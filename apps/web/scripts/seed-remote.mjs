@@ -82,17 +82,8 @@ async function main() {
   }
   console.log(`  user_id = ${userId}`);
 
-  // 2) Garantir que o profile existe e é produtor
-  const { error: profErr } = await admin
-    .from("profiles")
-    .upsert(
-      { id: userId, role: "produtor", full_name: "Rick Januário" },
-      { onConflict: "id" },
-    );
-  if (profErr) throw profErr;
-  console.log("  profile atualizado (role=produtor)");
-
-  // 3) Upsert corretora exemplo (Cooxupé)
+  // 2) Upsert corretora exemplo (Cooxupé) — feito ANTES do profile pra
+  // poder vincular corretora_id no profile da pessoa que também é corretora.
   console.log("> Inserindo corretora exemplo (Cooxupé)...");
   const { data: corretora, error: corrErr } = await admin
     .from("corretoras")
@@ -112,6 +103,22 @@ async function main() {
     .single();
   if (corrErr) throw corrErr;
   console.log(`  corretora ${corretora.name} (${corretora.id})`);
+
+  // 3) Atualizar profile: usuário é produtor + corretora, vinculado à Cooxupé.
+  const { error: profErr } = await admin
+    .from("profiles")
+    .upsert(
+      {
+        id: userId,
+        role: "produtor",
+        roles: ["produtor", "corretora"],
+        corretora_id: corretora.id,
+        full_name: "Rick Januário",
+      },
+      { onConflict: "id" },
+    );
+  if (profErr) throw profErr;
+  console.log("  profile atualizado (roles=[produtor, corretora], vinculado à Cooxupé)");
 
   // 4) Cotações: 2 datas por tipo pra calcular variação
   console.log("> Inserindo cotações (Arábica × 2 datas, Conillón × 2 datas)...");

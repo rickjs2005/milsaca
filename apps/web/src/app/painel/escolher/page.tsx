@@ -1,0 +1,112 @@
+import { redirect } from "next/navigation";
+import { Handshake, Sprout, Shield, ArrowRight, Coffee } from "lucide-react";
+import { getProfile, panelFor } from "@/lib/auth";
+import { selectRole } from "./_actions";
+import { Card, CardContent } from "@/components/ui/card";
+import type { UserRole } from "@milsaca/types";
+
+export const metadata = { title: "Escolha o painel — Milsaca" };
+
+const ROLE_META: Record<
+  UserRole,
+  {
+    label: string;
+    description: string;
+    icon: typeof Handshake;
+  }
+> = {
+  produtor: {
+    label: "Entrar como produtor",
+    description:
+      "Acompanhe cotações, propostas e contratos das corretoras que falam com você.",
+    icon: Sprout,
+  },
+  corretora: {
+    label: "Entrar como corretora",
+    description:
+      "Veja leads, contratos e gerencie sua carteira de produtores.",
+    icon: Handshake,
+  },
+  admin: {
+    label: "Entrar como admin",
+    description: "Acesso interno para administração da plataforma.",
+    icon: Shield,
+  },
+};
+
+export default async function EscolherPainelPage() {
+  const profile = await getProfile();
+  if (!profile) redirect("/entrar");
+
+  // Se só tem um papel, manda direto.
+  if (profile.roles.length <= 1) {
+    const only = profile.roles[0];
+    if (only) redirect(panelFor(only));
+    redirect("/");
+  }
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-milsaca-cream px-6 py-12">
+      <div className="w-full max-w-2xl">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-milsaca-verde text-milsaca-dourado">
+            <Coffee className="h-5 w-5" />
+          </span>
+          <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
+            Como você quer entrar hoje?
+          </h1>
+          <p className="mt-2 max-w-md text-sm text-milsaca-verde-claro">
+            Sua conta tem mais de um papel. Escolha um painel — você pode
+            trocar a qualquer momento pelo menu lateral.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          {profile.roles.map((role) => {
+            const meta = ROLE_META[role];
+            const Icon = meta.icon;
+            return (
+              <form key={role} action={selectRole}>
+                <input type="hidden" name="role" value={role} />
+                <button
+                  type="submit"
+                  className="block w-full text-left"
+                  aria-label={meta.label}
+                >
+                  <Card className="border-milsaca-cream-escuro transition-shadow hover:shadow-md">
+                    <CardContent className="flex flex-col gap-3 p-6">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-milsaca-verde/10 text-milsaca-verde">
+                        <Icon className="h-5 w-5" />
+                      </span>
+                      <div className="space-y-1">
+                        <p className="font-semibold text-milsaca-verde">
+                          {meta.label}
+                        </p>
+                        <p className="text-xs text-milsaca-verde-claro">
+                          {meta.description}
+                        </p>
+                      </div>
+                      <span className="mt-1 flex items-center gap-1 text-sm font-medium text-milsaca-verde">
+                        Continuar
+                        <ArrowRight className="h-4 w-4" />
+                      </span>
+                    </CardContent>
+                  </Card>
+                </button>
+              </form>
+            );
+          })}
+        </div>
+
+        <form action="/sair" method="post" className="mt-8 text-center">
+          <button
+            type="submit"
+            className="text-sm text-milsaca-verde-claro underline-offset-4 hover:text-milsaca-verde hover:underline"
+          >
+            Sair da conta
+          </button>
+        </form>
+      </div>
+    </main>
+  );
+}

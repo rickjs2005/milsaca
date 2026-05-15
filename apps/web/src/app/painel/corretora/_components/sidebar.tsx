@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import {
   Coffee,
   Home,
-  TrendingUp,
   Handshake,
   FileText,
   Users,
+  TrendingUp,
   User,
   LogOut,
   Repeat,
@@ -23,19 +23,21 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/painel/produtor", label: "Início", icon: Home, exact: true },
-  { href: "/painel/produtor/cotacoes", label: "Cotações", icon: TrendingUp },
-  { href: "/painel/produtor/negociacoes", label: "Negociações", icon: Handshake },
-  { href: "/painel/produtor/contratos", label: "Contratos", icon: FileText },
-  { href: "/painel/produtor/corretoras", label: "Corretoras", icon: Users },
-  { href: "/painel/produtor/perfil", label: "Perfil", icon: User },
+  { href: "/painel/corretora", label: "Início", icon: Home, exact: true },
+  { href: "/painel/corretora/leads", label: "Leads", icon: Handshake },
+  { href: "/painel/corretora/contratos", label: "Contratos", icon: FileText },
+  { href: "/painel/corretora/produtores", label: "Produtores", icon: Users },
+  { href: "/painel/corretora/cotacoes", label: "Cotações", icon: TrendingUp },
+  { href: "/painel/corretora/perfil", label: "Perfil", icon: User },
 ];
 
-export function ProdutorSidebar({
+export function CorretoraSidebar({
   userEmail,
+  corretoraName,
   showSwitcher,
 }: {
   userEmail: string;
+  corretoraName: string | null;
   showSwitcher: boolean;
 }) {
   const pathname = usePathname();
@@ -78,9 +80,12 @@ export function ProdutorSidebar({
       <div className="border-t border-milsaca-cream-escuro p-3">
         <div className="mb-2 px-3 py-1">
           <p className="text-xs uppercase tracking-wider text-milsaca-verde-claro/70">
-            Produtor
+            {corretoraName ?? "Corretora"}
           </p>
-          <p className="truncate text-sm font-medium text-milsaca-verde" title={userEmail}>
+          <p
+            className="truncate text-sm font-medium text-milsaca-verde"
+            title={userEmail}
+          >
             {userEmail}
           </p>
         </div>

@@ -39,12 +39,12 @@ export async function GET(request: NextRequest) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("roles")
     .eq("id", user.id)
-    .single<Pick<Profile, "role">>();
+    .single<Pick<Profile, "roles">>();
 
-  const target = profile?.role
-    ? defaultRouteFor(profile.role)
+  const target = profile?.roles?.length
+    ? defaultRouteFor(profile)
     : next;
 
   return NextResponse.redirect(`${origin}${target}`);

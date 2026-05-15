@@ -61,7 +61,7 @@ export async function verifyCode(formData: FormData) {
     );
   }
 
-  // Decide o destino pelo role do profile.
+  // Decide o destino pelos papéis do profile.
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -71,11 +71,13 @@ export async function verifyCode(formData: FormData) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("roles")
     .eq("id", user.id)
-    .single<Pick<Profile, "role">>();
+    .single<Pick<Profile, "roles">>();
 
-  const target = profile?.role ? defaultRouteFor(profile.role) : redirectTo;
+  const target = profile?.roles?.length
+    ? defaultRouteFor(profile)
+    : redirectTo;
   redirect(target);
 }
 
