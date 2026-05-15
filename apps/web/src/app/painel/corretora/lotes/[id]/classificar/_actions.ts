@@ -6,7 +6,7 @@ import { createClient } from "@milsaca/db/web/server";
 import { getProfile, getUser } from "@/lib/auth";
 import { calcularLaudo, calcularPVA } from "@milsaca/cob";
 import type { DefeitosCrus, OpcoesCalculo } from "@milsaca/cob";
-import type { TablesInsert, TablesUpdate } from "@/lib/db-helpers";
+import type { Json } from "@milsaca/types/database";
 
 type ClassificarInput = {
   loteId: string;
@@ -47,7 +47,7 @@ export async function saveClassificacao(input: ClassificarInput) {
       : null;
 
   const supabase = await createClient();
-  const insertPayload: TablesInsert<"classificacoes_cob"> = {
+  const { error } = await supabase.from("classificacoes_cob").insert({
     lote_id: input.loteId,
     corretora_id: profile.corretora_id,
     classificador_id: user.id,
@@ -57,35 +57,31 @@ export async function saveClassificacao(input: ClassificarInput) {
     fora_de_tipo: resultado.fora_de_tipo,
     fora_de_tipo_motivos: resultado.fora_de_tipo_motivos,
     schema_version: resultado.schema_version,
-    defeitos_crus: input.defeitosCrus as never,
+    defeitos_crus: input.defeitosCrus as unknown as Json,
     brocados_por_defeito: input.brocadosPorDefeito,
     bebida: input.bebida,
     classe: input.classe,
     aspecto: input.aspecto,
     torra: input.torra,
-    peneiras: input.peneiras as never,
+    peneiras: input.peneiras as unknown as Json,
     peneira_dominante: input.peneiraDominante,
     bica_corrida: input.bicaCorrida,
     umidade: input.umidade,
     pva,
     impurezas_pct: input.impurezasPct,
     observacoes: input.observacoes,
-  };
-  const { error } = await supabase
-    .from("classificacoes_cob")
-    .insert(insertPayload as never);
+  });
 
   if (error) {
     return { ok: false as const, error: error.message };
   }
 
   // Atualizar status do lote conforme resultado
-  const statusUpdate: TablesUpdate<"lotes"> = {
-    status: resultado.fora_de_tipo ? "fora_de_tipo" : "classificado",
-  };
   await supabase
     .from("lotes")
-    .update(statusUpdate as never)
+    .update({
+      status: resultado.fora_de_tipo ? "fora_de_tipo" : "classificado",
+    })
     .eq("id", input.loteId);
 
   revalidatePath(`/painel/corretora/lotes/${input.loteId}`);

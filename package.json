@@ -37,7 +37,9 @@
       "react": "19.1.0",
       "react-dom": "19.1.0",
       "@types/react": "19.1.17",
-      "@types/react-dom": "19.1.10"
+      "@types/react-dom": "19.1.10",
+      "@supabase/supabase-js": "2.49.4",
+      "@supabase/postgrest-js": "1.16.3"
     }
   }
 }

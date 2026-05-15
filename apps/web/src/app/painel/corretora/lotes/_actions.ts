@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import type { CoffeeProcesso, CoffeeSpecie } from "@milsaca/types";
-import type { TablesInsert } from "@/lib/db-helpers";
 
 const SPECIES: CoffeeSpecie[] = ["arabica", "conillon"];
 const PROCESSOS: CoffeeProcesso[] = [
@@ -52,21 +51,20 @@ export async function createLote(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const payload: TablesInsert<"lotes"> = {
-    corretora_id: profile.corretora_id,
-    produtor_id,
-    codigo,
-    specie,
-    processo,
-    safra,
-    descricao,
-    peso_sacas,
-    umidade_inicial,
-    status: "aguardando_classificacao",
-  };
   const { data, error } = await supabase
     .from("lotes")
-    .insert(payload as never)
+    .insert({
+      corretora_id: profile.corretora_id,
+      produtor_id,
+      codigo,
+      specie,
+      processo,
+      safra,
+      descricao,
+      peso_sacas,
+      umidade_inicial,
+      status: "aguardando_classificacao",
+    })
     .select("id")
     .single();
 
@@ -75,10 +73,6 @@ export async function createLote(formData: FormData) {
     redirect(`/painel/corretora/lotes/novo?${params.toString()}`);
   }
 
-  const row = data as { id: string } | null;
-  if (!row) {
-    redirect("/painel/corretora/lotes/novo?error=Falha%20ao%20criar%20lote");
-  }
   revalidatePath("/painel/corretora/lotes");
-  redirect(`/painel/corretora/lotes/${row.id}`);
+  redirect(`/painel/corretora/lotes/${data.id}`);
 }
