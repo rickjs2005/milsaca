@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Coffee } from "lucide-react";
-import { sendCode } from "./_actions";
+import { redirect } from "next/navigation";
+import { Coffee, Mail } from "lucide-react";
+import { verifyCode } from "../_actions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,14 +13,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type SearchParams = Promise<{ redirectTo?: string; error?: string }>;
+type SearchParams = Promise<{
+  email?: string;
+  redirectTo?: string;
+  error?: string;
+}>;
 
-export default async function EntrarPage({
+export default async function VerificarPage({
   searchParams,
 }: {
   searchParams: SearchParams;
 }) {
   const sp = await searchParams;
+  if (!sp.email) redirect("/entrar");
+
+  const email = sp.email;
   const error = sp.error;
 
   return (
@@ -36,13 +44,19 @@ export default async function EntrarPage({
 
         <Card className="border-milsaca-cream-escuro">
           <CardHeader>
-            <CardTitle className="text-2xl">Entrar como produtor</CardTitle>
+            <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-milsaca-cream-escuro text-milsaca-verde">
+              <Mail className="h-6 w-6" />
+            </div>
+            <CardTitle className="text-2xl">Confira seu email</CardTitle>
             <CardDescription>
-              Vamos enviar um código de 6 dígitos para o seu email. Sem senha.
+              Enviamos um código de 6 dígitos para{" "}
+              <span className="font-medium text-milsaca-verde">{email}</span>.
+              Cole abaixo para entrar.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={sendCode} className="space-y-4">
+            <form action={verifyCode} className="space-y-4">
+              <input type="hidden" name="email" value={email} />
               {sp.redirectTo && (
                 <input
                   type="hidden"
@@ -51,14 +65,19 @@ export default async function EntrarPage({
                 />
               )}
               <div className="space-y-2">
-                <Label htmlFor="email">Seu email</Label>
+                <Label htmlFor="token">Código de 6 dígitos</Label>
                 <Input
-                  id="email"
-                  name="email"
-                  type="email"
+                  id="token"
+                  name="token"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete="one-time-code"
+                  maxLength={6}
                   required
-                  autoComplete="email"
-                  placeholder="voce@exemplo.com"
+                  autoFocus
+                  placeholder="123456"
+                  className="text-center text-2xl tracking-[0.5em] font-mono"
                 />
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
@@ -66,19 +85,19 @@ export default async function EntrarPage({
                 type="submit"
                 className="w-full bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
               >
-                Enviar código
+                Entrar
               </Button>
             </form>
           </CardContent>
         </Card>
 
         <p className="mt-6 text-center text-sm text-milsaca-verde-claro">
-          É corretora?{" "}
+          Não recebeu?{" "}
           <Link
-            href="/entrar/corretora"
+            href="/entrar"
             className="font-medium text-milsaca-verde underline-offset-4 hover:underline"
           >
-            Entrar com email e senha
+            Pedir outro código
           </Link>
         </p>
       </div>

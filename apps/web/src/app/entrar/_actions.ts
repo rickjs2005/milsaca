@@ -2,14 +2,15 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
-
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+import { defaultRouteFor } from "@/lib/auth";
+import type { Profile } from "@milsaca/types";
 
 /**
- * Envia magic link (OTP por email) para o usuário produtor.
+ * Envia OTP por email para o produtor.
+ * Em vez de magic link (que o Gmail consome no prefetch), o usuário
+ * recebe um código de 6 dígitos para colar em /entrar/verificar.
  */
-export async function sendMagicLink(formData: FormData) {
+export async function sendCode(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const redirectTo = String(formData.get("redirectTo") ?? "/painel");
 
@@ -21,7 +22,6 @@ export async function sendMagicLink(formData: FormData) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${SITE_URL}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
       shouldCreateUser: true,
     },
   });
@@ -29,7 +29,54 @@ export async function sendMagicLink(formData: FormData) {
   if (error) {
     redirect(`/entrar?error=${encodeURIComponent(error.message)}`);
   }
-  redirect("/entrar?sent=1");
+
+  const params = new URLSearchParams({ email, redirectTo });
+  redirect(`/entrar/verificar?${params.toString()}`);
+}
+
+/**
+ * Verifica o código OTP digitado pelo usuário e cria a sessão.
+ */
+export async function verifyCode(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const token = String(formData.get("token") ?? "").trim();
+  const redirectTo = String(formData.get("redirectTo") ?? "/painel");
+
+  if (!email || !token) {
+    redirect(
+      `/entrar/verificar?email=${encodeURIComponent(email)}&error=C%C3%B3digo%20obrigat%C3%B3rio`,
+    );
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: "email",
+  });
+
+  if (error) {
+    redirect(
+      `/entrar/verificar?email=${encodeURIComponent(email)}&error=${encodeURIComponent(error.message)}`,
+    );
+  }
+
+  // Decide o destino pelo role do profile.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/entrar?error=Sess%C3%A3o%20inv%C3%A1lida");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single<Pick<Profile, "role">>();
+
+  const target = profile?.role ? defaultRouteFor(profile.role) : redirectTo;
+  redirect(target);
 }
 
 /**
