@@ -1,0 +1,22 @@
+{
+  "name": "@milsaca/eslint-config",
+  "version": "0.0.1",
+  "private": true,
+  "main": "base.js",
+  "files": [
+    "base.js",
+    "next.js",
+    "expo.js"
+  ],
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.1.0"
+  },
+  "peerDependencies": {
+    "eslint": "^8.57.0",
+    "typescript": ">=5.0.0"
+  }
+}

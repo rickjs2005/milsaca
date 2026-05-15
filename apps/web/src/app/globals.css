@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Tema Milsaca claro — base cream com acentos verde-café e dourado */
+    --background: 39 47% 96%;
+    --foreground: 124 12% 19%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 124 12% 19%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 124 12% 19%;
+
+    --primary: 124 12% 19%;
+    --primary-foreground: 39 47% 96%;
+
+    --secondary: 38 49% 90%;
+    --secondary-foreground: 124 12% 19%;
+
+    --muted: 38 49% 90%;
+    --muted-foreground: 120 6% 35%;
+
+    --accent: 41 47% 59%;
+    --accent-foreground: 124 12% 19%;
+
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 38 30% 85%;
+    --input: 38 30% 85%;
+    --ring: 41 47% 59%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 124 12% 12%;
+    --foreground: 39 47% 96%;
+
+    --card: 124 14% 17%;
+    --card-foreground: 39 47% 96%;
+
+    --popover: 124 14% 17%;
+    --popover-foreground: 39 47% 96%;
+
+    --primary: 41 47% 59%;
+    --primary-foreground: 124 12% 12%;
+
+    --secondary: 124 10% 25%;
+    --secondary-foreground: 39 47% 96%;
+
+    --muted: 124 10% 25%;
+    --muted-foreground: 38 20% 75%;
+
+    --accent: 41 47% 59%;
+    --accent-foreground: 124 12% 12%;
+
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 124 8% 28%;
+    --input: 124 8% 28%;
+    --ring: 41 47% 59%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}

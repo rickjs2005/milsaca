@@ -1,0 +1,35 @@
+{
+  "name": "@milsaca/db",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./web/client": "./src/web/client.ts",
+    "./web/server": "./src/web/server.ts",
+    "./web/middleware": "./src/web/middleware.ts",
+    "./mobile": "./src/mobile.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "clean": "rimraf dist .turbo"
+  },
+  "dependencies": {
+    "@milsaca/types": "workspace:*",
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.47.10"
+  },
+  "devDependencies": {
+    "@milsaca/eslint-config": "workspace:*",
+    "@milsaca/typescript-config": "workspace:*",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.2"
+  },
+  "peerDependencies": {
+    "next": ">=15",
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "next": { "optional": true },
+    "react": { "optional": true }
+  }
+}

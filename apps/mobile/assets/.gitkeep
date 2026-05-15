@@ -1,0 +1,2 @@
+# Pasta para ícones do app (icon.png, splash.png, adaptive-icon.png).
+# Adicione os assets antes do primeiro `expo prebuild` ou `eas build`.

@@ -1,0 +1,31 @@
+{
+  "name": "@milsaca/ui",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./cn": "./src/cn.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "clean": "rimraf dist .turbo"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.6.0"
+  },
+  "devDependencies": {
+    "@milsaca/eslint-config": "workspace:*",
+    "@milsaca/typescript-config": "workspace:*",
+    "@types/react": "^19.0.0",
+    "react": "^19.0.0",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.2"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  }
+}

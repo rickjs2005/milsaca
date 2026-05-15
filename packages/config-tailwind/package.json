@@ -1,0 +1,17 @@
+{
+  "name": "@milsaca/config-tailwind",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./tokens": "./tokens.js"
+  },
+  "files": [
+    "index.js",
+    "tokens.js"
+  ],
+  "peerDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}
