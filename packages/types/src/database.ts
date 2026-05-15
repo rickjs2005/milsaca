@@ -689,17 +689,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      current_corretora: { Args: never; Returns: string }
+      current_corretora: { Args: Record<string, never>; Returns: string }
       current_role: {
-        Args: never
+        Args: Record<string, never>
         Returns: Database["public"]["Enums"]["user_role"]
       }
       current_roles: {
-        Args: never
+        Args: Record<string, never>
         Returns: Database["public"]["Enums"]["user_role"][]
       }
-      is_admin: { Args: never; Returns: boolean }
-      is_corretora: { Args: never; Returns: boolean }
+      is_admin: { Args: Record<string, never>; Returns: boolean }
+      is_corretora: { Args: Record<string, never>; Returns: boolean }
     }
     Enums: {
       coffee_processo:

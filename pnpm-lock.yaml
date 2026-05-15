@@ -133,6 +133,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@milsaca/cob':
+        specifier: workspace:*
+        version: link:../../packages/cob
       '@milsaca/db':
         specifier: workspace:*
         version: link:../../packages/db

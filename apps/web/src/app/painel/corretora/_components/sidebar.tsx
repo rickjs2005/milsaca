@@ -12,6 +12,7 @@ import {
   User,
   LogOut,
   Repeat,
+  Package,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/painel/corretora", label: "Início", icon: Home, exact: true },
+  { href: "/painel/corretora/lotes", label: "Lotes", icon: Package },
   { href: "/painel/corretora/leads", label: "Leads", icon: Handshake },
   { href: "/painel/corretora/contratos", label: "Contratos", icon: FileText },
   { href: "/painel/corretora/produtores", label: "Produtores", icon: Users },

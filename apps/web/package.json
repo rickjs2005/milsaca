@@ -12,6 +12,7 @@
     "seed": "node scripts/seed-remote.mjs"
   },
   "dependencies": {
+    "@milsaca/cob": "workspace:*",
     "@milsaca/db": "workspace:*",
     "@milsaca/types": "workspace:*",
     "@milsaca/ui": "workspace:*",
