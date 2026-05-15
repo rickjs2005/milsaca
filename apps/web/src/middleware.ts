@@ -4,7 +4,15 @@ import { updateSession } from "@milsaca/db/web/middleware";
 
 const PROTECTED_PREFIX = ["/painel", "/admin"];
 
+const supabaseConfigured = Boolean(
+  process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+);
+
 export async function middleware(request: NextRequest) {
+  // Sem Supabase configurado, deixa passar (modo "vitrine" / dev sem auth).
+  if (!supabaseConfigured) return NextResponse.next({ request });
+
   const { response, user } = await updateSession(request);
   const { pathname } = request.nextUrl;
 
