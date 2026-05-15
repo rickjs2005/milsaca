@@ -219,6 +219,21 @@ importers:
         specifier: ^5.7.2
         version: 5.9.3
 
+  packages/cob:
+    devDependencies:
+      '@milsaca/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@milsaca/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      rimraf:
+        specifier: ^6.0.1
+        version: 6.1.3
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
   packages/config-tailwind:
     dependencies:
       tailwindcss:

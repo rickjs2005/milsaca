@@ -87,6 +87,121 @@ export type Database = {
           },
         ]
       }
+      classificacoes_cob: {
+        Row: {
+          anulada: boolean
+          anulada_motivo: string | null
+          aspecto: string | null
+          bebida: string | null
+          bica_corrida: boolean
+          brocados_por_defeito: number
+          classe: string | null
+          classificador_id: string | null
+          corretora_id: string
+          created_at: string
+          defeitos_crus: Json
+          fora_de_tipo: boolean
+          fora_de_tipo_motivos: Json
+          id: string
+          impurezas_pct: number | null
+          lote_id: string
+          observacoes: string | null
+          pdf_url: string | null
+          peneira_dominante: string | null
+          peneiras: Json
+          pontuacao: number | null
+          pva: number | null
+          schema_version: number
+          tipo: string | null
+          torra: string | null
+          total_defeitos: number
+          umidade: number | null
+          updated_at: string
+        }
+        Insert: {
+          anulada?: boolean
+          anulada_motivo?: string | null
+          aspecto?: string | null
+          bebida?: string | null
+          bica_corrida?: boolean
+          brocados_por_defeito?: number
+          classe?: string | null
+          classificador_id?: string | null
+          corretora_id: string
+          created_at?: string
+          defeitos_crus: Json
+          fora_de_tipo?: boolean
+          fora_de_tipo_motivos?: Json
+          id?: string
+          impurezas_pct?: number | null
+          lote_id: string
+          observacoes?: string | null
+          pdf_url?: string | null
+          peneira_dominante?: string | null
+          peneiras?: Json
+          pontuacao?: number | null
+          pva?: number | null
+          schema_version?: number
+          tipo?: string | null
+          torra?: string | null
+          total_defeitos: number
+          umidade?: number | null
+          updated_at?: string
+        }
+        Update: {
+          anulada?: boolean
+          anulada_motivo?: string | null
+          aspecto?: string | null
+          bebida?: string | null
+          bica_corrida?: boolean
+          brocados_por_defeito?: number
+          classe?: string | null
+          classificador_id?: string | null
+          corretora_id?: string
+          created_at?: string
+          defeitos_crus?: Json
+          fora_de_tipo?: boolean
+          fora_de_tipo_motivos?: Json
+          id?: string
+          impurezas_pct?: number | null
+          lote_id?: string
+          observacoes?: string | null
+          pdf_url?: string | null
+          peneira_dominante?: string | null
+          peneiras?: Json
+          pontuacao?: number | null
+          pva?: number | null
+          schema_version?: number
+          tipo?: string | null
+          torra?: string | null
+          total_defeitos?: number
+          umidade?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classificacoes_cob_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classificacoes_cob_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classificacoes_cob_classificador_id_fkey"
+            columns: ["classificador_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contratos: {
         Row: {
           bag_count: number | null
@@ -368,6 +483,75 @@ export type Database = {
           },
         ]
       }
+      lotes: {
+        Row: {
+          codigo: string
+          corretora_id: string
+          created_at: string
+          descricao: string | null
+          id: string
+          observacoes: string | null
+          peso_kg: number | null
+          peso_sacas: number | null
+          processo: Database["public"]["Enums"]["coffee_processo"] | null
+          produtor_id: string
+          safra: string | null
+          specie: Database["public"]["Enums"]["coffee_specie"]
+          status: Database["public"]["Enums"]["lote_status"]
+          umidade_inicial: number | null
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          corretora_id: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          observacoes?: string | null
+          peso_kg?: number | null
+          peso_sacas?: number | null
+          processo?: Database["public"]["Enums"]["coffee_processo"] | null
+          produtor_id: string
+          safra?: string | null
+          specie: Database["public"]["Enums"]["coffee_specie"]
+          status?: Database["public"]["Enums"]["lote_status"]
+          umidade_inicial?: number | null
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          corretora_id?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          observacoes?: string | null
+          peso_kg?: number | null
+          peso_sacas?: number | null
+          processo?: Database["public"]["Enums"]["coffee_processo"] | null
+          produtor_id?: string
+          safra?: string | null
+          specie?: Database["public"]["Enums"]["coffee_specie"]
+          status?: Database["public"]["Enums"]["lote_status"]
+          umidade_inicial?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lotes_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lotes_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string | null
@@ -518,6 +702,13 @@ export type Database = {
       is_corretora: { Args: never; Returns: boolean }
     }
     Enums: {
+      coffee_processo:
+        | "natural"
+        | "cereja_descascado"
+        | "cd_desmucilado"
+        | "despolpado"
+        | "fermentacao_induzida"
+      coffee_specie: "arabica" | "conillon"
       contrato_status:
         | "rascunho"
         | "em_analise"
@@ -529,6 +720,14 @@ export type Database = {
         | "em_negociacao"
         | "convertido"
         | "perdido"
+        | "arquivado"
+      lote_status:
+        | "rascunho"
+        | "aguardando_classificacao"
+        | "classificado"
+        | "fora_de_tipo"
+        | "rebeneficiar"
+        | "vendido"
         | "arquivado"
       notification_kind: "lead" | "contrato" | "cotacao" | "sistema"
       user_role: "produtor" | "corretora" | "admin"
