@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx",
     "type-check": "tsc --noEmit",
-    "clean": "rimraf .next .turbo"
+    "clean": "rimraf .next .turbo",
+    "seed": "node scripts/seed-remote.mjs"
   },
   "dependencies": {
     "@milsaca/db": "workspace:*",
