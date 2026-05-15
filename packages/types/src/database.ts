@@ -465,6 +465,7 @@ export type Database = {
           id: string
           phone: string | null
           role: Database["public"]["Enums"]["user_role"]
+          roles: Database["public"]["Enums"]["user_role"][]
           updated_at: string
         }
         Insert: {
@@ -475,6 +476,7 @@ export type Database = {
           id: string
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          roles?: Database["public"]["Enums"]["user_role"][]
           updated_at?: string
         }
         Update: {
@@ -485,6 +487,7 @@ export type Database = {
           id?: string
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          roles?: Database["public"]["Enums"]["user_role"][]
           updated_at?: string
         }
         Relationships: [
@@ -507,7 +510,12 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      current_roles: {
+        Args: never
+        Returns: Database["public"]["Enums"]["user_role"][]
+      }
       is_admin: { Args: never; Returns: boolean }
+      is_corretora: { Args: never; Returns: boolean }
     }
     Enums: {
       contrato_status:

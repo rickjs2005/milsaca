@@ -3,6 +3,7 @@ export type UserRole = "produtor" | "corretora" | "admin";
 export interface Profile {
   id: string;
   role: UserRole;
+  roles: UserRole[];
   corretora_id: string | null;
   full_name: string | null;
   phone: string | null;
