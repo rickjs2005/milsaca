@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -290,9 +290,11 @@ export type Database = {
           id: string
           payload: Json
           price: number
+          process: Database["public"]["Enums"]["coffee_processo"] | null
           reference_date: string
           region: string | null
           source: string | null
+          specie: Database["public"]["Enums"]["coffee_specie"] | null
         }
         Insert: {
           coffee_type: string
@@ -300,9 +302,11 @@ export type Database = {
           id?: string
           payload?: Json
           price: number
+          process?: Database["public"]["Enums"]["coffee_processo"] | null
           reference_date: string
           region?: string | null
           source?: string | null
+          specie?: Database["public"]["Enums"]["coffee_specie"] | null
         }
         Update: {
           coffee_type?: string
@@ -310,9 +314,11 @@ export type Database = {
           id?: string
           payload?: Json
           price?: number
+          process?: Database["public"]["Enums"]["coffee_processo"] | null
           reference_date?: string
           region?: string | null
           source?: string | null
+          specie?: Database["public"]["Enums"]["coffee_specie"] | null
         }
         Relationships: []
       }
@@ -408,6 +414,7 @@ export type Database = {
         Row: {
           bag_count: number | null
           coffee_type: string | null
+          contato_id: string | null
           corretora_id: string
           created_at: string
           id: string
@@ -420,6 +427,7 @@ export type Database = {
         Insert: {
           bag_count?: number | null
           coffee_type?: string | null
+          contato_id?: string | null
           corretora_id: string
           created_at?: string
           id?: string
@@ -432,6 +440,7 @@ export type Database = {
         Update: {
           bag_count?: number | null
           coffee_type?: string | null
+          contato_id?: string | null
           corretora_id?: string
           created_at?: string
           id?: string
@@ -442,6 +451,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "leads_contato_id_fkey"
+            columns: ["contato_id"]
+            isOneToOne: false
+            referencedRelation: "produtor_contatos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "leads_corretora_id_fkey"
             columns: ["corretora_id"]
@@ -568,6 +584,66 @@ export type Database = {
           },
         ]
       }
+      produtor_contatos: {
+        Row: {
+          city: string | null
+          claimed_profile_id: string | null
+          corretora_id: string
+          created_at: string
+          email: string | null
+          fazenda_nome: string | null
+          full_name: string
+          id: string
+          notes: string | null
+          phone: string | null
+          state: string | null
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          claimed_profile_id?: string | null
+          corretora_id: string
+          created_at?: string
+          email?: string | null
+          fazenda_nome?: string | null
+          full_name: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          claimed_profile_id?: string | null
+          corretora_id?: string
+          created_at?: string
+          email?: string | null
+          fazenda_nome?: string | null
+          full_name?: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produtor_contatos_claimed_profile_id_fkey"
+            columns: ["claimed_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produtor_contatos_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produtores: {
         Row: {
           altitude_m: number | null
@@ -673,6 +749,7 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"][]
       }
+      get_laudo_publico: { Args: { p_id: string }; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
       is_corretora: { Args: never; Returns: boolean }
     }
