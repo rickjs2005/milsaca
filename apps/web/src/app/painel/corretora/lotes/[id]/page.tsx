@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, FileSearch, Plus } from "lucide-react";
+import { ArrowLeft, Download, ExternalLink, FileSearch, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -170,7 +170,7 @@ export default async function LoteDetalhePage({
             {!vigente ? (
               <p className="text-milsaca-verde-claro">
                 Nenhuma classificação ainda. Clique em
-                <span className="font-medium"> "Nova classificação" </span>
+                <span className="font-medium"> &quot;Nova classificação&quot; </span>
                 para criar.
               </p>
             ) : (
@@ -216,6 +216,36 @@ export default async function LoteDetalhePage({
                     value={`${Number(vigente.pva).toLocaleString("pt-BR")} %`}
                   />
                 )}
+                <div className="flex flex-wrap gap-2 pt-3">
+                  <Button
+                    asChild
+                    size="sm"
+                    className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+                  >
+                    <a
+                      href={`/laudos/${vigente.id}/pdf`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Download className="mr-1 h-3.5 w-3.5" />
+                      Baixar PDF
+                    </a>
+                  </Button>
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="outline"
+                    className="border-milsaca-cream-escuro text-milsaca-verde"
+                  >
+                    <Link
+                      href={`/laudos/${vigente.id}`}
+                      target="_blank"
+                    >
+                      <ExternalLink className="mr-1 h-3.5 w-3.5" />
+                      Link público
+                    </Link>
+                  </Button>
+                </div>
               </>
             )}
           </CardContent>
