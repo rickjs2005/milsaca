@@ -1,0 +1,176 @@
+import { createClient } from "@milsaca/db/web/server";
+import type { Database } from "@milsaca/types/database";
+
+export type LeadStatus = Database["public"]["Enums"]["lead_status"];
+
+export const LEAD_STATUS_ORDER: LeadStatus[] = [
+  "novo",
+  "em_negociacao",
+  "convertido",
+  "perdido",
+  "arquivado",
+];
+
+export const LEAD_STATUS_LABEL: Record<LeadStatus, string> = {
+  novo: "Novo",
+  em_negociacao: "Em negociação",
+  convertido: "Convertido",
+  perdido: "Recusado",
+  arquivado: "Arquivado",
+};
+
+export const LEAD_STATUS_COLOR: Record<LeadStatus, string> = {
+  novo: "bg-milsaca-dourado/20 text-milsaca-verde",
+  em_negociacao: "bg-sky-100 text-sky-800",
+  convertido: "bg-emerald-100 text-emerald-800",
+  perdido: "bg-rose-100 text-rose-800",
+  arquivado: "bg-slate-200 text-slate-700",
+};
+
+export type NegociacaoListItem = {
+  id: string;
+  status: LeadStatus;
+  coffee_type: string | null;
+  bag_count: number | null;
+  proposed_price: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  corretora_id: string;
+  corretora_nome: string;
+  corretora_phone: string | null;
+  corretora_city: string | null;
+};
+
+type Row = {
+  id: string;
+  status: LeadStatus;
+  coffee_type: string | null;
+  bag_count: number | null;
+  proposed_price: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  corretora_id: string;
+  corretora:
+    | { id: string; name: string; phone: string | null; city: string | null }
+    | { id: string; name: string; phone: string | null; city: string | null }[]
+    | null;
+};
+
+function pickOne<T>(v: T | T[] | null | undefined): T | null {
+  if (v == null) return null;
+  return Array.isArray(v) ? (v[0] ?? null) : v;
+}
+
+export async function listMinhasNegociacoes(
+  produtorId: string,
+  filter: { status?: LeadStatus } = {},
+): Promise<NegociacaoListItem[]> {
+  const supabase = await createClient();
+  let q = supabase
+    .from("leads")
+    .select(
+      `id, status, coffee_type, bag_count, proposed_price, notes,
+       created_at, updated_at, corretora_id,
+       corretora:corretoras!leads_corretora_id_fkey(id, name, phone, city)`,
+    )
+    .eq("produtor_id", produtorId)
+    .order("updated_at", { ascending: false })
+    .limit(500);
+
+  if (filter.status) q = q.eq("status", filter.status);
+
+  const { data } = await q;
+  const rows = (data ?? []) as Row[];
+
+  return rows.map((r): NegociacaoListItem => {
+    const cor = pickOne(r.corretora);
+    return {
+      id: r.id,
+      status: r.status,
+      coffee_type: r.coffee_type,
+      bag_count: r.bag_count,
+      proposed_price:
+        r.proposed_price != null ? Number(r.proposed_price) : null,
+      notes: r.notes,
+      created_at: r.created_at,
+      updated_at: r.updated_at,
+      corretora_id: r.corretora_id,
+      corretora_nome: cor?.name ?? "—",
+      corretora_phone: cor?.phone ?? null,
+      corretora_city: cor?.city ?? null,
+    };
+  });
+}
+
+export type NegociacaoEvent = {
+  id: string;
+  kind: string;
+  payload: Record<string, unknown>;
+  created_at: string;
+};
+
+export type NegociacaoDetail = NegociacaoListItem & {
+  events: NegociacaoEvent[];
+};
+
+export async function getMinhaNegociacao(
+  produtorId: string,
+  leadId: string,
+): Promise<NegociacaoDetail | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("leads")
+    .select(
+      `id, status, coffee_type, bag_count, proposed_price, notes,
+       created_at, updated_at, corretora_id,
+       corretora:corretoras!leads_corretora_id_fkey(id, name, phone, city)`,
+    )
+    .eq("produtor_id", produtorId)
+    .eq("id", leadId)
+    .maybeSingle();
+
+  if (!data) return null;
+  const r = data as Row;
+  const cor = pickOne(r.corretora);
+
+  const { data: eventsRaw } = await supabase
+    .from("lead_events")
+    .select("id, kind, payload, created_at")
+    .eq("lead_id", leadId)
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  type EventRow = {
+    id: string;
+    kind: string;
+    payload: Record<string, unknown> | null;
+    created_at: string;
+  };
+
+  const events: NegociacaoEvent[] = ((eventsRaw ?? []) as EventRow[]).map(
+    (e) => ({
+      id: e.id,
+      kind: e.kind,
+      payload: e.payload ?? {},
+      created_at: e.created_at,
+    }),
+  );
+
+  return {
+    id: r.id,
+    status: r.status,
+    coffee_type: r.coffee_type,
+    bag_count: r.bag_count,
+    proposed_price: r.proposed_price != null ? Number(r.proposed_price) : null,
+    notes: r.notes,
+    created_at: r.created_at,
+    updated_at: r.updated_at,
+    corretora_id: r.corretora_id,
+    corretora_nome: cor?.name ?? "—",
+    corretora_phone: cor?.phone ?? null,
+    corretora_city: cor?.city ?? null,
+    events,
+  };
+}
