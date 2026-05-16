@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { Coffee } from "lucide-react";
+import { Coffee, Sparkles } from "lucide-react";
 import { sendCode } from "./_actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +13,8 @@ import { Label } from "@/components/ui/label";
 
 type SearchParams = Promise<{ redirectTo?: string; error?: string }>;
 
+export const metadata = { title: "Entrar — Milsaca" };
+
 export default async function EntrarPage({
   searchParams,
 }: {
@@ -23,7 +24,7 @@ export default async function EntrarPage({
   const error = sp.error;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-milsaca-cream px-6">
+    <main className="flex min-h-screen items-center justify-center bg-milsaca-cream px-6 py-10">
       <div className="w-full max-w-md">
         <div className="mb-8 flex items-center justify-center gap-2">
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-milsaca-verde text-milsaca-dourado">
@@ -36,9 +37,10 @@ export default async function EntrarPage({
 
         <Card className="border-milsaca-cream-escuro">
           <CardHeader>
-            <CardTitle className="text-2xl">Entrar como produtor</CardTitle>
+            <CardTitle className="text-2xl">Entrar ou criar conta</CardTitle>
             <CardDescription>
-              Vamos enviar um código de 6 dígitos para o seu email. Sem senha.
+              Vamos enviar um código de 6 dígitos pro seu email. Sem senha.
+              Primeiro acesso? A conta é criada automaticamente.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -50,6 +52,7 @@ export default async function EntrarPage({
                   value={sp.redirectTo}
                 />
               )}
+
               <div className="space-y-2">
                 <Label htmlFor="email">Seu email</Label>
                 <Input
@@ -61,7 +64,25 @@ export default async function EntrarPage({
                   placeholder="voce@exemplo.com"
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="full_name" className="flex items-center gap-1">
+                  Seu nome
+                  <span className="text-xs font-normal text-milsaca-verde-claro">
+                    (só no primeiro acesso)
+                  </span>
+                </Label>
+                <Input
+                  id="full_name"
+                  name="full_name"
+                  type="text"
+                  autoComplete="name"
+                  placeholder="Como podemos te chamar?"
+                />
+              </div>
+
               {error && <p className="text-sm text-destructive">{error}</p>}
+
               <Button
                 type="submit"
                 className="w-full bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
@@ -72,15 +93,14 @@ export default async function EntrarPage({
           </CardContent>
         </Card>
 
-        <p className="mt-6 text-center text-sm text-milsaca-verde-claro">
-          É corretora?{" "}
-          <Link
-            href="/entrar/corretora"
-            className="font-medium text-milsaca-verde underline-offset-4 hover:underline"
-          >
-            Entrar com email e senha
-          </Link>
-        </p>
+        <div className="mt-6 flex items-start gap-2 rounded-md border border-milsaca-dourado/30 bg-milsaca-dourado/5 p-3 text-xs text-milsaca-verde">
+          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-milsaca-dourado" />
+          <p>
+            Funciona pra produtor e corretora — o mesmo email entra em ambos
+            os papéis. Quando você tiver 2 papéis, vai poder alternar pelo
+            menu lateral.
+          </p>
+        </div>
       </div>
     </main>
   );

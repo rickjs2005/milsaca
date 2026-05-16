@@ -6,12 +6,17 @@ import { defaultRouteFor } from "@/lib/auth";
 import type { Profile } from "@milsaca/types";
 
 /**
- * Envia OTP por email para o produtor.
+ * Envia OTP por email pra entrar OU criar conta.
  * Em vez de magic link (que o Gmail consome no prefetch), o usuário
- * recebe um código de 6 dígitos para colar em /entrar/verificar.
+ * recebe um código de 6 dígitos pra colar em /entrar/verificar.
+ *
+ * Se for primeiro acesso, `shouldCreateUser: true` cria o user em
+ * auth.users, e o trigger `handle_new_user` cria o profile correspondente.
+ * O campo `full_name` é passado via raw_user_meta_data e usado pelo trigger.
  */
 export async function sendCode(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const fullName = String(formData.get("full_name") ?? "").trim();
   const redirectTo = String(formData.get("redirectTo") ?? "/painel");
 
   if (!email) {
@@ -23,6 +28,7 @@ export async function sendCode(formData: FormData) {
     email,
     options: {
       shouldCreateUser: true,
+      data: fullName ? { full_name: fullName } : undefined,
     },
   });
 
@@ -81,26 +87,3 @@ export async function verifyCode(formData: FormData) {
   redirect(target);
 }
 
-/**
- * Login da corretora com email + senha.
- */
-export async function signInCorretora(formData: FormData) {
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const password = String(formData.get("password") ?? "");
-  const redirectTo = String(formData.get("redirectTo") ?? "/painel/corretora");
-
-  if (!email || !password) {
-    redirect("/entrar/corretora?error=Email%20e%20senha%20s%C3%A3o%20obrigat%C3%B3rios");
-  }
-
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    redirect(`/entrar/corretora?error=${encodeURIComponent(error.message)}`);
-  }
-  redirect(redirectTo);
-}
