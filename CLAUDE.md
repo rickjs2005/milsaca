@@ -52,8 +52,8 @@ Fonte: **Inter** (via `next/font/google` no web, `@expo-google-fonts/inter` no m
 
 ## Auth
 
-- **Produtor:** magic link.
-- **Corretora:** email + senha.
+- **OTP de 6 dígitos por email** pra todos (produtor e corretora). Magic link foi descartado porque o Gmail Safe Links faz prefetch e queima o link one-time-use. Ver `_Milsaca/05 - Auth e Fluxos.md` e a memória `feedback_supabase_otp_email`.
+- Multi-role: `profiles.roles user_role[]` permite mesmo email ser produtor + corretora. Tela `/painel/escolher` aparece quando há 2+ papéis; cookie `mp_active_role` armazena modo ativo.
 - No server, usar `getUser()` (NÃO `getSession()`).
 - Após login confirmado, redirecionar para o painel correto — **nunca deixar o usuário preso na tela de login**.
 
@@ -78,4 +78,4 @@ Não usar `anon`/`service_role` legacy como padrão.
 
 ## Documentação
 
-A documentação extensa fica no vault Obsidian em `C:\Users\rickj\saas\Milsaca\`. O resumo fica em `docs/README-MILSACA.md`. Mantenha ambos atualizados quando mudar algo importante.
+A documentação extensa fica no vault Obsidian em `C:\Users\rickj\saas\_Milsaca\` (com underscore — colisão case-insensitive com a pasta `milsaca/` do código no Windows). Comece sempre lendo `_Milsaca/09 - Ultima Sessao.md` no handoff entre sessões; atualize ele quando terminar.
