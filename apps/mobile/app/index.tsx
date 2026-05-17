@@ -1,8 +1,17 @@
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { Redirect, router } from "expo-router";
+
+import { useAuth } from "../src/lib/auth";
 
 export default function HomeScreen() {
+  const { status } = useAuth();
+
+  if (status === "signed_in") {
+    return <Redirect href="/(painel)/inicio" />;
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-milsaca-verde">
       <ScrollView
@@ -81,15 +90,13 @@ export default function HomeScreen() {
           {/* CTA */}
           <Pressable
             className="mt-8 items-center rounded-2xl bg-milsaca-dourado px-6 py-4 active:opacity-80"
-            onPress={() => {
-              // Próximas sprints: navegar para /entrar
-            }}
+            onPress={() => router.push("/(auth)/entrar")}
           >
             <Text
               className="text-base text-milsaca-verde"
               style={{ fontFamily: "Inter_600SemiBold" }}
             >
-              Em breve no seu celular
+              Entrar
             </Text>
           </Pressable>
 

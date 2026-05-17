@@ -13,6 +13,8 @@ import {
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 
+import { AuthProvider } from "../src/lib/auth";
+
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -32,14 +34,16 @@ export default function RootLayout() {
   if (!loaded) return null;
 
   return (
-    <SafeAreaProvider>
-      <StatusBar style="light" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: "#2D3A2E" },
-        }}
-      />
-    </SafeAreaProvider>
+    <AuthProvider>
+      <SafeAreaProvider>
+        <StatusBar style="light" />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: "#2D3A2E" },
+          }}
+        />
+      </SafeAreaProvider>
+    </AuthProvider>
   );
 }

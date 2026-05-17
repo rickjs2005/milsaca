@@ -8,17 +8,23 @@ const workspaceRoot = path.resolve(projectRoot, "../..");
 
 const config = getDefaultConfig(projectRoot);
 
-// 1. Watcha o monorepo inteiro (pnpm precisa disso).
 config.watchFolders = [workspaceRoot];
-
-// 2. node_modules locais e do workspace.
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, "node_modules"),
   path.resolve(workspaceRoot, "node_modules"),
 ];
 
-// 3. Resolve workspace packages corretamente.
-config.resolver.disableHierarchicalLookup = true;
+// @supabase/realtime-js usa `require('ws')` mas só roda em Node;
+// em RN o WebSocket global cobre. Stub pra Metro não tentar resolver.
+const originalResolveRequest = config.resolver.resolveRequest;
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (platform !== "web" && moduleName === "ws") {
+    return { type: "empty" };
+  }
+  return originalResolveRequest
+    ? originalResolveRequest(context, moduleName, platform)
+    : context.resolveRequest(context, moduleName, platform);
+};
 
 module.exports = withNativeWind(config, {
   input: "./global.css",
