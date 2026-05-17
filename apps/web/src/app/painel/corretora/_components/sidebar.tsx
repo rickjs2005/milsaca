@@ -14,6 +14,7 @@ import {
   Repeat,
   Package,
   Truck,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/painel/corretora/contratos", label: "Contratos", icon: FileText },
   { href: "/painel/corretora/entregas", label: "Entregas", icon: Truck },
   { href: "/painel/corretora/produtores", label: "Produtores", icon: Users },
+  { href: "/painel/corretora/compradores", label: "Compradores", icon: Building2 },
   { href: "/painel/corretora/cotacoes", label: "Cotações", icon: TrendingUp },
   { href: "/painel/corretora/perfil", label: "Perfil", icon: User },
 ];

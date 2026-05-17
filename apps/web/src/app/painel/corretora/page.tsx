@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   FileSignature,
   Truck,
+  Wallet,
 } from "lucide-react";
 import {
   Card,
@@ -41,6 +42,7 @@ type Kpi = {
   value: number;
   hint: string;
   icon: typeof Handshake;
+  isCurrency?: boolean;
 };
 
 type LeadRow = {
@@ -67,26 +69,43 @@ async function loadKpis(): Promise<Kpi[]> {
   monthStart.setUTCHours(0, 0, 0, 0);
   const monthStartIso = monthStart.toISOString();
 
-  const [novos, emNegociacao, convertidosMes, contratosAtivos] =
-    await Promise.all([
-      supabase
-        .from("leads")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "novo"),
-      supabase
-        .from("leads")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "em_negociacao"),
-      supabase
-        .from("leads")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "convertido")
-        .gte("updated_at", monthStartIso),
-      supabase
-        .from("contratos")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "ativo"),
-    ]);
+  const [
+    novos,
+    emNegociacao,
+    convertidosMes,
+    contratosAtivos,
+    contratosDoMes,
+  ] = await Promise.all([
+    supabase
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "novo"),
+    supabase
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "em_negociacao"),
+    supabase
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "convertido")
+      .gte("updated_at", monthStartIso),
+    supabase
+      .from("contratos")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "ativo"),
+    supabase
+      .from("contratos")
+      .select("comissao_total")
+      .in("status", ["ativo", "finalizado"])
+      .gte("updated_at", monthStartIso),
+  ]);
+
+  const receitaMes = (
+    (contratosDoMes.data ?? []) as { comissao_total: number | string | null }[]
+  ).reduce(
+    (sum, r) => sum + (r.comissao_total != null ? Number(r.comissao_total) : 0),
+    0,
+  );
 
   return [
     {
@@ -112,6 +131,13 @@ async function loadKpis(): Promise<Kpi[]> {
       value: contratosAtivos.count ?? 0,
       hint: "em execução",
       icon: FileSignature,
+    },
+    {
+      label: "Receita do mês",
+      value: receitaMes,
+      hint: "comissão de contratos ativos e finalizados",
+      icon: Wallet,
+      isCurrency: true,
     },
   ];
 }
@@ -207,9 +233,10 @@ export default async function InicioCorretoraPage() {
         </p>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {kpis.map((k) => {
           const Icon = k.icon;
+          const displayValue = k.isCurrency ? BRL.format(k.value) : k.value;
           return (
             <Card key={k.label} className="border-milsaca-cream-escuro">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -221,8 +248,14 @@ export default async function InicioCorretoraPage() {
                 </span>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-semibold tracking-tight text-milsaca-verde">
-                  {k.value}
+                <p
+                  className={
+                    k.isCurrency
+                      ? "text-2xl font-semibold tracking-tight text-milsaca-verde"
+                      : "text-3xl font-semibold tracking-tight text-milsaca-verde"
+                  }
+                >
+                  {displayValue}
                 </p>
                 <p className="mt-1 text-xs text-milsaca-verde-claro">
                   {k.hint}

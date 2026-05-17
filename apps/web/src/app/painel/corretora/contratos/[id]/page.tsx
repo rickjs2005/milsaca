@@ -33,6 +33,7 @@ import {
 } from "../_actions";
 import { gerarEntregaDoContrato } from "../../entregas/_actions";
 import { buildWhatsAppInviteUrl } from "../../produtores/_lib/whatsapp";
+import { listCompradoresOptions } from "../../compradores/_lib/queries";
 
 export const metadata = { title: "Contrato — Milsaca" };
 
@@ -104,7 +105,10 @@ export default async function ContratoDetalhePage({
   const { id } = await params;
   const sp = await searchParams;
 
-  const contrato = await getContrato(profile.corretora_id, id);
+  const [contrato, compradoresOpts] = await Promise.all([
+    getContrato(profile.corretora_id, id),
+    listCompradoresOptions(profile.corretora_id),
+  ]);
   if (!contrato) notFound();
 
   const waUrl = buildWhatsAppInviteUrl({
@@ -283,6 +287,58 @@ export default async function ContratoDetalhePage({
                         : ""
                     }
                   />
+                </div>
+
+                <div className="space-y-2 sm:col-span-2 border-t border-milsaca-cream-escuro pt-4">
+                  <Label htmlFor="comprador_id">Comprador</Label>
+                  <select
+                    id="comprador_id"
+                    name="comprador_id"
+                    defaultValue={contrato.comprador_id ?? ""}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="">— sem comprador —</option>
+                    {compradoresOpts.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  {compradoresOpts.length === 0 ? (
+                    <p className="text-xs text-milsaca-verde-claro">
+                      Nenhum comprador ativo.{" "}
+                      <Link
+                        href="/painel/corretora/compradores/novo"
+                        className="text-milsaca-dourado hover:underline"
+                      >
+                        Cadastrar
+                      </Link>
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="comissao_pct">Comissão (%)</Label>
+                  <Input
+                    id="comissao_pct"
+                    name="comissao_pct"
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="1,0"
+                    defaultValue={
+                      contrato.comissao_pct != null
+                        ? String(contrato.comissao_pct).replace(".", ",")
+                        : ""
+                    }
+                  />
+                  {contrato.comissao_total != null ? (
+                    <p className="text-xs text-milsaca-verde-claro">
+                      Total: R${" "}
+                      {contrato.comissao_total.toLocaleString("pt-BR", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="sm:col-span-2 grid gap-3 rounded-md bg-milsaca-cream-escuro/30 p-3 text-xs text-milsaca-verde-claro sm:grid-cols-2">

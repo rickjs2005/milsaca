@@ -32,6 +32,23 @@ function parseDecimal(v: FormDataEntryValue | null): number | null {
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
+// Comissão é entrada simples: aceita "1.0", "1,0", "0,5" etc.
+function parsePct(v: FormDataEntryValue | null): number | null {
+  if (v == null) return null;
+  const s = String(v).trim().replace(",", ".");
+  if (!s) return null;
+  const n = Number(s);
+  return Number.isFinite(n) && n >= 0 && n <= 100 ? n : null;
+}
+
+function calcComissaoTotal(
+  totalValue: number | null,
+  pct: number | null,
+): number | null {
+  if (totalValue == null || pct == null) return null;
+  return Math.round(((totalValue * pct) / 100) * 100) / 100;
+}
+
 function isContratoStatus(v: string): v is ContratoStatus {
   return (CONTRATO_STATUS_ORDER as readonly string[]).includes(v);
 }
@@ -52,9 +69,12 @@ export async function createContrato(formData: FormData) {
 
   const produtor_id = clean(formData.get("produtor_id"));
   const lead_id = clean(formData.get("lead_id"));
+  const comprador_id = clean(formData.get("comprador_id"));
   const coffee_type = clean(formData.get("coffee_type"));
   const bag_count = parseInteger(formData.get("bag_count"));
   const total_value = parseDecimal(formData.get("total_value"));
+  const comissao_pct = parsePct(formData.get("comissao_pct"));
+  const comissao_total = calcComissaoTotal(total_value, comissao_pct);
   const code_input = clean(formData.get("code"));
 
   const errors: string[] = [];
@@ -74,12 +94,15 @@ export async function createContrato(formData: FormData) {
     .insert({
       corretora_id: profile.corretora_id,
       produtor_id: produtor_id as string,
+      comprador_id,
       lead_id,
       code,
       status: "rascunho",
       coffee_type,
       bag_count,
       total_value,
+      comissao_pct,
+      comissao_total,
     })
     .select("id")
     .single();
@@ -104,9 +127,12 @@ export async function updateContratoFields(formData: FormData) {
   if (!id) redirect("/painel/corretora/contratos");
 
   const code = clean(formData.get("code"));
+  const comprador_id = clean(formData.get("comprador_id"));
   const coffee_type = clean(formData.get("coffee_type"));
   const bag_count = parseInteger(formData.get("bag_count"));
   const total_value = parseDecimal(formData.get("total_value"));
+  const comissao_pct = parsePct(formData.get("comissao_pct"));
+  const comissao_total = calcComissaoTotal(total_value, comissao_pct);
 
   if (!code) {
     const params = new URLSearchParams({ error: "Código obrigatório" });
@@ -116,7 +142,15 @@ export async function updateContratoFields(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("contratos")
-    .update({ code: code as string, coffee_type, bag_count, total_value })
+    .update({
+      code: code as string,
+      comprador_id,
+      coffee_type,
+      bag_count,
+      total_value,
+      comissao_pct,
+      comissao_total,
+    })
     .eq("id", id)
     .eq("corretora_id", profile.corretora_id);
 

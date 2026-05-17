@@ -107,7 +107,16 @@ export async function listContratos(
   });
 }
 
-export type ContratoDetail = ContratoListItem & { notes_lead: string | null };
+export type ContratoDetail = ContratoListItem & {
+  notes_lead: string | null;
+  comprador_id: string | null;
+  comprador_nome: string | null;
+  comprador_cnpj: string | null;
+  comprador_city: string | null;
+  comprador_state: string | null;
+  comissao_pct: number | null;
+  comissao_total: number | null;
+};
 
 export async function getContrato(
   corretoraId: string,
@@ -119,8 +128,10 @@ export async function getContrato(
     .select(
       `id, code, status, coffee_type, bag_count, total_value, signed_at,
        created_at, updated_at, produtor_id, lead_id,
+       comprador_id, comissao_pct, comissao_total,
        produtor:profiles!contratos_produtor_id_fkey(id, full_name, phone),
-       lead:leads!contratos_lead_id_fkey(notes)`,
+       lead:leads!contratos_lead_id_fkey(notes),
+       comprador:compradores!contratos_comprador_id_fkey(id, name, cnpj, city, state)`,
     )
     .eq("corretora_id", corretoraId)
     .eq("id", id)
@@ -129,10 +140,18 @@ export async function getContrato(
   if (!data) return null;
   const r = data as ContratoRow & {
     lead: { notes: string | null } | { notes: string | null }[] | null;
+    comprador_id: string | null;
+    comissao_pct: number | string | null;
+    comissao_total: number | string | null;
+    comprador:
+      | { id: string; name: string; cnpj: string | null; city: string | null; state: string | null }
+      | { id: string; name: string; cnpj: string | null; city: string | null; state: string | null }[]
+      | null;
   };
 
   const p = pickOne(r.produtor);
   const lead = pickOne(r.lead);
+  const c = pickOne(r.comprador);
   return {
     id: r.id,
     code: r.code,
@@ -148,6 +167,13 @@ export async function getContrato(
     produtor_phone: p?.phone ?? null,
     lead_id: r.lead_id,
     notes_lead: lead?.notes ?? null,
+    comprador_id: r.comprador_id,
+    comprador_nome: c?.name ?? null,
+    comprador_cnpj: c?.cnpj ?? null,
+    comprador_city: c?.city ?? null,
+    comprador_state: c?.state ?? null,
+    comissao_pct: r.comissao_pct != null ? Number(r.comissao_pct) : null,
+    comissao_total: r.comissao_total != null ? Number(r.comissao_total) : null,
   };
 }
 

@@ -18,6 +18,7 @@ import {
   nextContratoCode,
 } from "../_lib/queries";
 import { createContrato } from "../_actions";
+import { listCompradoresOptions } from "../../compradores/_lib/queries";
 
 export const metadata = { title: "Novo contrato — Milsaca" };
 
@@ -34,8 +35,9 @@ export default async function NovoContratoPage({
   }
   const sp = await searchParams;
 
-  const [produtores, lead, suggestedCode] = await Promise.all([
+  const [produtores, compradores, lead, suggestedCode] = await Promise.all([
     listProdutoresReais(profile.corretora_id),
+    listCompradoresOptions(profile.corretora_id),
     sp.lead
       ? getLeadForContrato(profile.corretora_id, sp.lead)
       : Promise.resolve(null),
@@ -224,6 +226,51 @@ export default async function NovoContratoPage({
                     × {lead.bag_count} sacas.
                   </p>
                 )}
+              </div>
+
+              <div className="space-y-2 sm:col-span-2 border-t border-milsaca-cream-escuro pt-4">
+                <Label htmlFor="comprador_id">Comprador</Label>
+                {compradores.length === 0 ? (
+                  <p className="text-xs text-milsaca-verde-claro">
+                    Nenhum comprador ativo.{" "}
+                    <Link
+                      href="/painel/corretora/compradores/novo"
+                      className="text-milsaca-dourado hover:underline"
+                    >
+                      Cadastrar um agora
+                    </Link>
+                    .
+                  </p>
+                ) : (
+                  <select
+                    id="comprador_id"
+                    name="comprador_id"
+                    defaultValue=""
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="">— sem comprador definido —</option>
+                    {compradores.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="comissao_pct">Comissão (%)</Label>
+                <Input
+                  id="comissao_pct"
+                  name="comissao_pct"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="1,0"
+                  defaultValue="1,0"
+                />
+                <p className="text-xs text-milsaca-verde-claro">
+                  Calculada sobre o valor total.
+                </p>
               </div>
 
               {sp.error && (

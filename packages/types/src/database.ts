@@ -202,11 +202,91 @@ export type Database = {
           },
         ]
       }
+      compradores: {
+        Row: {
+          ativo: boolean
+          city: string | null
+          cnpj: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          corretora_id: string
+          created_at: string
+          id: string
+          inscricao_estadual: string | null
+          name: string
+          observacoes: string | null
+          preferencias: Json
+          regime_tributario:
+            | Database["public"]["Enums"]["regime_tributario"]
+            | null
+          state: string | null
+          tipo: string | null
+          trade_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          city?: string | null
+          cnpj?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          corretora_id: string
+          created_at?: string
+          id?: string
+          inscricao_estadual?: string | null
+          name: string
+          observacoes?: string | null
+          preferencias?: Json
+          regime_tributario?:
+            | Database["public"]["Enums"]["regime_tributario"]
+            | null
+          state?: string | null
+          tipo?: string | null
+          trade_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          city?: string | null
+          cnpj?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          corretora_id?: string
+          created_at?: string
+          id?: string
+          inscricao_estadual?: string | null
+          name?: string
+          observacoes?: string | null
+          preferencias?: Json
+          regime_tributario?:
+            | Database["public"]["Enums"]["regime_tributario"]
+            | null
+          state?: string | null
+          tipo?: string | null
+          trade_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compradores_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contratos: {
         Row: {
           bag_count: number | null
           code: string
           coffee_type: string | null
+          comissao_pct: number | null
+          comissao_total: number | null
+          comprador_id: string | null
           corretora_id: string
           created_at: string
           id: string
@@ -221,6 +301,9 @@ export type Database = {
           bag_count?: number | null
           code: string
           coffee_type?: string | null
+          comissao_pct?: number | null
+          comissao_total?: number | null
+          comprador_id?: string | null
           corretora_id: string
           created_at?: string
           id?: string
@@ -235,6 +318,9 @@ export type Database = {
           bag_count?: number | null
           code?: string
           coffee_type?: string | null
+          comissao_pct?: number | null
+          comissao_total?: number | null
+          comprador_id?: string | null
           corretora_id?: string
           created_at?: string
           id?: string
@@ -246,6 +332,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "contratos_comprador_id_fkey"
+            columns: ["comprador_id"]
+            isOneToOne: false
+            referencedRelation: "compradores"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "contratos_corretora_id_fkey"
             columns: ["corretora_id"]
@@ -937,6 +1030,12 @@ export type Database = {
         | "vendido"
         | "arquivado"
       notification_kind: "lead" | "contrato" | "cotacao" | "sistema"
+      regime_tributario:
+        | "simples_nacional"
+        | "lucro_presumido"
+        | "lucro_real"
+        | "mei"
+        | "isento"
       user_role: "produtor" | "corretora" | "admin"
     }
     CompositeTypes: {
@@ -1557,6 +1656,13 @@ export const Constants = {
         "arquivado",
       ],
       notification_kind: ["lead", "contrato", "cotacao", "sistema"],
+      regime_tributario: [
+        "simples_nacional",
+        "lucro_presumido",
+        "lucro_real",
+        "mei",
+        "isento",
+      ],
       user_role: ["produtor", "corretora", "admin"],
     },
   },

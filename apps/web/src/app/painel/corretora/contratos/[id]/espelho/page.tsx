@@ -105,8 +105,8 @@ export default async function EspelhoContratoPage({
           </div>
         </header>
 
-        {/* Partes */}
-        <section className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
+        {/* Partes — triangular: vendedor / corretora / comprador */}
+        <section className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-milsaca-verde-claro">
               Vendedor (produtor)
@@ -131,6 +131,25 @@ export default async function EspelhoContratoPage({
               </p>
             ) : null}
           </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-milsaca-verde-claro">
+              Comprador
+            </p>
+            <p className="mt-2 text-lg font-medium">
+              {contrato.comprador_nome ?? "— a definir —"}
+            </p>
+            {contrato.comprador_cnpj ? (
+              <p className="font-mono text-xs text-milsaca-verde-claro">
+                CNPJ {contrato.comprador_cnpj}
+              </p>
+            ) : null}
+            {contrato.comprador_city ? (
+              <p className="text-xs text-milsaca-verde-claro">
+                {contrato.comprador_city}
+                {contrato.comprador_state ? `/${contrato.comprador_state}` : ""}
+              </p>
+            ) : null}
+          </div>
         </section>
 
         {/* Negócio */}
@@ -148,8 +167,28 @@ export default async function EspelhoContratoPage({
           </dl>
         </section>
 
-        {/* Assinatura */}
-        <section className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2">
+        {/* Comissão */}
+        {contrato.comissao_pct != null ? (
+          <section className="mt-4 rounded-2xl border border-milsaca-dourado/40 bg-milsaca-dourado/10 p-6">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-milsaca-verde-claro">
+              Corretagem
+            </h2>
+            <dl className="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-2">
+              <Field label="Alíquota">
+                {contrato.comissao_pct.toLocaleString("pt-BR", {
+                  maximumFractionDigits: 2,
+                })}
+                %
+              </Field>
+              <Field label="Comissão devida à corretora">
+                {formatBRL(contrato.comissao_total)}
+              </Field>
+            </dl>
+          </section>
+        ) : null}
+
+        {/* Assinatura — 3 partes */}
+        <section className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-3">
           <div>
             <div className="border-b border-milsaca-verde/40 pb-1" />
             <p className="mt-2 text-xs text-milsaca-verde-claro">
@@ -165,6 +204,13 @@ export default async function EspelhoContratoPage({
             <p className="text-xs text-milsaca-verde-claro">
               Corretora intermediária
             </p>
+          </div>
+          <div>
+            <div className="border-b border-milsaca-verde/40 pb-1" />
+            <p className="mt-2 text-xs text-milsaca-verde-claro">
+              {contrato.comprador_nome ?? "Comprador"}
+            </p>
+            <p className="text-xs text-milsaca-verde-claro">Comprador</p>
           </div>
         </section>
 
