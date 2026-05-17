@@ -1,11 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Redirect, Tabs } from "expo-router";
-import { ActivityIndicator, View } from "react-native";
+import { useEffect } from "react";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 import { useAuth } from "../../src/lib/auth";
 
 export default function PainelLayout() {
-  const { status, profile, activeRole } = useAuth();
+  const { status, profile, activeRole, reloadProfile, signOut } = useAuth();
+
+  // Race condition: trigger handle_new_user pode demorar a popular profile.
+  // Quando signed_in mas sem profile, faz polling discreto pra evitar tabs vazias.
+  useEffect(() => {
+    if (status !== "signed_in" || profile) return;
+    const t = setInterval(reloadProfile, 1500);
+    return () => clearInterval(t);
+  }, [status, profile, reloadProfile]);
 
   if (status === "loading") {
     return (
@@ -19,9 +28,87 @@ export default function PainelLayout() {
     return <Redirect href="/(auth)/entrar" />;
   }
 
-  const roles = profile?.roles ?? [];
+  // Conta acabou de ser criada e o trigger ainda não populou o profile.
+  if (!profile) {
+    return (
+      <View className="flex-1 items-center justify-center bg-milsaca-verde px-6">
+        <ActivityIndicator color="#C9A961" />
+        <Text
+          className="mt-4 text-center text-sm text-milsaca-cream/80"
+          style={{ fontFamily: "Inter_500Medium" }}
+        >
+          Preparando sua conta…
+        </Text>
+      </View>
+    );
+  }
+
+  const roles = profile.roles ?? [];
+
+  // Sem nenhum papel — não deveria acontecer, mas se acontecer não trava silencioso.
+  if (roles.length === 0) {
+    return (
+      <View className="flex-1 items-center justify-center bg-milsaca-verde px-6">
+        <Text
+          className="text-center text-lg text-milsaca-cream"
+          style={{ fontFamily: "Inter_700Bold" }}
+        >
+          Conta sem perfil definido
+        </Text>
+        <Text
+          className="mt-3 text-center text-sm text-milsaca-cream/70"
+          style={{ fontFamily: "Inter_400Regular" }}
+        >
+          Sua conta foi criada mas ainda não tem produtor nem corretora vinculados. Entre em contato com a corretora que te cadastrou.
+        </Text>
+        <Pressable
+          onPress={signOut}
+          className="mt-6 rounded-2xl border border-milsaca-dourado/40 px-5 py-3 active:opacity-70"
+        >
+          <Text
+            className="text-sm text-milsaca-dourado"
+            style={{ fontFamily: "Inter_500Medium" }}
+          >
+            Sair
+          </Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   if (!activeRole && roles.length > 1) {
     return <Redirect href="/escolher" />;
+  }
+
+  // App é pro produtor/corretora. Admin opera no painel web.
+  if (activeRole === "admin") {
+    return (
+      <View className="flex-1 items-center justify-center bg-milsaca-verde px-6">
+        <Text
+          className="text-center text-lg text-milsaca-cream"
+          style={{ fontFamily: "Inter_700Bold" }}
+        >
+          Painel administrativo
+        </Text>
+        <Text
+          className="mt-3 text-center text-sm text-milsaca-cream/70"
+          style={{ fontFamily: "Inter_400Regular" }}
+        >
+          O admin opera pelo painel web em milsaca.app/admin.
+        </Text>
+        <Pressable
+          onPress={signOut}
+          className="mt-6 rounded-2xl border border-milsaca-dourado/40 px-5 py-3 active:opacity-70"
+        >
+          <Text
+            className="text-sm text-milsaca-dourado"
+            style={{ fontFamily: "Inter_500Medium" }}
+          >
+            Sair
+          </Text>
+        </Pressable>
+      </View>
+    );
   }
 
   const isCorretora = activeRole === "corretora";

@@ -46,36 +46,46 @@ export default function InicioScreen() {
   const { profile, activeRole, signOut } = useAuth();
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!profile) return;
-    const cotacoes = await listCotacoes();
-    const cotacao = cotacoes[0] ?? null;
+    setError(null);
+    try {
+      const cotacoes = await listCotacoes();
+      const cotacao = cotacoes[0] ?? null;
 
-    if (activeRole === "corretora" && profile.corretora_id) {
-      const [leads, contratos] = await Promise.all([
-        listLeadsDaCorretora(profile.corretora_id),
-        listContratosDaCorretora(profile.corretora_id),
-      ]);
-      setSnap({
-        cotacao,
-        leadsAbertos: leads.filter((l) =>
-          ["novo", "em_negociacao"].includes(l.status),
-        ),
-        contratosAtivos: contratos.filter((c) => c.status === "ativo"),
-      });
-    } else {
-      const [leads, contratos] = await Promise.all([
-        listMinhasNegociacoes(profile.id),
-        listMeusContratos(profile.id),
-      ]);
-      setSnap({
-        cotacao,
-        leadsAbertos: leads.filter((l) =>
-          ["novo", "em_negociacao"].includes(l.status),
-        ),
-        contratosAtivos: contratos.filter((c) => c.status === "ativo"),
-      });
+      if (activeRole === "corretora" && profile.corretora_id) {
+        const [leads, contratos] = await Promise.all([
+          listLeadsDaCorretora(profile.corretora_id),
+          listContratosDaCorretora(profile.corretora_id),
+        ]);
+        setSnap({
+          cotacao,
+          leadsAbertos: leads.filter((l) =>
+            ["novo", "em_negociacao"].includes(l.status),
+          ),
+          contratosAtivos: contratos.filter((c) => c.status === "ativo"),
+        });
+      } else {
+        const [leads, contratos] = await Promise.all([
+          listMinhasNegociacoes(profile.id),
+          listMeusContratos(profile.id),
+        ]);
+        setSnap({
+          cotacao,
+          leadsAbertos: leads.filter((l) =>
+            ["novo", "em_negociacao"].includes(l.status),
+          ),
+          contratosAtivos: contratos.filter((c) => c.status === "ativo"),
+        });
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Não conseguimos carregar os dados.",
+      );
     }
   }, [activeRole, profile]);
 
@@ -145,7 +155,27 @@ export default function InicioScreen() {
           </Text>
         </View>
 
-        {!snap ? (
+        {error ? (
+          <View className="mt-12 items-center px-2">
+            <Text
+              className="text-center text-sm text-red-300"
+              style={{ fontFamily: "Inter_500Medium" }}
+            >
+              {error}
+            </Text>
+            <Pressable
+              onPress={load}
+              className="mt-4 rounded-2xl bg-milsaca-dourado px-5 py-3 active:opacity-80"
+            >
+              <Text
+                className="text-sm text-milsaca-verde"
+                style={{ fontFamily: "Inter_600SemiBold" }}
+              >
+                Tentar de novo
+              </Text>
+            </Pressable>
+          </View>
+        ) : !snap ? (
           <View className="mt-12 items-center">
             <ActivityIndicator color="#C9A961" />
           </View>
