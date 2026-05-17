@@ -12,6 +12,7 @@ import {
   User,
   LogOut,
   Repeat,
+  Truck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +28,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/painel/produtor/cotacoes", label: "Cotações", icon: TrendingUp },
   { href: "/painel/produtor/negociacoes", label: "Negociações", icon: Handshake },
   { href: "/painel/produtor/contratos", label: "Contratos", icon: FileText },
+  { href: "/painel/produtor/entregas", label: "Entregas", icon: Truck },
   { href: "/painel/produtor/corretoras", label: "Corretoras", icon: Users },
   { href: "/painel/produtor/perfil", label: "Perfil", icon: User },
 ];

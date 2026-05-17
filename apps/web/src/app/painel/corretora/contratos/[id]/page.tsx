@@ -7,6 +7,7 @@ import {
   ArrowRight,
   Phone,
   Link2,
+  Truck,
 } from "lucide-react";
 import {
   Card,
@@ -30,6 +31,7 @@ import {
   updateContratoFields,
   updateContratoStatus,
 } from "../_actions";
+import { gerarEntregaDoContrato } from "../../entregas/_actions";
 import { buildWhatsAppInviteUrl } from "../../produtores/_lib/whatsapp";
 
 export const metadata = { title: "Contrato — Milsaca" };
@@ -145,6 +147,16 @@ export default async function ContratoDetalhePage({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <form action={gerarEntregaDoContrato} className="inline">
+            <input type="hidden" name="contrato_id" value={contrato.id} />
+            <button
+              type="submit"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-milsaca-verde bg-transparent px-4 text-sm font-medium text-milsaca-verde hover:bg-milsaca-verde hover:text-milsaca-cream"
+            >
+              <Truck className="h-4 w-4" />
+              Gerar entrega
+            </button>
+          </form>
           <Button
             asChild
             variant="outline"

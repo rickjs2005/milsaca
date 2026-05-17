@@ -1,11 +1,14 @@
+import Link from "next/link";
 import {
   ArrowUpRight,
   ArrowDownRight,
+  AlertTriangle,
   Coffee,
   Handshake,
   TrendingUp as TrendingUpIcon,
   CheckCircle2,
   FileSignature,
+  Truck,
 } from "lucide-react";
 import {
   Card,
@@ -17,6 +20,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@milsaca/db/web/server";
 import type { LeadStatus } from "@milsaca/types";
+import { getProfile } from "@/lib/auth";
+import { listEntregasHojeEAtrasadas } from "./entregas/_lib/queries";
 
 export const metadata = { title: "Início — Painel da corretora" };
 
@@ -181,10 +186,14 @@ async function loadCotacoes(): Promise<CotacaoCard[]> {
 }
 
 export default async function InicioCorretoraPage() {
-  const [kpis, leads, cotacoes] = await Promise.all([
+  const profile = await getProfile();
+  const [kpis, leads, cotacoes, entregasSnap] = await Promise.all([
     loadKpis(),
     loadLeadsRecentes(),
     loadCotacoes(),
+    profile?.corretora_id
+      ? listEntregasHojeEAtrasadas(profile.corretora_id)
+      : Promise.resolve({ hoje: [], atrasadas: [] }),
   ]);
 
   return (
@@ -222,6 +231,35 @@ export default async function InicioCorretoraPage() {
             </Card>
           );
         })}
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
+            <Truck className="h-4 w-4" />
+            Entregas pra acompanhar
+          </h2>
+          <Link
+            href="/painel/corretora/entregas"
+            className="text-xs text-milsaca-dourado hover:underline"
+          >
+            Ver todas →
+          </Link>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <EntregasMiniCard
+            label="Atrasadas"
+            count={entregasSnap.atrasadas.length}
+            tone="warn"
+            items={entregasSnap.atrasadas}
+          />
+          <EntregasMiniCard
+            label="Hoje"
+            count={entregasSnap.hoje.length}
+            tone="info"
+            items={entregasSnap.hoje}
+          />
+        </div>
       </section>
 
       <section className="space-y-3">
@@ -320,6 +358,80 @@ function EmptyCard({ message }: { message: string }) {
     <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
       <CardContent className="py-6 text-center text-sm text-milsaca-verde-claro">
         {message}
+      </CardContent>
+    </Card>
+  );
+}
+
+function EntregasMiniCard({
+  label,
+  count,
+  tone,
+  items,
+}: {
+  label: string;
+  count: number;
+  tone: "warn" | "info";
+  items: { id: string; contrato_code: string; produtor_nome: string; data_prevista: string | null; bag_count: number | null }[];
+}) {
+  const isWarn = tone === "warn";
+  return (
+    <Card
+      className={
+        isWarn && count > 0
+          ? "border-rose-200 bg-rose-50/40"
+          : "border-milsaca-cream-escuro"
+      }
+    >
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardDescription className="text-xs uppercase tracking-wider">
+          {label}
+        </CardDescription>
+        <span
+          className={
+            isWarn && count > 0
+              ? "flex h-7 w-7 items-center justify-center rounded-full bg-rose-100 text-rose-700"
+              : "flex h-7 w-7 items-center justify-center rounded-full bg-milsaca-verde/10 text-milsaca-verde"
+          }
+        >
+          {isWarn ? <AlertTriangle className="h-3.5 w-3.5" /> : <Truck className="h-3.5 w-3.5" />}
+        </span>
+      </CardHeader>
+      <CardContent>
+        <p
+          className={
+            isWarn && count > 0
+              ? "text-3xl font-semibold tracking-tight text-rose-700"
+              : "text-3xl font-semibold tracking-tight text-milsaca-verde"
+          }
+        >
+          {count}
+        </p>
+        {items.length === 0 ? (
+          <p className="mt-1 text-xs text-milsaca-verde-claro">
+            {isWarn ? "Nada em atraso. Bom." : "Nenhuma entrega hoje."}
+          </p>
+        ) : (
+          <ul className="mt-3 space-y-1 text-xs text-milsaca-verde-claro">
+            {items.slice(0, 3).map((it) => (
+              <li key={it.id}>
+                <Link
+                  href={`/painel/corretora/entregas/${it.id}`}
+                  className="hover:text-milsaca-verde hover:underline"
+                >
+                  <span className="font-mono">{it.contrato_code}</span> ·{" "}
+                  {it.produtor_nome}
+                  {it.bag_count ? ` · ${it.bag_count} sc` : ""}
+                </Link>
+              </li>
+            ))}
+            {items.length > 3 ? (
+              <li className="text-[10px] text-milsaca-verde-claro/70">
+                +{items.length - 3} ...
+              </li>
+            ) : null}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );
