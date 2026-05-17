@@ -144,17 +144,28 @@ export default async function ContratoDetalhePage({
             )}
           </div>
         </div>
-        {waUrl && (
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             asChild
-            className="bg-emerald-600 text-white hover:bg-emerald-700"
+            variant="outline"
+            className="border-milsaca-verde text-milsaca-verde hover:bg-milsaca-verde hover:text-milsaca-cream"
           >
-            <a href={waUrl} target="_blank" rel="noopener noreferrer">
-              <MessageCircle className="mr-2 h-4 w-4" />
-              WhatsApp
-            </a>
+            <Link href={`/painel/corretora/contratos/${contrato.id}/espelho`}>
+              Espelho / imprimir
+            </Link>
           </Button>
-        )}
+          {waUrl && (
+            <Button
+              asChild
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+            >
+              <a href={waUrl} target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="mr-2 h-4 w-4" />
+                WhatsApp
+              </a>
+            </Button>
+          )}
+        </div>
       </header>
 
       {sp.saved && (

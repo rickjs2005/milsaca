@@ -1,0 +1,124 @@
+import Link from "next/link";
+import { requireRole } from "@/lib/auth";
+import { createClient } from "@milsaca/db/web/server";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { toggleCorretoraVerified } from "../_actions";
+
+export const metadata = { title: "Corretoras · Admin Milsaca" };
+
+interface PageProps {
+  searchParams: Promise<{ ok?: string; error?: string }>;
+}
+
+export default async function AdminCorretorasPage({ searchParams }: PageProps) {
+  await requireRole("admin");
+  const { ok, error } = await searchParams;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("corretoras")
+    .select("id, name, slug, city, phone, verified, created_at")
+    .order("created_at", { ascending: false });
+
+  const rows = data ?? [];
+
+  return (
+    <main className="mx-auto max-w-5xl px-6 py-10">
+      <div className="flex items-center justify-between">
+        <div>
+          <Link
+            href="/admin"
+            className="text-xs text-milsaca-dourado hover:underline"
+          >
+            ← Admin
+          </Link>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight text-milsaca-verde">
+            Corretoras
+          </h1>
+          <p className="mt-1 text-sm text-milsaca-verde-claro">
+            {rows.length} cadastrada{rows.length === 1 ? "" : "s"}.
+          </p>
+        </div>
+        <Button
+          asChild
+          className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+        >
+          <Link href="/admin/corretoras/nova">+ Nova corretora</Link>
+        </Button>
+      </div>
+
+      {ok ? (
+        <p className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {ok}
+        </p>
+      ) : null}
+      {error ? (
+        <p className="mt-4 rounded-xl border border-rose-500/30 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          {error}
+        </p>
+      ) : null}
+
+      <div className="mt-8 overflow-hidden rounded-2xl border border-milsaca-verde/10 bg-white shadow-sm">
+        {rows.length === 0 ? (
+          <p className="p-8 text-center text-sm text-milsaca-verde-claro">
+            Nenhuma corretora cadastrada. Crie a primeira.
+          </p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-milsaca-cream-escuro/30 text-left text-xs uppercase tracking-wide text-milsaca-verde-claro">
+              <tr>
+                <th className="px-4 py-3">Nome</th>
+                <th className="px-4 py-3">Slug</th>
+                <th className="px-4 py-3">Cidade</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((c) => (
+                <tr key={c.id} className="border-t border-milsaca-verde/5">
+                  <td className="px-4 py-3 font-medium text-milsaca-verde">
+                    {c.name}
+                  </td>
+                  <td className="px-4 py-3 font-mono text-xs text-milsaca-verde-claro">
+                    {c.slug}
+                  </td>
+                  <td className="px-4 py-3 text-milsaca-verde-claro">
+                    {c.city ?? "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    {c.verified ? (
+                      <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+                        Verificada
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-milsaca-verde-claro">
+                        Pendente
+                      </Badge>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <form action={toggleCorretoraVerified} className="inline">
+                      <input type="hidden" name="id" value={c.id} />
+                      <input
+                        type="hidden"
+                        name="verified"
+                        value={c.verified ? "false" : "true"}
+                      />
+                      <button
+                        type="submit"
+                        className="text-xs text-milsaca-dourado underline-offset-2 hover:underline"
+                      >
+                        {c.verified ? "Desativar" : "Ativar"}
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </main>
+  );
+}
