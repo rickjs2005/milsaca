@@ -17,6 +17,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import {
   fetchBcbPtax,
   fetchCepeaArabica,
+  fetchCepeaOfficial,
   fetchIceArabica,
   fetchIceRobusta,
   type Quote,
@@ -30,8 +31,18 @@ const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
+// CEPEA tem 2 caminhos: API oficial (quando contratada) e scraping fallback.
+// Oficial vence se retornar valor; cai pro scraping só se oficial retornar null
+// (sem credenciais OU erro). Mantém PK (source, symbol) = 'cepea_esalq' única
+// na tabela — quem grava primeiro determina o source_url/meta.
+async function fetchCepea(): Promise<Quote | null> {
+  const official = await fetchCepeaOfficial();
+  if (official) return official;
+  return fetchCepeaArabica();
+}
+
 const ADAPTERS: Array<{ name: string; run: () => Promise<Quote | null> }> = [
-  { name: "cepea_arabica", run: fetchCepeaArabica },
+  { name: "cepea", run: fetchCepea },
   { name: "ice_arabica", run: fetchIceArabica },
   { name: "ice_robusta", run: fetchIceRobusta },
   { name: "bcb_ptax", run: fetchBcbPtax },

@@ -225,10 +225,100 @@ export async function fetchBcbPtax(): Promise<Quote | null> {
 }
 
 // ---------------------------------------------------------------------------
-// 4) Arábica CEPEA via Notícias Agrícolas (scraping)
+// 4) Arábica CEPEA — API OFICIAL (preferida quando contratada)
+//
+//    Ativa via env vars (Supabase Edge secrets):
+//      CEPEA_API_URL    — endpoint base, ex. https://api.cepea.esalq.usp.br/v1
+//      CEPEA_API_TOKEN  — Bearer token recebido na contratação
+//      CEPEA_INDICATOR  — ID do indicador (default: "cafe-arabica")
+//
+//    Sem essas envs, retorna null e o `cepea_scraping` (fallback abaixo) cuida.
+//    Quando recebermos a doc real CEPEA, ajustar:
+//      - URL do endpoint diário do indicador (formato JSON esperado)
+//      - Campos do response: valor BRL, data de referência, variação
+//      - Headers de auth (Bearer vs API Key)
+//
+//    Mantém a REGRA DE OURO: se o response vier inesperado, retorna null
+//    (orchestrator não insere preço chutado).
+// ---------------------------------------------------------------------------
+export async function fetchCepeaOfficial(): Promise<Quote | null> {
+  const baseUrl = Deno.env.get("CEPEA_API_URL");
+  const token = Deno.env.get("CEPEA_API_TOKEN");
+  const indicator = Deno.env.get("CEPEA_INDICATOR") ?? "cafe-arabica";
+
+  if (!baseUrl || !token) return null; // não contratada ainda — usa scraping
+
+  // TODO(quando-receber-doc-cepea): substituir path + parser pelos campos
+  // reais da resposta da API oficial. Mantém o shape Quote e a faixa de
+  // sanidade R$ 500–5000.
+  const url = `${baseUrl.replace(/\/$/, "")}/indicadores/${indicator}/atual`;
+
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+        "User-Agent": UA,
+      },
+    });
+  } catch {
+    return null;
+  }
+  if (!res.ok) return null;
+
+  const body = await res.json().catch(() => null);
+  if (!body || typeof body !== "object") return null;
+
+  // Esperado (ajustar conforme doc CEPEA real):
+  //   { valor_brl: 1804.50, data_referencia: "2026-05-16", variacao_pct: 0.32 }
+  const rawPrice = Number(
+    (body as Record<string, unknown>).valor_brl ??
+      (body as Record<string, unknown>).valor ??
+      NaN,
+  );
+  const refDate = String(
+    (body as Record<string, unknown>).data_referencia ??
+      (body as Record<string, unknown>).data ??
+      "",
+  );
+  const variation = Number(
+    (body as Record<string, unknown>).variacao_pct ?? NaN,
+  );
+
+  if (!Number.isFinite(rawPrice) || rawPrice < 500 || rawPrice > 5000) {
+    return null; // sanity: scraping também usa essa faixa
+  }
+
+  const quotedAt = refDate
+    ? new Date(refDate + "T00:00:00Z").toISOString()
+    : new Date().toISOString();
+
+  return {
+    source: "cepea_esalq",
+    symbol: "arabica_bica_corrida_esalq",
+    price_brl_cents: Math.round(rawPrice * 100),
+    variation_pct: Number.isFinite(variation) ? variation : null,
+    quoted_at: quotedAt,
+    source_url: url,
+    meta: {
+      provider_chain: "cepea_api_oficial",
+      unit: "BRL/saca-60kg",
+      raw_price: rawPrice,
+      indicator,
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// 5) Arábica CEPEA via Notícias Agrícolas (SCRAPING — fallback)
 //    Portado de kavita-backend/services/cotacoes/noticiasAgricolasAdapter.js.
 //    Parser de 2 níveis: tabela estruturada → fallback regex tolerante.
 //    Sanity check: faixa R$ 500–5000/saca pra não capturar propaganda.
+//
+//    Usado quando `cepea_official` retorna null (sem credenciais ou erro).
+//    Marcar pra remover depois que a API oficial estiver estável em produção
+//    por algumas semanas.
 // ---------------------------------------------------------------------------
 export async function fetchCepeaArabica(): Promise<Quote | null> {
   const url =
