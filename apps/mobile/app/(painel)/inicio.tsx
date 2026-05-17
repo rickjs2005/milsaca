@@ -5,6 +5,7 @@
 
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import * as Linking from "expo-linking";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -29,6 +30,8 @@ import {
   type CotacaoRow,
   type LeadItem,
 } from "../../src/lib/queries";
+import { supabase } from "../../src/lib/supabase";
+import { buildWhatsAppUrl } from "../../src/lib/whatsapp";
 
 const BRL = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -40,6 +43,7 @@ interface Snapshot {
   cotacao: CotacaoRow | null;
   leadsAbertos: LeadItem[];
   contratosAtivos: ContratoItem[];
+  corretoraCasa: { name: string; phone: string | null } | null;
 }
 
 export default function InicioScreen() {
@@ -55,6 +59,17 @@ export default function InicioScreen() {
       const cotacoes = await listCotacoes();
       const cotacao = cotacoes[0] ?? null;
 
+      // Corretora "casa" do produtor (pra botão "Falar Corretora")
+      let corretoraCasa: Snapshot["corretoraCasa"] = null;
+      if (profile.corretora_id) {
+        const { data } = await supabase
+          .from("corretoras")
+          .select("name, phone")
+          .eq("id", profile.corretora_id)
+          .maybeSingle();
+        if (data) corretoraCasa = data as Snapshot["corretoraCasa"];
+      }
+
       if (activeRole === "corretora" && profile.corretora_id) {
         const [leads, contratos] = await Promise.all([
           listLeadsDaCorretora(profile.corretora_id),
@@ -66,6 +81,7 @@ export default function InicioScreen() {
             ["novo", "em_negociacao"].includes(l.status),
           ),
           contratosAtivos: contratos.filter((c) => c.status === "ativo"),
+          corretoraCasa,
         });
       } else {
         const [leads, contratos] = await Promise.all([
@@ -78,6 +94,7 @@ export default function InicioScreen() {
             ["novo", "em_negociacao"].includes(l.status),
           ),
           contratosAtivos: contratos.filter((c) => c.status === "ativo"),
+          corretoraCasa,
         });
       }
     } catch (err) {
@@ -154,6 +171,91 @@ export default function InicioScreen() {
             {profile?.full_name?.trim() || "Bem-vindo(a)"}
           </Text>
         </View>
+
+        {/* 2 botões grandes — Ver Preço + Falar Corretora (produtor MVP rural) */}
+        {!isCorretora ? (
+          <View className="mt-6 gap-3">
+            <Pressable
+              onPress={() => router.push("/(painel)/cotacoes")}
+              className="flex-row items-center gap-3 rounded-2xl bg-milsaca-dourado p-5 active:opacity-80"
+            >
+              <View className="h-12 w-12 items-center justify-center rounded-full bg-milsaca-verde">
+                <Ionicons name="trending-up" size={24} color="#C9A961" />
+              </View>
+              <View className="flex-1">
+                <Text
+                  className="text-base text-milsaca-verde"
+                  style={{ fontFamily: "Inter_700Bold" }}
+                >
+                  Ver preço
+                </Text>
+                <Text
+                  className="text-xs text-milsaca-verde/80"
+                  style={{ fontFamily: "Inter_500Medium" }}
+                >
+                  Cotação do dia e histórico
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#2D3A2E" />
+            </Pressable>
+            <Pressable
+              disabled={!snap?.corretoraCasa?.phone}
+              onPress={() => {
+                const url = buildWhatsAppUrl(
+                  snap?.corretoraCasa?.phone ?? null,
+                  `Olá ${snap?.corretoraCasa?.name ?? ""}, sou ${profile?.full_name ?? "produtor"}.`,
+                );
+                if (url) Linking.openURL(url).catch(() => undefined);
+              }}
+              className="flex-row items-center gap-3 rounded-2xl bg-milsaca-verde-claro p-5 active:opacity-80 disabled:opacity-50"
+            >
+              <View className="h-12 w-12 items-center justify-center rounded-full bg-milsaca-dourado">
+                <Ionicons name="logo-whatsapp" size={24} color="#2D3A2E" />
+              </View>
+              <View className="flex-1">
+                <Text
+                  className="text-base text-milsaca-cream"
+                  style={{ fontFamily: "Inter_700Bold" }}
+                >
+                  Falar com corretora
+                </Text>
+                <Text
+                  className="text-xs text-milsaca-cream/70"
+                  style={{ fontFamily: "Inter_500Medium" }}
+                >
+                  {snap?.corretoraCasa?.name ?? "Sem corretora vinculada"}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#FAF7F0" />
+            </Pressable>
+          </View>
+        ) : null}
+
+        {/* Grid de atalhos (telas extras) */}
+        {!isCorretora ? (
+          <View className="mt-5 flex-row flex-wrap gap-3">
+            <Shortcut
+              icon="document-text"
+              label="Laudos"
+              onPress={() => router.push("/(painel)/laudos")}
+            />
+            <Shortcut
+              icon="cube"
+              label="Entregas"
+              onPress={() => router.push("/(painel)/entregas")}
+            />
+            <Shortcut
+              icon="cash"
+              label="Financeiro"
+              onPress={() => router.push("/(painel)/financeiro")}
+            />
+            <Shortcut
+              icon="notifications"
+              label="Avisos"
+              onPress={() => router.push("/(painel)/notificacoes")}
+            />
+          </View>
+        ) : null}
 
         {error ? (
           <View className="mt-12 items-center px-2">
@@ -320,6 +422,31 @@ export default function InicioScreen() {
         )}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function Shortcut({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className="w-[47%] flex-grow flex-row items-center gap-2 rounded-xl border border-milsaca-dourado/30 bg-milsaca-verde-claro px-4 py-3 active:opacity-80"
+    >
+      <Ionicons name={icon} size={16} color="#C9A961" />
+      <Text
+        className="text-xs text-milsaca-cream"
+        style={{ fontFamily: "Inter_500Medium" }}
+      >
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 

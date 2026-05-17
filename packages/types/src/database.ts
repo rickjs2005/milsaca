@@ -886,42 +886,171 @@ export type Database = {
           },
         ]
       }
+      produtor_pagamentos: {
+        Row: {
+          comprovante_url: string | null
+          contrato_id: string | null
+          corretora_id: string
+          created_at: string
+          data_paga: string | null
+          data_prevista: string | null
+          descontos: Json
+          entrega_id: string | null
+          id: string
+          observacoes: string | null
+          produtor_id: string
+          status: Database["public"]["Enums"]["pagamento_status"]
+          updated_at: string
+          valor_bruto: number
+          valor_liquido: number
+        }
+        Insert: {
+          comprovante_url?: string | null
+          contrato_id?: string | null
+          corretora_id: string
+          created_at?: string
+          data_paga?: string | null
+          data_prevista?: string | null
+          descontos?: Json
+          entrega_id?: string | null
+          id?: string
+          observacoes?: string | null
+          produtor_id: string
+          status?: Database["public"]["Enums"]["pagamento_status"]
+          updated_at?: string
+          valor_bruto: number
+          valor_liquido: number
+        }
+        Update: {
+          comprovante_url?: string | null
+          contrato_id?: string | null
+          corretora_id?: string
+          created_at?: string
+          data_paga?: string | null
+          data_prevista?: string | null
+          descontos?: Json
+          entrega_id?: string | null
+          id?: string
+          observacoes?: string | null
+          produtor_id?: string
+          status?: Database["public"]["Enums"]["pagamento_status"]
+          updated_at?: string
+          valor_bruto?: number
+          valor_liquido?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produtor_pagamentos_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contratos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produtor_pagamentos_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produtor_pagamentos_entrega_id_fkey"
+            columns: ["entrega_id"]
+            isOneToOne: false
+            referencedRelation: "entregas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produtor_pagamentos_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produtores: {
         Row: {
           altitude_m: number | null
           area_ha: number | null
+          caepf: string | null
+          canal_preferido: Database["public"]["Enums"]["canal_preferido"] | null
+          car: string | null
+          certificacoes: Json
           city: string | null
+          cpf_cnpj: string | null
           created_at: string
           fazenda_nome: string | null
+          foto_capa_url: string | null
           id: string
+          indicacao_geografica: string | null
+          polygon_geojson: Json | null
+          preco_alvo: number | null
           preferencias: Json
           profile_id: string
+          receber_cotacao_diaria: boolean
+          specie: Database["public"]["Enums"]["produtor_specie"] | null
           state: string | null
+          status: Database["public"]["Enums"]["produtor_status"]
           updated_at: string
+          variedades: Json
+          whatsapp: string | null
         }
         Insert: {
           altitude_m?: number | null
           area_ha?: number | null
+          caepf?: string | null
+          canal_preferido?:
+            | Database["public"]["Enums"]["canal_preferido"]
+            | null
+          car?: string | null
+          certificacoes?: Json
           city?: string | null
+          cpf_cnpj?: string | null
           created_at?: string
           fazenda_nome?: string | null
+          foto_capa_url?: string | null
           id?: string
+          indicacao_geografica?: string | null
+          polygon_geojson?: Json | null
+          preco_alvo?: number | null
           preferencias?: Json
           profile_id: string
+          receber_cotacao_diaria?: boolean
+          specie?: Database["public"]["Enums"]["produtor_specie"] | null
           state?: string | null
+          status?: Database["public"]["Enums"]["produtor_status"]
           updated_at?: string
+          variedades?: Json
+          whatsapp?: string | null
         }
         Update: {
           altitude_m?: number | null
           area_ha?: number | null
+          caepf?: string | null
+          canal_preferido?:
+            | Database["public"]["Enums"]["canal_preferido"]
+            | null
+          car?: string | null
+          certificacoes?: Json
           city?: string | null
+          cpf_cnpj?: string | null
           created_at?: string
           fazenda_nome?: string | null
+          foto_capa_url?: string | null
           id?: string
+          indicacao_geografica?: string | null
+          polygon_geojson?: Json | null
+          preco_alvo?: number | null
           preferencias?: Json
           profile_id?: string
+          receber_cotacao_diaria?: boolean
+          specie?: Database["public"]["Enums"]["produtor_specie"] | null
           state?: string | null
+          status?: Database["public"]["Enums"]["produtor_status"]
           updated_at?: string
+          variedades?: Json
+          whatsapp?: string | null
         }
         Relationships: [
           {
@@ -996,6 +1125,7 @@ export type Database = {
       is_corretora: { Args: never; Returns: boolean }
     }
     Enums: {
+      canal_preferido: "app" | "whatsapp" | "email" | "sms"
       coffee_processo:
         | "natural"
         | "cereja_descascado"
@@ -1030,6 +1160,9 @@ export type Database = {
         | "vendido"
         | "arquivado"
       notification_kind: "lead" | "contrato" | "cotacao" | "sistema"
+      pagamento_status: "pendente" | "pago" | "vencido" | "cancelado"
+      produtor_specie: "arabica" | "conilon" | "ambos"
+      produtor_status: "sombra" | "ativo" | "pendente" | "bloqueado"
       regime_tributario:
         | "simples_nacional"
         | "lucro_presumido"
@@ -1617,6 +1750,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      canal_preferido: ["app", "whatsapp", "email", "sms"],
       coffee_processo: [
         "natural",
         "cereja_descascado",
@@ -1656,6 +1790,9 @@ export const Constants = {
         "arquivado",
       ],
       notification_kind: ["lead", "contrato", "cotacao", "sistema"],
+      pagamento_status: ["pendente", "pago", "vencido", "cancelado"],
+      produtor_specie: ["arabica", "conilon", "ambos"],
+      produtor_status: ["sombra", "ativo", "pendente", "bloqueado"],
       regime_tributario: [
         "simples_nacional",
         "lucro_presumido",

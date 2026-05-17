@@ -10,31 +10,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@milsaca/db/web/server";
 import { getProfile, getUser } from "@/lib/auth";
+import {
+  getProdutorByProfileId,
+  SPECIE_LABEL,
+  CANAL_LABEL,
+} from "../_lib/produtor";
 import { updatePerfilProdutor } from "./_actions";
 
 export const metadata = { title: "Perfil — Painel do produtor" };
 
 type SearchParams = Promise<{ error?: string; saved?: string }>;
-
-type ProdutorExt = {
-  fazenda_nome: string | null;
-  city: string | null;
-  state: string | null;
-  area_ha: number | null;
-  altitude_m: number | null;
-};
-
-async function loadProdutorExt(profileId: string): Promise<ProdutorExt | null> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("produtores")
-    .select("fazenda_nome, city, state, area_ha, altitude_m")
-    .eq("profile_id", profileId)
-    .maybeSingle<ProdutorExt>();
-  return data ?? null;
-}
 
 export default async function PerfilProdutorPage({
   searchParams,
@@ -44,7 +30,7 @@ export default async function PerfilProdutorPage({
   const [user, profile] = await Promise.all([getUser(), getProfile()]);
   if (!user || !profile) redirect("/entrar");
   const sp = await searchParams;
-  const ext = await loadProdutorExt(user.id);
+  const ext = await getProdutorByProfileId(user.id);
 
   return (
     <div className="space-y-6">
@@ -94,7 +80,7 @@ export default async function PerfilProdutorPage({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Telefone / WhatsApp</Label>
+              <Label htmlFor="phone">Telefone</Label>
               <Input
                 id="phone"
                 name="phone"
@@ -102,6 +88,39 @@ export default async function PerfilProdutorPage({
                 inputMode="tel"
                 placeholder="(33) 99999-9999"
                 defaultValue={profile.phone ?? ""}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="whatsapp">WhatsApp</Label>
+              <Input
+                id="whatsapp"
+                name="whatsapp"
+                type="tel"
+                inputMode="tel"
+                placeholder="(33) 99999-9999"
+                defaultValue={ext?.whatsapp ?? profile.phone ?? ""}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cpf_cnpj">CPF / CNPJ</Label>
+              <Input
+                id="cpf_cnpj"
+                name="cpf_cnpj"
+                inputMode="numeric"
+                placeholder="000.000.000-00"
+                defaultValue={ext?.cpf_cnpj ?? ""}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="caepf">CAEPF (opcional)</Label>
+              <Input
+                id="caepf"
+                name="caepf"
+                placeholder="Cadastro de Atividade Econômica do PF"
+                defaultValue={ext?.caepf ?? ""}
               />
             </div>
           </CardContent>
@@ -178,6 +197,128 @@ export default async function PerfilProdutorPage({
                 defaultValue={ext?.altitude_m ?? ""}
               />
             </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="specie">Espécie que produz</Label>
+              <select
+                id="specie"
+                name="specie"
+                defaultValue={ext?.specie ?? ""}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="">—</option>
+                {Object.entries(SPECIE_LABEL).map(([v, label]) => (
+                  <option key={v} value={v}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="car">CAR (Cadastro Ambiental Rural)</Label>
+              <Input
+                id="car"
+                name="car"
+                placeholder="MG-3140100-..."
+                defaultValue={ext?.car ?? ""}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="indicacao_geografica">
+                Indicação Geográfica
+              </Label>
+              <Input
+                id="indicacao_geografica"
+                name="indicacao_geografica"
+                placeholder="Matas de Minas, Cerrado, Mantiqueira..."
+                defaultValue={ext?.indicacao_geografica ?? ""}
+              />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="variedades">
+                Variedades (separadas por vírgula)
+              </Label>
+              <Input
+                id="variedades"
+                name="variedades"
+                placeholder="Catuaí Vermelho, Mundo Novo, Bourbon Amarelo"
+                defaultValue={(ext?.variedades ?? []).join(", ")}
+              />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="certificacoes">
+                Certificações (separadas por vírgula)
+              </Label>
+              <Input
+                id="certificacoes"
+                name="certificacoes"
+                placeholder="Rainforest Alliance, UTZ, Fair Trade..."
+                defaultValue={(ext?.certificacoes ?? []).join(", ")}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-milsaca-cream-escuro">
+          <CardHeader>
+            <CardTitle className="text-base">Preferências</CardTitle>
+            <CardDescription>
+              Como você quer que a corretora entre em contato e que tipo de
+              alerta receber.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="preco_alvo">Preço-alvo (R$/saca)</Label>
+              <Input
+                id="preco_alvo"
+                name="preco_alvo"
+                type="text"
+                inputMode="decimal"
+                placeholder="1.500,00"
+                defaultValue={
+                  ext?.preco_alvo != null
+                    ? ext.preco_alvo.toLocaleString("pt-BR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })
+                    : ""
+                }
+              />
+              <p className="text-xs text-milsaca-verde-claro">
+                Avisamos quando a cotação atingir esse valor.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="canal_preferido">Canal preferido</Label>
+              <select
+                id="canal_preferido"
+                name="canal_preferido"
+                defaultValue={ext?.canal_preferido ?? ""}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="">—</option>
+                {Object.entries(CANAL_LABEL).map(([v, label]) => (
+                  <option key={v} value={v}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <label className="flex items-center gap-2 text-sm text-milsaca-verde-claro sm:col-span-2">
+              <input
+                type="checkbox"
+                name="receber_cotacao_diaria"
+                defaultChecked={ext?.receber_cotacao_diaria ?? true}
+              />
+              Receber cotação do dia
+            </label>
           </CardContent>
         </Card>
 

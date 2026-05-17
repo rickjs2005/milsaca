@@ -178,6 +178,11 @@ export default function PainelLayout() {
           ),
         }}
       />
+      {/* Telas extras acessíveis via atalhos do Início (sem tab) */}
+      <Tabs.Screen name="laudos" options={{ href: null }} />
+      <Tabs.Screen name="entregas" options={{ href: null }} />
+      <Tabs.Screen name="financeiro" options={{ href: null }} />
+      <Tabs.Screen name="notificacoes" options={{ href: null }} />
     </Tabs>
   );
 }
