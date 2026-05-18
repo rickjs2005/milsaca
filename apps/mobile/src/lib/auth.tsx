@@ -48,9 +48,28 @@ function pickDefaultRole(
   previous: UserRole | null,
 ): UserRole | null {
   if (!roles || roles.length === 0) return null;
-  if (previous && roles.includes(previous)) return previous;
-  if (roles.length === 1) return roles[0] ?? null;
-  // Mais de 1 papel → não escolhe automaticamente, tela /escolher decide.
+
+  // Mobile não suporta admin (admin opera pelo painel web). Se o user
+  // tem só role admin, retornamos "admin" mesmo — o gate em (painel)/_layout
+  // detecta e mostra "use o web". Pra escolher entre produtor/corretora,
+  // ignoramos admin no cálculo.
+  const mobileRoles = roles.filter((r) => r !== "admin");
+
+  if (mobileRoles.length === 0) {
+    // Só tem admin → retorna admin pro gate mostrar mensagem "use o web"
+    return roles.includes("admin") ? "admin" : null;
+  }
+
+  if (
+    previous &&
+    previous !== "admin" &&
+    mobileRoles.includes(previous)
+  ) {
+    return previous;
+  }
+  if (mobileRoles.length === 1) return mobileRoles[0] ?? null;
+
+  // 2+ roles mobile (produtor + corretora) → tela /escolher decide
   return null;
 }
 

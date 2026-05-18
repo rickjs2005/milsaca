@@ -32,6 +32,7 @@ import {
 } from "../../src/lib/queries";
 import { supabase } from "../../src/lib/supabase";
 import { buildWhatsAppUrl } from "../../src/lib/whatsapp";
+import { IndicadoresLive } from "../../src/components/IndicadoresLive";
 
 const BRL = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -230,6 +231,10 @@ export default function InicioScreen() {
             </Pressable>
           </View>
         ) : null}
+
+        {/* Indicadores ao vivo (lê de market_quotes, populada pela
+            edge function sync-cotacoes 21h UTC dias úteis) */}
+        <IndicadoresLive />
 
         {/* Grid de atalhos (telas extras) */}
         {!isCorretora ? (

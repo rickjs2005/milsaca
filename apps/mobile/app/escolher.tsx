@@ -6,6 +6,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../src/lib/auth";
 import type { UserRole } from "@milsaca/types";
 
+// Admin não aparece no mobile — admin opera pelo painel web em milsaca.app/admin.
+// Se o user tiver SÓ role admin, /(painel)/_layout mostra mensagem "use o web".
 const ROLES: {
   role: UserRole;
   title: string;
@@ -23,12 +25,6 @@ const ROLES: {
     title: "Sou corretora",
     description: "Gerencie produtores, leads e contratos da operação.",
     icon: "briefcase",
-  },
-  {
-    role: "admin",
-    title: "Administrador",
-    description: "Acesso total ao sistema.",
-    icon: "shield-checkmark",
   },
 ];
 
