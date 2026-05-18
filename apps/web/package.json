@@ -33,7 +33,8 @@
     "react-dom": "^19.1.0",
     "recharts": "^3.8.1",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^2.6.0"
+    "tailwind-merge": "^2.6.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@milsaca/config-tailwind": "workspace:*",

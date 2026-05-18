@@ -4,7 +4,15 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { requireAppAdmin } from "@/lib/auth";
-import { parseRegioesFromForm } from "./corretoras/_components/regioes";
+import { friendlyPostgresError } from "./_lib/errors";
+import {
+  aprovarCorretoraSchema,
+  corretoraSchema,
+  flattenZodErrors,
+  formDataToObject,
+  rejeitarCorretoraSchema,
+  uuidSchema,
+} from "./_lib/schemas";
 
 function slugify(input: string): string {
   return input
@@ -16,45 +24,28 @@ function slugify(input: string): string {
     .slice(0, 40);
 }
 
-function clean(v: FormDataEntryValue | null): string | null {
-  if (v == null) return null;
-  const s = String(v).trim();
-  return s ? s : null;
-}
-
-function readCorretoraForm(formData: FormData) {
-  return {
-    name: String(formData.get("name") ?? "").trim(),
-    city: clean(formData.get("city")),
-    state: clean(formData.get("state")),
-    phone: clean(formData.get("phone")),
-    telefone_fixo: clean(formData.get("telefone_fixo")),
-    email: clean(formData.get("email")),
-    cnpj: clean(formData.get("cnpj")),
-    inscricao_est: clean(formData.get("inscricao_est")),
-    cep: clean(formData.get("cep")),
-    endereco: clean(formData.get("endereco")),
-    bairro: clean(formData.get("bairro")),
-    site_url: clean(formData.get("site_url")),
-    descricao: clean(formData.get("descricao")),
-    logo_url: clean(formData.get("logo_url")),
-    regioes_atendimento: parseRegioesFromForm(formData),
-  };
-}
 
 export async function createCorretora(formData: FormData) {
   const actor = await requireAppAdmin();
-  const fields = readCorretoraForm(formData);
+
+  const parsed = corretoraSchema.safeParse(
+    formDataToObject(formData, ["regioes_atendimento"]),
+  );
+  if (!parsed.success) {
+    redirect(
+      `/admin/corretoras/nova?error=${encodeURIComponent(flattenZodErrors(parsed.error))}`,
+    );
+  }
+  const fields = parsed.data;
+
   const slugInput = String(formData.get("slug") ?? "").trim();
   const verified = formData.get("verified") === "on";
 
-  if (!fields.name) {
-    redirect("/admin/corretoras/nova?error=Nome%20obrigat%C3%B3rio");
-  }
-
   const slug = slugify(slugInput || fields.name);
   if (!slug) {
-    redirect("/admin/corretoras/nova?error=Slug%20inv%C3%A1lido");
+    redirect(
+      `/admin/corretoras/nova?error=${encodeURIComponent("Não consegui gerar slug a partir do nome.")}`,
+    );
   }
 
   const supabase = await createClient();
@@ -66,7 +57,7 @@ export async function createCorretora(formData: FormData) {
 
   if (error || !created) {
     redirect(
-      `/admin/corretoras/nova?error=${encodeURIComponent(error?.message ?? "Falha ao criar")}`,
+      `/admin/corretoras/nova?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
@@ -86,13 +77,20 @@ export async function createCorretora(formData: FormData) {
 
 export async function updateCorretora(formData: FormData) {
   const actor = await requireAppAdmin();
-  const id = String(formData.get("id") ?? "").trim();
-  if (!id) redirect("/admin/corretoras");
 
-  const fields = readCorretoraForm(formData);
-  if (!fields.name) {
-    redirect(`/admin/corretoras/${id}?error=Nome%20obrigat%C3%B3rio`);
+  const idParsed = uuidSchema.safeParse(String(formData.get("id") ?? "").trim());
+  if (!idParsed.success) redirect("/admin/corretoras");
+  const id = idParsed.data;
+
+  const parsed = corretoraSchema.safeParse(
+    formDataToObject(formData, ["regioes_atendimento"]),
+  );
+  if (!parsed.success) {
+    redirect(
+      `/admin/corretoras/${id}?error=${encodeURIComponent(flattenZodErrors(parsed.error))}`,
+    );
   }
+  const fields = parsed.data;
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -102,7 +100,7 @@ export async function updateCorretora(formData: FormData) {
 
   if (error) {
     redirect(
-      `/admin/corretoras/${id}?error=${encodeURIComponent(error.message)}`,
+      `/admin/corretoras/${id}?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
@@ -112,7 +110,11 @@ export async function updateCorretora(formData: FormData) {
     action: "update_corretora",
     entity: "corretora",
     entity_id: id,
-    payload: { fields: Object.keys(fields).filter((k) => (fields as Record<string, unknown>)[k] != null) },
+    payload: {
+      fields: Object.keys(fields).filter(
+        (k) => (fields as Record<string, unknown>)[k] != null,
+      ),
+    },
   });
 
   revalidatePath("/admin");
@@ -143,38 +145,21 @@ export async function toggleCorretoraVerified(formData: FormData) {
   revalidatePath("/admin/corretoras");
 }
 
-function cleanDigits(v: FormDataEntryValue | null): string | null {
-  const s = String(v ?? "").replace(/\D/g, "");
-  return s || null;
-}
-
 export async function aprovarCorretora(formData: FormData) {
   const actor = await requireAppAdmin();
-  const profileId = String(formData.get("profile_id") ?? "").trim();
-  if (!profileId) {
-    redirect("/admin/aprovacoes?error=" + encodeURIComponent("Profile inválido"));
-  }
 
-  const name = String(formData.get("name") ?? "").trim();
-  const cnpj = cleanDigits(formData.get("cnpj"));
-  const city = clean(formData.get("city"));
-  const state = clean(formData.get("state"));
-
-  const missing: string[] = [];
-  if (!name) missing.push("nome");
-  if (!cnpj) missing.push("CNPJ");
-  if (!city) missing.push("cidade");
-  if (missing.length > 0) {
+  const parsed = aprovarCorretoraSchema.safeParse(formDataToObject(formData));
+  if (!parsed.success) {
     redirect(
-      "/admin/aprovacoes?error=" +
-        encodeURIComponent("Preencha: " + missing.join(", ")),
+      `/admin/aprovacoes?error=${encodeURIComponent(flattenZodErrors(parsed.error))}`,
     );
   }
+  const { profile_id: profileId, name, cnpj, city, state } = parsed.data;
 
   const slug = slugify(name);
   if (!slug) {
     redirect(
-      "/admin/aprovacoes?error=" + encodeURIComponent("Não consegui gerar slug"),
+      `/admin/aprovacoes?error=${encodeURIComponent("Não consegui gerar slug a partir do nome.")}`,
     );
   }
 
@@ -187,7 +172,7 @@ export async function aprovarCorretora(formData: FormData) {
       slug,
       cnpj,
       city,
-      state: state ? state.toUpperCase().slice(0, 2) : null,
+      state,
       verified: true,
     })
     .select("id")
@@ -195,8 +180,7 @@ export async function aprovarCorretora(formData: FormData) {
 
   if (createErr || !created) {
     redirect(
-      "/admin/aprovacoes?error=" +
-        encodeURIComponent(createErr?.message ?? "Falha ao criar corretora"),
+      `/admin/aprovacoes?error=${encodeURIComponent(friendlyPostgresError(createErr))}`,
     );
   }
 
@@ -207,7 +191,7 @@ export async function aprovarCorretora(formData: FormData) {
 
   if (linkErr) {
     redirect(
-      "/admin/aprovacoes?error=" + encodeURIComponent(linkErr.message),
+      `/admin/aprovacoes?error=${encodeURIComponent(friendlyPostgresError(linkErr))}`,
     );
   }
 
@@ -250,10 +234,10 @@ export async function aprovarCorretora(formData: FormData) {
 
 export async function rejeitarCorretora(formData: FormData) {
   const actor = await requireAppAdmin();
-  const profileId = String(formData.get("profile_id") ?? "").trim();
-  if (!profileId) {
-    redirect("/admin/aprovacoes");
-  }
+
+  const parsed = rejeitarCorretoraSchema.safeParse(formDataToObject(formData));
+  if (!parsed.success) redirect("/admin/aprovacoes");
+  const { profile_id: profileId } = parsed.data;
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -263,7 +247,7 @@ export async function rejeitarCorretora(formData: FormData) {
 
   if (error) {
     redirect(
-      "/admin/aprovacoes?error=" + encodeURIComponent(error.message),
+      `/admin/aprovacoes?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 

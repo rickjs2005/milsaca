@@ -4,45 +4,34 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { requireAppAdmin } from "@/lib/auth";
+import { friendlyPostgresError } from "../_lib/errors";
+import {
+  flattenZodErrors,
+  formDataToObject,
+  subscriptionIdSchema,
+  updateSubscriptionSchema,
+} from "../_lib/schemas";
 
-type SubStatus = "trial" | "active" | "past_due" | "canceled" | "expired";
-
-function clean(v: FormDataEntryValue | null): string | null {
-  if (v == null) return null;
-  const s = String(v).trim();
-  return s || null;
-}
-
-function parseDate(v: FormDataEntryValue | null): string | null {
-  const s = clean(v);
-  if (!s) return null;
+function dateInputToIso(v: string | null): string | null {
+  if (!v) return null;
   // input type="date" devolve YYYY-MM-DD; armazenamos como ISO no final do dia
-  const iso = new Date(`${s}T23:59:59`).toISOString();
-  return iso;
+  return new Date(`${v}T23:59:59`).toISOString();
 }
-
-const VALID_STATUS: SubStatus[] = [
-  "trial",
-  "active",
-  "past_due",
-  "canceled",
-  "expired",
-];
 
 export async function updateSubscription(formData: FormData) {
   const actor = await requireAppAdmin();
-  const id = String(formData.get("id") ?? "").trim();
-  if (!id) redirect("/admin/assinaturas");
 
-  const statusRaw = String(formData.get("status") ?? "");
-  const status: SubStatus = VALID_STATUS.includes(statusRaw as SubStatus)
-    ? (statusRaw as SubStatus)
-    : "trial";
-
-  const plan_id = clean(formData.get("plan_id"));
-  const trial_ends_at = parseDate(formData.get("trial_ends_at"));
-  const current_period_end = parseDate(formData.get("current_period_end"));
-  const notes = clean(formData.get("notes"));
+  const parsed = updateSubscriptionSchema.safeParse(
+    formDataToObject(formData),
+  );
+  if (!parsed.success) {
+    const id = String(formData.get("id") ?? "");
+    redirect(
+      `/admin/assinaturas/${id || ""}?error=${encodeURIComponent(flattenZodErrors(parsed.error))}`,
+    );
+  }
+  const { id, status, plan_id, trial_ends_at, current_period_end, notes } =
+    parsed.data;
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -50,15 +39,17 @@ export async function updateSubscription(formData: FormData) {
     .update({
       status,
       plan_id,
-      trial_ends_at,
-      current_period_end,
+      trial_ends_at: dateInputToIso(trial_ends_at),
+      current_period_end: dateInputToIso(current_period_end),
       canceled_at: status === "canceled" ? new Date().toISOString() : null,
       notes,
     })
     .eq("id", id);
 
   if (error) {
-    redirect(`/admin/assinaturas/${id}?error=${encodeURIComponent(error.message)}`);
+    redirect(
+      `/admin/assinaturas/${id}?error=${encodeURIComponent(friendlyPostgresError(error))}`,
+    );
   }
 
   await supabase.from("audit_log").insert({
@@ -80,8 +71,10 @@ export async function updateSubscription(formData: FormData) {
  */
 export async function markSubscriptionPaid(formData: FormData) {
   const actor = await requireAppAdmin();
-  const id = String(formData.get("id") ?? "").trim();
-  if (!id) return;
+
+  const parsed = subscriptionIdSchema.safeParse(formDataToObject(formData));
+  if (!parsed.success) return;
+  const { id } = parsed.data;
 
   const supabase = await createClient();
   const { data: sub } = await supabase
@@ -121,7 +114,9 @@ export async function markSubscriptionPaid(formData: FormData) {
     .eq("id", id);
 
   if (error) {
-    redirect(`/admin/assinaturas/${id}?error=${encodeURIComponent(error.message)}`);
+    redirect(
+      `/admin/assinaturas/${id}?error=${encodeURIComponent(friendlyPostgresError(error))}`,
+    );
   }
 
   await supabase.from("audit_log").insert({
@@ -142,8 +137,10 @@ export async function markSubscriptionPaid(formData: FormData) {
 
 export async function cancelSubscription(formData: FormData) {
   const actor = await requireAppAdmin();
-  const id = String(formData.get("id") ?? "").trim();
-  if (!id) return;
+
+  const parsed = subscriptionIdSchema.safeParse(formDataToObject(formData));
+  if (!parsed.success) return;
+  const { id } = parsed.data;
 
   const supabase = await createClient();
   await supabase
