@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireAppAdmin } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "../../_components/submit-button";
 import { createPlano } from "../_actions";
 import { PlanFormFields } from "../_components/plan-form-fields";
 
@@ -40,12 +41,12 @@ export default async function NovoPlanoPage({ searchParams }: PageProps) {
           <Button variant="outline" asChild>
             <Link href="/admin/planos">Cancelar</Link>
           </Button>
-          <Button
-            type="submit"
-            className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+          <SubmitButton
+            className="gap-2 bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+            pendingLabel="Criando..."
           >
             Criar plano
-          </Button>
+          </SubmitButton>
         </div>
       </form>
     </div>

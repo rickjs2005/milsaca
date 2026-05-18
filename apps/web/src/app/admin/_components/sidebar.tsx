@@ -9,7 +9,6 @@ import {
   Building2,
   Wallet,
   Receipt,
-  Users,
   BarChart3,
   LogOut,
 } from "lucide-react";
@@ -22,13 +21,15 @@ type NavItem = {
   exact?: boolean;
 };
 
+// Itens visíveis na sidebar. "Usuários", "Produtores", "Leads" e
+// "Auditoria" estão no roadmap (auditoria-admin-completa.md, Etapas 4-6)
+// — adicionar aqui APENAS quando a rota correspondente existir.
 const NAV_ITEMS: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/aprovacoes", label: "Aprovações", icon: Inbox },
   { href: "/admin/corretoras", label: "Corretoras", icon: Building2 },
   { href: "/admin/planos", label: "Planos", icon: Wallet },
   { href: "/admin/assinaturas", label: "Assinaturas", icon: Receipt },
-  { href: "/admin/usuarios", label: "Usuários", icon: Users },
   { href: "/admin/metricas", label: "Métricas", icon: BarChart3 },
 ];
 

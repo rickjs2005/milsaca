@@ -3,9 +3,9 @@ import { notFound } from "next/navigation";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SubmitButton } from "../../_components/submit-button";
 import {
   cancelSubscription,
   markSubscriptionPaid,
@@ -148,23 +148,23 @@ export default async function AssinaturaDetalhePage({
         <div className="mt-3 flex flex-wrap gap-2">
           <form action={markSubscriptionPaid}>
             <input type="hidden" name="id" value={s.id} />
-            <Button
-              type="submit"
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
+            <SubmitButton
+              className="gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
+              pendingLabel="Renovando..."
             >
               Marcar como paga · +1 período
-            </Button>
+            </SubmitButton>
           </form>
           {s.status !== "canceled" ? (
             <form action={cancelSubscription}>
               <input type="hidden" name="id" value={s.id} />
-              <Button
-                type="submit"
+              <SubmitButton
                 variant="outline"
-                className="text-destructive hover:text-destructive"
+                className="gap-2 text-destructive hover:text-destructive"
+                pendingLabel="Cancelando..."
               >
                 Cancelar
-              </Button>
+              </SubmitButton>
             </form>
           ) : null}
         </div>
@@ -247,12 +247,12 @@ export default async function AssinaturaDetalhePage({
         </div>
 
         <div className="flex justify-end border-t border-slate-100 pt-4">
-          <Button
-            type="submit"
-            className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+          <SubmitButton
+            className="gap-2 bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+            pendingLabel="Salvando..."
           >
             Salvar
-          </Button>
+          </SubmitButton>
         </div>
       </form>
     </div>

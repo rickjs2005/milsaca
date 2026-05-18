@@ -4,6 +4,7 @@ import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "../../_components/submit-button";
 import {
   toggleCorretoraVerified,
   updateCorretora,
@@ -102,12 +103,12 @@ export default async function EditCorretoraPage({
           <Button asChild variant="outline">
             <Link href="/admin/corretoras">Cancelar</Link>
           </Button>
-          <Button
-            type="submit"
-            className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+          <SubmitButton
+            className="gap-2 bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+            pendingLabel="Salvando..."
           >
             Salvar
-          </Button>
+          </SubmitButton>
         </div>
       </form>
     </div>

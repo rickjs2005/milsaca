@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireAppAdmin } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "../../_components/submit-button";
 import { createCorretora } from "../../_actions";
 import { CorretoraFormFields } from "../_components/corretora-form-fields";
 
@@ -52,12 +53,12 @@ export default async function NovaCorretoraPage({ searchParams }: PageProps) {
           <Button asChild variant="outline">
             <Link href="/admin/corretoras">Cancelar</Link>
           </Button>
-          <Button
-            type="submit"
-            className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+          <SubmitButton
+            className="gap-2 bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+            pendingLabel="Criando..."
           >
             Criar corretora
-          </Button>
+          </SubmitButton>
         </div>
       </form>
     </div>

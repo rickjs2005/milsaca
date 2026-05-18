@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "../../_components/submit-button";
 import { updatePlano } from "../_actions";
 import { PlanFormFields } from "../_components/plan-form-fields";
 
@@ -71,12 +72,12 @@ export default async function EditPlanoPage({ params, searchParams }: PageProps)
           <Button variant="outline" asChild>
             <Link href="/admin/planos">Voltar</Link>
           </Button>
-          <Button
-            type="submit"
-            className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+          <SubmitButton
+            className="gap-2 bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+            pendingLabel="Salvando..."
           >
             Salvar
-          </Button>
+          </SubmitButton>
         </div>
       </form>
     </div>

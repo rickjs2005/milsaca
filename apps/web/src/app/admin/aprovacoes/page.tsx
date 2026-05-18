@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SubmitButton } from "../_components/submit-button";
 import { aprovarCorretora, rejeitarCorretora } from "../_actions";
 
 export const metadata = { title: "Aprovações · Admin Milsaca" };
@@ -146,20 +146,20 @@ export default async function AdminAprovacoesPage({ searchParams }: PageProps) {
               </div>
 
               <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
-                <Button
-                  type="submit"
+                <SubmitButton
                   formAction={rejeitarCorretora}
                   variant="outline"
-                  className="text-destructive hover:text-destructive"
+                  className="gap-2 text-destructive hover:text-destructive"
+                  pendingLabel="Rejeitando..."
                 >
                   Rejeitar
-                </Button>
-                <Button
-                  type="submit"
-                  className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+                </SubmitButton>
+                <SubmitButton
+                  className="gap-2 bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+                  pendingLabel="Aprovando..."
                 >
                   Aprovar e criar corretora
-                </Button>
+                </SubmitButton>
               </div>
             </form>
           </article>
