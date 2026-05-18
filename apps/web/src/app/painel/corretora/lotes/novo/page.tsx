@@ -10,8 +10,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { redirect } from "next/navigation";
+import { getProfile } from "@/lib/auth";
 import { listProdutores } from "../_lib/queries";
 import { createLote } from "../_actions";
+import { blockIfNoActiveSubscription } from "../../_lib/subscription-gate";
 
 export const metadata = { title: "Novo lote — Milsaca" };
 
@@ -22,6 +25,17 @@ export default async function NovoLotePage({
 }: {
   searchParams: SearchParams;
 }) {
+  const profile = await getProfile();
+  if (!profile?.corretora_id) {
+    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
+  }
+
+  const block = await blockIfNoActiveSubscription(profile.corretora_id, {
+    action: "criar lotes",
+    backHref: "/painel/corretora/lotes",
+  });
+  if (block) return block;
+
   const sp = await searchParams;
   const produtores = await listProdutores();
 

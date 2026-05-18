@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { getProfile } from "@/lib/auth";
 import { listContratosOptions } from "../_lib/queries";
 import { createEntrega } from "../_actions";
+import { blockIfNoActiveSubscription } from "../../_lib/subscription-gate";
 
 export const metadata = { title: "Nova entrega — Milsaca" };
 
@@ -20,6 +21,13 @@ export default async function NovaEntregaPage({
   if (!profile?.corretora_id) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
   }
+
+  const block = await blockIfNoActiveSubscription(profile.corretora_id, {
+    action: "criar entregas",
+    backHref: "/painel/corretora/entregas",
+  });
+  if (block) return block;
+
   const { contrato: preselected, error } = await searchParams;
 
   const contratos = await listContratosOptions(profile.corretora_id);

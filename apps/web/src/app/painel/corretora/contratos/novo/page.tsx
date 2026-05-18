@@ -19,6 +19,7 @@ import {
 } from "../_lib/queries";
 import { createContrato } from "../_actions";
 import { listCompradoresOptions } from "../../compradores/_lib/queries";
+import { blockIfNoActiveSubscription } from "../../_lib/subscription-gate";
 
 export const metadata = { title: "Novo contrato — Milsaca" };
 
@@ -33,6 +34,13 @@ export default async function NovoContratoPage({
   if (!profile?.corretora_id) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
   }
+
+  const block = await blockIfNoActiveSubscription(profile.corretora_id, {
+    action: "criar contratos",
+    backHref: "/painel/corretora/contratos",
+  });
+  if (block) return block;
+
   const sp = await searchParams;
 
   const [produtores, compradores, lead, suggestedCode] = await Promise.all([

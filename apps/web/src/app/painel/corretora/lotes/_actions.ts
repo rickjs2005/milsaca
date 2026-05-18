@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import type { CoffeeProcesso, CoffeeSpecie } from "@milsaca/types";
+import { requireActiveSubscription } from "../_lib/corretora";
 
 const SPECIES: CoffeeSpecie[] = ["arabica", "conillon"];
 const PROCESSOS: CoffeeProcesso[] = [
@@ -28,6 +29,10 @@ export async function createLote(formData: FormData) {
   if (!profile?.corretora_id) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
   }
+  await requireActiveSubscription(
+    profile.corretora_id,
+    "/painel/corretora/lotes",
+  );
 
   const codigo = String(formData.get("codigo") ?? "").trim();
   const produtor_id = String(formData.get("produtor_id") ?? "").trim();

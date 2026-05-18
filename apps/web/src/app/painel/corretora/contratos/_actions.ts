@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import { notify } from "@/lib/notify";
+import { requireActiveSubscription } from "../_lib/corretora";
 import {
   CONTRATO_STATUS_ORDER,
   type ContratoStatus,
@@ -75,6 +76,10 @@ export async function createContrato(formData: FormData) {
   if (!profile?.corretora_id) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
   }
+  await requireActiveSubscription(
+    profile.corretora_id,
+    "/painel/corretora/contratos",
+  );
 
   const produtor_id = clean(formData.get("produtor_id"));
   const lead_id = clean(formData.get("lead_id"));

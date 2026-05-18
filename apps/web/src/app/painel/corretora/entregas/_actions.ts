@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import { notify } from "@/lib/notify";
+import { requireActiveSubscription } from "../_lib/corretora";
 import type { EntregaStatus } from "./_lib/queries";
 
 const ENTREGA_STATUS_LABEL: Record<EntregaStatus, string> = {
@@ -42,6 +43,10 @@ async function ensureCorretora() {
 
 export async function createEntrega(formData: FormData) {
   const profile = await ensureCorretora();
+  await requireActiveSubscription(
+    profile.corretora_id,
+    "/painel/corretora/entregas",
+  );
   const supabase = await createClient();
 
   const contratoId = String(formData.get("contrato_id") ?? "");

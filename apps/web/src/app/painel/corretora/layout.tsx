@@ -2,8 +2,10 @@ import { redirect } from "next/navigation";
 import { requireUser, getProfile, enforceProfileStatus } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { CorretoraSidebar } from "./_components/sidebar";
+import { SubscriptionBanner } from "./_components/subscription-banner";
 import {
   getCorretoraOnboarding,
+  getCorretoraSubscriptionInfo,
   needsCorretoraOnboarding,
 } from "./_lib/corretora";
 
@@ -39,6 +41,10 @@ export default async function PainelCorretoraLayout({
     }
   }
 
+  const subscription = profile?.corretora_id
+    ? await getCorretoraSubscriptionInfo(profile.corretora_id)
+    : null;
+
   const corretoraLabel = corretora
     ? [corretora.name, [corretora.city, corretora.state].filter(Boolean).join("/")]
         .filter(Boolean)
@@ -54,7 +60,10 @@ export default async function PainelCorretoraLayout({
         showSwitcher={showSwitcher}
       />
       <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-6xl px-8 py-10">{children}</div>
+        <div className="mx-auto max-w-6xl space-y-6 px-8 py-10">
+          {subscription ? <SubscriptionBanner info={subscription} /> : null}
+          {children}
+        </div>
       </div>
     </div>
   );
