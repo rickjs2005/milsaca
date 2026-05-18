@@ -3,6 +3,7 @@ import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { loadFunnelStats } from "./_lib/funnel";
 
 export const metadata = { title: "Leads · Admin Milsaca" };
 
@@ -109,6 +110,8 @@ export default async function LeadsAdminPage({ searchParams }: PageProps) {
   }));
 
   const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
+  const funnel = await loadFunnelStats(corretoraId);
+  const conversionPct = (funnel.conversionRate * 100).toFixed(1);
 
   return (
     <div className="space-y-8">
@@ -120,6 +123,30 @@ export default async function LeadsAdminPage({ searchParams }: PageProps) {
           Cliques no botão &ldquo;Falar no WhatsApp&rdquo; registrados antes do redirect.{" "}
           {count != null ? `${count} registro${count === 1 ? "" : "s"}.` : ""}
         </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <FunnelKpi
+          label="Cliques totais"
+          value={funnel.totalClicks}
+          hint="incluindo anônimos"
+        />
+        <FunnelKpi
+          label="Pares únicos"
+          value={funnel.uniquePairs}
+          hint="corretora ↔ produtor"
+        />
+        <FunnelKpi
+          label="Viraram contrato"
+          value={funnel.convertedPairs}
+          hint="pelo menos 1 contrato após o click"
+        />
+        <FunnelKpi
+          label="Taxa de conversão"
+          value={`${conversionPct}%`}
+          hint="contratos / pares únicos"
+          accent
+        />
       </div>
 
       <form
@@ -261,6 +288,42 @@ export default async function LeadsAdminPage({ searchParams }: PageProps) {
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function FunnelKpi({
+  label,
+  value,
+  hint,
+  accent,
+}: {
+  label: string;
+  value: string | number;
+  hint: string;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      className={
+        accent
+          ? "rounded-2xl border border-emerald-300 bg-emerald-50 p-4 shadow-sm"
+          : "rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+      }
+    >
+      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+        {label}
+      </p>
+      <p
+        className={
+          accent
+            ? "mt-2 text-2xl font-bold text-emerald-700"
+            : "mt-2 text-2xl font-bold text-slate-900"
+        }
+      >
+        {value}
+      </p>
+      <p className="mt-0.5 text-[11px] text-slate-500">{hint}</p>
     </div>
   );
 }

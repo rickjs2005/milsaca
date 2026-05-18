@@ -36,6 +36,53 @@ function extractIp(req: NextRequest): string | null {
 }
 
 /**
+ * Monta a mensagem default que chega na corretora.
+ *
+ * Quando o produtor está logado e tem perfil preenchido, inclui nome,
+ * fazenda, cidade e tipo de café — corretora consegue responder com
+ * contexto sem perguntar o básico. Sem produtor, mensagem genérica.
+ */
+function buildDefaultMessage(
+  corretoraNome: string,
+  ctx: {
+    primeiroNome: string | null;
+    fazenda: string | null;
+    cidade: string | null;
+    uf: string | null;
+    specieLabel: string | null;
+  },
+): string {
+  if (!ctx.primeiroNome && !ctx.fazenda && !ctx.cidade && !ctx.specieLabel) {
+    return `Oi! Vi a ${corretoraNome} no Milsaca e gostaria de conversar sobre cotações de café.`;
+  }
+
+  const linhas: string[] = [];
+  linhas.push(`Olá, ${corretoraNome}! Vim pelo Milsaca.`);
+  linhas.push("");
+
+  if (ctx.primeiroNome) {
+    const fazendaSuffix = ctx.fazenda ? `, da ${ctx.fazenda}` : "";
+    linhas.push(`Sou ${ctx.primeiroNome}${fazendaSuffix}.`);
+  } else if (ctx.fazenda) {
+    linhas.push(`Falo da ${ctx.fazenda}.`);
+  }
+
+  if (ctx.cidade || ctx.uf) {
+    const local = [ctx.cidade, ctx.uf].filter(Boolean).join("/");
+    linhas.push(`Estou em ${local}.`);
+  }
+
+  if (ctx.specieLabel) {
+    linhas.push(`Produzo café ${ctx.specieLabel}.`);
+  }
+
+  linhas.push("");
+  linhas.push("Gostaria de conversar sobre cotações.");
+
+  return linhas.join("\n");
+}
+
+/**
  * Registra um lead de WhatsApp e retorna a URL pra abrir o app.
  *
  * NÃO armazena IP cru. NÃO captura conversa subsequente.
@@ -86,14 +133,64 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const defaultMessage = `Oi! Vi a ${corretora.name} no Milsaca e gostaria de conversar sobre cotações de café.`;
-  const text = (body.message ?? defaultMessage).slice(0, 1000);
-  const waUrl = `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(text)}`;
-
-  // Identifica o produtor logado (pode ser null pra rota anon)
+  // Identifica o produtor logado (pode ser null pra rota anon) pra
+  // enriquecer a mensagem com nome, fazenda, cidade e tipo de café.
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  const SPECIE_LABEL: Record<string, string> = {
+    arabica: "Arábica",
+    conillon: "Conillón",
+    ambos: "Arábica + Conillón",
+  };
+
+  let produtorContext: {
+    primeiroNome: string | null;
+    fazenda: string | null;
+    cidade: string | null;
+    uf: string | null;
+    specieLabel: string | null;
+  } = {
+    primeiroNome: null,
+    fazenda: null,
+    cidade: null,
+    uf: null,
+    specieLabel: null,
+  };
+
+  if (user) {
+    const [{ data: profile }, { data: produtor }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("produtores")
+        .select("fazenda_nome, city, state, specie")
+        .eq("profile_id", user.id)
+        .maybeSingle(),
+    ]);
+    const fullName = profile?.full_name ?? null;
+    const primeiroNome = fullName ? fullName.split(" ")[0] : null;
+    produtorContext = {
+      primeiroNome: primeiroNome ?? null,
+      fazenda: produtor?.fazenda_nome ?? null,
+      cidade: produtor?.city ?? null,
+      uf: produtor?.state ?? null,
+      specieLabel: produtor?.specie
+        ? (SPECIE_LABEL[produtor.specie] ?? produtor.specie)
+        : null,
+    };
+  }
+
+  const defaultMessage = buildDefaultMessage(
+    corretora.name ?? "a corretora",
+    produtorContext,
+  );
+  const text = (body.message ?? defaultMessage).slice(0, 1000);
+  const waUrl = `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(text)}`;
 
   const ipHash = hashIp(extractIp(req));
   const ua = req.headers.get("user-agent")?.slice(0, 500) ?? null;

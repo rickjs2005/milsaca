@@ -5,6 +5,7 @@ import { createClient } from "@milsaca/db/web/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { loadFunnelStats } from "@/app/admin/leads/_lib/funnel";
 
 export const metadata = { title: "Leads WhatsApp — Painel da corretora" };
 
@@ -70,25 +71,27 @@ export default async function LeadsWhatsAppCorretoraPage({
     .range(from, to);
   if (source) q = q.eq("source", source);
 
-  const [{ data, count }, sevenDayCount, thirtyDayCount] = await Promise.all([
-    q,
-    supabase
-      .from("whatsapp_leads")
-      .select("*", { count: "exact", head: true })
-      .eq("corretora_id", profile.corretora_id)
-      .gte(
-        "created_at",
-        new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      ),
-    supabase
-      .from("whatsapp_leads")
-      .select("*", { count: "exact", head: true })
-      .eq("corretora_id", profile.corretora_id)
-      .gte(
-        "created_at",
-        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      ),
-  ]);
+  const [{ data, count }, sevenDayCount, thirtyDayCount, funnel] =
+    await Promise.all([
+      q,
+      supabase
+        .from("whatsapp_leads")
+        .select("*", { count: "exact", head: true })
+        .eq("corretora_id", profile.corretora_id)
+        .gte(
+          "created_at",
+          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        ),
+      supabase
+        .from("whatsapp_leads")
+        .select("*", { count: "exact", head: true })
+        .eq("corretora_id", profile.corretora_id)
+        .gte(
+          "created_at",
+          new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        ),
+      loadFunnelStats(profile.corretora_id),
+    ]);
 
   type Row = {
     id: string;
@@ -130,6 +133,20 @@ export default async function LeadsWhatsAppCorretoraPage({
         <Stat label="Últimos 7 dias" value={sevenDayCount.count ?? 0} />
         <Stat label="Últimos 30 dias" value={thirtyDayCount.count ?? 0} />
       </div>
+
+      {funnel.uniquePairs > 0 ? (
+        <div className="rounded-2xl border border-emerald-300 bg-emerald-50 px-5 py-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+            Funil de conversão
+          </p>
+          <p className="mt-2 text-sm text-emerald-900">
+            <strong>{funnel.convertedPairs}</strong> de{" "}
+            <strong>{funnel.uniquePairs}</strong> produtores que te chamaram
+            viraram contrato — taxa de{" "}
+            <strong>{(funnel.conversionRate * 100).toFixed(1)}%</strong>.
+          </p>
+        </div>
+      ) : null}
 
       <div className="flex flex-wrap gap-2 text-sm">
         <span className="text-milsaca-verde-claro">Filtrar origem:</span>
