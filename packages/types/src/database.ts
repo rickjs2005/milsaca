@@ -103,6 +103,13 @@ export type Database = {
             referencedRelation: "corretoras"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "audit_log_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
+            referencedColumns: ["id"]
+          },
         ]
       }
       classificacoes_cob: {
@@ -212,6 +219,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "classificacoes_cob_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "classificacoes_cob_lote_id_fkey"
             columns: ["lote_id"]
             isOneToOne: false
@@ -295,6 +309,13 @@ export type Database = {
             referencedRelation: "corretoras"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "compradores_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
+            referencedColumns: ["id"]
+          },
         ]
       }
       contratos: {
@@ -362,6 +383,13 @@ export type Database = {
             columns: ["corretora_id"]
             isOneToOne: false
             referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contratos_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
             referencedColumns: ["id"]
           },
           {
@@ -565,6 +593,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "entregas_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "entregas_produtor_id_fkey"
             columns: ["produtor_id"]
             isOneToOne: false
@@ -598,6 +633,13 @@ export type Database = {
             columns: ["corretora_id"]
             isOneToOne: false
             referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favoritos_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
             referencedColumns: ["id"]
           },
           {
@@ -650,6 +692,13 @@ export type Database = {
             columns: ["corretora_id"]
             isOneToOne: false
             referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_events_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
             referencedColumns: ["id"]
           },
           {
@@ -714,6 +763,13 @@ export type Database = {
             columns: ["corretora_id"]
             isOneToOne: false
             referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
             referencedColumns: ["id"]
           },
           {
@@ -783,6 +839,13 @@ export type Database = {
             columns: ["corretora_id"]
             isOneToOne: false
             referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lotes_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
             referencedColumns: ["id"]
           },
           {
@@ -968,6 +1031,13 @@ export type Database = {
             referencedRelation: "corretoras"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "produtor_contatos_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
+            referencedColumns: ["id"]
+          },
         ]
       }
       produtor_pagamentos: {
@@ -1035,6 +1105,13 @@ export type Database = {
             columns: ["corretora_id"]
             isOneToOne: false
             referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produtor_pagamentos_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
             referencedColumns: ["id"]
           },
           {
@@ -1191,6 +1268,13 @@ export type Database = {
             referencedRelation: "corretoras"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "profiles_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
+            referencedColumns: ["id"]
+          },
         ]
       }
       subscriptions: {
@@ -1245,6 +1329,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "subscriptions_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: true
+            referencedRelation: "corretoras_publicas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "subscriptions_plan_id_fkey"
             columns: ["plan_id"]
             isOneToOne: false
@@ -1255,7 +1346,51 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      corretoras_publicas: {
+        Row: {
+          city: string | null
+          created_at: string | null
+          descricao: string | null
+          email: string | null
+          id: string | null
+          logo_url: string | null
+          name: string | null
+          phone: string | null
+          site_url: string | null
+          slug: string | null
+          state: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          email?: string | null
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          phone?: string | null
+          site_url?: string | null
+          slug?: string | null
+          state?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          email?: string | null
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          phone?: string | null
+          site_url?: string | null
+          slug?: string | null
+          state?: string | null
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       current_corretora: { Args: never; Returns: string }

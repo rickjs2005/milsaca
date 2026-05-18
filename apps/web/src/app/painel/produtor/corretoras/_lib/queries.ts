@@ -15,9 +15,9 @@ export type CorretoraListItem = {
 };
 
 /**
- * Lista todas as corretoras visíveis (policy `corretoras_public_read`),
- * marcando favoritas do produtor e contagens de leads/contratos
- * em que ele participou.
+ * Lista corretoras pra produtor a partir da view `corretoras_publicas`
+ * (não vaza cnpj/endereço/IE/CEP), marcando favoritas e contagens de
+ * leads/contratos em que o produtor participou.
  */
 export async function listCorretorasParaProdutor(
   produtorId: string,
@@ -27,7 +27,7 @@ export async function listCorretorasParaProdutor(
   const [corretorasRes, favoritosRes, leadsRes, contratosRes] =
     await Promise.all([
       supabase
-        .from("corretoras")
+        .from("corretoras_publicas")
         .select("id, name, slug, city, state, phone, email, verified")
         .order("verified", { ascending: false })
         .order("name", { ascending: true })

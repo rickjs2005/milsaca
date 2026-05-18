@@ -34,10 +34,12 @@ export default async function OnboardingProdutorPage({
 
   const { error } = await searchParams;
 
-  // Lista corretoras verificadas pra escolher uma "casa" opcional
+  // Lista corretoras verificadas pra escolher uma "casa" opcional.
+  // Usa view pública (não vaza cnpj/endereço — produtor só precisa
+  // do nome e localização pra escolher).
   const supabase = await createClient();
   const { data: corretoras } = await supabase
-    .from("corretoras")
+    .from("corretoras_publicas")
     .select("id, name, city, state")
     .eq("verified", true)
     .order("name", { ascending: true });
@@ -176,13 +178,17 @@ export default async function OnboardingProdutorPage({
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <option value="">— escolho depois —</option>
-                {(corretoras ?? []).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                    {c.city ? ` — ${c.city}` : ""}
-                    {c.state ? `/${c.state}` : ""}
-                  </option>
-                ))}
+                {(corretoras ?? [])
+                  .filter((c): c is { id: string; name: string; city: string | null; state: string | null } =>
+                    !!c.id && !!c.name,
+                  )
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                      {c.city ? ` — ${c.city}` : ""}
+                      {c.state ? `/${c.state}` : ""}
+                    </option>
+                  ))}
               </select>
               <p className="text-xs text-milsaca-verde-claro">
                 Você pode mudar ou adicionar outras corretoras depois.
