@@ -57,7 +57,7 @@ function readPlanForm(formData: FormData) {
 }
 
 export async function createPlano(formData: FormData) {
-  await requireAppAdmin();
+  const actor = await requireAppAdmin();
   const fields = readPlanForm(formData);
   const slugInput = String(formData.get("slug") ?? "").trim();
 
@@ -70,22 +70,37 @@ export async function createPlano(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data: created, error } = await supabase
     .from("plans")
-    .insert({ ...fields, slug });
+    .insert({ ...fields, slug })
+    .select("id")
+    .single();
 
-  if (error) {
+  if (error || !created) {
     redirect(
-      `/admin/planos/novo?error=${encodeURIComponent(error.message)}`,
+      `/admin/planos/novo?error=${encodeURIComponent(error?.message ?? "Falha ao criar")}`,
     );
   }
+
+  await supabase.from("audit_log").insert({
+    actor_id: actor.id,
+    action: "create_plan",
+    entity: "plan",
+    entity_id: created.id,
+    payload: {
+      name: fields.name,
+      slug,
+      price_cents: fields.price_cents,
+      billing_period: fields.billing_period,
+    },
+  });
 
   revalidatePath("/admin/planos");
   redirect("/admin/planos?ok=" + encodeURIComponent("Plano criado"));
 }
 
 export async function updatePlano(formData: FormData) {
-  await requireAppAdmin();
+  const actor = await requireAppAdmin();
   const id = String(formData.get("id") ?? "").trim();
   if (!id) redirect("/admin/planos");
 
@@ -104,18 +119,40 @@ export async function updatePlano(formData: FormData) {
     redirect(`/admin/planos/${id}?error=${encodeURIComponent(error.message)}`);
   }
 
+  await supabase.from("audit_log").insert({
+    actor_id: actor.id,
+    action: "update_plan",
+    entity: "plan",
+    entity_id: id,
+    payload: {
+      name: fields.name,
+      price_cents: fields.price_cents,
+      billing_period: fields.billing_period,
+      active: fields.active,
+    },
+  });
+
   revalidatePath("/admin/planos");
   revalidatePath(`/admin/planos/${id}`);
   redirect(`/admin/planos/${id}?saved=1`);
 }
 
 export async function togglePlanoActive(formData: FormData) {
-  await requireAppAdmin();
+  const actor = await requireAppAdmin();
   const id = String(formData.get("id") ?? "");
   const next = formData.get("active") === "true";
   if (!id) return;
 
   const supabase = await createClient();
   await supabase.from("plans").update({ active: next }).eq("id", id);
+
+  await supabase.from("audit_log").insert({
+    actor_id: actor.id,
+    action: next ? "activate_plan" : "deactivate_plan",
+    entity: "plan",
+    entity_id: id,
+    payload: { active: next },
+  });
+
   revalidatePath("/admin/planos");
 }

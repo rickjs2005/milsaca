@@ -10,6 +10,7 @@ import {
   Wallet,
   Receipt,
   BarChart3,
+  ScrollText,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/planos", label: "Planos", icon: Wallet },
   { href: "/admin/assinaturas", label: "Assinaturas", icon: Receipt },
   { href: "/admin/metricas", label: "Métricas", icon: BarChart3 },
+  { href: "/admin/auditoria", label: "Auditoria", icon: ScrollText },
 ];
 
 export function AdminSidebar({

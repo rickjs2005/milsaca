@@ -41,7 +41,7 @@ function readCorretoraForm(formData: FormData) {
 }
 
 export async function createCorretora(formData: FormData) {
-  await requireAppAdmin();
+  const actor = await requireAppAdmin();
   const fields = readCorretoraForm(formData);
   const slugInput = String(formData.get("slug") ?? "").trim();
   const verified = formData.get("verified") === "on";
@@ -56,15 +56,26 @@ export async function createCorretora(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data: created, error } = await supabase
     .from("corretoras")
-    .insert({ ...fields, slug, verified });
+    .insert({ ...fields, slug, verified })
+    .select("id")
+    .single();
 
-  if (error) {
+  if (error || !created) {
     redirect(
-      `/admin/corretoras/nova?error=${encodeURIComponent(error.message)}`,
+      `/admin/corretoras/nova?error=${encodeURIComponent(error?.message ?? "Falha ao criar")}`,
     );
   }
+
+  await supabase.from("audit_log").insert({
+    actor_id: actor.id,
+    corretora_id: created.id,
+    action: "create_corretora",
+    entity: "corretora",
+    entity_id: created.id,
+    payload: { name: fields.name, slug, cnpj: fields.cnpj, verified },
+  });
 
   revalidatePath("/admin");
   revalidatePath("/admin/corretoras");
@@ -72,7 +83,7 @@ export async function createCorretora(formData: FormData) {
 }
 
 export async function updateCorretora(formData: FormData) {
-  await requireAppAdmin();
+  const actor = await requireAppAdmin();
   const id = String(formData.get("id") ?? "").trim();
   if (!id) redirect("/admin/corretoras");
 
@@ -93,6 +104,15 @@ export async function updateCorretora(formData: FormData) {
     );
   }
 
+  await supabase.from("audit_log").insert({
+    actor_id: actor.id,
+    corretora_id: id,
+    action: "update_corretora",
+    entity: "corretora",
+    entity_id: id,
+    payload: { fields: Object.keys(fields).filter((k) => (fields as Record<string, unknown>)[k] != null) },
+  });
+
   revalidatePath("/admin");
   revalidatePath("/admin/corretoras");
   revalidatePath(`/admin/corretoras/${id}`);
@@ -100,13 +120,23 @@ export async function updateCorretora(formData: FormData) {
 }
 
 export async function toggleCorretoraVerified(formData: FormData) {
-  await requireAppAdmin();
+  const actor = await requireAppAdmin();
   const id = String(formData.get("id") ?? "");
   const next = formData.get("verified") === "true";
   if (!id) return;
 
   const supabase = await createClient();
   await supabase.from("corretoras").update({ verified: next }).eq("id", id);
+
+  await supabase.from("audit_log").insert({
+    actor_id: actor.id,
+    corretora_id: id,
+    action: next ? "verify_corretora" : "unverify_corretora",
+    entity: "corretora",
+    entity_id: id,
+    payload: { verified: next },
+  });
+
   revalidatePath("/admin");
   revalidatePath("/admin/corretoras");
 }
@@ -252,7 +282,7 @@ export async function rejeitarCorretora(formData: FormData) {
 }
 
 export async function linkProfileToCorretora(formData: FormData) {
-  await requireAppAdmin();
+  const actor = await requireAppAdmin();
   const profileId = String(formData.get("profile_id") ?? "");
   const corretoraId = String(formData.get("corretora_id") ?? "");
   if (!profileId) return;
@@ -264,5 +294,15 @@ export async function linkProfileToCorretora(formData: FormData) {
       corretora_id: corretoraId || null,
     })
     .eq("id", profileId);
+
+  await supabase.from("audit_log").insert({
+    actor_id: actor.id,
+    corretora_id: corretoraId || null,
+    action: corretoraId ? "link_profile_corretora" : "unlink_profile_corretora",
+    entity: "profile",
+    entity_id: profileId,
+    payload: { corretora_id: corretoraId || null },
+  });
+
   revalidatePath("/admin");
 }
