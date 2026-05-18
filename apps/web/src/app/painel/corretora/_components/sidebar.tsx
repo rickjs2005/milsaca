@@ -38,12 +38,14 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 export function CorretoraSidebar({
-  userEmail,
-  corretoraName,
+  operatorName,
+  operatorEmail,
+  corretoraLabel,
   showSwitcher,
 }: {
-  userEmail: string;
-  corretoraName: string | null;
+  operatorName: string;
+  operatorEmail: string;
+  corretoraLabel: string | null;
   showSwitcher: boolean;
 }) {
   const pathname = usePathname();
@@ -85,14 +87,20 @@ export function CorretoraSidebar({
 
       <div className="border-t border-milsaca-cream-escuro p-3">
         <div className="mb-2 px-3 py-1">
-          <p className="text-xs uppercase tracking-wider text-milsaca-verde-claro/70">
-            {corretoraName ?? "Corretora"}
+          <p
+            className="truncate text-sm font-semibold text-milsaca-verde"
+            title={corretoraLabel ?? "Corretora não vinculada"}
+          >
+            {corretoraLabel ?? "Corretora não vinculada"}
+          </p>
+          <p className="mt-1 text-[11px] uppercase tracking-wider text-milsaca-verde-claro/70">
+            Operador
           </p>
           <p
-            className="truncate text-sm font-medium text-milsaca-verde"
-            title={userEmail}
+            className="truncate text-xs text-milsaca-verde-claro"
+            title={operatorEmail || operatorName}
           >
-            {userEmail}
+            {operatorName}
           </p>
         </div>
         {showSwitcher && (

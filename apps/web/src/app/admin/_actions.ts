@@ -15,19 +15,42 @@ function slugify(input: string): string {
     .slice(0, 40);
 }
 
+function clean(v: FormDataEntryValue | null): string | null {
+  if (v == null) return null;
+  const s = String(v).trim();
+  return s ? s : null;
+}
+
+function readCorretoraForm(formData: FormData) {
+  return {
+    name: String(formData.get("name") ?? "").trim(),
+    city: clean(formData.get("city")),
+    state: clean(formData.get("state")),
+    phone: clean(formData.get("phone")),
+    telefone_fixo: clean(formData.get("telefone_fixo")),
+    email: clean(formData.get("email")),
+    cnpj: clean(formData.get("cnpj")),
+    inscricao_est: clean(formData.get("inscricao_est")),
+    cep: clean(formData.get("cep")),
+    endereco: clean(formData.get("endereco")),
+    bairro: clean(formData.get("bairro")),
+    site_url: clean(formData.get("site_url")),
+    descricao: clean(formData.get("descricao")),
+    logo_url: clean(formData.get("logo_url")),
+  };
+}
+
 export async function createCorretora(formData: FormData) {
   await requireRole("admin");
-  const name = String(formData.get("name") ?? "").trim();
-  const city = String(formData.get("city") ?? "").trim() || null;
-  const phone = String(formData.get("phone") ?? "").trim() || null;
+  const fields = readCorretoraForm(formData);
   const slugInput = String(formData.get("slug") ?? "").trim();
   const verified = formData.get("verified") === "on";
 
-  if (!name) {
+  if (!fields.name) {
     redirect("/admin/corretoras/nova?error=Nome%20obrigat%C3%B3rio");
   }
 
-  const slug = slugify(slugInput || name);
+  const slug = slugify(slugInput || fields.name);
   if (!slug) {
     redirect("/admin/corretoras/nova?error=Slug%20inv%C3%A1lido");
   }
@@ -35,7 +58,7 @@ export async function createCorretora(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("corretoras")
-    .insert({ name, slug, city, phone, verified });
+    .insert({ ...fields, slug, verified });
 
   if (error) {
     redirect(
@@ -46,6 +69,34 @@ export async function createCorretora(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/corretoras");
   redirect("/admin/corretoras?ok=Corretora%20criada");
+}
+
+export async function updateCorretora(formData: FormData) {
+  await requireRole("admin");
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) redirect("/admin/corretoras");
+
+  const fields = readCorretoraForm(formData);
+  if (!fields.name) {
+    redirect(`/admin/corretoras/${id}?error=Nome%20obrigat%C3%B3rio`);
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("corretoras")
+    .update(fields)
+    .eq("id", id);
+
+  if (error) {
+    redirect(
+      `/admin/corretoras/${id}?error=${encodeURIComponent(error.message)}`,
+    );
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/corretoras");
+  revalidatePath(`/admin/corretoras/${id}`);
+  redirect(`/admin/corretoras/${id}?saved=1`);
 }
 
 export async function toggleCorretoraVerified(formData: FormData) {

@@ -364,38 +364,65 @@ export type Database = {
       }
       corretoras: {
         Row: {
+          bairro: string | null
+          cep: string | null
           city: string | null
+          cnpj: string | null
           created_at: string
+          descricao: string | null
           email: string | null
+          endereco: string | null
           id: string
+          inscricao_est: string | null
+          logo_url: string | null
           name: string
           phone: string | null
+          site_url: string | null
           slug: string
           state: string | null
+          telefone_fixo: string | null
           updated_at: string
           verified: boolean
         }
         Insert: {
+          bairro?: string | null
+          cep?: string | null
           city?: string | null
+          cnpj?: string | null
           created_at?: string
+          descricao?: string | null
           email?: string | null
+          endereco?: string | null
           id?: string
+          inscricao_est?: string | null
+          logo_url?: string | null
           name: string
           phone?: string | null
+          site_url?: string | null
           slug: string
           state?: string | null
+          telefone_fixo?: string | null
           updated_at?: string
           verified?: boolean
         }
         Update: {
+          bairro?: string | null
+          cep?: string | null
           city?: string | null
+          cnpj?: string | null
           created_at?: string
+          descricao?: string | null
           email?: string | null
+          endereco?: string | null
           id?: string
+          inscricao_est?: string | null
+          logo_url?: string | null
           name?: string
           phone?: string | null
+          site_url?: string | null
           slug?: string
           state?: string | null
+          telefone_fixo?: string | null
           updated_at?: string
           verified?: boolean
         }
@@ -1162,10 +1189,10 @@ export type Database = {
       notification_kind:
         | "lead"
         | "contrato"
-        | "entrega"
-        | "pagamento"
         | "cotacao"
         | "sistema"
+        | "entrega"
+        | "pagamento"
       pagamento_status: "pendente" | "pago" | "vencido" | "cancelado"
       produtor_specie: "arabica" | "conilon" | "ambos"
       produtor_status: "sombra" | "ativo" | "pendente" | "bloqueado"
@@ -1798,10 +1825,10 @@ export const Constants = {
       notification_kind: [
         "lead",
         "contrato",
-        "entrega",
-        "pagamento",
         "cotacao",
         "sistema",
+        "entrega",
+        "pagamento",
       ],
       pagamento_status: ["pendente", "pago", "vencido", "cancelado"],
       produtor_specie: ["arabica", "conilon", "ambos"],

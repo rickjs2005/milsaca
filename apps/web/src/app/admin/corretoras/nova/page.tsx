@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { createCorretora } from "../../_actions";
+import { CorretoraFormFields } from "../_components/corretora-form-fields";
 
 export const metadata = { title: "Nova corretora · Admin Milsaca" };
 
@@ -14,7 +15,7 @@ export default async function NovaCorretoraPage({ searchParams }: PageProps) {
   const { error } = await searchParams;
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-10">
+    <main className="mx-auto max-w-3xl px-6 py-10">
       <Link
         href="/admin/corretoras"
         className="text-xs text-milsaca-dourado hover:underline"
@@ -36,61 +37,16 @@ export default async function NovaCorretoraPage({ searchParams }: PageProps) {
 
       <form
         action={createCorretora}
-        className="mt-8 space-y-4 rounded-2xl border border-milsaca-verde/10 bg-white p-6 shadow-sm"
+        className="mt-8 space-y-8 rounded-2xl border border-milsaca-verde/10 bg-white p-6 shadow-sm"
       >
-        <div className="space-y-1">
-          <label className="text-xs font-medium uppercase tracking-wide text-milsaca-verde-claro">
-            Nome *
+        <CorretoraFormFields />
+
+        <div className="border-t border-milsaca-verde/10 pt-4">
+          <label className="flex items-center gap-2 text-sm text-milsaca-verde-claro">
+            <input type="checkbox" name="verified" defaultChecked />
+            Marcar como verificada
           </label>
-          <input
-            name="name"
-            required
-            placeholder="Café & Cia Corretagem"
-            className="w-full rounded-xl border border-milsaca-verde/20 px-3 py-2 text-sm text-milsaca-verde outline-none focus:border-milsaca-dourado"
-          />
         </div>
-
-        <div className="space-y-1">
-          <label className="text-xs font-medium uppercase tracking-wide text-milsaca-verde-claro">
-            Slug (URL)
-          </label>
-          <input
-            name="slug"
-            placeholder="cafe-cia (gerado do nome se vazio)"
-            className="w-full rounded-xl border border-milsaca-verde/20 px-3 py-2 font-mono text-sm text-milsaca-verde outline-none focus:border-milsaca-dourado"
-          />
-          <p className="text-xs text-milsaca-verde-claro/70">
-            Usado em códigos de contrato (<code>slug-2026-0001</code>).
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-1">
-            <label className="text-xs font-medium uppercase tracking-wide text-milsaca-verde-claro">
-              Cidade
-            </label>
-            <input
-              name="city"
-              placeholder="Manhuaçu/MG"
-              className="w-full rounded-xl border border-milsaca-verde/20 px-3 py-2 text-sm text-milsaca-verde outline-none focus:border-milsaca-dourado"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium uppercase tracking-wide text-milsaca-verde-claro">
-              Telefone (WhatsApp)
-            </label>
-            <input
-              name="phone"
-              placeholder="(33) 99999-9999"
-              className="w-full rounded-xl border border-milsaca-verde/20 px-3 py-2 text-sm text-milsaca-verde outline-none focus:border-milsaca-dourado"
-            />
-          </div>
-        </div>
-
-        <label className="flex items-center gap-2 text-sm text-milsaca-verde-claro">
-          <input type="checkbox" name="verified" defaultChecked />
-          Marcar como verificada
-        </label>
 
         <div className="flex items-center justify-end gap-3 pt-2">
           <Button asChild variant="outline">

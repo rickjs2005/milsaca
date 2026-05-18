@@ -2,15 +2,15 @@ import { requireUser, getProfile } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { CorretoraSidebar } from "./_components/sidebar";
 
-async function loadCorretoraName(corretoraId: string | null) {
+async function loadCorretora(corretoraId: string | null) {
   if (!corretoraId) return null;
   const supabase = await createClient();
   const { data } = await supabase
     .from("corretoras")
-    .select("name")
+    .select("name, city, state")
     .eq("id", corretoraId)
-    .maybeSingle<{ name: string }>();
-  return data?.name ?? null;
+    .maybeSingle<{ name: string; city: string | null; state: string | null }>();
+  return data ?? null;
 }
 
 export default async function PainelCorretoraLayout({
@@ -20,14 +20,21 @@ export default async function PainelCorretoraLayout({
 }) {
   const user = await requireUser("/painel/corretora");
   const profile = await getProfile();
-  const corretoraName = await loadCorretoraName(profile?.corretora_id ?? null);
+  const corretora = await loadCorretora(profile?.corretora_id ?? null);
   const showSwitcher = (profile?.roles.length ?? 0) > 1;
+
+  const corretoraLabel = corretora
+    ? [corretora.name, [corretora.city, corretora.state].filter(Boolean).join("/")]
+        .filter(Boolean)
+        .join(" · ")
+    : null;
 
   return (
     <div className="flex min-h-screen bg-milsaca-cream">
       <CorretoraSidebar
-        userEmail={user.email ?? "corretora"}
-        corretoraName={corretoraName}
+        operatorName={profile?.full_name ?? user.email ?? "operador"}
+        operatorEmail={user.email ?? ""}
+        corretoraLabel={corretoraLabel}
         showSwitcher={showSwitcher}
       />
       <div className="flex-1 overflow-y-auto">

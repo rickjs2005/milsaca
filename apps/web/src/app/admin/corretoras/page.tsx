@@ -17,7 +17,7 @@ export default async function AdminCorretorasPage({ searchParams }: PageProps) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("corretoras")
-    .select("id, name, slug, city, phone, verified, created_at")
+    .select("id, name, slug, city, state, phone, verified, created_at")
     .order("created_at", { ascending: false });
 
   const rows = data ?? [];
@@ -69,7 +69,7 @@ export default async function AdminCorretorasPage({ searchParams }: PageProps) {
               <tr>
                 <th className="px-4 py-3">Nome</th>
                 <th className="px-4 py-3">Slug</th>
-                <th className="px-4 py-3">Cidade</th>
+                <th className="px-4 py-3">Cidade/UF</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Ações</th>
               </tr>
@@ -84,7 +84,7 @@ export default async function AdminCorretorasPage({ searchParams }: PageProps) {
                     {c.slug}
                   </td>
                   <td className="px-4 py-3 text-milsaca-verde-claro">
-                    {c.city ?? "—"}
+                    {[c.city, c.state].filter(Boolean).join("/") || "—"}
                   </td>
                   <td className="px-4 py-3">
                     {c.verified ? (
@@ -98,20 +98,28 @@ export default async function AdminCorretorasPage({ searchParams }: PageProps) {
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <form action={toggleCorretoraVerified} className="inline">
-                      <input type="hidden" name="id" value={c.id} />
-                      <input
-                        type="hidden"
-                        name="verified"
-                        value={c.verified ? "false" : "true"}
-                      />
-                      <button
-                        type="submit"
-                        className="text-xs text-milsaca-dourado underline-offset-2 hover:underline"
+                    <div className="flex items-center justify-end gap-3">
+                      <Link
+                        href={`/admin/corretoras/${c.id}`}
+                        className="text-xs text-milsaca-verde-claro underline-offset-2 hover:text-milsaca-verde hover:underline"
                       >
-                        {c.verified ? "Desativar" : "Ativar"}
-                      </button>
-                    </form>
+                        Editar
+                      </Link>
+                      <form action={toggleCorretoraVerified} className="inline">
+                        <input type="hidden" name="id" value={c.id} />
+                        <input
+                          type="hidden"
+                          name="verified"
+                          value={c.verified ? "false" : "true"}
+                        />
+                        <button
+                          type="submit"
+                          className="text-xs text-milsaca-dourado underline-offset-2 hover:underline"
+                        >
+                          {c.verified ? "Desativar" : "Ativar"}
+                        </button>
+                      </form>
+                    </div>
                   </td>
                 </tr>
               ))}

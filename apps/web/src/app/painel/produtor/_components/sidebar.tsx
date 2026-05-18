@@ -40,10 +40,14 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 export function ProdutorSidebar({
-  userEmail,
+  producerName,
+  producerEmail,
+  fazendaNome,
   showSwitcher,
 }: {
-  userEmail: string;
+  producerName: string;
+  producerEmail: string;
+  fazendaNome: string | null;
   showSwitcher: boolean;
 }) {
   const pathname = usePathname();
@@ -85,12 +89,24 @@ export function ProdutorSidebar({
 
       <div className="border-t border-milsaca-cream-escuro p-3">
         <div className="mb-2 px-3 py-1">
-          <p className="text-xs uppercase tracking-wider text-milsaca-verde-claro/70">
-            Produtor
+          <p
+            className="truncate text-sm font-semibold text-milsaca-verde"
+            title={producerEmail || producerName}
+          >
+            {producerName}
           </p>
-          <p className="truncate text-sm font-medium text-milsaca-verde" title={userEmail}>
-            {userEmail}
-          </p>
+          {fazendaNome ? (
+            <p
+              className="truncate text-xs text-milsaca-verde-claro"
+              title={fazendaNome}
+            >
+              {fazendaNome}
+            </p>
+          ) : (
+            <p className="text-[11px] uppercase tracking-wider text-milsaca-verde-claro/70">
+              Produtor
+            </p>
+          )}
         </div>
         {showSwitcher && (
           <Link
