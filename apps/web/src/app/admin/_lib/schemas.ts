@@ -63,6 +63,22 @@ const REGIAO_VALUES = [
 
 export const regiaoSchema = z.enum(REGIAO_VALUES);
 
+// Coordenada decimal opcional (-180..180 pra lng, -90..90 pra lat).
+// Aceita "-20,2587" e "-20.2587". Vazio vira null.
+const coord = (label: string, min: number, max: number) =>
+  z
+    .union([z.string(), z.number()])
+    .optional()
+    .transform((v) => {
+      if (v == null || v === "") return null;
+      const s = String(v).trim().replace(",", ".");
+      const n = Number(s);
+      return Number.isFinite(n) ? n : null;
+    })
+    .refine((v) => v === null || (v >= min && v <= max), {
+      message: `${label} deve estar entre ${min} e ${max}.`,
+    });
+
 // =================================================================
 // Corretora
 // =================================================================
@@ -88,6 +104,8 @@ export const corretoraSchema = z.object({
   descricao: optionalText(1000),
   logo_url: optionalText(500),
   regioes_atendimento: z.array(regiaoSchema).default([]),
+  lat: coord("Latitude", -90, 90),
+  lng: coord("Longitude", -180, 180),
 });
 
 export type CorretoraInput = z.infer<typeof corretoraSchema>;

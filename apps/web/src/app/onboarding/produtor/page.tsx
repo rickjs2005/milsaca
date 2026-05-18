@@ -4,6 +4,7 @@ import { Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MunicipioAutocomplete } from "@/components/municipio-autocomplete";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile, requireUser } from "@/lib/auth";
 import {
@@ -139,16 +140,6 @@ export default async function OnboardingProdutorPage({
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="city">Cidade *</Label>
-                <Input
-                  id="city"
-                  name="city"
-                  required
-                  defaultValue={produtor?.city ?? ""}
-                  placeholder="Manhuaçu"
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="state">UF *</Label>
                 <Input
                   id="state"
@@ -158,6 +149,17 @@ export default async function OnboardingProdutorPage({
                   defaultValue={produtor?.state ?? ""}
                   placeholder="MG"
                   className="uppercase"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="city">Cidade *</Label>
+                <MunicipioAutocomplete
+                  name="city"
+                  defaultValue={produtor?.city ?? ""}
+                  uf={produtor?.state ?? null}
+                  ufFieldId="state"
+                  placeholder="Manhuaçu"
+                  required
                 />
               </div>
             </div>

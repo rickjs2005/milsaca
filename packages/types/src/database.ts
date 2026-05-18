@@ -420,6 +420,8 @@ export type Database = {
           endereco: string | null
           id: string
           inscricao_est: string | null
+          lat: number | null
+          lng: number | null
           logo_url: string | null
           name: string
           phone: string | null
@@ -442,6 +444,8 @@ export type Database = {
           endereco?: string | null
           id?: string
           inscricao_est?: string | null
+          lat?: number | null
+          lng?: number | null
           logo_url?: string | null
           name: string
           phone?: string | null
@@ -464,6 +468,8 @@ export type Database = {
           endereco?: string | null
           id?: string
           inscricao_est?: string | null
+          lat?: number | null
+          lng?: number | null
           logo_url?: string | null
           name?: string
           phone?: string | null
@@ -1148,6 +1154,8 @@ export type Database = {
           foto_capa_url: string | null
           id: string
           indicacao_geografica: string | null
+          lat: number | null
+          lng: number | null
           polygon_geojson: Json | null
           preco_alvo: number | null
           preferencias: Json
@@ -1176,6 +1184,8 @@ export type Database = {
           foto_capa_url?: string | null
           id?: string
           indicacao_geografica?: string | null
+          lat?: number | null
+          lng?: number | null
           polygon_geojson?: Json | null
           preco_alvo?: number | null
           preferencias?: Json
@@ -1204,6 +1214,8 @@ export type Database = {
           foto_capa_url?: string | null
           id?: string
           indicacao_geografica?: string | null
+          lat?: number | null
+          lng?: number | null
           polygon_geojson?: Json | null
           preco_alvo?: number | null
           preferencias?: Json
@@ -1414,6 +1426,8 @@ export type Database = {
           descricao: string | null
           email: string | null
           id: string | null
+          lat: number | null
+          lng: number | null
           logo_url: string | null
           name: string | null
           phone: string | null
@@ -1431,6 +1445,8 @@ export type Database = {
           descricao?: string | null
           email?: string | null
           id?: string | null
+          lat?: number | null
+          lng?: number | null
           logo_url?: string | null
           name?: string | null
           phone?: string | null
@@ -1448,6 +1464,8 @@ export type Database = {
           descricao?: string | null
           email?: string | null
           id?: string | null
+          lat?: number | null
+          lng?: number | null
           logo_url?: string | null
           name?: string | null
           phone?: string | null

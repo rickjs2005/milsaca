@@ -1,6 +1,7 @@
 // Campos do form de corretora — compartilhado entre "Nova" e "Editar".
 // Server Component sem state; valores defaults vêm via prop.
 
+import { MunicipioAutocomplete } from "@/components/municipio-autocomplete";
 import { REGIOES_CAFEEIRAS, type RegiaoCafeeira } from "./regioes";
 
 type Defaults = {
@@ -20,6 +21,8 @@ type Defaults = {
   descricao?: string | null;
   logo_url?: string | null;
   regioes_atendimento?: RegiaoCafeeira[] | null;
+  lat?: number | string | null;
+  lng?: number | string | null;
 };
 
 const labelCls =
@@ -173,17 +176,9 @@ export function CorretoraFormFields({
             />
           </div>
           <div className="space-y-1">
-            <label className={labelCls}>Cidade</label>
-            <input
-              name="city"
-              defaultValue={d.city ?? ""}
-              placeholder="Manhuaçu"
-              className={inputCls}
-            />
-          </div>
-          <div className="space-y-1">
             <label className={labelCls}>Estado (UF)</label>
             <input
+              id="corretora-state"
               name="state"
               maxLength={2}
               defaultValue={d.state ?? ""}
@@ -191,7 +186,43 @@ export function CorretoraFormFields({
               className={`${inputCls} uppercase`}
             />
           </div>
+          <div className="space-y-1">
+            <label className={labelCls}>Cidade</label>
+            <MunicipioAutocomplete
+              name="city"
+              defaultValue={d.city ?? ""}
+              uf={d.state ?? null}
+              ufFieldId="corretora-state"
+              placeholder="Manhuaçu"
+            />
+          </div>
         </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-1">
+            <label className={labelCls}>Latitude (opcional)</label>
+            <input
+              name="lat"
+              defaultValue={d.lat != null ? String(d.lat) : ""}
+              placeholder="-20.2587"
+              inputMode="decimal"
+              className={inputMonoCls}
+            />
+          </div>
+          <div className="space-y-1">
+            <label className={labelCls}>Longitude (opcional)</label>
+            <input
+              name="lng"
+              defaultValue={d.lng != null ? String(d.lng) : ""}
+              placeholder="-42.0289"
+              inputMode="decimal"
+              className={inputMonoCls}
+            />
+          </div>
+        </div>
+        <p className="text-[11px] text-milsaca-verde-claro/70">
+          Cole de um link do Google Maps (clique direito → coordenadas).
+          Fica oculto pro produtor; usado no mapa de busca futuro.
+        </p>
       </Section>
 
       <Section title="Contato">
