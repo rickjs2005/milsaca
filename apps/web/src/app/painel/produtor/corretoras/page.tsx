@@ -22,6 +22,7 @@ import { listCorretorasParaProdutor } from "./_lib/queries";
 import { toggleFavorito } from "./_actions";
 import { buildWhatsAppInviteUrl } from "../../corretora/produtores/_lib/whatsapp";
 import { WhatsAppButton } from "./_components/whatsapp-button";
+import { CorretorasMapWrapper } from "./_components/corretoras-map-wrapper";
 import {
   REGIAO_LABEL,
   REGIOES_CAFEEIRAS,
@@ -132,6 +133,35 @@ export default async function CorretorasProdutorPage({
           );
         })}
       </div>
+
+      {(() => {
+        const pins = lista
+          .filter(
+            (c): c is typeof c & { lat: number; lng: number } =>
+              c.lat != null && c.lng != null,
+          )
+          .map((c) => ({
+            id: c.id,
+            name: c.name,
+            city: c.city,
+            state: c.state,
+            verified: c.verified,
+            lat: c.lat,
+            lng: c.lng,
+          }));
+        return pins.length > 0 ? (
+          <section className="space-y-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
+              No mapa
+            </h2>
+            <CorretorasMapWrapper pins={pins} />
+            <p className="text-[10px] text-milsaca-verde-claro/70">
+              {pins.length} corretora{pins.length === 1 ? "" : "s"} com
+              localização confirmada. As demais aparecem só na lista abaixo.
+            </p>
+          </section>
+        ) : null;
+      })()}
 
       {lista.length === 0 ? (
         <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">

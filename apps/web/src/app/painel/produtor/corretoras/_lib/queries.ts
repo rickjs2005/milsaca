@@ -11,6 +11,8 @@ export type CorretoraListItem = {
   email: string | null;
   verified: boolean;
   regioes_atendimento: RegiaoCafeeira[];
+  lat: number | null;
+  lng: number | null;
   is_favorita: boolean;
   qtd_negociacoes: number;
   qtd_contratos: number;
@@ -31,7 +33,7 @@ export async function listCorretorasParaProdutor(
       supabase
         .from("corretoras_publicas")
         .select(
-          "id, name, slug, city, state, phone, email, verified, regioes_atendimento",
+          "id, name, slug, city, state, phone, email, verified, regioes_atendimento, lat, lng",
         )
         .order("verified", { ascending: false })
         .order("name", { ascending: true })
@@ -77,6 +79,8 @@ export async function listCorretorasParaProdutor(
     email: string | null;
     verified: boolean | null;
     regioes_atendimento: RegiaoCafeeira[] | null;
+    lat: number | string | null;
+    lng: number | string | null;
   };
 
   const rows = ((corretorasRes.data ?? []) as Row[])
@@ -93,6 +97,8 @@ export async function listCorretorasParaProdutor(
       email: c.email,
       verified: c.verified ?? false,
       regioes_atendimento: c.regioes_atendimento ?? [],
+      lat: c.lat != null ? Number(c.lat) : null,
+      lng: c.lng != null ? Number(c.lng) : null,
       is_favorita: favoritas.has(c.id),
       qtd_negociacoes: leadsCount.get(c.id) ?? 0,
       qtd_contratos: contratosCount.get(c.id) ?? 0,
