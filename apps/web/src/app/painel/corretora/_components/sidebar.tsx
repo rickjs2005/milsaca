@@ -15,6 +15,7 @@ import {
   Package,
   Truck,
   Building2,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/painel/corretora/produtores", label: "Produtores", icon: Users },
   { href: "/painel/corretora/compradores", label: "Compradores", icon: Building2 },
   { href: "/painel/corretora/cotacoes", label: "Cotações", icon: TrendingUp },
+  { href: "/painel/corretora/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/painel/corretora/perfil", label: "Perfil", icon: User },
 ];
 
