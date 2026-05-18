@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Coffee } from "lucide-react";
-import { signIn } from "./_actions";
+import { signUp } from "./_actions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,15 +13,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 type SearchParams = Promise<{
-  redirectTo?: string;
   email?: string;
+  full_name?: string;
   error?: string;
-  ok?: string;
 }>;
 
-export const metadata = { title: "Entrar — Milsaca" };
+export const metadata = { title: "Criar conta — Milsaca" };
 
-export default async function EntrarPage({
+export default async function CadastrarPage({
   searchParams,
 }: {
   searchParams: SearchParams;
@@ -42,20 +41,25 @@ export default async function EntrarPage({
 
         <Card className="border-milsaca-cream-escuro">
           <CardHeader>
-            <CardTitle className="text-2xl">Entrar</CardTitle>
+            <CardTitle className="text-2xl">Criar conta</CardTitle>
             <CardDescription>
-              Acesse com email e senha. Primeira vez? Crie sua conta.
+              Comece como produtor. Sua corretora pode te vincular depois.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={signIn} className="space-y-4">
-              {sp.redirectTo && (
-                <input
-                  type="hidden"
-                  name="redirectTo"
-                  value={sp.redirectTo}
+            <form action={signUp} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="full_name">Seu nome completo</Label>
+                <Input
+                  id="full_name"
+                  name="full_name"
+                  type="text"
+                  required
+                  autoComplete="name"
+                  defaultValue={sp.full_name ?? ""}
+                  placeholder="João da Silva"
                 />
-              )}
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -71,30 +75,31 @@ export default async function EntrarPage({
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-baseline justify-between">
-                  <Label htmlFor="password">Senha</Label>
-                  <Link
-                    href="/esqueci-senha"
-                    className="text-xs text-milsaca-dourado hover:underline"
-                  >
-                    Esqueci minha senha
-                  </Link>
-                </div>
+                <Label htmlFor="password">Senha</Label>
                 <Input
                   id="password"
                   name="password"
                   type="password"
                   required
-                  autoComplete="current-password"
-                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  minLength={8}
+                  placeholder="Mínimo 8 caracteres"
                 />
               </div>
 
-              {sp.ok ? (
-                <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                  {sp.ok}
-                </p>
-              ) : null}
+              <div className="space-y-2">
+                <Label htmlFor="confirm">Confirmar senha</Label>
+                <Input
+                  id="confirm"
+                  name="confirm"
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                  minLength={8}
+                  placeholder="Repita a senha"
+                />
+              </div>
+
               {sp.error ? (
                 <p className="text-sm text-destructive">{sp.error}</p>
               ) : null}
@@ -103,17 +108,17 @@ export default async function EntrarPage({
                 type="submit"
                 className="w-full bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
               >
-                Entrar
+                Criar conta
               </Button>
             </form>
 
             <p className="mt-6 text-center text-sm text-milsaca-verde-claro">
-              Não tem conta?{" "}
+              Já tem conta?{" "}
               <Link
-                href="/cadastrar"
+                href="/entrar"
                 className="font-medium text-milsaca-verde hover:underline"
               >
-                Criar conta
+                Entrar
               </Link>
             </p>
           </CardContent>

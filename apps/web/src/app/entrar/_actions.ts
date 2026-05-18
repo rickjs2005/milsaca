@@ -6,68 +6,35 @@ import { defaultRouteFor } from "@/lib/auth";
 import type { Profile } from "@milsaca/types";
 
 /**
- * Envia OTP por email pra entrar OU criar conta.
- * Em vez de magic link (que o Gmail consome no prefetch), o usuário
- * recebe um código de 6 dígitos pra colar em /entrar/verificar.
- *
- * Se for primeiro acesso, `shouldCreateUser: true` cria o user em
- * auth.users, e o trigger `handle_new_user` cria o profile correspondente.
- * O campo `full_name` é passado via raw_user_meta_data e usado pelo trigger.
+ * Login com email + senha. Substitui o fluxo de OTP de 6 dígitos.
+ * Pra criar conta nova, usar /cadastrar. Pra recuperar senha esquecida,
+ * usar /esqueci-senha.
  */
-export async function sendCode(formData: FormData) {
+export async function signIn(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const fullName = String(formData.get("full_name") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
   const redirectTo = String(formData.get("redirectTo") ?? "/painel");
 
-  if (!email) {
-    redirect("/entrar?error=Email%20obrigat%C3%B3rio");
+  if (!email || !password) {
+    redirect("/entrar?error=Email%20e%20senha%20obrigat%C3%B3rios");
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithOtp({
+  const { error } = await supabase.auth.signInWithPassword({
     email,
-    options: {
-      shouldCreateUser: true,
-      data: fullName ? { full_name: fullName } : undefined,
-    },
+    password,
   });
 
   if (error) {
-    redirect(`/entrar?error=${encodeURIComponent(error.message)}`);
+    const params = new URLSearchParams({
+      email,
+      error: error.message,
+    });
+    if (redirectTo !== "/painel") params.set("redirectTo", redirectTo);
+    redirect(`/entrar?${params.toString()}`);
   }
 
-  const params = new URLSearchParams({ email, redirectTo });
-  redirect(`/entrar/verificar?${params.toString()}`);
-}
-
-/**
- * Verifica o código OTP digitado pelo usuário e cria a sessão.
- */
-export async function verifyCode(formData: FormData) {
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const token = String(formData.get("token") ?? "").trim();
-  const redirectTo = String(formData.get("redirectTo") ?? "/painel");
-
-  if (!email || !token) {
-    redirect(
-      `/entrar/verificar?email=${encodeURIComponent(email)}&error=C%C3%B3digo%20obrigat%C3%B3rio`,
-    );
-  }
-
-  const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({
-    email,
-    token,
-    type: "email",
-  });
-
-  if (error) {
-    redirect(
-      `/entrar/verificar?email=${encodeURIComponent(email)}&error=${encodeURIComponent(error.message)}`,
-    );
-  }
-
-  // Decide o destino pelos papéis do profile.
+  // Decide o destino pelos papéis do profile
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -86,4 +53,3 @@ export async function verifyCode(formData: FormData) {
     : redirectTo;
   redirect(target);
 }
-

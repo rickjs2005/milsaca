@@ -13,7 +13,7 @@ import type { Profile } from "@milsaca/types";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/painel";
+  const nextParam = searchParams.get("next");
 
   if (!code) {
     return NextResponse.redirect(
@@ -29,12 +29,17 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Decide para onde mandar
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.redirect(`${origin}/entrar?error=Sess%C3%A3o%20inv%C3%A1lida`);
+  }
+
+  // Se o caller especificou `next`, vence — fluxo de reset de senha
+  // depende disso pra parar em /redefinir-senha em vez de cair no painel.
+  if (nextParam) {
+    return NextResponse.redirect(`${origin}${nextParam}`);
   }
 
   const { data: profile } = await supabase
@@ -45,7 +50,7 @@ export async function GET(request: NextRequest) {
 
   const target = profile?.roles?.length
     ? defaultRouteFor(profile)
-    : next;
+    : "/painel";
 
   return NextResponse.redirect(`${origin}${target}`);
 }

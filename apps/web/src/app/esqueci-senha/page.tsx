@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Coffee } from "lucide-react";
-import { signIn } from "./_actions";
+import { requestPasswordReset } from "./_actions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,16 +12,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type SearchParams = Promise<{
-  redirectTo?: string;
-  email?: string;
-  error?: string;
-  ok?: string;
-}>;
+type SearchParams = Promise<{ error?: string; ok?: string; email?: string }>;
 
-export const metadata = { title: "Entrar — Milsaca" };
+export const metadata = { title: "Esqueci minha senha — Milsaca" };
 
-export default async function EntrarPage({
+export default async function EsqueciSenhaPage({
   searchParams,
 }: {
   searchParams: SearchParams;
@@ -42,21 +37,13 @@ export default async function EntrarPage({
 
         <Card className="border-milsaca-cream-escuro">
           <CardHeader>
-            <CardTitle className="text-2xl">Entrar</CardTitle>
+            <CardTitle className="text-2xl">Esqueci minha senha</CardTitle>
             <CardDescription>
-              Acesse com email e senha. Primeira vez? Crie sua conta.
+              Informe seu email. Mandamos um link pra você criar uma nova senha.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={signIn} className="space-y-4">
-              {sp.redirectTo && (
-                <input
-                  type="hidden"
-                  name="redirectTo"
-                  value={sp.redirectTo}
-                />
-              )}
-
+            <form action={requestPasswordReset} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -67,26 +54,6 @@ export default async function EntrarPage({
                   autoComplete="email"
                   defaultValue={sp.email ?? ""}
                   placeholder="voce@exemplo.com"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-baseline justify-between">
-                  <Label htmlFor="password">Senha</Label>
-                  <Link
-                    href="/esqueci-senha"
-                    className="text-xs text-milsaca-dourado hover:underline"
-                  >
-                    Esqueci minha senha
-                  </Link>
-                </div>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  autoComplete="current-password"
-                  placeholder="••••••••"
                 />
               </div>
 
@@ -103,17 +70,16 @@ export default async function EntrarPage({
                 type="submit"
                 className="w-full bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
               >
-                Entrar
+                Enviar link
               </Button>
             </form>
 
             <p className="mt-6 text-center text-sm text-milsaca-verde-claro">
-              Não tem conta?{" "}
               <Link
-                href="/cadastrar"
+                href="/entrar"
                 className="font-medium text-milsaca-verde hover:underline"
               >
-                Criar conta
+                ← Voltar pro login
               </Link>
             </p>
           </CardContent>
