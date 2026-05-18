@@ -1,20 +1,15 @@
 import Link from "next/link";
 import { Coffee } from "lucide-react";
 import { signUp } from "./_actions";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CadastroForm } from "./_components/cadastro-form";
 
 type SearchParams = Promise<{
   email?: string;
   full_name?: string;
+  role?: string;
+  corretora_name?: string;
+  corretora_city?: string;
   error?: string;
 }>;
 
@@ -26,6 +21,7 @@ export default async function CadastrarPage({
   searchParams: SearchParams;
 }) {
   const sp = await searchParams;
+  const initialRole = sp.role === "corretora" ? "corretora" : "produtor";
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-milsaca-cream px-6 py-10">
@@ -43,74 +39,21 @@ export default async function CadastrarPage({
           <CardHeader>
             <CardTitle className="text-2xl">Criar conta</CardTitle>
             <CardDescription>
-              Comece como produtor. Sua corretora pode te vincular depois.
+              Você é produtor ou está abrindo uma corretora?
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={signUp} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="full_name">Seu nome completo</Label>
-                <Input
-                  id="full_name"
-                  name="full_name"
-                  type="text"
-                  required
-                  autoComplete="name"
-                  defaultValue={sp.full_name ?? ""}
-                  placeholder="João da Silva"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  autoComplete="email"
-                  defaultValue={sp.email ?? ""}
-                  placeholder="voce@exemplo.com"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  autoComplete="new-password"
-                  minLength={8}
-                  placeholder="Mínimo 8 caracteres"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirm">Confirmar senha</Label>
-                <Input
-                  id="confirm"
-                  name="confirm"
-                  type="password"
-                  required
-                  autoComplete="new-password"
-                  minLength={8}
-                  placeholder="Repita a senha"
-                />
-              </div>
-
-              {sp.error ? (
-                <p className="text-sm text-destructive">{sp.error}</p>
-              ) : null}
-
-              <Button
-                type="submit"
-                className="w-full bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
-              >
-                Criar conta
-              </Button>
-            </form>
+            <CadastroForm
+              action={signUp}
+              initialRole={initialRole}
+              defaults={{
+                email: sp.email ?? "",
+                full_name: sp.full_name ?? "",
+                corretora_name: sp.corretora_name ?? "",
+                corretora_city: sp.corretora_city ?? "",
+              }}
+              error={sp.error ?? null}
+            />
 
             <p className="mt-6 text-center text-sm text-milsaca-verde-claro">
               Já tem conta?{" "}

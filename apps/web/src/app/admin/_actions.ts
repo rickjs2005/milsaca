@@ -111,6 +111,127 @@ export async function toggleCorretoraVerified(formData: FormData) {
   revalidatePath("/admin/corretoras");
 }
 
+function cleanDigits(v: FormDataEntryValue | null): string | null {
+  const s = String(v ?? "").replace(/\D/g, "");
+  return s || null;
+}
+
+export async function aprovarCorretora(formData: FormData) {
+  const actor = await requireRole("admin");
+  const profileId = String(formData.get("profile_id") ?? "").trim();
+  if (!profileId) {
+    redirect("/admin/aprovacoes?error=" + encodeURIComponent("Profile inválido"));
+  }
+
+  const name = String(formData.get("name") ?? "").trim();
+  const cnpj = cleanDigits(formData.get("cnpj"));
+  const city = clean(formData.get("city"));
+  const state = clean(formData.get("state"));
+
+  const missing: string[] = [];
+  if (!name) missing.push("nome");
+  if (!cnpj) missing.push("CNPJ");
+  if (!city) missing.push("cidade");
+  if (missing.length > 0) {
+    redirect(
+      "/admin/aprovacoes?error=" +
+        encodeURIComponent("Preencha: " + missing.join(", ")),
+    );
+  }
+
+  const slug = slugify(name);
+  if (!slug) {
+    redirect(
+      "/admin/aprovacoes?error=" + encodeURIComponent("Não consegui gerar slug"),
+    );
+  }
+
+  const supabase = await createClient();
+
+  const { data: created, error: createErr } = await supabase
+    .from("corretoras")
+    .insert({
+      name,
+      slug,
+      cnpj,
+      city,
+      state: state ? state.toUpperCase().slice(0, 2) : null,
+      verified: true,
+    })
+    .select("id")
+    .single();
+
+  if (createErr || !created) {
+    redirect(
+      "/admin/aprovacoes?error=" +
+        encodeURIComponent(createErr?.message ?? "Falha ao criar corretora"),
+    );
+  }
+
+  const { error: linkErr } = await supabase
+    .from("profiles")
+    .update({ corretora_id: created.id, status: "ativo" })
+    .eq("id", profileId);
+
+  if (linkErr) {
+    redirect(
+      "/admin/aprovacoes?error=" + encodeURIComponent(linkErr.message),
+    );
+  }
+
+  await supabase.from("audit_log").insert({
+    actor_id: actor.id,
+    corretora_id: created.id,
+    action: "aprovar_corretora",
+    entity: "profile",
+    entity_id: profileId,
+    payload: { name, cnpj, city, state },
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/aprovacoes");
+  revalidatePath("/admin/corretoras");
+  redirect(
+    "/admin/aprovacoes?ok=" +
+      encodeURIComponent(`${name} aprovada e ativada.`),
+  );
+}
+
+export async function rejeitarCorretora(formData: FormData) {
+  const actor = await requireRole("admin");
+  const profileId = String(formData.get("profile_id") ?? "").trim();
+  if (!profileId) {
+    redirect("/admin/aprovacoes");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ status: "bloqueado" })
+    .eq("id", profileId);
+
+  if (error) {
+    redirect(
+      "/admin/aprovacoes?error=" + encodeURIComponent(error.message),
+    );
+  }
+
+  await supabase.from("audit_log").insert({
+    actor_id: actor.id,
+    action: "rejeitar_corretora",
+    entity: "profile",
+    entity_id: profileId,
+    payload: {},
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/aprovacoes");
+  redirect(
+    "/admin/aprovacoes?ok=" +
+      encodeURIComponent("Solicitação rejeitada."),
+  );
+}
+
 export async function linkProfileToCorretora(formData: FormData) {
   await requireRole("admin");
   const profileId = String(formData.get("profile_id") ?? "");

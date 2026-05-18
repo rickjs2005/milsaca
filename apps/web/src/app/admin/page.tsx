@@ -15,6 +15,7 @@ export default async function AdminPage() {
     { count: usersCount },
     { count: leadsCount },
     { count: contratosCount },
+    { count: pendentesCount },
     { data: ultimasCorretoras },
   ] = await Promise.all([
     supabase.from("corretoras").select("*", { count: "exact", head: true }),
@@ -22,6 +23,11 @@ export default async function AdminPage() {
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("leads").select("*", { count: "exact", head: true }),
     supabase.from("contratos").select("*", { count: "exact", head: true }),
+    supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pendente")
+      .contains("roles", ["corretora"]),
     supabase
       .from("corretoras")
       .select("id, name, slug, verified, created_at")
@@ -47,6 +53,25 @@ export default async function AdminPage() {
           MVP
         </Badge>
       </div>
+
+      {(pendentesCount ?? 0) > 0 ? (
+        <Link
+          href="/admin/aprovacoes"
+          className="mt-6 flex items-center justify-between rounded-2xl border border-milsaca-dourado bg-milsaca-dourado/10 px-5 py-4 transition hover:bg-milsaca-dourado/20"
+        >
+          <div>
+            <p className="text-sm font-semibold text-milsaca-verde">
+              {pendentesCount} corretora{pendentesCount === 1 ? "" : "s"} aguardando aprovação
+            </p>
+            <p className="mt-0.5 text-xs text-milsaca-verde-claro">
+              Solicitações novas de cadastro pelo app.
+            </p>
+          </div>
+          <span className="text-sm font-medium text-milsaca-dourado">
+            Revisar →
+          </span>
+        </Link>
+      ) : null}
 
       <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-5">
         <Card label="Corretoras" value={corretorasCount ?? 0} href="/admin/corretoras" />

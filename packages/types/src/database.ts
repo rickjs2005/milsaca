@@ -1099,6 +1099,7 @@ export type Database = {
           phone: string | null
           role: Database["public"]["Enums"]["user_role"]
           roles: Database["public"]["Enums"]["user_role"][]
+          status: Database["public"]["Enums"]["profile_status"]
           updated_at: string
         }
         Insert: {
@@ -1110,6 +1111,7 @@ export type Database = {
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           roles?: Database["public"]["Enums"]["user_role"][]
+          status?: Database["public"]["Enums"]["profile_status"]
           updated_at?: string
         }
         Update: {
@@ -1121,6 +1123,7 @@ export type Database = {
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           roles?: Database["public"]["Enums"]["user_role"][]
+          status?: Database["public"]["Enums"]["profile_status"]
           updated_at?: string
         }
         Relationships: [
@@ -1150,6 +1153,18 @@ export type Database = {
       get_laudo_publico: { Args: { p_id: string }; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
       is_corretora: { Args: never; Returns: boolean }
+      list_pending_corretora_signups: {
+        Args: never
+        Returns: {
+          corretora_city: string
+          corretora_cnpj: string
+          corretora_name: string
+          email: string
+          full_name: string
+          profile_id: string
+          signup_at: string
+        }[]
+      }
     }
     Enums: {
       canal_preferido: "app" | "whatsapp" | "email" | "sms"
@@ -1196,6 +1211,7 @@ export type Database = {
       pagamento_status: "pendente" | "pago" | "vencido" | "cancelado"
       produtor_specie: "arabica" | "conilon" | "ambos"
       produtor_status: "sombra" | "ativo" | "pendente" | "bloqueado"
+      profile_status: "ativo" | "pendente" | "bloqueado"
       regime_tributario:
         | "simples_nacional"
         | "lucro_presumido"
@@ -1833,6 +1849,7 @@ export const Constants = {
       pagamento_status: ["pendente", "pago", "vencido", "cancelado"],
       produtor_specie: ["arabica", "conilon", "ambos"],
       produtor_status: ["sombra", "ativo", "pendente", "bloqueado"],
+      profile_status: ["ativo", "pendente", "bloqueado"],
       regime_tributario: [
         "simples_nacional",
         "lucro_presumido",
@@ -1849,3 +1866,4 @@ export const Constants = {
     },
   },
 } as const
+

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requireUser, getProfile } from "@/lib/auth";
+import { requireUser, getProfile, enforceProfileStatus } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { CorretoraSidebar } from "./_components/sidebar";
 import {
@@ -25,6 +25,7 @@ export default async function PainelCorretoraLayout({
 }) {
   const user = await requireUser("/painel/corretora");
   const profile = await getProfile();
+  enforceProfileStatus(profile);
   const corretora = await loadCorretora(profile?.corretora_id ?? null);
   const showSwitcher = (profile?.roles.length ?? 0) > 1;
 

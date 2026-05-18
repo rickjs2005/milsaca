@@ -1,9 +1,12 @@
 export type UserRole = "produtor" | "corretora" | "admin";
 
+export type ProfileStatus = "ativo" | "pendente" | "bloqueado";
+
 export interface Profile {
   id: string;
   role: UserRole;
   roles: UserRole[];
+  status: ProfileStatus;
   corretora_id: string | null;
   full_name: string | null;
   phone: string | null;

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getProfile, requireUser } from "@/lib/auth";
+import { enforceProfileStatus, getProfile, requireUser } from "@/lib/auth";
 import { ProdutorSidebar } from "./_components/sidebar";
 import { getProdutorByProfileId, needsOnboarding } from "./_lib/produtor";
 
@@ -10,6 +10,7 @@ export default async function PainelProdutorLayout({
 }) {
   const user = await requireUser("/painel/produtor");
   const profile = await getProfile();
+  enforceProfileStatus(profile);
   const showSwitcher = (profile?.roles.length ?? 0) > 1;
 
   // Gate de onboarding — sem dados mínimos, manda pra rota externa

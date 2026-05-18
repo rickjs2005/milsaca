@@ -45,6 +45,24 @@ export async function getProfile(): Promise<Profile | null> {
 }
 
 /**
+ * Manda quem não tem `profile.status='ativo'` para a tela correspondente,
+ * antes de qualquer gate de painel/onboarding.
+ *   - pendente  → /aguardando-aprovacao
+ *   - bloqueado → /entrar com mensagem
+ */
+export function enforceProfileStatus(profile: Pick<Profile, "status"> | null) {
+  if (!profile) return;
+  if (profile.status === "pendente") {
+    redirect("/aguardando-aprovacao");
+  }
+  if (profile.status === "bloqueado") {
+    redirect(
+      `/entrar?error=${encodeURIComponent("Sua conta está suspensa. Fale com o suporte.")}`,
+    );
+  }
+}
+
+/**
  * Garante que o user logado tenha pelo menos um dos papéis informados
  * (em qualquer entrada de profile.roles). Caso contrário, redireciona.
  */
