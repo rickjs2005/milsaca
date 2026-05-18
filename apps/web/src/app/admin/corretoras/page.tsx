@@ -12,9 +12,10 @@ interface PageProps {
   searchParams: Promise<{ ok?: string; error?: string }>;
 }
 
-export default async function AdminCorretorasPage({ searchParams }: PageProps) {
+export default async function AdminCorretorasPage({
+  searchParams: _searchParams,
+}: PageProps) {
   await requireAppAdmin();
-  const { ok, error } = await searchParams;
   const supabase = await createClient();
   const { data } = await supabase
     .from("corretoras")
@@ -47,17 +48,6 @@ export default async function AdminCorretorasPage({ searchParams }: PageProps) {
           <Link href="/admin/corretoras/nova">+ Nova corretora</Link>
         </Button>
       </div>
-
-      {ok ? (
-        <p className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {ok}
-        </p>
-      ) : null}
-      {error ? (
-        <p className="mt-4 rounded-xl border border-rose-500/30 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          {error}
-        </p>
-      ) : null}
 
       <div className="mt-8 overflow-hidden rounded-2xl border border-milsaca-verde/10 bg-white shadow-sm">
         {rows.length === 0 ? (

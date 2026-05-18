@@ -55,9 +55,10 @@ const STATUS_META: Record<SubStatus, { label: string; className: string }> = {
   expired: { label: "Expirada", className: "bg-rose-100 text-rose-700 hover:bg-rose-100" },
 };
 
-export default async function AssinaturasAdminPage({ searchParams }: PageProps) {
+export default async function AssinaturasAdminPage({
+  searchParams: _searchParams,
+}: PageProps) {
   await requireAppAdmin();
-  const { ok, error } = await searchParams;
   const supabase = await createClient();
 
   const { data } = await supabase
@@ -96,17 +97,6 @@ export default async function AssinaturasAdminPage({ searchParams }: PageProps) 
           {rows.length} corretora{rows.length === 1 ? "" : "s"} com assinatura.
         </p>
       </div>
-
-      {ok ? (
-        <p className="rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
-          {ok}
-        </p>
-      ) : null}
-      {error ? (
-        <p className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-2 text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <table className="w-full text-sm">

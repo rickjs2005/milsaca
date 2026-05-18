@@ -1,6 +1,8 @@
+import { Toaster } from "sonner";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
-import { AdminSidebar } from "./_components/sidebar";
+import { AdminShell } from "./_components/admin-shell";
+import { ToastFromSearchParams } from "./_components/toast-from-search-params";
 
 export const metadata = {
   title: "Admin — Milsaca",
@@ -38,15 +40,16 @@ export default async function AdminLayout({
   ]);
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <AdminSidebar
+    <>
+      <AdminShell
         adminName={adminName ?? user.email ?? "admin"}
         adminEmail={user.email ?? ""}
         pendentesCount={pendentesCount}
-      />
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-6xl px-8 py-10">{children}</div>
-      </div>
-    </div>
+      >
+        {children}
+      </AdminShell>
+      <ToastFromSearchParams />
+      <Toaster richColors position="top-right" />
+    </>
   );
 }

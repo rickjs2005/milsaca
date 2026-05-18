@@ -44,9 +44,10 @@ function fmtDate(iso: string): string {
   }
 }
 
-export default async function AdminAprovacoesPage({ searchParams }: PageProps) {
+export default async function AdminAprovacoesPage({
+  searchParams: _searchParams,
+}: PageProps) {
   await requireAppAdmin();
-  const { ok, error } = await searchParams;
 
   const supabase = await createClient();
   const { data, error: rpcError } = await supabase.rpc(
@@ -73,16 +74,6 @@ export default async function AdminAprovacoesPage({ searchParams }: PageProps) {
         </div>
       </div>
 
-      {ok ? (
-        <p className="mt-6 rounded-md border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {ok}
-        </p>
-      ) : null}
-      {error ? (
-        <p className="mt-6 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
       {rpcError ? (
         <p className="mt-6 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           Erro ao listar pendentes: {rpcError.message}
