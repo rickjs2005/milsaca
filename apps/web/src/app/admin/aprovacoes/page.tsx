@@ -3,6 +3,7 @@ import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ConfirmSubmit } from "../_components/confirm-submit";
 import { SubmitButton } from "../_components/submit-button";
 import { aprovarCorretora, rejeitarCorretora } from "../_actions";
 
@@ -146,14 +147,29 @@ export default async function AdminAprovacoesPage({ searchParams }: PageProps) {
               </div>
 
               <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
-                <SubmitButton
+                <ConfirmSubmit
                   formAction={rejeitarCorretora}
                   variant="outline"
-                  className="gap-2 text-destructive hover:text-destructive"
+                  className="text-destructive hover:text-destructive"
+                  confirmTitle="Rejeitar cadastro?"
+                  confirmMessage={
+                    <>
+                      <p>
+                        A corretora <strong>{row.corretora_name ?? "—"}</strong>{" "}
+                        terá o cadastro <strong>bloqueado</strong> e não vai
+                        conseguir acessar a plataforma.
+                      </p>
+                      <p className="mt-2">
+                        Ação reversível só via banco (atualizar{" "}
+                        <code>profiles.status</code>).
+                      </p>
+                    </>
+                  }
+                  confirmButtonLabel="Rejeitar"
                   pendingLabel="Rejeitando..."
                 >
                   Rejeitar
-                </SubmitButton>
+                </ConfirmSubmit>
                 <SubmitButton
                   className="gap-2 bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
                   pendingLabel="Aprovando..."

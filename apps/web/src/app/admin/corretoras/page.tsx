@@ -3,6 +3,7 @@ import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmit } from "../_components/confirm-submit";
 import { toggleCorretoraVerified } from "../_actions";
 
 export const metadata = { title: "Corretoras · Admin Milsaca" };
@@ -112,12 +113,26 @@ export default async function AdminCorretorasPage({ searchParams }: PageProps) {
                           name="verified"
                           value={c.verified ? "false" : "true"}
                         />
-                        <button
-                          type="submit"
-                          className="text-xs text-milsaca-dourado underline-offset-2 hover:underline"
+                        <ConfirmSubmit
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-0 text-xs text-milsaca-dourado hover:bg-transparent hover:underline"
+                          shouldConfirm={c.verified}
+                          confirmTitle="Desativar corretora?"
+                          confirmMessage={
+                            <p>
+                              <strong>{c.name}</strong> sairá do catálogo
+                              público (perde o selo de verificada) e o badge
+                              vai pra <em>Pendente</em>. Você pode reativar a
+                              qualquer momento.
+                            </p>
+                          }
+                          confirmButtonLabel="Desativar"
+                          confirmButtonVariant="destructive"
+                          pendingLabel="Desativando..."
                         >
                           {c.verified ? "Desativar" : "Ativar"}
-                        </button>
+                        </ConfirmSubmit>
                       </form>
                     </div>
                   </td>

@@ -4,6 +4,7 @@ import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmit } from "../_components/confirm-submit";
 import { togglePlanoActive } from "./_actions";
 
 export const metadata = { title: "Planos · Admin Milsaca" };
@@ -117,14 +118,26 @@ export default async function PlanosAdminPage({ searchParams }: PageProps) {
                           name="active"
                           value={p.active ? "false" : "true"}
                         />
-                        <Button
+                        <ConfirmSubmit
                           variant="outline"
                           size="sm"
-                          type="submit"
                           className="h-7 text-xs"
+                          shouldConfirm={p.active}
+                          confirmTitle="Desativar plano?"
+                          confirmMessage={
+                            <p>
+                              <strong>{p.name}</strong> some do catálogo de
+                              planos disponíveis pra venda. Assinaturas
+                              existentes nele continuam ativas até o admin
+                              trocar.
+                            </p>
+                          }
+                          confirmButtonLabel="Desativar"
+                          confirmButtonVariant="destructive"
+                          pendingLabel="Aguarde..."
                         >
                           {p.active ? "Desativar" : "Ativar"}
-                        </Button>
+                        </ConfirmSubmit>
                       </form>
                     </div>
                   </td>

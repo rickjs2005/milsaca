@@ -5,6 +5,7 @@ import { createClient } from "@milsaca/db/web/server";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ConfirmSubmit } from "../../_components/confirm-submit";
 import { SubmitButton } from "../../_components/submit-button";
 import {
   cancelSubscription,
@@ -158,13 +159,29 @@ export default async function AssinaturaDetalhePage({
           {s.status !== "canceled" ? (
             <form action={cancelSubscription}>
               <input type="hidden" name="id" value={s.id} />
-              <SubmitButton
+              <ConfirmSubmit
                 variant="outline"
-                className="gap-2 text-destructive hover:text-destructive"
+                className="text-destructive hover:text-destructive"
+                confirmTitle="Cancelar assinatura?"
+                confirmMessage={
+                  <>
+                    <p>
+                      <strong>{s.corretoras?.name ?? "Esta corretora"}</strong>{" "}
+                      terá a assinatura marcada como cancelada agora. O acesso
+                      ao painel pode parar de funcionar dependendo do gate
+                      configurado.
+                    </p>
+                    <p className="mt-2">
+                      Reverter exige criar nova assinatura ou editar o status
+                      manualmente.
+                    </p>
+                  </>
+                }
+                confirmButtonLabel="Cancelar assinatura"
                 pendingLabel="Cancelando..."
               >
                 Cancelar
-              </SubmitButton>
+              </ConfirmSubmit>
             </form>
           ) : null}
         </div>

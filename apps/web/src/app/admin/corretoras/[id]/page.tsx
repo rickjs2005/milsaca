@@ -4,6 +4,7 @@ import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmit } from "../../_components/confirm-submit";
 import { SubmitButton } from "../../_components/submit-button";
 import {
   toggleCorretoraVerified,
@@ -71,12 +72,24 @@ export default async function EditCorretoraPage({
               name="verified"
               value={data.verified ? "false" : "true"}
             />
-            <button
-              type="submit"
-              className="text-xs text-milsaca-dourado underline-offset-2 hover:underline"
+            <ConfirmSubmit
+              variant="ghost"
+              size="sm"
+              className="h-auto p-0 text-xs text-milsaca-dourado hover:bg-transparent hover:underline"
+              shouldConfirm={data.verified}
+              confirmTitle="Desativar corretora?"
+              confirmMessage={
+                <p>
+                  <strong>{data.name}</strong> sairá do catálogo público (perde
+                  o selo de verificada). Você pode reativar a qualquer momento.
+                </p>
+              }
+              confirmButtonLabel="Desativar"
+              confirmButtonVariant="destructive"
+              pendingLabel="Desativando..."
             >
               {data.verified ? "Desativar" : "Ativar"}
-            </button>
+            </ConfirmSubmit>
           </form>
         </div>
       </div>
