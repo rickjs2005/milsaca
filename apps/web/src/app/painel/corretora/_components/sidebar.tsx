@@ -16,6 +16,7 @@ import {
   Truck,
   Building2,
   BarChart3,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,11 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/painel/corretora", label: "Início", icon: Home, exact: true },
   { href: "/painel/corretora/lotes", label: "Lotes", icon: Package },
   { href: "/painel/corretora/leads", label: "Leads", icon: Handshake },
+  {
+    href: "/painel/corretora/leads-whatsapp",
+    label: "Leads WhatsApp",
+    icon: MessageCircle,
+  },
   { href: "/painel/corretora/contratos", label: "Contratos", icon: FileText },
   { href: "/painel/corretora/entregas", label: "Entregas", icon: Truck },
   { href: "/painel/corretora/produtores", label: "Produtores", icon: Users },
