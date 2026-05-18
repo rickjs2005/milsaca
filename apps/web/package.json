@@ -10,7 +10,9 @@
     "type-check": "tsc --noEmit",
     "clean": "rimraf .next .turbo",
     "seed": "node scripts/seed-remote.mjs",
-    "cleanup": "node scripts/cleanup-remote.mjs"
+    "cleanup": "node scripts/cleanup-remote.mjs",
+    "promote-admin": "node scripts/promote-admin.mjs",
+    "notify-test": "node scripts/notify-test.mjs"
   },
   "dependencies": {
     "@milsaca/cob": "workspace:*",

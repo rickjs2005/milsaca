@@ -18,12 +18,66 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
   );
 }
 
-// expo-secure-store tem limite de 2KB por valor; sessão Supabase fica
-// confortavelmente abaixo (~1KB) então não precisamos chunking.
+// expo-secure-store tem limite de 2KB por valor. Quando o JWT do Supabase
+// passa disso (user com roles[] grande, user_metadata, etc.), setItemAsync
+// emite warning e a sessão não persiste — usuário cai de volta no login.
+// Solução: chunking. Valor grande é quebrado em N partes; o key principal
+// guarda apenas um marker "__chunked__:N", e os pedaços ficam em key.0, key.1...
+const CHUNK_SIZE = 1800;
+const CHUNK_MARKER = "__chunked__:";
+
+async function deleteOldChunks(key: string): Promise<void> {
+  const existing = await SecureStore.getItemAsync(key);
+  if (!existing?.startsWith(CHUNK_MARKER)) return;
+  const count = parseInt(existing.slice(CHUNK_MARKER.length), 10);
+  if (!Number.isFinite(count) || count <= 0) return;
+  for (let i = 0; i < count; i++) {
+    try {
+      await SecureStore.deleteItemAsync(`${key}.${i}`);
+    } catch {
+      // ignore — chunk pode já não existir
+    }
+  }
+}
+
 const secureStorage = {
-  getItem: (key: string) => SecureStore.getItemAsync(key),
-  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
-  removeItem: (key: string) => SecureStore.deleteItemAsync(key),
+  getItem: async (key: string): Promise<string | null> => {
+    const head = await SecureStore.getItemAsync(key);
+    if (!head) return null;
+    if (!head.startsWith(CHUNK_MARKER)) return head;
+    const count = parseInt(head.slice(CHUNK_MARKER.length), 10);
+    if (!Number.isFinite(count) || count <= 0) return null;
+    const parts: string[] = [];
+    for (let i = 0; i < count; i++) {
+      const part = await SecureStore.getItemAsync(`${key}.${i}`);
+      if (part == null) return null;
+      parts.push(part);
+    }
+    return parts.join("");
+  },
+  setItem: async (key: string, value: string): Promise<void> => {
+    await deleteOldChunks(key);
+    if (value.length <= CHUNK_SIZE) {
+      await SecureStore.setItemAsync(key, value);
+      return;
+    }
+    const total = Math.ceil(value.length / CHUNK_SIZE);
+    await SecureStore.setItemAsync(key, `${CHUNK_MARKER}${total}`);
+    for (let i = 0; i < total; i++) {
+      await SecureStore.setItemAsync(
+        `${key}.${i}`,
+        value.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE),
+      );
+    }
+  },
+  removeItem: async (key: string): Promise<void> => {
+    await deleteOldChunks(key);
+    try {
+      await SecureStore.deleteItemAsync(key);
+    } catch {
+      // ignore
+    }
+  },
 };
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_KEY, {
