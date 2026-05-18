@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
+import { friendlyPostgresError } from "@/lib/postgres-error";
 import { notify } from "@/lib/notify";
 import { requireActiveSubscription } from "../_lib/corretora";
 import type { EntregaStatus } from "./_lib/queries";
@@ -97,7 +98,7 @@ export async function createEntrega(formData: FormData) {
 
   if (error || !novo) {
     redirect(
-      `/painel/corretora/entregas/nova?contrato=${contratoId}&error=${encodeURIComponent(error?.message ?? "Erro ao criar entrega")}`,
+      `/painel/corretora/entregas/nova?contrato=${contratoId}&error=${encodeURIComponent(friendlyPostgresError(error, "Erro ao criar entrega"))}`,
     );
   }
 
@@ -163,7 +164,7 @@ export async function gerarEntregaDoContrato(formData: FormData) {
 
   if (error || !novo) {
     redirect(
-      `/painel/corretora/contratos/${contratoId}?error=${encodeURIComponent(error?.message ?? "Erro ao gerar entrega")}`,
+      `/painel/corretora/contratos/${contratoId}?error=${encodeURIComponent(friendlyPostgresError(error, "Erro ao gerar entrega"))}`,
     );
   }
 

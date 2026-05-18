@@ -4,25 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
-import type { CoffeeProcesso, CoffeeSpecie } from "@milsaca/types";
+import { friendlyPostgresError } from "@/lib/postgres-error";
 import { requireActiveSubscription } from "../_lib/corretora";
-
-const SPECIES: CoffeeSpecie[] = ["arabica", "conillon"];
-const PROCESSOS: CoffeeProcesso[] = [
-  "natural",
-  "cereja_descascado",
-  "cd_desmucilado",
-  "despolpado",
-  "fermentacao_induzida",
-];
-
-function parseNumber(v: FormDataEntryValue | null): number | null {
-  if (v == null) return null;
-  const s = String(v).trim().replace(",", ".");
-  if (!s) return null;
-  const n = Number(s);
-  return Number.isFinite(n) ? n : null;
-}
+import {
+  createLoteSchema,
+  flattenZodErrors,
+  formDataToObject,
+} from "../_lib/schemas";
 
 export async function createLote(formData: FormData) {
   const profile = await getProfile();
@@ -34,47 +22,30 @@ export async function createLote(formData: FormData) {
     "/painel/corretora/lotes",
   );
 
-  const codigo = String(formData.get("codigo") ?? "").trim();
-  const produtor_id = String(formData.get("produtor_id") ?? "").trim();
-  const specie = String(formData.get("specie") ?? "").trim() as CoffeeSpecie;
-  const processoRaw = String(formData.get("processo") ?? "").trim();
-  const processo = (PROCESSOS as string[]).includes(processoRaw)
-    ? (processoRaw as CoffeeProcesso)
-    : null;
-  const safra = String(formData.get("safra") ?? "").trim() || null;
-  const descricao = String(formData.get("descricao") ?? "").trim() || null;
-  const peso_sacas = parseNumber(formData.get("peso_sacas"));
-  const umidade_inicial = parseNumber(formData.get("umidade_inicial"));
-
-  const errors: string[] = [];
-  if (!codigo) errors.push("Código obrigatório");
-  if (!produtor_id) errors.push("Produtor obrigatório");
-  if (!SPECIES.includes(specie)) errors.push("Espécie inválida");
-  if (errors.length > 0) {
-    const params = new URLSearchParams({ error: errors.join(", ") });
+  const parsed = createLoteSchema.safeParse(formDataToObject(formData));
+  if (!parsed.success) {
+    const params = new URLSearchParams({
+      error: flattenZodErrors(parsed.error),
+    });
     redirect(`/painel/corretora/lotes/novo?${params.toString()}`);
   }
+  const fields = parsed.data;
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("lotes")
     .insert({
       corretora_id: profile.corretora_id,
-      produtor_id,
-      codigo,
-      specie,
-      processo,
-      safra,
-      descricao,
-      peso_sacas,
-      umidade_inicial,
+      ...fields,
       status: "aguardando_classificacao",
     })
     .select("id")
     .single();
 
   if (error) {
-    const params = new URLSearchParams({ error: error.message });
+    const params = new URLSearchParams({
+      error: friendlyPostgresError(error),
+    });
     redirect(`/painel/corretora/lotes/novo?${params.toString()}`);
   }
 

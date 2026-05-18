@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
+import { friendlyPostgresError } from "@/lib/postgres-error";
+import { uuidSchema } from "../_lib/schemas";
 import type { CoffeeProcesso, CoffeeSpecie } from "@milsaca/types";
 
 const SPECIES: readonly CoffeeSpecie[] = ["arabica", "conillon"];
@@ -76,7 +78,7 @@ export async function createCotacao(formData: FormData) {
   });
 
   if (error) {
-    const params = new URLSearchParams({ error: error.message });
+    const params = new URLSearchParams({ error: friendlyPostgresError(error) });
     redirect(`/painel/corretora/cotacoes/novo?${params.toString()}`);
   }
 
@@ -88,8 +90,9 @@ export async function deleteCotacao(formData: FormData) {
   const profile = await getProfile();
   if (!profile?.corretora_id) redirect("/painel");
 
-  const id = String(formData.get("id") ?? "").trim();
-  if (!id) redirect("/painel/corretora/cotacoes");
+  const idParsed = uuidSchema.safeParse(String(formData.get("id") ?? "").trim());
+  if (!idParsed.success) redirect("/painel/corretora/cotacoes");
+  const id = idParsed.data;
 
   const supabase = await createClient();
   await supabase.from("cotacoes").delete().eq("id", id);

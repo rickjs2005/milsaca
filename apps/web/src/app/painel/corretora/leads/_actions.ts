@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import type { Json } from "@milsaca/types/database";
 import { getProfile, getUser } from "@/lib/auth";
+import { friendlyPostgresError } from "@/lib/postgres-error";
 import { notify } from "@/lib/notify";
 import type { LeadStatus } from "./_lib/queries";
 import { LEAD_STATUS_ORDER } from "./_lib/queries";
@@ -175,7 +176,7 @@ export async function updateLeadFields(formData: FormData) {
     .eq("corretora_id", profile.corretora_id);
 
   if (error) {
-    const params = new URLSearchParams({ error: error.message });
+    const params = new URLSearchParams({ error: friendlyPostgresError(error) });
     redirect(`/painel/corretora/leads/${id}?${params.toString()}`);
   }
 
@@ -237,7 +238,7 @@ export async function updateLeadStatus(formData: FormData) {
     .eq("corretora_id", profile.corretora_id);
 
   if (error) {
-    const params = new URLSearchParams({ error: error.message });
+    const params = new URLSearchParams({ error: friendlyPostgresError(error) });
     redirect(`/painel/corretora/leads/${id}?${params.toString()}`);
   }
 

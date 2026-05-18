@@ -4,26 +4,24 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getUser } from "@/lib/auth";
-
-function clean(v: FormDataEntryValue | null): string | null {
-  if (v == null) return null;
-  const s = String(v).trim();
-  return s ? s : null;
-}
+import { friendlyPostgresError } from "@/lib/postgres-error";
+import {
+  flattenZodErrors,
+  formDataToObject,
+  perfilCorretoraSchema,
+} from "../_lib/schemas";
 
 export async function updatePerfilCorretora(formData: FormData) {
   const user = await getUser();
   if (!user) redirect("/entrar");
 
-  const full_name = clean(formData.get("full_name"));
-  const phone = clean(formData.get("phone"));
-
-  if (!full_name) {
+  const parsed = perfilCorretoraSchema.safeParse(formDataToObject(formData));
+  if (!parsed.success) {
     redirect(
-      "/painel/corretora/perfil?error=" +
-        encodeURIComponent("Nome obrigatório"),
+      `/painel/corretora/perfil?error=${encodeURIComponent(flattenZodErrors(parsed.error))}`,
     );
   }
+  const { full_name, phone } = parsed.data;
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -33,7 +31,7 @@ export async function updatePerfilCorretora(formData: FormData) {
 
   if (error) {
     redirect(
-      `/painel/corretora/perfil?error=${encodeURIComponent(error.message)}`,
+      `/painel/corretora/perfil?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 

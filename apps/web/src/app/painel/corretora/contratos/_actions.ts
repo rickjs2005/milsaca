@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
+import { friendlyPostgresError } from "@/lib/postgres-error";
 import { notify } from "@/lib/notify";
 import { requireActiveSubscription } from "../_lib/corretora";
 import {
@@ -182,7 +183,7 @@ export async function updateContratoFields(formData: FormData) {
     .eq("corretora_id", profile.corretora_id);
 
   if (error) {
-    const params = new URLSearchParams({ error: error.message });
+    const params = new URLSearchParams({ error: friendlyPostgresError(error) });
     redirect(`/painel/corretora/contratos/${id}?${params.toString()}`);
   }
 
@@ -226,7 +227,7 @@ export async function updateContratoStatus(formData: FormData) {
     .eq("corretora_id", profile.corretora_id);
 
   if (error) {
-    const params = new URLSearchParams({ error: error.message });
+    const params = new URLSearchParams({ error: friendlyPostgresError(error) });
     redirect(`/painel/corretora/contratos/${id}?${params.toString()}`);
   }
 

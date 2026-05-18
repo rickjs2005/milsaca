@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
+import { friendlyPostgresError } from "@/lib/postgres-error";
 
 function clean(v: FormDataEntryValue | null): string | null {
   if (v == null) return null;
@@ -57,7 +58,7 @@ export async function createContato(formData: FormData) {
     .single();
 
   if (error) {
-    const params = new URLSearchParams({ error: error.message });
+    const params = new URLSearchParams({ error: friendlyPostgresError(error) });
     redirect(`/painel/corretora/produtores/novo?${params.toString()}`);
   }
 
@@ -103,7 +104,7 @@ export async function updateContato(formData: FormData) {
     .eq("corretora_id", profile.corretora_id);
 
   if (error) {
-    const params = new URLSearchParams({ error: error.message });
+    const params = new URLSearchParams({ error: friendlyPostgresError(error) });
     redirect(
       `/painel/corretora/produtores/contatos/${id}?${params.toString()}`,
     );
