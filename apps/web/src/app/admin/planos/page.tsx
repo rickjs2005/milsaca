@@ -4,7 +4,7 @@ import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ConfirmSubmit } from "../_components/confirm-submit";
+import { ConfirmSubmit } from "@/components/confirm-submit";
 import { togglePlanoActive } from "./_actions";
 
 export const metadata = { title: "Planos · Admin Milsaca" };

@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmit } from "@/components/confirm-submit";
 import { getProfile } from "@/lib/auth";
 import {
   getContrato,
@@ -384,7 +385,7 @@ export default async function ContratoDetalhePage({
               <input type="hidden" name="id" value={contrato.id} />
               <div className="flex flex-col gap-2">
                 {STATUS_BUTTONS.filter(
-                  (b) => b.value !== contrato.status,
+                  (b) => b.value !== contrato.status && b.value !== "cancelado",
                 ).map((b) => (
                   <button
                     key={b.value}
@@ -409,6 +410,34 @@ export default async function ContratoDetalhePage({
                 )}
               </div>
             </form>
+            {contrato.status !== "cancelado" && (
+              <form action={updateContratoStatus} className="mt-2">
+                <input type="hidden" name="id" value={contrato.id} />
+                <input type="hidden" name="status" value="cancelado" />
+                <ConfirmSubmit
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-1 border-rose-300 text-rose-700 hover:bg-rose-50"
+                  confirmTitle="Cancelar contrato?"
+                  confirmMessage={
+                    <>
+                      <p>
+                        O contrato <strong>{contrato.code}</strong> ficará
+                        marcado como cancelado.
+                      </p>
+                      <p className="mt-2">
+                        Entregas vinculadas ficam órfãs; ajuste depois se
+                        necessário.
+                      </p>
+                    </>
+                  }
+                  confirmButtonLabel="Cancelar contrato"
+                  pendingLabel="Cancelando..."
+                >
+                  Cancelar contrato
+                </ConfirmSubmit>
+              </form>
+            )}
             {contrato.total_value != null && contrato.bag_count != null && (
               <div className="mt-4 rounded-md bg-milsaca-cream-escuro/30 p-3 text-xs text-milsaca-verde-claro">
                 <span className="font-medium text-milsaca-verde">

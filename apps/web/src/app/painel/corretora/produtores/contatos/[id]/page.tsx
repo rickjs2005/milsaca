@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmit } from "@/components/confirm-submit";
 import { getProfile } from "@/lib/auth";
 import { getContato, getCorretoraNome } from "../../_lib/queries";
 import { updateContato, deleteContato } from "../../_actions";
@@ -217,14 +218,23 @@ export default async function ContatoDetalhePage({
         <CardContent>
           <form action={deleteContato}>
             <input type="hidden" name="id" value={contato.id} />
-            <Button
-              type="submit"
+            <ConfirmSubmit
               variant="outline"
-              className="border-rose-300 text-rose-700 hover:bg-rose-50"
+              className="gap-2 border-rose-300 text-rose-700 hover:bg-rose-50"
+              confirmTitle="Apagar contato?"
+              confirmMessage={
+                <p>
+                  <strong>{contato.full_name}</strong> será removido da sua
+                  carteira de contatos sombra. Leads vinculados bloqueiam o
+                  delete automaticamente.
+                </p>
+              }
+              confirmButtonLabel="Apagar contato"
+              pendingLabel="Apagando..."
             >
-              <Trash2 className="mr-2 h-4 w-4" />
+              <Trash2 className="h-4 w-4" />
               Apagar contato
-            </Button>
+            </ConfirmSubmit>
           </form>
         </CardContent>
       </Card>

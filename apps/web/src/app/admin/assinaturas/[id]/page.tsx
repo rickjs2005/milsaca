@@ -5,8 +5,8 @@ import { createClient } from "@milsaca/db/web/server";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ConfirmSubmit } from "../../_components/confirm-submit";
-import { SubmitButton } from "../../_components/submit-button";
+import { ConfirmSubmit } from "@/components/confirm-submit";
+import { SubmitButton } from "@/components/submit-button";
 import {
   cancelSubscription,
   markSubscriptionPaid,

@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmit } from "@/components/confirm-submit";
 import { getProfile } from "@/lib/auth";
 import {
   ENTREGA_STATUS_COLOR,
@@ -300,7 +301,9 @@ export default async function EntregaDetalhePage({
           <CardContent>
             <form action={updateEntregaStatus} className="space-y-2">
               <input type="hidden" name="id" value={e.id} />
-              {STATUS_BUTTONS.filter((b) => b.value !== e.status).map((b) => (
+              {STATUS_BUTTONS.filter(
+                (b) => b.value !== e.status && b.value !== "cancelada",
+              ).map((b) => (
                 <button
                   key={b.value}
                   type="submit"
@@ -323,6 +326,28 @@ export default async function EntregaDetalhePage({
                 </button>
               ) : null}
             </form>
+            {e.status !== "cancelada" && (
+              <form action={updateEntregaStatus} className="mt-2">
+                <input type="hidden" name="id" value={e.id} />
+                <input type="hidden" name="status" value="cancelada" />
+                <ConfirmSubmit
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-1 border-rose-300 text-rose-700 hover:bg-rose-50"
+                  confirmTitle="Cancelar entrega?"
+                  confirmMessage={
+                    <p>
+                      Essa entrega ficará marcada como cancelada. A
+                      classificação do contrato não muda.
+                    </p>
+                  }
+                  confirmButtonLabel="Cancelar entrega"
+                  pendingLabel="Cancelando..."
+                >
+                  Cancelar entrega
+                </ConfirmSubmit>
+              </form>
+            )}
 
             <div className="mt-4 rounded-md bg-milsaca-cream-escuro/30 p-3 text-xs text-milsaca-verde-claro">
               <p>

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { Button } from "@/components/ui/button";
-import { SubmitButton } from "../../_components/submit-button";
+import { SubmitButton } from "@/components/submit-button";
 import { updatePlano } from "../_actions";
 import { PlanFormFields } from "../_components/plan-form-fields";
 

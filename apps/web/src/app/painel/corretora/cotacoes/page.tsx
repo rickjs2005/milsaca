@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Plus, TrendingDown, TrendingUp, LineChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ConfirmSubmit } from "@/components/confirm-submit";
 import { listCotacoes } from "./_lib/queries";
 import { deleteCotacao } from "./_actions";
 import type { CoffeeProcesso, CoffeeSpecie } from "@milsaca/types";
@@ -206,12 +207,22 @@ export default async function CotacoesCorretoraPage({
                       <td className="px-5 py-3 text-right">
                         <form action={deleteCotacao}>
                           <input type="hidden" name="id" value={c.id} />
-                          <button
-                            type="submit"
-                            className="text-xs text-rose-700 hover:underline"
+                          <ConfirmSubmit
+                            variant="ghost"
+                            size="sm"
+                            className="h-auto p-0 text-xs text-rose-700 hover:bg-transparent hover:underline"
+                            confirmTitle="Apagar cotação?"
+                            confirmMessage={
+                              <p>
+                                Essa cotação manual será removida do histórico
+                                e não aparece mais pro produtor.
+                              </p>
+                            }
+                            confirmButtonLabel="Apagar"
+                            pendingLabel="Apagando..."
                           >
                             Apagar
-                          </button>
+                          </ConfirmSubmit>
                         </form>
                       </td>
                     </tr>

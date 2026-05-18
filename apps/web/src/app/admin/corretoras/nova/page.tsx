@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireAppAdmin } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { SubmitButton } from "../../_components/submit-button";
+import { SubmitButton } from "@/components/submit-button";
 import { createCorretora } from "../../_actions";
 import { CorretoraFormFields } from "../_components/corretora-form-fields";
 
