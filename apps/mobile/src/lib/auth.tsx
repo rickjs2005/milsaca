@@ -34,8 +34,13 @@ interface AuthValue {
   user: User | null;
   profile: Profile | null;
   activeRole: UserRole | null;
-  signInWithOtp: (email: string) => Promise<{ error?: string }>;
-  verifyOtp: (email: string, token: string) => Promise<{ error?: string }>;
+  signIn: (email: string, password: string) => Promise<{ error?: string }>;
+  signUp: (params: {
+    email: string;
+    password: string;
+    fullName: string;
+  }) => Promise<{ error?: string; needsConfirmation?: boolean }>;
+  requestPasswordReset: (email: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   setActiveRole: (role: UserRole) => Promise<void>;
   reloadProfile: () => Promise<void>;
@@ -148,29 +153,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const signInWithOtp = useCallback(async (email: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     const trimmed = email.trim().toLowerCase();
-    if (!trimmed) return { error: "Informe seu email." };
+    if (!trimmed || !password) return { error: "Informe email e senha." };
 
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error } = await supabase.auth.signInWithPassword({
       email: trimmed,
-      options: { shouldCreateUser: true },
+      password,
     });
     if (error) return { error: error.message };
     return {};
   }, []);
 
-  const verifyOtp = useCallback(async (email: string, token: string) => {
-    const trimmedEmail = email.trim().toLowerCase();
-    const trimmedToken = token.trim();
-    if (!trimmedEmail || !trimmedToken) {
-      return { error: "Informe email e código." };
-    }
-    const { error } = await supabase.auth.verifyOtp({
-      email: trimmedEmail,
-      token: trimmedToken,
-      type: "email",
-    });
+  const signUp = useCallback(
+    async ({
+      email,
+      password,
+      fullName,
+    }: {
+      email: string;
+      password: string;
+      fullName: string;
+    }) => {
+      const trimmedEmail = email.trim().toLowerCase();
+      const trimmedName = fullName.trim();
+      if (!trimmedEmail || !password || !trimmedName) {
+        return { error: "Preencha nome, email e senha." };
+      }
+      if (password.length < 8) {
+        return { error: "Senha precisa ter pelo menos 8 caracteres." };
+      }
+      const { data, error } = await supabase.auth.signUp({
+        email: trimmedEmail,
+        password,
+        options: {
+          data: { full_name: trimmedName, role: "produtor" },
+        },
+      });
+      if (error) return { error: error.message };
+      return { needsConfirmation: !data.session };
+    },
+    [],
+  );
+
+  const requestPasswordReset = useCallback(async (email: string) => {
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed) return { error: "Informe seu email." };
+
+    const { error } = await supabase.auth.resetPasswordForEmail(trimmed);
     if (error) return { error: error.message };
     return {};
   }, []);
@@ -199,8 +229,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: session?.user ?? null,
       profile,
       activeRole,
-      signInWithOtp,
-      verifyOtp,
+      signIn,
+      signUp,
+      requestPasswordReset,
       signOut,
       setActiveRole,
       reloadProfile,
@@ -210,8 +241,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       profile,
       activeRole,
-      signInWithOtp,
-      verifyOtp,
+      signIn,
+      signUp,
+      requestPasswordReset,
       signOut,
       setActiveRole,
       reloadProfile,
