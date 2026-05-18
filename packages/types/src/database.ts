@@ -423,6 +423,7 @@ export type Database = {
           logo_url: string | null
           name: string
           phone: string | null
+          regioes_atendimento: Database["public"]["Enums"]["regiao_cafeeira"][]
           site_url: string | null
           slug: string
           state: string | null
@@ -444,6 +445,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           phone?: string | null
+          regioes_atendimento?: Database["public"]["Enums"]["regiao_cafeeira"][]
           site_url?: string | null
           slug: string
           state?: string | null
@@ -465,6 +467,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           phone?: string | null
+          regioes_atendimento?: Database["public"]["Enums"]["regiao_cafeeira"][]
           site_url?: string | null
           slug?: string
           state?: string | null
@@ -1414,6 +1417,9 @@ export type Database = {
           logo_url: string | null
           name: string | null
           phone: string | null
+          regioes_atendimento:
+            | Database["public"]["Enums"]["regiao_cafeeira"][]
+            | null
           site_url: string | null
           slug: string | null
           state: string | null
@@ -1428,6 +1434,9 @@ export type Database = {
           logo_url?: string | null
           name?: string | null
           phone?: string | null
+          regioes_atendimento?:
+            | Database["public"]["Enums"]["regiao_cafeeira"][]
+            | null
           site_url?: string | null
           slug?: string | null
           state?: string | null
@@ -1442,6 +1451,9 @@ export type Database = {
           logo_url?: string | null
           name?: string | null
           phone?: string | null
+          regioes_atendimento?:
+            | Database["public"]["Enums"]["regiao_cafeeira"][]
+            | null
           site_url?: string | null
           slug?: string | null
           state?: string | null
@@ -1528,6 +1540,17 @@ export type Database = {
       produtor_specie: "arabica" | "conilon" | "ambos"
       produtor_status: "sombra" | "ativo" | "pendente" | "bloqueado"
       profile_status: "ativo" | "pendente" | "bloqueado"
+      regiao_cafeeira:
+        | "zona_da_mata"
+        | "sul_de_minas"
+        | "cerrado_mineiro"
+        | "matas_de_minas"
+        | "caparao"
+        | "mogiana"
+        | "espirito_santo"
+        | "bahia"
+        | "rondonia"
+        | "outras"
       regime_tributario:
         | "simples_nacional"
         | "lucro_presumido"
@@ -2178,6 +2201,18 @@ export const Constants = {
       produtor_specie: ["arabica", "conilon", "ambos"],
       produtor_status: ["sombra", "ativo", "pendente", "bloqueado"],
       profile_status: ["ativo", "pendente", "bloqueado"],
+      regiao_cafeeira: [
+        "zona_da_mata",
+        "sul_de_minas",
+        "cerrado_mineiro",
+        "matas_de_minas",
+        "caparao",
+        "mogiana",
+        "espirito_santo",
+        "bahia",
+        "rondonia",
+        "outras",
+      ],
       regime_tributario: [
         "simples_nacional",
         "lucro_presumido",

@@ -31,7 +31,7 @@ export default async function EditCorretoraPage({
   const { data } = await supabase
     .from("corretoras")
     .select(
-      "id, name, slug, city, state, phone, email, verified, cnpj, inscricao_est, cep, endereco, bairro, telefone_fixo, site_url, descricao, logo_url, created_at",
+      "id, name, slug, city, state, phone, email, verified, cnpj, inscricao_est, cep, endereco, bairro, telefone_fixo, site_url, descricao, logo_url, regioes_atendimento, created_at",
     )
     .eq("id", id)
     .maybeSingle();

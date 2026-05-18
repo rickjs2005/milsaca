@@ -1,4 +1,5 @@
 import { createClient } from "@milsaca/db/web/server";
+import type { RegiaoCafeeira } from "@/app/admin/corretoras/_components/regioes";
 
 export type CorretoraListItem = {
   id: string;
@@ -9,6 +10,7 @@ export type CorretoraListItem = {
   phone: string | null;
   email: string | null;
   verified: boolean;
+  regioes_atendimento: RegiaoCafeeira[];
   is_favorita: boolean;
   qtd_negociacoes: number;
   qtd_contratos: number;
@@ -28,7 +30,9 @@ export async function listCorretorasParaProdutor(
     await Promise.all([
       supabase
         .from("corretoras_publicas")
-        .select("id, name, slug, city, state, phone, email, verified")
+        .select(
+          "id, name, slug, city, state, phone, email, verified, regioes_atendimento",
+        )
         .order("verified", { ascending: false })
         .order("name", { ascending: true })
         .limit(500),
@@ -64,29 +68,35 @@ export async function listCorretorasParaProdutor(
   }
 
   type Row = {
-    id: string;
-    name: string;
-    slug: string;
+    id: string | null;
+    name: string | null;
+    slug: string | null;
     city: string | null;
     state: string | null;
     phone: string | null;
     email: string | null;
-    verified: boolean;
+    verified: boolean | null;
+    regioes_atendimento: RegiaoCafeeira[] | null;
   };
 
-  const rows = ((corretorasRes.data ?? []) as Row[]).map((c) => ({
-    id: c.id,
-    name: c.name,
-    slug: c.slug,
-    city: c.city,
-    state: c.state,
-    phone: c.phone,
-    email: c.email,
-    verified: c.verified,
-    is_favorita: favoritas.has(c.id),
-    qtd_negociacoes: leadsCount.get(c.id) ?? 0,
-    qtd_contratos: contratosCount.get(c.id) ?? 0,
-  }));
+  const rows = ((corretorasRes.data ?? []) as Row[])
+    .filter((c): c is Row & { id: string; name: string; slug: string } =>
+      !!c.id && !!c.name && !!c.slug,
+    )
+    .map((c) => ({
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      city: c.city,
+      state: c.state,
+      phone: c.phone,
+      email: c.email,
+      verified: c.verified ?? false,
+      regioes_atendimento: c.regioes_atendimento ?? [],
+      is_favorita: favoritas.has(c.id),
+      qtd_negociacoes: leadsCount.get(c.id) ?? 0,
+      qtd_contratos: contratosCount.get(c.id) ?? 0,
+    }));
 
   // Favoritas no topo, mantendo a ordem alfabética intra-grupos.
   return rows.sort((a, b) => {

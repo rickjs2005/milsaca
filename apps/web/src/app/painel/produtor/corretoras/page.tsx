@@ -22,16 +22,27 @@ import { listCorretorasParaProdutor } from "./_lib/queries";
 import { toggleFavorito } from "./_actions";
 import { buildWhatsAppInviteUrl } from "../../corretora/produtores/_lib/whatsapp";
 import { WhatsAppButton } from "./_components/whatsapp-button";
+import {
+  REGIAO_LABEL,
+  REGIOES_CAFEEIRAS,
+  type RegiaoCafeeira,
+} from "@/app/admin/corretoras/_components/regioes";
 
 export const metadata = { title: "Corretoras — Painel do produtor" };
 
-type SearchParams = Promise<{ filter?: string }>;
+type SearchParams = Promise<{ filter?: string; regiao?: string }>;
 
 const FILTERS = [
   { value: "", label: "Todas" },
   { value: "favoritas", label: "Favoritas" },
   { value: "verificadas", label: "Verificadas" },
 ];
+
+const VALID_REGIOES = new Set<string>(REGIOES_CAFEEIRAS.map((r) => r.value));
+
+function isRegiao(s: string): s is RegiaoCafeeira {
+  return VALID_REGIOES.has(s);
+}
 
 export default async function CorretorasProdutorPage({
   searchParams,
@@ -41,10 +52,14 @@ export default async function CorretorasProdutorPage({
   const user = await requireUser("/painel/produtor/corretoras");
   const sp = await searchParams;
   const filter = sp.filter ?? "";
+  const regiao = sp.regiao && isRegiao(sp.regiao) ? sp.regiao : null;
 
   let lista = await listCorretorasParaProdutor(user.id);
   if (filter === "favoritas") lista = lista.filter((c) => c.is_favorita);
   if (filter === "verificadas") lista = lista.filter((c) => c.verified);
+  if (regiao) {
+    lista = lista.filter((c) => c.regioes_atendimento.includes(regiao));
+  }
 
   const totalFavoritas = lista.filter((c) => c.is_favorita).length;
 
@@ -65,6 +80,7 @@ export default async function CorretorasProdutorPage({
         {FILTERS.map((f) => {
           const params = new URLSearchParams();
           if (f.value) params.set("filter", f.value);
+          if (regiao) params.set("regiao", regiao);
           const href = params.toString()
             ? `/painel/produtor/corretoras?${params.toString()}`
             : "/painel/produtor/corretoras";
@@ -85,6 +101,33 @@ export default async function CorretorasProdutorPage({
                   {totalFavoritas}
                 </span>
               )}
+            </Link>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-milsaca-verde-claro">Região:</span>
+        {[null, ...REGIOES_CAFEEIRAS.map((r) => r.value)].map((value) => {
+          const params = new URLSearchParams();
+          if (filter) params.set("filter", filter);
+          if (value) params.set("regiao", value);
+          const href = params.toString()
+            ? `/painel/produtor/corretoras?${params.toString()}`
+            : "/painel/produtor/corretoras";
+          const active = regiao === value;
+          const label = value ? REGIAO_LABEL[value] : "Todas";
+          return (
+            <Link
+              key={value ?? "all"}
+              href={href}
+              className={
+                active
+                  ? "rounded-full bg-milsaca-dourado px-3 py-1 text-xs font-medium text-milsaca-verde"
+                  : "rounded-full border border-milsaca-cream-escuro px-3 py-1 text-xs text-milsaca-verde-claro hover:text-milsaca-verde"
+              }
+            >
+              {label}
             </Link>
           );
         })}
@@ -181,6 +224,18 @@ export default async function CorretorasProdutorPage({
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
+                  {c.regioes_atendimento.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {c.regioes_atendimento.map((r) => (
+                        <span
+                          key={r}
+                          className="rounded-full bg-milsaca-dourado/15 px-2 py-0.5 text-[10px] text-milsaca-verde"
+                        >
+                          {REGIAO_LABEL[r]}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   <div className="space-y-1 text-xs text-milsaca-verde-claro">
                     {c.phone && (
                       <div className="flex items-center gap-1.5">

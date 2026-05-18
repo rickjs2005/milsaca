@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { requireAppAdmin } from "@/lib/auth";
+import { parseRegioesFromForm } from "./corretoras/_components/regioes";
 
 function slugify(input: string): string {
   return input
@@ -37,6 +38,7 @@ function readCorretoraForm(formData: FormData) {
     site_url: clean(formData.get("site_url")),
     descricao: clean(formData.get("descricao")),
     logo_url: clean(formData.get("logo_url")),
+    regioes_atendimento: parseRegioesFromForm(formData),
   };
 }
 

@@ -1,6 +1,8 @@
 // Campos do form de corretora — compartilhado entre "Nova" e "Editar".
 // Server Component sem state; valores defaults vêm via prop.
 
+import { REGIOES_CAFEEIRAS, type RegiaoCafeeira } from "./regioes";
+
 type Defaults = {
   name?: string | null;
   slug?: string | null;
@@ -17,6 +19,7 @@ type Defaults = {
   site_url?: string | null;
   descricao?: string | null;
   logo_url?: string | null;
+  regioes_atendimento?: RegiaoCafeeira[] | null;
 };
 
 const labelCls =
@@ -109,6 +112,32 @@ export function CorretoraFormFields({
               className={inputCls}
             />
           </div>
+        </div>
+      </Section>
+
+      <Section title="Região de atendimento">
+        <p className="text-xs text-milsaca-verde-claro/80">
+          Marque todas que a corretora opera. Aparece como filtro pro produtor
+          no catálogo.
+        </p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {REGIOES_CAFEEIRAS.map((r) => {
+            const checked = (d.regioes_atendimento ?? []).includes(r.value);
+            return (
+              <label
+                key={r.value}
+                className="flex items-center gap-2 rounded-lg border border-milsaca-cream-escuro/60 px-3 py-2 text-sm text-milsaca-verde hover:border-milsaca-dourado"
+              >
+                <input
+                  type="checkbox"
+                  name="regioes_atendimento"
+                  value={r.value}
+                  defaultChecked={checked}
+                />
+                <span>{r.label}</span>
+              </label>
+            );
+          })}
         </div>
       </Section>
 
