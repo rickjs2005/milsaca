@@ -4,7 +4,16 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
+import { notify } from "@/lib/notify";
 import type { EntregaStatus } from "./_lib/queries";
+
+const ENTREGA_STATUS_LABEL: Record<EntregaStatus, string> = {
+  programada: "programada",
+  em_transito: "em trânsito",
+  recebida: "recebida",
+  conferida: "conferida",
+  cancelada: "cancelada",
+};
 
 function parseNum(v: FormDataEntryValue | null): number | null {
   const s = String(v ?? "").trim();
@@ -60,24 +69,52 @@ export async function createEntrega(formData: FormData) {
     .limit(1);
   const nextSeq = ((existing?.[0]?.sequencia as number | undefined) ?? 0) + 1;
 
-  const { error } = await supabase.from("entregas").insert({
-    corretora_id: profile.corretora_id,
-    contrato_id: contratoId,
-    produtor_id: contrato.produtor_id,
-    sequencia: nextSeq,
-    bag_count: parseInt0(formData.get("bag_count")),
-    data_prevista: parseDate(formData.get("data_prevista")),
-    local_retirada: String(formData.get("local_retirada") ?? "").trim() || null,
-    transportadora_nome:
-      String(formData.get("transportadora_nome") ?? "").trim() || null,
-    observacoes: String(formData.get("observacoes") ?? "").trim() || null,
-  });
+  const bag_count = parseInt0(formData.get("bag_count"));
+  const data_prevista = parseDate(formData.get("data_prevista"));
 
-  if (error) {
+  const { data: novo, error } = await supabase
+    .from("entregas")
+    .insert({
+      corretora_id: profile.corretora_id,
+      contrato_id: contratoId,
+      produtor_id: contrato.produtor_id,
+      sequencia: nextSeq,
+      bag_count,
+      data_prevista,
+      local_retirada:
+        String(formData.get("local_retirada") ?? "").trim() || null,
+      transportadora_nome:
+        String(formData.get("transportadora_nome") ?? "").trim() || null,
+      observacoes: String(formData.get("observacoes") ?? "").trim() || null,
+    })
+    .select("id")
+    .single();
+
+  if (error || !novo) {
     redirect(
-      `/painel/corretora/entregas/nova?contrato=${contratoId}&error=${encodeURIComponent(error.message)}`,
+      `/painel/corretora/entregas/nova?contrato=${contratoId}&error=${encodeURIComponent(error?.message ?? "Erro ao criar entrega")}`,
     );
   }
+
+  await notify({
+    userId: contrato.produtor_id,
+    kind: "entrega",
+    title: "Entrega programada",
+    body:
+      [
+        bag_count != null ? `${bag_count} sacas` : null,
+        data_prevista ? `prevista para ${data_prevista}` : null,
+      ]
+        .filter(Boolean)
+        .join(" — ") || null,
+    data: {
+      entrega_id: novo.id,
+      contrato_id: contratoId,
+      corretora_id: profile.corretora_id,
+      sequencia: nextSeq,
+      href: `/painel/produtor/entregas`,
+    },
+  });
 
   revalidatePath("/painel/corretora/entregas");
   revalidatePath("/painel/corretora");
@@ -125,6 +162,20 @@ export async function gerarEntregaDoContrato(formData: FormData) {
     );
   }
 
+  await notify({
+    userId: contrato.produtor_id,
+    kind: "entrega",
+    title: "Entrega programada",
+    body: contrato.bag_count != null ? `${contrato.bag_count} sacas` : null,
+    data: {
+      entrega_id: novo.id,
+      contrato_id: contratoId,
+      corretora_id: profile.corretora_id,
+      sequencia: nextSeq,
+      href: `/painel/produtor/entregas`,
+    },
+  });
+
   revalidatePath(`/painel/corretora/contratos/${contratoId}`);
   revalidatePath("/painel/corretora/entregas");
   redirect(`/painel/corretora/entregas/${novo.id}?saved=1`);
@@ -136,6 +187,15 @@ export async function updateEntregaStatus(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "") as EntregaStatus;
   if (!id || !status) return;
+
+  const { data: current } = await supabase
+    .from("entregas")
+    .select("status, produtor_id, sequencia, contrato_id")
+    .eq("corretora_id", profile.corretora_id)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!current) return;
 
   const patch: {
     status: EntregaStatus;
@@ -150,6 +210,23 @@ export async function updateEntregaStatus(formData: FormData) {
     .update(patch)
     .eq("corretora_id", profile.corretora_id)
     .eq("id", id);
+
+  if (current.status !== status) {
+    await notify({
+      userId: current.produtor_id,
+      kind: "entrega",
+      title: `Entrega ${ENTREGA_STATUS_LABEL[status]}`,
+      body: `Entrega #${current.sequencia}`,
+      data: {
+        entrega_id: id,
+        contrato_id: current.contrato_id,
+        corretora_id: profile.corretora_id,
+        from: current.status,
+        to: status,
+        href: `/painel/produtor/entregas`,
+      },
+    });
+  }
 
   revalidatePath("/painel/corretora/entregas");
   revalidatePath(`/painel/corretora/entregas/${id}`);

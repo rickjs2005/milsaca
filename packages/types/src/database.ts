@@ -1159,7 +1159,13 @@ export type Database = {
         | "rebeneficiar"
         | "vendido"
         | "arquivado"
-      notification_kind: "lead" | "contrato" | "cotacao" | "sistema"
+      notification_kind:
+        | "lead"
+        | "contrato"
+        | "entrega"
+        | "pagamento"
+        | "cotacao"
+        | "sistema"
       pagamento_status: "pendente" | "pago" | "vencido" | "cancelado"
       produtor_specie: "arabica" | "conilon" | "ambos"
       produtor_status: "sombra" | "ativo" | "pendente" | "bloqueado"
@@ -1789,7 +1795,14 @@ export const Constants = {
         "vendido",
         "arquivado",
       ],
-      notification_kind: ["lead", "contrato", "cotacao", "sistema"],
+      notification_kind: [
+        "lead",
+        "contrato",
+        "entrega",
+        "pagamento",
+        "cotacao",
+        "sistema",
+      ],
       pagamento_status: ["pendente", "pago", "vencido", "cancelado"],
       produtor_specie: ["arabica", "conilon", "ambos"],
       produtor_status: ["sombra", "ativo", "pendente", "bloqueado"],

@@ -5,8 +5,31 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import type { Json } from "@milsaca/types/database";
 import { getProfile, getUser } from "@/lib/auth";
+import { notify } from "@/lib/notify";
 import type { LeadStatus } from "./_lib/queries";
 import { LEAD_STATUS_ORDER } from "./_lib/queries";
+
+const LEAD_STATUS_LABEL: Record<LeadStatus, string> = {
+  novo: "Nova",
+  em_negociacao: "Em negociação",
+  convertido: "Convertida",
+  perdido: "Perdida",
+  arquivado: "Arquivada",
+};
+
+function formatProposta(
+  coffee_type: string | null,
+  bag_count: number | null,
+  proposed_price: number | null,
+): string {
+  const parts: string[] = [];
+  if (coffee_type) parts.push(coffee_type);
+  if (bag_count != null) parts.push(`${bag_count} sacas`);
+  if (proposed_price != null) {
+    parts.push(`R$ ${proposed_price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}/sc`);
+  }
+  return parts.join(" — ");
+}
 
 function clean(v: FormDataEntryValue | null): string | null {
   if (v == null) return null;
@@ -110,6 +133,23 @@ export async function createLead(formData: FormData) {
     } as unknown as Json,
   });
 
+  // Notifica o produtor apenas quando o alvo é um produtor real (com auth.user).
+  // Contato sombra (produtor_contatos) não tem user_id pra notificar.
+  if (t.kind === "produtor") {
+    const proposta = formatProposta(coffee_type, bag_count, proposed_price);
+    await notify({
+      userId: t.id,
+      kind: "lead",
+      title: "Nova proposta de café",
+      body: proposta || "Você recebeu uma nova proposta.",
+      data: {
+        lead_id: data.id,
+        corretora_id: profile.corretora_id,
+        href: `/painel/produtor/negociacoes/${data.id}`,
+      },
+    });
+  }
+
   revalidateLead(data.id);
   redirect(`/painel/corretora/leads/${data.id}`);
 }
@@ -169,7 +209,7 @@ export async function updateLeadStatus(formData: FormData) {
   const supabase = await createClient();
   const { data: current } = await supabase
     .from("leads")
-    .select("status")
+    .select("status, produtor_id")
     .eq("id", id)
     .eq("corretora_id", profile.corretora_id)
     .maybeSingle();
@@ -212,6 +252,22 @@ export async function updateLeadStatus(formData: FormData) {
       comment: comment ?? null,
     } as unknown as Json,
   });
+
+  if (current.produtor_id) {
+    await notify({
+      userId: current.produtor_id,
+      kind: "lead",
+      title: `Proposta ${LEAD_STATUS_LABEL[next as LeadStatus]?.toLowerCase() ?? next}`,
+      body: comment ?? null,
+      data: {
+        lead_id: id,
+        corretora_id: profile.corretora_id,
+        from: current.status,
+        to: next,
+        href: `/painel/produtor/negociacoes/${id}`,
+      },
+    });
+  }
 
   revalidateLead(id);
   redirect(`/painel/corretora/leads/${id}`);

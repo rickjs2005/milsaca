@@ -18,6 +18,8 @@ import { supabase } from "../../src/lib/supabase";
 const KIND_LABEL: Record<string, string> = {
   lead: "Proposta",
   contrato: "Contrato",
+  entrega: "Entrega",
+  pagamento: "Pagamento",
   cotacao: "Cotação",
   sistema: "Sistema",
 };
@@ -25,6 +27,8 @@ const KIND_LABEL: Record<string, string> = {
 const KIND_BG: Record<string, string> = {
   lead: "rgba(125,211,252,0.25)",
   contrato: "rgba(134,239,172,0.25)",
+  entrega: "rgba(251,191,36,0.25)",
+  pagamento: "rgba(196,181,253,0.25)",
   cotacao: "rgba(224,198,138,0.25)",
   sistema: "rgba(203,213,225,0.25)",
 };
@@ -32,6 +36,8 @@ const KIND_BG: Record<string, string> = {
 const KIND_FG: Record<string, string> = {
   lead: "#7dd3fc",
   contrato: "#86efac",
+  entrega: "#fbbf24",
+  pagamento: "#c4b5fd",
   cotacao: "#C9A961",
   sistema: "#cbd5e1",
 };

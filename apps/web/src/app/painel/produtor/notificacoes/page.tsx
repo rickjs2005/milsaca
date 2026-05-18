@@ -10,6 +10,8 @@ export const metadata = { title: "Notificações — Milsaca" };
 const KIND_LABEL: Record<string, string> = {
   lead: "Proposta",
   contrato: "Contrato",
+  entrega: "Entrega",
+  pagamento: "Pagamento",
   cotacao: "Cotação",
   sistema: "Sistema",
 };
@@ -17,6 +19,8 @@ const KIND_LABEL: Record<string, string> = {
 const KIND_COLOR: Record<string, string> = {
   lead: "bg-sky-100 text-sky-800",
   contrato: "bg-emerald-100 text-emerald-800",
+  entrega: "bg-amber-100 text-amber-800",
+  pagamento: "bg-violet-100 text-violet-800",
   cotacao: "bg-milsaca-dourado/20 text-milsaca-verde",
   sistema: "bg-slate-200 text-slate-700",
 };

@@ -4,11 +4,20 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
+import { notify } from "@/lib/notify";
 import {
   CONTRATO_STATUS_ORDER,
   type ContratoStatus,
   nextContratoCode,
 } from "./_lib/queries";
+
+const CONTRATO_STATUS_LABEL: Record<ContratoStatus, string> = {
+  rascunho: "em rascunho",
+  em_analise: "em análise",
+  ativo: "ativado",
+  finalizado: "finalizado",
+  cancelado: "cancelado",
+};
 
 function clean(v: FormDataEntryValue | null): string | null {
   if (v == null) return null;
@@ -115,6 +124,19 @@ export async function createContrato(formData: FormData) {
     redirect(`/painel/corretora/contratos/novo?${params.toString()}`);
   }
 
+  await notify({
+    userId: produtor_id as string,
+    kind: "contrato",
+    title: "Novo contrato em rascunho",
+    body: `Contrato ${code} foi criado e aguarda revisão.`,
+    data: {
+      contrato_id: data.id,
+      corretora_id: profile.corretora_id,
+      code,
+      href: `/painel/produtor/contratos/${data.id}`,
+    },
+  });
+
   revalidateContrato(data.id);
   redirect(`/painel/corretora/contratos/${data.id}`);
 }
@@ -172,6 +194,15 @@ export async function updateContratoStatus(formData: FormData) {
   if (!id || !isContratoStatus(next)) redirect("/painel/corretora/contratos");
 
   const supabase = await createClient();
+  const { data: current } = await supabase
+    .from("contratos")
+    .select("status, produtor_id, code")
+    .eq("id", id)
+    .eq("corretora_id", profile.corretora_id)
+    .maybeSingle();
+
+  if (!current) redirect("/painel/corretora/contratos");
+
   const payload: { status: ContratoStatus; signed_at?: string | null } = {
     status: next,
   };
@@ -192,6 +223,22 @@ export async function updateContratoStatus(formData: FormData) {
   if (error) {
     const params = new URLSearchParams({ error: error.message });
     redirect(`/painel/corretora/contratos/${id}?${params.toString()}`);
+  }
+
+  if (current.status !== next) {
+    await notify({
+      userId: current.produtor_id,
+      kind: "contrato",
+      title: `Contrato ${CONTRATO_STATUS_LABEL[next as ContratoStatus]}`,
+      body: current.code ? `Contrato ${current.code}` : null,
+      data: {
+        contrato_id: id,
+        corretora_id: profile.corretora_id,
+        from: current.status,
+        to: next,
+        href: `/painel/produtor/contratos/${id}`,
+      },
+    });
   }
 
   revalidateContrato(id);
