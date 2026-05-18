@@ -105,6 +105,7 @@ async function main() {
   ok("user criado");
 
   let createdCorretoraId = null;
+  let createdSubscriptionId = null;
   let auditLogIds = [];
 
   try {
@@ -191,6 +192,29 @@ async function main() {
       return;
     }
 
+    // Trial automático (espelha aprovarCorretora server action)
+    const trialEnds = new Date();
+    trialEnds.setDate(trialEnds.getDate() + 30);
+    const { data: subRow, error: subErr } = await supa
+      .from("subscriptions")
+      .insert({
+        corretora_id: createdCorretoraId,
+        status: "trial",
+        started_at: new Date().toISOString(),
+        trial_ends_at: trialEnds.toISOString(),
+      })
+      .select("id, status, trial_ends_at")
+      .single();
+    if (subErr || !subRow) {
+      fail(`insert subscription falhou: ${subErr?.message}`);
+      return;
+    }
+    createdSubscriptionId = subRow.id;
+    log("subscription.id", createdSubscriptionId);
+    log("subscription.status", subRow.status);
+    if (subRow.status !== "trial") fail("trial não setado");
+    else ok("trial criado");
+
     const { data: audit } = await supa
       .from("audit_log")
       .insert({
@@ -199,7 +223,7 @@ async function main() {
         action: "aprovar_corretora",
         entity: "profile",
         entity_id: userId,
-        payload: { smoke: true, name: fakeCorretoraName },
+        payload: { smoke: true, name: fakeCorretoraName, trial_ends_at: trialEnds.toISOString() },
       })
       .select("id")
       .single();
@@ -245,6 +269,13 @@ async function main() {
     if (auditLogIds.length > 0) {
       await supa.from("audit_log").delete().in("id", auditLogIds);
       log("audit_log apagado", auditLogIds.length);
+    }
+    if (createdSubscriptionId) {
+      await supa
+        .from("subscriptions")
+        .delete()
+        .eq("id", createdSubscriptionId);
+      log("subscription apagada", createdSubscriptionId);
     }
     if (createdCorretoraId) {
       // primeiro desvincula o profile (FK), depois apaga corretora

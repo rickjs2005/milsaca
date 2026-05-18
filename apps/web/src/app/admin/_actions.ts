@@ -179,13 +179,32 @@ export async function aprovarCorretora(formData: FormData) {
     );
   }
 
+  // Trial de 30 dias automático. Admin pode trocar/cobrar depois em
+  // /admin/assinaturas/[id]. Falha silenciosa (loga em audit) — não
+  // bloqueia a aprovação.
+  const trialEnds = new Date();
+  trialEnds.setDate(trialEnds.getDate() + 30);
+  const { error: subErr } = await supabase.from("subscriptions").insert({
+    corretora_id: created.id,
+    status: "trial",
+    started_at: new Date().toISOString(),
+    trial_ends_at: trialEnds.toISOString(),
+  });
+
   await supabase.from("audit_log").insert({
     actor_id: actor.id,
     corretora_id: created.id,
     action: "aprovar_corretora",
     entity: "profile",
     entity_id: profileId,
-    payload: { name, cnpj, city, state },
+    payload: {
+      name,
+      cnpj,
+      city,
+      state,
+      trial_ends_at: trialEnds.toISOString(),
+      subscription_error: subErr?.message ?? null,
+    },
   });
 
   revalidatePath("/admin");

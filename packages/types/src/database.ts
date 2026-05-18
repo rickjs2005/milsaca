@@ -871,6 +871,45 @@ export type Database = {
           },
         ]
       }
+      plans: {
+        Row: {
+          active: boolean
+          billing_period: Database["public"]["Enums"]["billing_period"]
+          created_at: string
+          description: string | null
+          features: Json
+          id: string
+          name: string
+          price_cents: number
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          billing_period?: Database["public"]["Enums"]["billing_period"]
+          created_at?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          name: string
+          price_cents?: number
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          billing_period?: Database["public"]["Enums"]["billing_period"]
+          created_at?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          name?: string
+          price_cents?: number
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       produtor_contatos: {
         Row: {
           city: string | null
@@ -1154,6 +1193,66 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          canceled_at: string | null
+          corretora_id: string
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string
+          id: string
+          notes: string | null
+          plan_id: string | null
+          started_at: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          canceled_at?: string | null
+          corretora_id: string
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string
+          id?: string
+          notes?: string | null
+          plan_id?: string | null
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          canceled_at?: string | null
+          corretora_id?: string
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string
+          id?: string
+          notes?: string | null
+          plan_id?: string | null
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: true
+            referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1184,8 +1283,13 @@ export type Database = {
           signup_at: string
         }[]
       }
+      subscription_effective_status: {
+        Args: { sub: Database["public"]["Tables"]["subscriptions"]["Row"] }
+        Returns: Database["public"]["Enums"]["subscription_status"]
+      }
     }
     Enums: {
+      billing_period: "monthly" | "yearly"
       canal_preferido: "app" | "whatsapp" | "email" | "sms"
       coffee_processo:
         | "natural"
@@ -1237,6 +1341,12 @@ export type Database = {
         | "lucro_real"
         | "mei"
         | "isento"
+      subscription_status:
+        | "trial"
+        | "active"
+        | "past_due"
+        | "canceled"
+        | "expired"
       user_role: "produtor" | "corretora" | "admin"
     }
     CompositeTypes: {
@@ -1818,6 +1928,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      billing_period: ["monthly", "yearly"],
       canal_preferido: ["app", "whatsapp", "email", "sms"],
       coffee_processo: [
         "natural",
@@ -1875,6 +1986,13 @@ export const Constants = {
         "lucro_real",
         "mei",
         "isento",
+      ],
+      subscription_status: [
+        "trial",
+        "active",
+        "past_due",
+        "canceled",
+        "expired",
       ],
       user_role: ["produtor", "corretora", "admin"],
     },
