@@ -7,20 +7,21 @@ import {
   getProfile,
   panelFor,
 } from "@/lib/auth";
-import type { UserRole } from "@milsaca/types";
 
-const VALID_ROLES: UserRole[] = ["produtor", "corretora", "admin"];
+type ClientRole = "produtor" | "corretora";
+const VALID_ROLES: ClientRole[] = ["produtor", "corretora"];
 
 /**
  * Seta o cookie de modo ativo e redireciona pro painel.
  * Falha graciosamente se o user não tem aquele papel.
+ * Admin não aparece aqui — é via /admin direto.
  */
 export async function selectRole(formData: FormData) {
   const raw = String(formData.get("role") ?? "").trim();
-  if (!VALID_ROLES.includes(raw as UserRole)) {
+  if (!VALID_ROLES.includes(raw as ClientRole)) {
     redirect("/painel/escolher");
   }
-  const role = raw as UserRole;
+  const role = raw as ClientRole;
 
   const profile = await getProfile();
   if (!profile) redirect("/entrar");

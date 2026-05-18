@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireRole } from "@/lib/auth";
+import { requireAppAdmin } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { createCorretora } from "../../_actions";
 import { CorretoraFormFields } from "../_components/corretora-form-fields";
@@ -11,11 +11,11 @@ interface PageProps {
 }
 
 export default async function NovaCorretoraPage({ searchParams }: PageProps) {
-  await requireRole("admin");
+  await requireAppAdmin();
   const { error } = await searchParams;
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
+    <div className="mx-auto max-w-3xl space-y-6">
       <Link
         href="/admin/corretoras"
         className="text-xs text-milsaca-dourado hover:underline"
@@ -60,6 +60,6 @@ export default async function NovaCorretoraPage({ searchParams }: PageProps) {
           </Button>
         </div>
       </form>
-    </main>
+    </div>
   );
 }

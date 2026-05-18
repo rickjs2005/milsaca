@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
-import { requireRole } from "@/lib/auth";
+import { requireAppAdmin } from "@/lib/auth";
 
 function slugify(input: string): string {
   return input
@@ -41,7 +41,7 @@ function readCorretoraForm(formData: FormData) {
 }
 
 export async function createCorretora(formData: FormData) {
-  await requireRole("admin");
+  await requireAppAdmin();
   const fields = readCorretoraForm(formData);
   const slugInput = String(formData.get("slug") ?? "").trim();
   const verified = formData.get("verified") === "on";
@@ -72,7 +72,7 @@ export async function createCorretora(formData: FormData) {
 }
 
 export async function updateCorretora(formData: FormData) {
-  await requireRole("admin");
+  await requireAppAdmin();
   const id = String(formData.get("id") ?? "").trim();
   if (!id) redirect("/admin/corretoras");
 
@@ -100,7 +100,7 @@ export async function updateCorretora(formData: FormData) {
 }
 
 export async function toggleCorretoraVerified(formData: FormData) {
-  await requireRole("admin");
+  await requireAppAdmin();
   const id = String(formData.get("id") ?? "");
   const next = formData.get("verified") === "true";
   if (!id) return;
@@ -117,7 +117,7 @@ function cleanDigits(v: FormDataEntryValue | null): string | null {
 }
 
 export async function aprovarCorretora(formData: FormData) {
-  const actor = await requireRole("admin");
+  const actor = await requireAppAdmin();
   const profileId = String(formData.get("profile_id") ?? "").trim();
   if (!profileId) {
     redirect("/admin/aprovacoes?error=" + encodeURIComponent("Profile inválido"));
@@ -198,7 +198,7 @@ export async function aprovarCorretora(formData: FormData) {
 }
 
 export async function rejeitarCorretora(formData: FormData) {
-  const actor = await requireRole("admin");
+  const actor = await requireAppAdmin();
   const profileId = String(formData.get("profile_id") ?? "").trim();
   if (!profileId) {
     redirect("/admin/aprovacoes");
@@ -233,7 +233,7 @@ export async function rejeitarCorretora(formData: FormData) {
 }
 
 export async function linkProfileToCorretora(formData: FormData) {
-  await requireRole("admin");
+  await requireAppAdmin();
   const profileId = String(formData.get("profile_id") ?? "");
   const corretoraId = String(formData.get("corretora_id") ?? "");
   if (!profileId) return;

@@ -39,6 +39,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_admins: {
+        Row: {
+          created_at: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -1152,6 +1170,7 @@ export type Database = {
       }
       get_laudo_publico: { Args: { p_id: string }; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
+      is_app_admin: { Args: never; Returns: boolean }
       is_corretora: { Args: never; Returns: boolean }
       list_pending_corretora_signups: {
         Args: never
@@ -1866,4 +1885,3 @@ export const Constants = {
     },
   },
 } as const
-

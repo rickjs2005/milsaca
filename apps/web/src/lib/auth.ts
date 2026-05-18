@@ -65,6 +65,9 @@ export function enforceProfileStatus(profile: Pick<Profile, "status"> | null) {
 /**
  * Garante que o user logado tenha pelo menos um dos papéis informados
  * (em qualquer entrada de profile.roles). Caso contrário, redireciona.
+ *
+ * NÃO use pra checar admin — admin não é mais um user_role, é entry
+ * em public.app_admins. Use requireAppAdmin() pra isso.
  */
 export async function requireRole(...allowed: UserRole[]) {
   const profile = await getProfile();
@@ -79,28 +82,58 @@ export async function requireRole(...allowed: UserRole[]) {
 }
 
 /**
+ * Operador da plataforma (Rick). Não é cliente.
+ * Implementado via tabela app_admins + função is_app_admin() — não tem
+ * nada a ver com profile.role ou profile.roles. Quem entra em app_admins
+ * é provisionado manualmente.
+ */
+export async function isAppAdmin(): Promise<boolean> {
+  const user = await getUser();
+  if (!user) return false;
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("is_app_admin");
+  return data === true;
+}
+
+export async function requireAppAdmin() {
+  const user = await getUser();
+  if (!user) {
+    redirect("/entrar?redirectTo=%2Fadmin");
+  }
+  const ok = await isAppAdmin();
+  if (!ok) {
+    redirect("/");
+  }
+  return user;
+}
+
+/**
  * Lê o cookie de modo ativo (qual painel o user escolheu usar agora).
  */
 export async function getActiveRole(): Promise<UserRole | null> {
   const store = await cookies();
   const value = store.get(ACTIVE_ROLE_COOKIE)?.value;
-  if (value === "produtor" || value === "corretora" || value === "admin") {
+  if (value === "produtor" || value === "corretora") {
     return value;
   }
   return null;
 }
 
 /**
- * Decide pra qual painel mandar o user logo após login (verifyOtp).
- * - 1 papel ativo: vai direto pro painel correspondente.
- * - 2+ papéis: vai pra /painel/escolher e o user decide.
+ * Decide pra qual painel mandar o user logo após login.
+ * - 1 papel: vai direto pro painel correspondente.
+ * - 2+ papéis: vai pra /painel/escolher.
+ *
+ * Admin é tratado separadamente no /entrar action: se isAppAdmin(),
+ * vai pra /admin antes de chegar aqui.
  */
 export function defaultRouteFor(profile: Pick<Profile, "roles">) {
-  if (profile.roles.length === 0) return "/";
-  if (profile.roles.length === 1) {
-    const only = profile.roles[0];
-    if (!only) return "/";
-    return panelFor(only);
+  const clientRoles = profile.roles.filter(
+    (r): r is "produtor" | "corretora" => r === "produtor" || r === "corretora",
+  );
+  if (clientRoles.length === 0) return "/";
+  if (clientRoles.length === 1) {
+    return panelFor(clientRoles[0]!);
   }
   return "/painel/escolher";
 }
@@ -108,10 +141,8 @@ export function defaultRouteFor(profile: Pick<Profile, "roles">) {
 /**
  * Rota do painel para um papel específico.
  */
-export function panelFor(role: UserRole): string {
+export function panelFor(role: "produtor" | "corretora"): string {
   switch (role) {
-    case "admin":
-      return "/admin";
     case "corretora":
       return "/painel/corretora";
     case "produtor":

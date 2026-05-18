@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@milsaca/db/web/server";
-import { defaultRouteFor } from "@/lib/auth";
+import { defaultRouteFor, isAppAdmin } from "@/lib/auth";
 import type { Profile } from "@milsaca/types";
 
 /**
@@ -40,6 +40,10 @@ export async function GET(request: NextRequest) {
   // depende disso pra parar em /redefinir-senha em vez de cair no painel.
   if (nextParam) {
     return NextResponse.redirect(`${origin}${nextParam}`);
+  }
+
+  if (await isAppAdmin()) {
+    return NextResponse.redirect(`${origin}/admin`);
   }
 
   const { data: profile } = await supabase

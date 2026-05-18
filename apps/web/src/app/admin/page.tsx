@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { requireRole } from "@/lib/auth";
+import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { Badge } from "@/components/ui/badge";
 
 export const metadata = { title: "Admin · Milsaca" };
 
 export default async function AdminPage() {
-  await requireRole("admin");
+  await requireAppAdmin();
   const supabase = await createClient();
 
   const [
@@ -36,7 +36,7 @@ export default async function AdminPage() {
   ]);
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
+    <div className="space-y-10">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-milsaca-verde">
@@ -157,7 +157,7 @@ export default async function AdminPage() {
           </div>
         </section>
       </div>
-    </main>
+    </div>
   );
 }
 

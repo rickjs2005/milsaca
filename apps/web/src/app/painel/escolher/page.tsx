@@ -1,14 +1,15 @@
 import { redirect } from "next/navigation";
-import { Handshake, Sprout, Shield, ArrowRight, Coffee } from "lucide-react";
+import { Handshake, Sprout, ArrowRight, Coffee } from "lucide-react";
 import { getProfile, panelFor } from "@/lib/auth";
 import { selectRole } from "./_actions";
 import { Card, CardContent } from "@/components/ui/card";
-import type { UserRole } from "@milsaca/types";
 
 export const metadata = { title: "Escolha o painel — Milsaca" };
 
+type ClientRole = "produtor" | "corretora";
+
 const ROLE_META: Record<
-  UserRole,
+  ClientRole,
   {
     label: string;
     description: string;
@@ -27,20 +28,18 @@ const ROLE_META: Record<
       "Veja leads, contratos e gerencie sua carteira de produtores.",
     icon: Handshake,
   },
-  admin: {
-    label: "Entrar como admin",
-    description: "Acesso interno para administração da plataforma.",
-    icon: Shield,
-  },
 };
 
 export default async function EscolherPainelPage() {
   const profile = await getProfile();
   if (!profile) redirect("/entrar");
 
-  // Se só tem um papel, manda direto.
-  if (profile.roles.length <= 1) {
-    const only = profile.roles[0];
+  const clientRoles = profile.roles.filter(
+    (r): r is ClientRole => r === "produtor" || r === "corretora",
+  );
+
+  if (clientRoles.length <= 1) {
+    const only = clientRoles[0];
     if (only) redirect(panelFor(only));
     redirect("/");
   }
@@ -62,7 +61,7 @@ export default async function EscolherPainelPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          {profile.roles.map((role) => {
+          {clientRoles.map((role) => {
             const meta = ROLE_META[role];
             const Icon = meta.icon;
             return (

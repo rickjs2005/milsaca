@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireRole } from "@/lib/auth";
+import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ export default async function EditCorretoraPage({
   params,
   searchParams,
 }: PageProps) {
-  await requireRole("admin");
+  await requireAppAdmin();
   const { id } = await params;
   const { saved, error } = await searchParams;
 
@@ -37,7 +37,7 @@ export default async function EditCorretoraPage({
   if (!data) notFound();
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
+    <div className="mx-auto max-w-3xl space-y-6">
       <Link
         href="/admin/corretoras"
         className="text-xs text-milsaca-dourado hover:underline"
@@ -110,6 +110,6 @@ export default async function EditCorretoraPage({
           </Button>
         </div>
       </form>
-    </main>
+    </div>
   );
 }

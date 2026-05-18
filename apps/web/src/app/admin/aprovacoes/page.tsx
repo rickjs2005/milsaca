@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireRole } from "@/lib/auth";
+import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,7 +44,7 @@ function fmtDate(iso: string): string {
 }
 
 export default async function AdminAprovacoesPage({ searchParams }: PageProps) {
-  await requireRole("admin");
+  await requireAppAdmin();
   const { ok, error } = await searchParams;
 
   const supabase = await createClient();
@@ -54,7 +54,7 @@ export default async function AdminAprovacoesPage({ searchParams }: PageProps) {
   const rows: PendingSignup[] = (data ?? []) as PendingSignup[];
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <Link
@@ -165,7 +165,7 @@ export default async function AdminAprovacoesPage({ searchParams }: PageProps) {
           </article>
         ))}
       </div>
-    </main>
+    </div>
   );
 }
 

@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
-import { defaultRouteFor } from "@/lib/auth";
+import { defaultRouteFor, isAppAdmin } from "@/lib/auth";
 import type { Profile } from "@milsaca/types";
 
 /**
@@ -40,6 +40,11 @@ export async function signIn(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) {
     redirect("/entrar?error=Sess%C3%A3o%20inv%C3%A1lida");
+  }
+
+  // Superuser: vai direto pra /admin antes de qualquer decisão de painel.
+  if (await isAppAdmin()) {
+    redirect("/admin");
   }
 
   const { data: profile } = await supabase
