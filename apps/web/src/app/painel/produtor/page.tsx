@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { createClient } from "@milsaca/db/web/server";
 import { requireUser } from "@/lib/auth";
 import type { LeadStatus } from "@milsaca/types";
+import { IndicadoresLive } from "@/components/indicadores-live";
 
 export const metadata = { title: "Início — Painel do produtor" };
 
@@ -127,9 +128,11 @@ export default async function InicioProdutorPage() {
         </p>
       </header>
 
+      <IndicadoresLive />
+
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
-          Cotações de hoje
+          Cotações da corretora
         </h2>
         {cotacoes.length === 0 ? (
           <EmptyCard message="Nenhuma cotação registrada ainda." />

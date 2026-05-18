@@ -23,6 +23,7 @@ import { createClient } from "@milsaca/db/web/server";
 import type { LeadStatus } from "@milsaca/types";
 import { getProfile } from "@/lib/auth";
 import { listEntregasHojeEAtrasadas } from "./entregas/_lib/queries";
+import { IndicadoresLive } from "@/components/indicadores-live";
 
 export const metadata = { title: "Início — Painel da corretora" };
 
@@ -329,9 +330,11 @@ export default async function InicioCorretoraPage() {
         )}
       </section>
 
+      <IndicadoresLive />
+
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
-          Cotações de hoje
+          Cotações manuais da praça
         </h2>
         {cotacoes.length === 0 ? (
           <EmptyCard message="Nenhuma cotação registrada ainda." />

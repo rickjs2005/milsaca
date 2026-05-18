@@ -70,3 +70,10 @@ inspector_port = 8083
 
 [analytics]
 enabled = false
+
+# Edge Function: sync-cotacoes
+# Disabled JWT verification — function autentica internamente via
+# header `x-cron-secret`. Permite chamadas do pg_cron (que não tem JWT)
+# e curl manual com a secret.
+[functions.sync-cotacoes]
+verify_jwt = false
