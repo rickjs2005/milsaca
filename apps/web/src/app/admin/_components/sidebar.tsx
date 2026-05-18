@@ -12,6 +12,7 @@ import {
   Receipt,
   BarChart3,
   ScrollText,
+  MessageCircle,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/aprovacoes", label: "Aprovações", icon: Inbox },
   { href: "/admin/corretoras", label: "Corretoras", icon: Building2 },
   { href: "/admin/produtores", label: "Produtores", icon: Sprout },
+  { href: "/admin/leads", label: "Leads WhatsApp", icon: MessageCircle },
   { href: "/admin/planos", label: "Planos", icon: Wallet },
   { href: "/admin/assinaturas", label: "Assinaturas", icon: Receipt },
   { href: "/admin/metricas", label: "Métricas", icon: BarChart3 },

@@ -79,6 +79,13 @@ export default async function MetricasAdminPage() {
         <Panel title="Contratos / mês" subtitle="Últimos 6 meses">
           <MonthlyBarChart data={m.contratosByMonth} color="#2D3A2E" />
         </Panel>
+
+        <Panel
+          title="Cliques WhatsApp / mês"
+          subtitle="Cliques no botão de contato no catálogo"
+        >
+          <MonthlyLineChart data={m.whatsappByMonth} color="#059669" />
+        </Panel>
       </div>
 
       <Panel title="Top corretoras por contratos" subtitle="All-time">

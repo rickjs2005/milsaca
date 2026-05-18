@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   Building2,
-  MessageCircle,
   MapPin,
   Phone,
   Mail,
@@ -22,6 +21,7 @@ import { requireUser } from "@/lib/auth";
 import { listCorretorasParaProdutor } from "./_lib/queries";
 import { toggleFavorito } from "./_actions";
 import { buildWhatsAppInviteUrl } from "../../corretora/produtores/_lib/whatsapp";
+import { WhatsAppButton } from "./_components/whatsapp-button";
 
 export const metadata = { title: "Corretoras — Painel do produtor" };
 
@@ -215,20 +215,11 @@ export default async function CorretorasProdutorPage({
 
                   <div className="flex gap-2 pt-1">
                     {waUrl && (
-                      <Button
-                        asChild
-                        size="sm"
-                        className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700"
-                      >
-                        <a
-                          href={waUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <MessageCircle className="mr-1 h-3.5 w-3.5" />
-                          WhatsApp
-                        </a>
-                      </Button>
+                      <WhatsAppButton
+                        corretoraId={c.id}
+                        fallbackWaUrl={waUrl}
+                        source="catalogo_corretoras"
+                      />
                     )}
                     {c.qtd_negociacoes > 0 && (
                       <Button

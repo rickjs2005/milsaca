@@ -1344,6 +1344,64 @@ export type Database = {
           },
         ]
       }
+      whatsapp_leads: {
+        Row: {
+          contato_email: string | null
+          corretora_id: string
+          created_at: string
+          id: string
+          ip_hash: string | null
+          message: string | null
+          produtor_id: string | null
+          source: Database["public"]["Enums"]["whatsapp_lead_source"]
+          user_agent: string | null
+        }
+        Insert: {
+          contato_email?: string | null
+          corretora_id: string
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          message?: string | null
+          produtor_id?: string | null
+          source?: Database["public"]["Enums"]["whatsapp_lead_source"]
+          user_agent?: string | null
+        }
+        Update: {
+          contato_email?: string | null
+          corretora_id?: string
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          message?: string | null
+          produtor_id?: string | null
+          source?: Database["public"]["Enums"]["whatsapp_lead_source"]
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_leads_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_leads_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_leads_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       corretoras_publicas: {
@@ -1483,6 +1541,11 @@ export type Database = {
         | "canceled"
         | "expired"
       user_role: "produtor" | "corretora" | "admin"
+      whatsapp_lead_source:
+        | "catalogo_corretoras"
+        | "perfil_corretora"
+        | "home_publica"
+        | "outro"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2130,6 +2193,12 @@ export const Constants = {
         "expired",
       ],
       user_role: ["produtor", "corretora", "admin"],
+      whatsapp_lead_source: [
+        "catalogo_corretoras",
+        "perfil_corretora",
+        "home_publica",
+        "outro",
+      ],
     },
   },
   storage: {

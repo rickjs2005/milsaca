@@ -8,6 +8,7 @@ import {
   Wallet,
   AlertTriangle,
   Clock,
+  MessageCircle,
 } from "lucide-react";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
@@ -162,6 +163,21 @@ export default async function AdminPage() {
             value={`+${metrics.novosLeads30d}/+${metrics.novosContratos30d}`}
             icon={TrendingUp}
             hint="Leads / contratos novos"
+          />
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Aquisição
+        </h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Kpi
+            label="Cliques WhatsApp 30d"
+            value={metrics.whatsappClicks30d}
+            icon={MessageCircle}
+            hint="Produtor → corretora"
+            href="/admin/leads"
           />
         </div>
       </section>

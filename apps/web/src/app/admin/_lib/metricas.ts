@@ -20,6 +20,7 @@ export type DashboardMetrics = {
   // Movimento últimos 30d
   novosLeads30d: number;
   novosContratos30d: number;
+  whatsappClicks30d: number;
 };
 
 export async function loadDashboardMetrics(): Promise<DashboardMetrics> {
@@ -42,6 +43,7 @@ export async function loadDashboardMetrics(): Promise<DashboardMetrics> {
     { count: trialsExpiringIn7d },
     { count: novosLeads30d },
     { count: novosContratos30d },
+    { count: whatsappClicks30d },
     { data: activeSubsRows },
   ] = await Promise.all([
     supabase.from("corretoras").select("*", { count: "exact", head: true }),
@@ -81,6 +83,10 @@ export async function loadDashboardMetrics(): Promise<DashboardMetrics> {
       .select("*", { count: "exact", head: true })
       .gte("created_at", ago30d),
     supabase
+      .from("whatsapp_leads")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", ago30d),
+    supabase
       .from("subscriptions")
       .select("plans(price_cents, billing_period)")
       .eq("status", "active"),
@@ -111,6 +117,7 @@ export async function loadDashboardMetrics(): Promise<DashboardMetrics> {
     pastDueSubs: pastDueSubs ?? 0,
     novosLeads30d: novosLeads30d ?? 0,
     novosContratos30d: novosContratos30d ?? 0,
+    whatsappClicks30d: whatsappClicks30d ?? 0,
   };
 }
 
@@ -150,7 +157,12 @@ function ymOf(iso: string): string {
  * Conta linhas de uma tabela agrupadas por mês de created_at, últimos N meses.
  */
 async function countByMonth(
-  table: "leads" | "contratos" | "corretoras" | "subscriptions",
+  table:
+    | "leads"
+    | "contratos"
+    | "corretoras"
+    | "subscriptions"
+    | "whatsapp_leads",
   months: number,
 ): Promise<MonthBucket[]> {
   const supabase = await createClient();
@@ -179,6 +191,7 @@ export type DetailedMetrics = {
   signupsByMonth: MonthBucket[];
   leadsByMonth: MonthBucket[];
   contratosByMonth: MonthBucket[];
+  whatsappByMonth: MonthBucket[];
   subsByStatus: { status: SubStatus; count: number }[];
   mrrCents: number;
   arpuCents: number;
@@ -200,6 +213,7 @@ export async function loadDetailedMetrics(): Promise<DetailedMetrics> {
     signupsByMonth,
     leadsByMonth,
     contratosByMonth,
+    whatsappByMonth,
     statusCountsRaw,
     { data: activeSubsRows },
     { data: contratosByCorretora },
@@ -207,6 +221,7 @@ export async function loadDetailedMetrics(): Promise<DetailedMetrics> {
     countByMonth("corretoras", 6),
     countByMonth("leads", 6),
     countByMonth("contratos", 6),
+    countByMonth("whatsapp_leads", 6),
     Promise.all(
       STATUSES.map(async (s) => {
         const { count } = await supabase
@@ -255,6 +270,7 @@ export async function loadDetailedMetrics(): Promise<DetailedMetrics> {
     signupsByMonth,
     leadsByMonth,
     contratosByMonth,
+    whatsappByMonth,
     subsByStatus: statusCountsRaw,
     mrrCents: Math.round(mrrCents),
     arpuCents,
