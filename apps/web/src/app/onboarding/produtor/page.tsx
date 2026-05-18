@@ -58,15 +58,14 @@ export default async function OnboardingProdutorPage({
 
         <div className="mt-8">
           <p className="text-sm font-medium text-milsaca-dourado">
-            Bem-vindo, {user.email}
+            Boas-vindas, {user.email}
           </p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-milsaca-verde">
-            Conte um pouco{" "}
-            <span className="text-milsaca-dourado">sobre você</span>
+            Vamos começar{" "}
+            <span className="text-milsaca-dourado">do básico</span>
           </h1>
           <p className="mt-3 text-sm text-milsaca-verde-claro">
-            Dados básicos pra começar. Você pode completar o resto depois no
-            seu Perfil.
+            São três blocos curtos. Dá pra mudar tudo depois no Perfil.
           </p>
         </div>
 
@@ -78,123 +77,152 @@ export default async function OnboardingProdutorPage({
 
         <form
           action={completarOnboarding}
-          className="mt-8 space-y-5 rounded-2xl border border-milsaca-cream-escuro bg-white p-6 shadow-sm"
+          className="mt-8 space-y-8"
         >
-          <div className="space-y-2">
-            <Label htmlFor="full_name">Seu nome completo *</Label>
-            <Input
-              id="full_name"
-              name="full_name"
-              required
-              defaultValue={profile.full_name ?? ""}
-              placeholder="Ex: João da Silva"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Section
+            number={1}
+            title="Sobre você"
+            subtitle="Como te identificamos e como a corretora te encontra."
+          >
             <div className="space-y-2">
-              <Label htmlFor="cpf_cnpj">CPF ou CNPJ *</Label>
+              <Label htmlFor="full_name">Seu nome completo *</Label>
               <Input
-                id="cpf_cnpj"
-                name="cpf_cnpj"
+                id="full_name"
+                name="full_name"
                 required
-                inputMode="numeric"
-                defaultValue={produtor?.cpf_cnpj ?? ""}
-                placeholder="000.000.000-00"
+                defaultValue={profile.full_name ?? ""}
+                placeholder="Ex: João da Silva"
               />
             </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="cpf_cnpj">CPF ou CNPJ *</Label>
+                <Input
+                  id="cpf_cnpj"
+                  name="cpf_cnpj"
+                  required
+                  inputMode="numeric"
+                  defaultValue={produtor?.cpf_cnpj ?? ""}
+                  placeholder="000.000.000-00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="whatsapp">WhatsApp *</Label>
+                <Input
+                  id="whatsapp"
+                  name="whatsapp"
+                  required
+                  defaultValue={produtor?.whatsapp ?? profile.phone ?? ""}
+                  placeholder="(33) 99999-9999"
+                />
+                <p className="text-[11px] text-milsaca-verde-claro/70">
+                  É por aqui que a corretora vai te chamar.
+                </p>
+              </div>
+            </div>
+          </Section>
+
+          <Section
+            number={2}
+            title="Sobre sua produção"
+            subtitle="Onde fica a sua fazenda e o que você colhe."
+          >
             <div className="space-y-2">
-              <Label htmlFor="whatsapp">WhatsApp *</Label>
+              <Label htmlFor="fazenda_nome">Nome da fazenda *</Label>
               <Input
-                id="whatsapp"
-                name="whatsapp"
+                id="fazenda_nome"
+                name="fazenda_nome"
                 required
-                defaultValue={produtor?.whatsapp ?? profile.phone ?? ""}
-                placeholder="(33) 99999-9999"
+                defaultValue={produtor?.fazenda_nome ?? ""}
+                placeholder="Ex: Sítio Boa Vista"
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="fazenda_nome">Nome da fazenda *</Label>
-            <Input
-              id="fazenda_nome"
-              name="fazenda_nome"
-              required
-              defaultValue={produtor?.fazenda_nome ?? ""}
-              placeholder="Ex: Sítio Boa Vista"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="city">Cidade *</Label>
-              <Input
-                id="city"
-                name="city"
-                required
-                defaultValue={produtor?.city ?? ""}
-                placeholder="Manhuaçu"
-              />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="city">Cidade *</Label>
+                <Input
+                  id="city"
+                  name="city"
+                  required
+                  defaultValue={produtor?.city ?? ""}
+                  placeholder="Manhuaçu"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="state">UF *</Label>
+                <Input
+                  id="state"
+                  name="state"
+                  required
+                  maxLength={2}
+                  defaultValue={produtor?.state ?? ""}
+                  placeholder="MG"
+                  className="uppercase"
+                />
+              </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="state">UF *</Label>
-              <Input
-                id="state"
-                name="state"
-                required
-                maxLength={2}
-                defaultValue={produtor?.state ?? ""}
-                placeholder="MG"
-                className="uppercase"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="specie">Você produz</Label>
-            <select
-              id="specie"
-              name="specie"
-              defaultValue={produtor?.specie ?? ""}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <option value="">—</option>
-              {Object.entries(SPECIE_LABEL).map(([v, label]) => (
-                <option key={v} value={v}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {(corretoras ?? []).length > 0 ? (
-            <div className="space-y-2 border-t border-milsaca-cream-escuro pt-4">
-              <Label htmlFor="corretora_id">Corretora de preferência</Label>
+              <Label htmlFor="specie">Você produz</Label>
               <select
-                id="corretora_id"
-                name="corretora_id"
-                defaultValue={profile.corretora_id ?? ""}
+                id="specie"
+                name="specie"
+                defaultValue={produtor?.specie ?? ""}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <option value="">— escolho depois —</option>
-                {(corretoras ?? [])
-                  .filter((c): c is { id: string; name: string; city: string | null; state: string | null } =>
-                    !!c.id && !!c.name,
-                  )
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                      {c.city ? ` — ${c.city}` : ""}
-                      {c.state ? `/${c.state}` : ""}
-                    </option>
-                  ))}
+                <option value="">—</option>
+                {Object.entries(SPECIE_LABEL).map(([v, label]) => (
+                  <option key={v} value={v}>
+                    {label}
+                  </option>
+                ))}
               </select>
-              <p className="text-xs text-milsaca-verde-claro">
-                Você pode mudar ou adicionar outras corretoras depois.
-              </p>
             </div>
-          ) : null}
+          </Section>
+
+          <Section
+            number={3}
+            title="Sua corretora preferida"
+            subtitle="Opcional. Você pode favoritar várias depois no catálogo."
+            optional
+          >
+            {(corretoras ?? []).length > 0 ? (
+              <div className="space-y-2">
+                <Label htmlFor="corretora_id">Quem te atende hoje</Label>
+                <select
+                  id="corretora_id"
+                  name="corretora_id"
+                  defaultValue={profile.corretora_id ?? ""}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <option value="">— escolho depois —</option>
+                  {(corretoras ?? [])
+                    .filter(
+                      (c): c is {
+                        id: string;
+                        name: string;
+                        city: string | null;
+                        state: string | null;
+                      } => !!c.id && !!c.name,
+                    )
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                        {c.city ? ` — ${c.city}` : ""}
+                        {c.state ? `/${c.state}` : ""}
+                      </option>
+                    ))}
+                </select>
+                <p className="text-xs text-milsaca-verde-claro">
+                  Você pode mudar ou adicionar outras corretoras depois.
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-milsaca-verde-claro">
+                Ainda não há corretoras verificadas no Milsaca. Você pode
+                continuar e escolher depois.
+              </p>
+            )}
+          </Section>
 
           <div className="flex flex-col items-stretch gap-3 pt-2 sm:flex-row sm:justify-end">
             <Button
@@ -210,11 +238,49 @@ export default async function OnboardingProdutorPage({
               size="lg"
               className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
             >
-              Começar
+              Pronto, começar
             </Button>
           </div>
         </form>
       </div>
     </main>
+  );
+}
+
+function Section({
+  number,
+  title,
+  subtitle,
+  optional,
+  children,
+}: {
+  number: number;
+  title: string;
+  subtitle?: string;
+  optional?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-milsaca-cream-escuro bg-white p-6 shadow-sm">
+      <header className="mb-5 flex items-start gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-milsaca-verde text-milsaca-dourado">
+          <span className="text-sm font-bold">{number}</span>
+        </span>
+        <div className="space-y-0.5">
+          <h2 className="text-lg font-semibold text-milsaca-verde">
+            {title}
+            {optional ? (
+              <span className="ml-2 rounded-full bg-milsaca-cream-escuro/60 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-milsaca-verde-claro">
+                Opcional
+              </span>
+            ) : null}
+          </h2>
+          {subtitle ? (
+            <p className="text-xs text-milsaca-verde-claro">{subtitle}</p>
+          ) : null}
+        </div>
+      </header>
+      <div className="space-y-4">{children}</div>
+    </section>
   );
 }

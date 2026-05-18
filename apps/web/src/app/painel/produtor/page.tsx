@@ -1,14 +1,15 @@
-import { ArrowUpRight, ArrowDownRight, Coffee } from "lucide-react";
+import Link from "next/link";
+import { ArrowUpRight, ArrowDownRight, Coffee, MessageCircle } from "lucide-react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { createClient } from "@milsaca/db/web/server";
-import { requireUser } from "@/lib/auth";
+import { getProfile, requireUser } from "@/lib/auth";
 import type { LeadStatus } from "@milsaca/types";
 import { IndicadoresLive } from "@/components/indicadores-live";
 
@@ -112,27 +113,50 @@ const BRL = new Intl.NumberFormat("pt-BR", {
 
 export default async function InicioProdutorPage() {
   const user = await requireUser("/painel/produtor");
+  const profile = await getProfile();
   const [cotacoes, propostas] = await Promise.all([
     loadCotacoes(),
     loadPropostas(user.id),
   ]);
 
+  const primeiroNome = profile?.full_name?.split(" ")[0] ?? null;
+
   return (
     <div className="space-y-8">
       <header>
         <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
-          Início
+          {primeiroNome ? `Oi, ${primeiroNome}` : "Bem-vindo"}
         </h1>
         <p className="text-sm text-milsaca-verde-claro">
-          Resumo do mercado e das suas negociações.
+          Veja preços do dia e as propostas que chegaram pra você.
         </p>
       </header>
+
+      <Link
+        href="/painel/produtor/corretoras"
+        className="group flex items-center justify-between gap-4 rounded-2xl bg-emerald-600 px-5 py-4 text-white shadow-sm transition hover:bg-emerald-700"
+      >
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
+            <MessageCircle className="h-5 w-5" />
+          </span>
+          <div>
+            <p className="text-sm font-semibold">Falar com uma corretora</p>
+            <p className="text-xs text-emerald-50/90">
+              Vê quem atende sua região e chama no WhatsApp em 1 toque.
+            </p>
+          </div>
+        </div>
+        <span className="text-sm font-medium opacity-90 group-hover:opacity-100">
+          Ver corretoras →
+        </span>
+      </Link>
 
       <IndicadoresLive />
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
-          Cotações da corretora
+          Cotações do café
         </h2>
         {cotacoes.length === 0 ? (
           <EmptyCard message="Nenhuma cotação registrada ainda." />
@@ -146,11 +170,37 @@ export default async function InicioProdutorPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
-          Últimas propostas
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
+            Últimas propostas
+          </h2>
+          {propostas.length > 0 ? (
+            <Link
+              href="/painel/produtor/negociacoes"
+              className="text-xs text-milsaca-dourado hover:underline"
+            >
+              Ver todas →
+            </Link>
+          ) : null}
+        </div>
         {propostas.length === 0 ? (
-          <EmptyCard message="Nenhuma proposta recebida ainda." />
+          <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
+            <CardContent className="space-y-3 py-6 text-center">
+              <p className="text-sm text-milsaca-verde-claro">
+                Nenhuma proposta ainda. Comece chamando uma corretora.
+              </p>
+              <Button
+                asChild
+                size="sm"
+                className="bg-emerald-600 text-white hover:bg-emerald-700"
+              >
+                <Link href="/painel/produtor/corretoras">
+                  <MessageCircle className="mr-1 h-3.5 w-3.5" />
+                  Ver corretoras
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
           <Card className="border-milsaca-cream-escuro">
             <CardContent className="divide-y divide-milsaca-cream-escuro p-0">
@@ -177,21 +227,6 @@ export default async function InicioProdutorPage() {
             </CardContent>
           </Card>
         )}
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
-          Próximos passos
-        </h2>
-        <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
-          <CardHeader>
-            <CardTitle className="text-base">Conecte sua corretora</CardTitle>
-            <CardDescription>
-              Em breve você poderá ver propostas em tempo real, registrar
-              entregas e acompanhar contratos por aqui.
-            </CardDescription>
-          </CardHeader>
-        </Card>
       </section>
     </div>
   );
