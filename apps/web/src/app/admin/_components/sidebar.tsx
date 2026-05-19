@@ -13,6 +13,7 @@ import {
   BarChart3,
   ScrollText,
   MessageCircle,
+  Lock,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/assinaturas", label: "Assinaturas", icon: Receipt },
   { href: "/admin/metricas", label: "Métricas", icon: BarChart3 },
   { href: "/admin/auditoria", label: "Auditoria", icon: ScrollText },
+  { href: "/admin/seguranca", label: "Segurança", icon: Lock },
 ];
 
 export function AdminSidebar({
