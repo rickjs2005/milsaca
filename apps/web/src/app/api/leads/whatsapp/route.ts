@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@milsaca/db/web/server";
 import { createHash } from "node:crypto";
+import { checkRateLimit, ipKey } from "@/lib/rate-limit";
 
 type RequestBody = {
   corretora_id?: string;
@@ -90,6 +91,20 @@ function buildDefaultMessage(
  * pra não travar a UX. Erros vão pro audit interno.
  */
 export async function POST(req: NextRequest) {
+  // Rate limit por IP: 30 cliques/min. Generoso pra não atrapalhar uso
+  // legítimo (produtor pode clicar várias corretoras seguidas) mas
+  // corta scraping/spam.
+  const rl = await checkRateLimit(ipKey(req, "wa-leads"), 30, 60);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "too many requests" },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rl.retryAfterSeconds) },
+      },
+    );
+  }
+
   let body: RequestBody;
   try {
     body = (await req.json()) as RequestBody;

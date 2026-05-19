@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { defaultRouteFor, isAppAdmin } from "@/lib/auth";
+import { checkRateLimit, identityKey } from "@/lib/rate-limit";
 import type { Profile } from "@milsaca/types";
 
 /**
@@ -17,6 +18,15 @@ export async function signIn(formData: FormData) {
 
   if (!email || !password) {
     redirect("/entrar?error=Email%20e%20senha%20obrigat%C3%B3rios");
+  }
+
+  // Rate limit por email: 5 tentativas em 5min. Anti-brute force.
+  const rl = await checkRateLimit(identityKey("signin", email), 5, 300);
+  if (!rl.allowed) {
+    const msg = `Muitas tentativas. Tente de novo em ${rl.retryAfterSeconds}s.`;
+    redirect(
+      `/entrar?error=${encodeURIComponent(msg)}&email=${encodeURIComponent(email)}`,
+    );
   }
 
   const supabase = await createClient();

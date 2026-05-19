@@ -1292,6 +1292,24 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          hits: number
+          key: string
+          window_start: string
+        }
+        Insert: {
+          hits?: number
+          key: string
+          window_start: string
+        }
+        Update: {
+          hits?: number
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           canceled_at: string | null
@@ -1481,6 +1499,10 @@ export type Database = {
       }
     }
     Functions: {
+      check_and_increment_rate: {
+        Args: { p_key: string; p_limit: number; p_window_seconds: number }
+        Returns: Json
+      }
       current_corretora: { Args: never; Returns: string }
       current_role: {
         Args: never

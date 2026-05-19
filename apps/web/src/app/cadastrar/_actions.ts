@@ -1,8 +1,11 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { defaultRouteFor } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { createHash } from "node:crypto";
 import type { Profile } from "@milsaca/types";
 
 const MIN_PASSWORD = 8;
@@ -70,6 +73,25 @@ export async function signUp(formData: FormData) {
   }
   if (password !== confirm) {
     params.set("error", "Senhas não conferem");
+    redirect(`/cadastrar?${params.toString()}`);
+  }
+
+  // Rate limit por IP: 10 tentativas/hora. Bloqueia spam de cadastro
+  // sem punir o mesmo email que erra de propósito (anti-enumeration).
+  const h = await headers();
+  const xff = h.get("x-forwarded-for");
+  const ip = xff ? xff.split(",")[0]?.trim() : h.get("x-real-ip");
+  const salt = process.env.LEAD_IP_SALT ?? "milsaca-signup";
+  const ipKey = createHash("sha256")
+    .update(`${salt}|${ip ?? "no-ip"}`)
+    .digest("hex")
+    .slice(0, 16);
+  const rl = await checkRateLimit(`signup:${ipKey}`, 10, 3600);
+  if (!rl.allowed) {
+    params.set(
+      "error",
+      `Muitas tentativas de cadastro. Tente de novo em ${Math.ceil(rl.retryAfterSeconds / 60)}min.`,
+    );
     redirect(`/cadastrar?${params.toString()}`);
   }
 
