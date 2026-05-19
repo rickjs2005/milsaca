@@ -40,6 +40,11 @@ interface AuthValue {
     password: string;
     fullName: string;
   }) => Promise<{ error?: string; needsConfirmation?: boolean }>;
+  confirmEmail: (
+    email: string,
+    token: string,
+  ) => Promise<{ error?: string }>;
+  resendConfirmation: (email: string) => Promise<{ error?: string }>;
   requestPasswordReset: (email: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   setActiveRole: (role: UserRole) => Promise<void>;
@@ -196,6 +201,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const confirmEmail = useCallback(
+    async (email: string, token: string) => {
+      const trimmed = email.trim().toLowerCase();
+      const code = token.replace(/\D/g, "").slice(0, 6);
+      if (!trimmed || code.length !== 6) {
+        return { error: "Código inválido. São 6 dígitos." };
+      }
+      const { error } = await supabase.auth.verifyOtp({
+        email: trimmed,
+        token: code,
+        type: "email",
+      });
+      if (error) return { error: "Código incorreto ou expirado." };
+      return {};
+    },
+    [],
+  );
+
+  const resendConfirmation = useCallback(async (email: string) => {
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed) return { error: "Informe seu email." };
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: trimmed,
+    });
+    if (error) return { error: error.message };
+    return {};
+  }, []);
+
   const requestPasswordReset = useCallback(async (email: string) => {
     const trimmed = email.trim().toLowerCase();
     if (!trimmed) return { error: "Informe seu email." };
@@ -231,6 +265,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       activeRole,
       signIn,
       signUp,
+      confirmEmail,
+      resendConfirmation,
       requestPasswordReset,
       signOut,
       setActiveRole,
@@ -243,6 +279,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       activeRole,
       signIn,
       signUp,
+      confirmEmail,
+      resendConfirmation,
       requestPasswordReset,
       signOut,
       setActiveRole,

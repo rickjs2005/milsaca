@@ -23,11 +23,9 @@ export default function CadastrarScreen() {
   const [confirm, setConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
 
   const onSubmit = async () => {
     setError(null);
-    setInfo(null);
     if (!fullName.trim()) {
       setError("Digite seu nome.");
       return;
@@ -53,9 +51,12 @@ export default function CadastrarScreen() {
       return;
     }
     if (result.needsConfirmation) {
-      setInfo(
-        `Conta criada. Confira o link de confirmação no email ${email.trim().toLowerCase()}.`,
-      );
+      // Confirmação por OTP de 6 dígitos (não magic link — Gmail Safe
+      // Links queima links one-time-use).
+      router.replace({
+        pathname: "/(auth)/confirmar",
+        params: { email: email.trim().toLowerCase() },
+      });
       return;
     }
     router.replace("/(painel)/inicio");
@@ -150,14 +151,6 @@ export default function CadastrarScreen() {
                 style={{ fontFamily: "Inter_500Medium" }}
               >
                 {error}
-              </Text>
-            ) : null}
-            {info ? (
-              <Text
-                className="text-xs text-milsaca-dourado"
-                style={{ fontFamily: "Inter_500Medium" }}
-              >
-                {info}
               </Text>
             ) : null}
           </View>

@@ -209,22 +209,22 @@ export async function signUp(formData: FormData) {
     },
   ]);
 
-  // Corretora signup → trigger seta status=pendente; user vê
-  // /aguardando-aprovacao independente de confirmação de email
+  // Corretora signup → trigger seta status=pendente. Se tem sessão
+  // (confirmation desabilitada no Supabase), pula direto pra espera.
+  // Caso contrário, manda pra confirmar email primeiro — depois sim
+  // a tela /confirmar-email redireciona pra /aguardando-aprovacao.
   if (role === "corretora") {
-    const ok =
-      "Cadastro recebido. Em até 24h um administrador valida sua corretora e libera o acesso.";
     if (data.session) {
-      // Já logado (confirmação desabilitada): vai pra tela de espera
       redirect(`/aguardando-aprovacao?email=${encodeURIComponent(email)}`);
     }
-    redirect(`/entrar?ok=${encodeURIComponent(ok)}&email=${encodeURIComponent(email)}`);
+    redirect(
+      `/confirmar-email?email=${encodeURIComponent(email)}&corretora=1`,
+    );
   }
 
-  // Produtor signup
+  // Produtor signup sem sessão → tela de confirmação por OTP
   if (!data.session) {
-    const ok = `Conta criada. Confira o link de confirmação no email ${email}.`;
-    redirect(`/entrar?ok=${encodeURIComponent(ok)}&email=${encodeURIComponent(email)}`);
+    redirect(`/confirmar-email?email=${encodeURIComponent(email)}`);
   }
 
   const {
