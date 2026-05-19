@@ -76,6 +76,12 @@ export async function signUp(formData: FormData) {
     redirect(`/cadastrar?${params.toString()}`);
   }
 
+  const lgpdConsent = formData.get("lgpd_consent") === "on";
+  if (!lgpdConsent) {
+    params.set("error", "Aceite a Política de Privacidade pra continuar.");
+    redirect(`/cadastrar?${params.toString()}`);
+  }
+
   // Rate limit por IP: 10 tentativas/hora. Bloqueia spam de cadastro
   // sem punir o mesmo email que erra de propósito (anti-enumeration).
   const h = await headers();
@@ -126,6 +132,33 @@ export async function signUp(formData: FormData) {
     params.set("error", generic);
     redirect(`/cadastrar?${params.toString()}`);
   }
+
+  // Registra consentimento LGPD (best-effort; falha não tomba signup).
+  // profile_id pode ser null se confirmação por email exigir clique
+  // antes da sessão existir — gravamos com email pra reconciliar depois.
+  const POLITICA_VERSAO = "2026-05-19";
+  await supabase.from("lgpd_consents").insert([
+    {
+      profile_id: data.user?.id ?? null,
+      email,
+      kind: "politica_privacidade",
+      version: POLITICA_VERSAO,
+      granted: true,
+      ip_hash: ipKey,
+      user_agent: h.get("user-agent")?.slice(0, 500) ?? null,
+      metadata: { role, signup_at: new Date().toISOString() },
+    },
+    {
+      profile_id: data.user?.id ?? null,
+      email,
+      kind: "termos_uso",
+      version: POLITICA_VERSAO,
+      granted: true,
+      ip_hash: ipKey,
+      user_agent: h.get("user-agent")?.slice(0, 500) ?? null,
+      metadata: { role },
+    },
+  ]);
 
   // Corretora signup → trigger seta status=pendente; user vê
   // /aguardando-aprovacao independente de confirmação de email

@@ -415,6 +415,7 @@ export type Database = {
           city: string | null
           cnpj: string | null
           created_at: string
+          deleted_at: string | null
           descricao: string | null
           email: string | null
           endereco: string | null
@@ -439,6 +440,7 @@ export type Database = {
           city?: string | null
           cnpj?: string | null
           created_at?: string
+          deleted_at?: string | null
           descricao?: string | null
           email?: string | null
           endereco?: string | null
@@ -463,6 +465,7 @@ export type Database = {
           city?: string | null
           cnpj?: string | null
           created_at?: string
+          deleted_at?: string | null
           descricao?: string | null
           email?: string | null
           endereco?: string | null
@@ -790,6 +793,53 @@ export type Database = {
           },
         ]
       }
+      lgpd_consents: {
+        Row: {
+          created_at: string
+          email: string | null
+          granted: boolean
+          id: string
+          ip_hash: string | null
+          kind: Database["public"]["Enums"]["lgpd_consent_kind"]
+          metadata: Json
+          profile_id: string | null
+          user_agent: string | null
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          granted?: boolean
+          id?: string
+          ip_hash?: string | null
+          kind: Database["public"]["Enums"]["lgpd_consent_kind"]
+          metadata?: Json
+          profile_id?: string | null
+          user_agent?: string | null
+          version: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          granted?: boolean
+          id?: string
+          ip_hash?: string | null
+          kind?: Database["public"]["Enums"]["lgpd_consent_kind"]
+          metadata?: Json
+          profile_id?: string | null
+          user_agent?: string | null
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lgpd_consents_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lotes: {
         Row: {
           codigo: string
@@ -988,6 +1038,7 @@ export type Database = {
           claimed_profile_id: string | null
           corretora_id: string
           created_at: string
+          deleted_at: string | null
           email: string | null
           fazenda_nome: string | null
           full_name: string
@@ -1002,6 +1053,7 @@ export type Database = {
           claimed_profile_id?: string | null
           corretora_id: string
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           fazenda_nome?: string | null
           full_name: string
@@ -1016,6 +1068,7 @@ export type Database = {
           claimed_profile_id?: string | null
           corretora_id?: string
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           fazenda_nome?: string | null
           full_name?: string
@@ -1150,6 +1203,7 @@ export type Database = {
           city: string | null
           cpf_cnpj: string | null
           created_at: string
+          deleted_at: string | null
           fazenda_nome: string | null
           foto_capa_url: string | null
           id: string
@@ -1180,6 +1234,7 @@ export type Database = {
           city?: string | null
           cpf_cnpj?: string | null
           created_at?: string
+          deleted_at?: string | null
           fazenda_nome?: string | null
           foto_capa_url?: string | null
           id?: string
@@ -1210,6 +1265,7 @@ export type Database = {
           city?: string | null
           cpf_cnpj?: string | null
           created_at?: string
+          deleted_at?: string | null
           fazenda_nome?: string | null
           foto_capa_url?: string | null
           id?: string
@@ -1243,6 +1299,7 @@ export type Database = {
           avatar_url: string | null
           corretora_id: string | null
           created_at: string
+          deleted_at: string | null
           full_name: string | null
           id: string
           phone: string | null
@@ -1255,6 +1312,7 @@ export type Database = {
           avatar_url?: string | null
           corretora_id?: string | null
           created_at?: string
+          deleted_at?: string | null
           full_name?: string | null
           id: string
           phone?: string | null
@@ -1267,6 +1325,7 @@ export type Database = {
           avatar_url?: string | null
           corretora_id?: string | null
           created_at?: string
+          deleted_at?: string | null
           full_name?: string | null
           id?: string
           phone?: string | null
@@ -1561,6 +1620,12 @@ export type Database = {
         | "convertido"
         | "perdido"
         | "arquivado"
+      lgpd_consent_kind:
+        | "termos_uso"
+        | "politica_privacidade"
+        | "marketing_email"
+        | "marketing_whatsapp"
+        | "compartilhamento_corretora"
       lote_status:
         | "rascunho"
         | "aguardando_classificacao"
@@ -2219,6 +2284,13 @@ export const Constants = {
         "convertido",
         "perdido",
         "arquivado",
+      ],
+      lgpd_consent_kind: [
+        "termos_uso",
+        "politica_privacidade",
+        "marketing_email",
+        "marketing_whatsapp",
+        "compartilhamento_corretora",
       ],
       lote_status: [
         "rascunho",

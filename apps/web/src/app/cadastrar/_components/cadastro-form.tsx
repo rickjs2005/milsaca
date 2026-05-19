@@ -148,6 +148,33 @@ export function CadastroForm({
         </div>
       ) : null}
 
+      <div className="space-y-2 rounded-md border border-milsaca-cream-escuro bg-milsaca-cream/40 p-3 text-xs text-milsaca-verde-claro">
+        <label className="flex items-start gap-2">
+          <input
+            type="checkbox"
+            name="lgpd_consent"
+            value="on"
+            required
+            className="mt-0.5"
+          />
+          <span>
+            Concordo com a{" "}
+            <a
+              href="/politica-privacidade"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-milsaca-verde underline-offset-2 hover:underline"
+            >
+              Política de Privacidade
+            </a>{" "}
+            e autorizo o Milsaca a usar meus dados pra conectar com{" "}
+            {role === "corretora" ? "produtores" : "corretoras"} de café,
+            conforme descrito. Posso revogar a qualquer momento em{" "}
+            <code>contato@milsaca.app</code>.
+          </span>
+        </label>
+      </div>
+
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       <Button
