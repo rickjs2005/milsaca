@@ -4,6 +4,9 @@ import { Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MaskedInput } from "@/components/forms/masked-input";
+import { UfSelect } from "@/components/forms/uf-select";
+import { SubmitButton } from "@/components/submit-button";
 import { getProfile, requireUser } from "@/lib/auth";
 import {
   getCorretoraOnboarding,
@@ -20,7 +23,7 @@ export default async function OnboardingCorretoraPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const user = await requireUser("/onboarding/corretora");
+  await requireUser("/onboarding/corretora");
   const profile = await getProfile();
   if (!profile) redirect("/entrar");
   if (!profile.corretora_id) {
@@ -95,23 +98,24 @@ export default async function OnboardingCorretoraPage({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="cnpj">CNPJ *</Label>
-                <Input
+                <MaskedInput
                   id="cnpj"
+                  type="cnpj"
                   name="cnpj"
                   required
-                  inputMode="numeric"
                   defaultValue={corretora?.cnpj ?? ""}
-                  placeholder="00.000.000/0000-00"
+                  validateOnBlur
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">WhatsApp *</Label>
-                <Input
+                <MaskedInput
                   id="phone"
+                  type="phone"
                   name="phone"
                   required
-                  defaultValue={corretora?.phone ?? user.email ?? ""}
-                  placeholder="(33) 99999-9999"
+                  defaultValue={corretora?.phone ?? ""}
+                  validateOnBlur
                 />
               </div>
             </div>
@@ -164,18 +168,16 @@ export default async function OnboardingCorretoraPage({
                   required
                   defaultValue={corretora?.city ?? ""}
                   placeholder="Manhuaçu"
+                  autoComplete="address-level2"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="state">UF *</Label>
-                <Input
+                <UfSelect
                   id="state"
                   name="state"
                   required
-                  maxLength={2}
-                  defaultValue={corretora?.state ?? ""}
-                  placeholder="MG"
-                  className="uppercase"
+                  defaultValue={corretora?.state ?? "MG"}
                 />
               </div>
             </div>
@@ -188,10 +190,11 @@ export default async function OnboardingCorretoraPage({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="telefone_fixo">Telefone fixo</Label>
-                <Input
+                <MaskedInput
                   id="telefone_fixo"
+                  type="phone"
                   name="telefone_fixo"
-                  placeholder="(33) 3333-3333"
+                  validateOnBlur
                 />
               </div>
               <div className="space-y-2">
@@ -215,13 +218,13 @@ export default async function OnboardingCorretoraPage({
             >
               <Link href="/sair">Sair</Link>
             </Button>
-            <Button
-              type="submit"
+            <SubmitButton
               size="lg"
+              pendingLabel="Salvando..."
               className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
             >
               Começar
-            </Button>
+            </SubmitButton>
           </div>
         </form>
       </div>

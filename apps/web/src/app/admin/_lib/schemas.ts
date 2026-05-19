@@ -1,4 +1,13 @@
 import { z } from "zod";
+import {
+  citySchema as brCitySchema,
+  cityOptionalSchema,
+  cnpjSchema as brCnpjSchema,
+  cnpjOptionalSchema,
+  phoneBROptionalSchema,
+  ufSchema as brUfSchema,
+  ufOptionalSchema,
+} from "@/lib/brasil-schemas";
 
 /**
  * Schemas Zod usados pelas server actions do admin. Centralizados
@@ -8,18 +17,18 @@ import { z } from "zod";
  *   - text "obrigatório": preventive — campos sem o nome ficam vazios
  *   - .transform corta espaços e normaliza caixa quando aplicável
  *   - mensagens curtas, diretas, em primeira pessoa do plural
+ *   - docs e telefones passam pelos schemas brasil-schemas (DV check + E.164)
  */
 
 export const uuidSchema = z
   .string()
   .uuid({ message: "ID inválido." });
 
-export const ufSchema = z
-  .string()
-  .trim()
-  .toUpperCase()
-  .length(2, { message: "UF tem 2 letras." })
-  .regex(/^[A-Z]{2}$/, { message: "UF inválida." });
+/**
+ * UF rigorosa — só aceita as 27 UFs do Brasil. Re-export pra uso direto
+ * em outras actions do admin.
+ */
+export const ufSchema = brUfSchema;
 
 const optionalText = (max = 200) =>
   z
@@ -36,17 +45,8 @@ const requiredText = (label: string, max = 200) =>
     .min(1, { message: `${label} obrigatório.` })
     .max(max, { message: `${label} muito longo.` });
 
-const cnpjOpcional = z
-  .string()
-  .optional()
-  .transform((v) => {
-    if (!v) return null;
-    const digits = String(v).replace(/\D/g, "");
-    return digits.length > 0 ? digits : null;
-  })
-  .refine((v) => v === null || v.length === 14, {
-    message: "CNPJ precisa ter 14 dígitos.",
-  });
+// CNPJ opcional com DV check (brasil-schemas). Vazio vira null.
+const cnpjOpcional = cnpjOptionalSchema;
 
 const REGIAO_VALUES = [
   "zona_da_mata",
@@ -84,10 +84,10 @@ const coord = (label: string, min: number, max: number) =>
 // =================================================================
 export const corretoraSchema = z.object({
   name: requiredText("Nome", 200),
-  city: optionalText(100),
-  state: ufSchema.nullish().transform((v) => v ?? null),
-  phone: optionalText(20),
-  telefone_fixo: optionalText(20),
+  city: cityOptionalSchema,
+  state: ufOptionalSchema,
+  phone: phoneBROptionalSchema,
+  telefone_fixo: phoneBROptionalSchema,
   email: z
     .string()
     .optional()
@@ -131,14 +131,9 @@ export type PlanInput = z.infer<typeof planSchema>;
 export const aprovarCorretoraSchema = z.object({
   profile_id: uuidSchema,
   name: requiredText("Nome da corretora", 200),
-  cnpj: z
-    .string()
-    .transform((v) => v.replace(/\D/g, ""))
-    .refine((v) => v.length === 14, {
-      message: "CNPJ precisa ter 14 dígitos.",
-    }),
-  city: requiredText("Cidade", 100),
-  state: ufSchema.optional().nullable().transform((v) => v ?? null),
+  cnpj: brCnpjSchema,
+  city: brCitySchema,
+  state: ufOptionalSchema,
 });
 
 export const rejeitarCorretoraSchema = z.object({

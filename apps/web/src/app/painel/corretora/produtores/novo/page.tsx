@@ -10,6 +10,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { MaskedInput } from "@/components/forms/masked-input";
+import { UfSelect } from "@/components/forms/uf-select";
+import { SubmitButton } from "@/components/submit-button";
 import { createContato } from "../_actions";
 
 export const metadata = { title: "Novo produtor — Milsaca" };
@@ -91,12 +94,11 @@ export default async function NovoProdutorPage({
 
             <div className="space-y-2">
               <Label htmlFor="phone">Telefone / WhatsApp</Label>
-              <Input
+              <MaskedInput
                 id="phone"
+                type="phone"
                 name="phone"
-                type="tel"
-                inputMode="tel"
-                placeholder="(33) 99999-9999"
+                validateOnBlur
               />
             </div>
 
@@ -116,12 +118,7 @@ export default async function NovoProdutorPage({
 
             <div className="space-y-2">
               <Label htmlFor="state">UF</Label>
-              <Input
-                id="state"
-                name="state"
-                placeholder="MG"
-                maxLength={2}
-              />
+              <UfSelect id="state" name="state" />
             </div>
 
             <div className="space-y-2 sm:col-span-2">
@@ -143,12 +140,12 @@ export default async function NovoProdutorPage({
               <Button asChild variant="outline">
                 <Link href="/painel/corretora/produtores">Cancelar</Link>
               </Button>
-              <Button
-                type="submit"
+              <SubmitButton
+                pendingLabel="Cadastrando..."
                 className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
               >
                 Cadastrar produtor
-              </Button>
+              </SubmitButton>
             </div>
           </form>
         </CardContent>

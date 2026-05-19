@@ -1,5 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MaskedInput } from "@/components/forms/masked-input";
+import { UfSelect } from "@/components/forms/uf-select";
 import { REGIME_LABEL, type CompradorDetail } from "./_lib/queries";
 
 type Props = {
@@ -48,12 +50,12 @@ export function CompradorFormFields({ defaults = {} }: Props) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="cnpj">CNPJ</Label>
-          <Input
+          <MaskedInput
             id="cnpj"
+            type="cnpj"
             name="cnpj"
-            inputMode="numeric"
-            placeholder="00.000.000/0000-00"
             defaultValue={defaults.cnpj ?? ""}
+            validateOnBlur
           />
         </div>
         <div className="space-y-2">
@@ -107,11 +109,12 @@ export function CompradorFormFields({ defaults = {} }: Props) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="contact_phone">Telefone / WhatsApp</Label>
-          <Input
+          <MaskedInput
             id="contact_phone"
+            type="phone"
             name="contact_phone"
             defaultValue={defaults.contact_phone ?? ""}
-            placeholder="(11) 99999-9999"
+            validateOnBlur
           />
         </div>
         <div className="space-y-2">
@@ -123,13 +126,12 @@ export function CompradorFormFields({ defaults = {} }: Props) {
               defaultValue={defaults.city ?? ""}
               placeholder="São Paulo"
               className="flex-1"
+              autoComplete="address-level2"
             />
-            <Input
+            <UfSelect
               name="state"
               defaultValue={defaults.state ?? ""}
-              placeholder="UF"
-              maxLength={2}
-              className="w-20 uppercase"
+              className="w-24"
             />
           </div>
         </div>

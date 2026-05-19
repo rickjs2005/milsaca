@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { MaskedInput } from "@/components/forms/masked-input";
+import { SubmitButton } from "@/components/submit-button";
 import { updatePerfilCorretora } from "./_actions";
 
 export const metadata = { title: "Perfil — Painel da corretora" };
@@ -99,23 +100,22 @@ export default async function PerfilCorretoraPage({
 
             <div className="space-y-2">
               <Label htmlFor="phone">Telefone / WhatsApp</Label>
-              <Input
+              <MaskedInput
                 id="phone"
+                type="phone"
                 name="phone"
-                type="tel"
-                inputMode="tel"
-                placeholder="(33) 99999-9999"
                 defaultValue={profile.phone ?? ""}
+                validateOnBlur
               />
             </div>
 
             <div className="flex justify-end sm:col-span-2">
-              <Button
-                type="submit"
+              <SubmitButton
+                pendingLabel="Salvando..."
                 className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
               >
                 Salvar dados pessoais
-              </Button>
+              </SubmitButton>
             </div>
           </CardContent>
         </Card>

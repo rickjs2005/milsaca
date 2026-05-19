@@ -3,6 +3,8 @@ import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MaskedInput } from "@/components/forms/masked-input";
+import { UfSelect } from "@/components/forms/uf-select";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { SubmitButton } from "@/components/submit-button";
 import { aprovarCorretora, rejeitarCorretora } from "../_actions";
@@ -17,17 +19,12 @@ type PendingSignup = {
   corretora_name: string | null;
   corretora_cnpj: string | null;
   corretora_city: string | null;
+  corretora_uf: string | null;
+  corretora_whatsapp: string | null;
 };
 
 interface PageProps {
   searchParams: Promise<{ ok?: string; error?: string }>;
-}
-
-function fmtCnpj(d: string | null): string {
-  if (!d) return "";
-  const s = d.replace(/\D/g, "");
-  if (s.length !== 14) return d;
-  return `${s.slice(0, 2)}.${s.slice(2, 5)}.${s.slice(5, 8)}/${s.slice(8, 12)}-${s.slice(12)}`;
 }
 
 function fmtDate(iso: string): string {
@@ -117,24 +114,32 @@ export default async function AdminAprovacoesPage({
                   defaultValue={row.corretora_name ?? ""}
                   required
                 />
-                <Field
-                  label="CNPJ"
-                  name="cnpj"
-                  defaultValue={fmtCnpj(row.corretora_cnpj)}
-                  required
-                />
+                <div className="space-y-1.5">
+                  <Label htmlFor={`cnpj-${row.profile_id}`}>CNPJ *</Label>
+                  <MaskedInput
+                    id={`cnpj-${row.profile_id}`}
+                    type="cnpj"
+                    name="cnpj"
+                    required
+                    defaultValue={row.corretora_cnpj ?? ""}
+                    validateOnBlur
+                  />
+                </div>
                 <Field
                   label="Cidade"
                   name="city"
                   defaultValue={row.corretora_city ?? ""}
                   required
                 />
-                <Field
-                  label="UF"
-                  name="state"
-                  maxLength={2}
-                  placeholder="MG"
-                />
+                <div className="space-y-1.5">
+                  <Label htmlFor={`state-${row.profile_id}`}>UF *</Label>
+                  <UfSelect
+                    id={`state-${row.profile_id}`}
+                    name="state"
+                    required
+                    defaultValue={row.corretora_uf ?? "MG"}
+                  />
+                </div>
               </div>
 
               <div className="flex flex-wrap items-center justify-end gap-3 pt-2">

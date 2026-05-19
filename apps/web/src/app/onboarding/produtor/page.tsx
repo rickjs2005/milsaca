@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MunicipioAutocomplete } from "@/components/municipio-autocomplete";
+import { MaskedInput } from "@/components/forms/masked-input";
+import { UfSelect } from "@/components/forms/uf-select";
+import { SubmitButton } from "@/components/submit-button";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile, requireUser } from "@/lib/auth";
 import {
@@ -98,23 +101,24 @@ export default async function OnboardingProdutorPage({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="cpf_cnpj">CPF ou CNPJ *</Label>
-                <Input
+                <MaskedInput
                   id="cpf_cnpj"
+                  type="cpf-cnpj"
                   name="cpf_cnpj"
                   required
-                  inputMode="numeric"
                   defaultValue={produtor?.cpf_cnpj ?? ""}
-                  placeholder="000.000.000-00"
+                  validateOnBlur
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="whatsapp">WhatsApp *</Label>
-                <Input
+                <MaskedInput
                   id="whatsapp"
+                  type="phone"
                   name="whatsapp"
                   required
                   defaultValue={produtor?.whatsapp ?? profile.phone ?? ""}
-                  placeholder="(33) 99999-9999"
+                  validateOnBlur
                 />
                 <p className="text-[11px] text-milsaca-verde-claro/70">
                   É por aqui que a corretora vai te chamar.
@@ -141,14 +145,11 @@ export default async function OnboardingProdutorPage({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="state">UF *</Label>
-                <Input
+                <UfSelect
                   id="state"
                   name="state"
                   required
-                  maxLength={2}
-                  defaultValue={produtor?.state ?? ""}
-                  placeholder="MG"
-                  className="uppercase"
+                  defaultValue={produtor?.state ?? "MG"}
                 />
               </div>
               <div className="space-y-2">
@@ -156,7 +157,7 @@ export default async function OnboardingProdutorPage({
                 <MunicipioAutocomplete
                   name="city"
                   defaultValue={produtor?.city ?? ""}
-                  uf={produtor?.state ?? null}
+                  uf={produtor?.state ?? "MG"}
                   ufFieldId="state"
                   placeholder="Manhuaçu"
                   required
@@ -235,13 +236,13 @@ export default async function OnboardingProdutorPage({
             >
               <Link href="/sair">Sair</Link>
             </Button>
-            <Button
-              type="submit"
+            <SubmitButton
               size="lg"
+              pendingLabel="Salvando..."
               className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
             >
               Pronto, começar
-            </Button>
+            </SubmitButton>
           </div>
         </form>
       </div>

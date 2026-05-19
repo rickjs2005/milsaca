@@ -1581,6 +1581,8 @@ export type Database = {
           corretora_city: string
           corretora_cnpj: string
           corretora_name: string
+          corretora_uf: string
+          corretora_whatsapp: string
           email: string
           full_name: string
           profile_id: string

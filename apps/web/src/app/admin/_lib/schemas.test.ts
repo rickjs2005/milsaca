@@ -50,17 +50,26 @@ describe("corretoraSchema", () => {
     expect(r.success).toBe(false);
   });
 
-  it("normaliza CNPJ pra digits-only", () => {
+  it("normaliza CNPJ válido pra digits-only", () => {
+    // 11.222.333/0001-81 é CNPJ com DV correto
     const r = corretoraSchema.safeParse({
       name: "X",
-      cnpj: "12.345.678/0001-90",
+      cnpj: "11.222.333/0001-81",
     });
     expect(r.success).toBe(true);
-    if (r.success) expect(r.data.cnpj).toBe("12345678000190");
+    if (r.success) expect(r.data.cnpj).toBe("11222333000181");
   });
 
   it("rejeita CNPJ com tamanho errado", () => {
     const r = corretoraSchema.safeParse({ name: "X", cnpj: "12345" });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejeita CNPJ com DV inválido (todos iguais)", () => {
+    const r = corretoraSchema.safeParse({
+      name: "X",
+      cnpj: "11111111111111",
+    });
     expect(r.success).toBe(false);
   });
 
@@ -109,15 +118,25 @@ describe("corretoraSchema", () => {
 });
 
 describe("aprovarCorretoraSchema", () => {
-  it("aceita payload válido", () => {
+  it("aceita payload válido com CNPJ real (DV correto)", () => {
     const r = aprovarCorretoraSchema.safeParse({
       profile_id: "550e8400-e29b-41d4-a716-446655440000",
       name: "Café X",
-      cnpj: "12345678000190",
+      cnpj: "11222333000181",
       city: "Manhuaçu",
       state: "MG",
     });
     expect(r.success).toBe(true);
+  });
+
+  it("rejeita CNPJ com DV inválido", () => {
+    const r = aprovarCorretoraSchema.safeParse({
+      profile_id: "550e8400-e29b-41d4-a716-446655440000",
+      name: "X",
+      cnpj: "12345678000190",
+      city: "Y",
+    });
+    expect(r.success).toBe(false);
   });
 
   it("rejeita sem CNPJ", () => {

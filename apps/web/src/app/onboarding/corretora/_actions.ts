@@ -4,6 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile, requireUser } from "@/lib/auth";
+import {
+  citySchema,
+  cnpjSchema,
+  phoneBROptionalSchema,
+  ufSchema,
+  whatsappSchema,
+} from "@/lib/brasil-schemas";
 
 function clean(v: FormDataEntryValue | null): string | null {
   const s = String(v ?? "").trim();
@@ -15,6 +22,10 @@ function cleanDigits(v: FormDataEntryValue | null): string | null {
   return s || null;
 }
 
+function redirectError(msg: string): never {
+  redirect(`/onboarding/corretora?error=${encodeURIComponent(msg)}`);
+}
+
 export async function completarOnboardingCorretora(formData: FormData) {
   const user = await requireUser("/onboarding/corretora");
   const profile = await getProfile();
@@ -23,28 +34,39 @@ export async function completarOnboardingCorretora(formData: FormData) {
   }
 
   const full_name = clean(formData.get("full_name"));
-  const cnpj = cleanDigits(formData.get("cnpj"));
-  const phone = clean(formData.get("phone"));
-  const city = clean(formData.get("city"));
-  const state = clean(formData.get("state"))?.toUpperCase().slice(0, 2) ?? null;
+  const cnpjRaw = String(formData.get("cnpj") ?? "");
+  const phoneRaw = String(formData.get("phone") ?? "");
+  const cityRaw = String(formData.get("city") ?? "");
+  const stateRaw = String(formData.get("state") ?? "");
+  const telefoneFixoRaw = String(formData.get("telefone_fixo") ?? "");
   const cep = cleanDigits(formData.get("cep"));
   const endereco = clean(formData.get("endereco"));
   const bairro = clean(formData.get("bairro"));
   const descricao = clean(formData.get("descricao"));
-  const telefone_fixo = clean(formData.get("telefone_fixo"));
   const site_url = clean(formData.get("site_url"));
 
-  const missing: string[] = [];
-  if (!full_name) missing.push("seu nome");
-  if (!cnpj) missing.push("CNPJ");
-  if (!phone) missing.push("WhatsApp");
-  if (!city || !state) missing.push("cidade/UF");
+  if (!full_name) redirectError("Preencha seu nome.");
 
-  if (missing.length > 0) {
-    redirect(
-      `/onboarding/corretora?error=${encodeURIComponent("Preencha: " + missing.join(", "))}`,
-    );
-  }
+  const cnpjParsed = cnpjSchema.safeParse(cnpjRaw);
+  if (!cnpjParsed.success) redirectError("Informe um CNPJ válido.");
+  const cnpj = cnpjParsed.data;
+
+  const phoneParsed = whatsappSchema.safeParse(phoneRaw);
+  if (!phoneParsed.success) redirectError("Informe um WhatsApp válido com DDD.");
+  const phone = phoneParsed.data;
+
+  const cityParsed = citySchema.safeParse(cityRaw);
+  if (!cityParsed.success) redirectError("Cidade inválida.");
+  const city = cityParsed.data;
+
+  const stateParsed = ufSchema.safeParse(stateRaw);
+  if (!stateParsed.success) redirectError("Selecione o estado.");
+  const state = stateParsed.data;
+
+  // Telefone fixo é opcional — só valida formato se preenchido.
+  const fixoParsed = phoneBROptionalSchema.safeParse(telefoneFixoRaw);
+  if (!fixoParsed.success) redirectError("Telefone fixo inválido.");
+  const telefone_fixo = fixoParsed.data;
 
   const supabase = await createClient();
 
@@ -52,11 +74,7 @@ export async function completarOnboardingCorretora(formData: FormData) {
     .from("profiles")
     .update({ full_name, phone })
     .eq("id", user.id);
-  if (pErr) {
-    redirect(
-      `/onboarding/corretora?error=${encodeURIComponent(pErr.message)}`,
-    );
-  }
+  if (pErr) redirectError(pErr.message);
 
   const { error: cErr } = await supabase
     .from("corretoras")
@@ -73,11 +91,7 @@ export async function completarOnboardingCorretora(formData: FormData) {
       site_url,
     })
     .eq("id", profile.corretora_id);
-  if (cErr) {
-    redirect(
-      `/onboarding/corretora?error=${encodeURIComponent(cErr.message)}`,
-    );
-  }
+  if (cErr) redirectError(cErr.message);
 
   revalidatePath("/painel/corretora");
   revalidatePath("/admin/corretoras");

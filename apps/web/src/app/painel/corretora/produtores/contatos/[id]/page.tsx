@@ -12,6 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { MaskedInput } from "@/components/forms/masked-input";
+import { UfSelect } from "@/components/forms/uf-select";
+import { SubmitButton } from "@/components/submit-button";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { getProfile } from "@/lib/auth";
 import { getContato, getCorretoraNome } from "../../_lib/queries";
@@ -144,12 +147,12 @@ export default async function ContatoDetalhePage({
 
             <div className="space-y-2">
               <Label htmlFor="phone">Telefone / WhatsApp</Label>
-              <Input
+              <MaskedInput
                 id="phone"
+                type="phone"
                 name="phone"
-                type="tel"
-                inputMode="tel"
                 defaultValue={contato.phone ?? ""}
+                validateOnBlur
               />
             </div>
 
@@ -169,10 +172,9 @@ export default async function ContatoDetalhePage({
 
             <div className="space-y-2">
               <Label htmlFor="state">UF</Label>
-              <Input
+              <UfSelect
                 id="state"
                 name="state"
-                maxLength={2}
                 defaultValue={contato.state ?? ""}
               />
             </div>
@@ -196,12 +198,12 @@ export default async function ContatoDetalhePage({
               <Button asChild variant="outline">
                 <Link href="/painel/corretora/produtores">Cancelar</Link>
               </Button>
-              <Button
-                type="submit"
+              <SubmitButton
+                pendingLabel="Salvando..."
                 className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
               >
                 Salvar
-              </Button>
+              </SubmitButton>
             </div>
           </form>
         </CardContent>

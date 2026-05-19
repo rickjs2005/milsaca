@@ -2,6 +2,8 @@
 // Server Component sem state; valores defaults vêm via prop.
 
 import { MunicipioAutocomplete } from "@/components/municipio-autocomplete";
+import { MaskedInput } from "@/components/forms/masked-input";
+import { UfSelect } from "@/components/forms/uf-select";
 import { REGIOES_CAFEEIRAS, type RegiaoCafeeira } from "./regioes";
 
 type Defaults = {
@@ -98,12 +100,15 @@ export function CorretoraFormFields({
       <Section title="Documentos">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1">
-            <label className={labelCls}>CNPJ</label>
-            <input
+            <label htmlFor="cnpj" className={labelCls}>
+              CNPJ
+            </label>
+            <MaskedInput
+              id="cnpj"
+              type="cnpj"
               name="cnpj"
               defaultValue={d.cnpj ?? ""}
-              placeholder="00.000.000/0000-00"
-              className={inputCls}
+              validateOnBlur
             />
           </div>
           <div className="space-y-1">
@@ -176,14 +181,13 @@ export function CorretoraFormFields({
             />
           </div>
           <div className="space-y-1">
-            <label className={labelCls}>Estado (UF)</label>
-            <input
+            <label htmlFor="corretora-state" className={labelCls}>
+              Estado (UF)
+            </label>
+            <UfSelect
               id="corretora-state"
               name="state"
-              maxLength={2}
               defaultValue={d.state ?? ""}
-              placeholder="MG"
-              className={`${inputCls} uppercase`}
             />
           </div>
           <div className="space-y-1">
@@ -228,24 +232,30 @@ export function CorretoraFormFields({
       <Section title="Contato">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1">
-            <label className={labelCls}>WhatsApp</label>
-            <input
+            <label htmlFor="phone" className={labelCls}>
+              WhatsApp
+            </label>
+            <MaskedInput
+              id="phone"
+              type="phone"
               name="phone"
               defaultValue={d.phone ?? ""}
-              placeholder="(33) 99999-9999"
-              className={inputCls}
+              validateOnBlur
             />
             <p className="text-xs text-milsaca-verde-claro/70">
               Canal principal pra produtor.
             </p>
           </div>
           <div className="space-y-1">
-            <label className={labelCls}>Telefone fixo</label>
-            <input
+            <label htmlFor="telefone_fixo" className={labelCls}>
+              Telefone fixo
+            </label>
+            <MaskedInput
+              id="telefone_fixo"
+              type="phone"
               name="telefone_fixo"
               defaultValue={d.telefone_fixo ?? ""}
-              placeholder="(33) 3333-3333"
-              className={inputCls}
+              validateOnBlur
             />
           </div>
         </div>

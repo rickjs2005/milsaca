@@ -5,18 +5,11 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
-
-function clean(v: FormDataEntryValue | null): string | null {
-  if (v == null) return null;
-  const s = String(v).trim();
-  return s ? s : null;
-}
-
-function cleanEmail(v: FormDataEntryValue | null): string | null {
-  const s = clean(v);
-  if (!s) return null;
-  return s.toLowerCase();
-}
+import {
+  createProdutorContatoSchema,
+  flattenZodErrors,
+  formDataToObject,
+} from "../_lib/schemas";
 
 export async function createContato(formData: FormData) {
   const profile = await getProfile();
@@ -24,46 +17,42 @@ export async function createContato(formData: FormData) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
   }
 
-  const full_name = clean(formData.get("full_name"));
-  const email = cleanEmail(formData.get("email"));
-  const phone = clean(formData.get("phone"));
-  const fazenda_nome = clean(formData.get("fazenda_nome"));
-  const city = clean(formData.get("city"));
-  const state = clean(formData.get("state"));
-  const notes = clean(formData.get("notes"));
-
-  const errors: string[] = [];
-  if (!full_name) errors.push("Nome obrigatório");
-  if (!email && !phone) errors.push("Informe email ou telefone");
-
-  if (errors.length > 0) {
-    const params = new URLSearchParams({ error: errors.join(", ") });
+  const parsed = createProdutorContatoSchema.safeParse(
+    formDataToObject(formData),
+  );
+  if (!parsed.success) {
+    const params = new URLSearchParams({
+      error: flattenZodErrors(parsed.error),
+    });
+    redirect(`/painel/corretora/produtores/novo?${params.toString()}`);
+  }
+  const data = parsed.data;
+  if (!data.email && !data.phone) {
+    const params = new URLSearchParams({
+      error: "Informe email ou telefone.",
+    });
     redirect(`/painel/corretora/produtores/novo?${params.toString()}`);
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data: inserted, error } = await supabase
     .from("produtor_contatos")
     .insert({
       corretora_id: profile.corretora_id,
-      full_name: full_name as string,
-      email,
-      phone,
-      fazenda_nome,
-      city,
-      state,
-      notes,
+      ...data,
     })
     .select("id")
     .single();
 
   if (error) {
-    const params = new URLSearchParams({ error: friendlyPostgresError(error) });
+    const params = new URLSearchParams({
+      error: friendlyPostgresError(error),
+    });
     redirect(`/painel/corretora/produtores/novo?${params.toString()}`);
   }
 
   revalidatePath("/painel/corretora/produtores");
-  redirect(`/painel/corretora/produtores/contatos/${data.id}`);
+  redirect(`/painel/corretora/produtores/contatos/${inserted.id}`);
 }
 
 export async function updateContato(formData: FormData) {
@@ -73,16 +62,13 @@ export async function updateContato(formData: FormData) {
   const id = String(formData.get("id") ?? "").trim();
   if (!id) redirect("/painel/corretora/produtores");
 
-  const full_name = clean(formData.get("full_name"));
-  const email = cleanEmail(formData.get("email"));
-  const phone = clean(formData.get("phone"));
-  const fazenda_nome = clean(formData.get("fazenda_nome"));
-  const city = clean(formData.get("city"));
-  const state = clean(formData.get("state"));
-  const notes = clean(formData.get("notes"));
-
-  if (!full_name) {
-    const params = new URLSearchParams({ error: "Nome obrigatório" });
+  const parsed = createProdutorContatoSchema.safeParse(
+    formDataToObject(formData),
+  );
+  if (!parsed.success) {
+    const params = new URLSearchParams({
+      error: flattenZodErrors(parsed.error),
+    });
     redirect(
       `/painel/corretora/produtores/contatos/${id}?${params.toString()}`,
     );
@@ -91,20 +77,14 @@ export async function updateContato(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("produtor_contatos")
-    .update({
-      full_name: full_name as string,
-      email,
-      phone,
-      fazenda_nome,
-      city,
-      state,
-      notes,
-    })
+    .update(parsed.data)
     .eq("id", id)
     .eq("corretora_id", profile.corretora_id);
 
   if (error) {
-    const params = new URLSearchParams({ error: friendlyPostgresError(error) });
+    const params = new URLSearchParams({
+      error: friendlyPostgresError(error),
+    });
     redirect(
       `/painel/corretora/produtores/contatos/${id}?${params.toString()}`,
     );

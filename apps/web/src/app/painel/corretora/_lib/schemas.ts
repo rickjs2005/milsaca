@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+  cityOptionalSchema,
+  cnpjOptionalSchema,
+  phoneBROptionalSchema,
+  ufOptionalSchema,
+} from "@/lib/brasil-schemas";
 
 /**
  * Schemas Zod das server actions do painel da corretora.
@@ -8,6 +14,7 @@ import { z } from "zod";
  *   - .transform corta espaços e normaliza casas decimais
  *   - mensagens curtas em pt-BR
  *   - empty string vira null pra não estourar NOT NULL
+ *   - docs e telefones passam por brasil-schemas (DV check + E.164)
  */
 
 export const uuidSchema = z.string().uuid({ message: "ID inválido." });
@@ -168,14 +175,7 @@ export const updateLeadStatusSchema = z.object({
 export const compradorSchema = z.object({
   name: requiredText("Nome", 200),
   trade_name: optionalText(200),
-  cnpj: z
-    .string()
-    .optional()
-    .transform((v) => (v ? v.replace(/\D/g, "") : ""))
-    .transform((v) => (v.length > 0 ? v : null))
-    .refine((v) => v === null || v.length === 14, {
-      message: "CNPJ precisa ter 14 dígitos.",
-    }),
+  cnpj: cnpjOptionalSchema,
   inscricao_estadual: optionalText(30),
   contact_name: optionalText(200),
   contact_email: z
@@ -185,9 +185,9 @@ export const compradorSchema = z.object({
     .refine((v) => v === null || /.+@.+\..+/.test(v), {
       message: "E-mail inválido.",
     }),
-  contact_phone: optionalText(20),
-  city: optionalText(100),
-  state: optionalText(2),
+  contact_phone: phoneBROptionalSchema,
+  city: cityOptionalSchema,
+  state: ufOptionalSchema,
   tipo: optionalText(40),
   observacoes: optionalText(1000),
 });
@@ -207,9 +207,9 @@ export const createCotacaoSchema = z.object({
 // =================================================================
 export const perfilCorretoraSchema = z.object({
   full_name: requiredText("Nome do operador", 200),
-  phone: optionalText(20),
-  city: optionalText(100),
-  state: optionalText(2),
+  phone: phoneBROptionalSchema,
+  city: cityOptionalSchema,
+  state: ufOptionalSchema,
   email: z
     .string()
     .optional()
@@ -231,10 +231,10 @@ export const createProdutorContatoSchema = z.object({
     .refine((v) => v === null || /.+@.+\..+/.test(v), {
       message: "E-mail inválido.",
     }),
-  phone: optionalText(20),
+  phone: phoneBROptionalSchema,
   fazenda_nome: optionalText(200),
-  city: optionalText(100),
-  state: optionalText(2),
+  city: cityOptionalSchema,
+  state: ufOptionalSchema,
   notes: optionalText(1000),
 });
 

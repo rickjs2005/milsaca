@@ -9,7 +9,9 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { MaskedInput } from "@/components/forms/masked-input";
+import { UfSelect } from "@/components/forms/uf-select";
+import { SubmitButton } from "@/components/submit-button";
 import { getProfile, getUser } from "@/lib/auth";
 import {
   getProdutorByProfileId,
@@ -81,36 +83,34 @@ export default async function PerfilProdutorPage({
 
             <div className="space-y-2">
               <Label htmlFor="phone">Telefone</Label>
-              <Input
+              <MaskedInput
                 id="phone"
+                type="phone"
                 name="phone"
-                type="tel"
-                inputMode="tel"
-                placeholder="(33) 99999-9999"
                 defaultValue={profile.phone ?? ""}
+                validateOnBlur
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="whatsapp">WhatsApp</Label>
-              <Input
+              <MaskedInput
                 id="whatsapp"
+                type="phone"
                 name="whatsapp"
-                type="tel"
-                inputMode="tel"
-                placeholder="(33) 99999-9999"
                 defaultValue={ext?.whatsapp ?? profile.phone ?? ""}
+                validateOnBlur
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="cpf_cnpj">CPF / CNPJ</Label>
-              <Input
+              <MaskedInput
                 id="cpf_cnpj"
+                type="cpf-cnpj"
                 name="cpf_cnpj"
-                inputMode="numeric"
-                placeholder="000.000.000-00"
                 defaultValue={ext?.cpf_cnpj ?? ""}
+                validateOnBlur
               />
             </div>
 
@@ -157,11 +157,9 @@ export default async function PerfilProdutorPage({
 
             <div className="space-y-2">
               <Label htmlFor="state">UF</Label>
-              <Input
+              <UfSelect
                 id="state"
                 name="state"
-                maxLength={2}
-                placeholder="MG"
                 defaultValue={ext?.state ?? ""}
               />
             </div>
@@ -323,12 +321,12 @@ export default async function PerfilProdutorPage({
         </Card>
 
         <div className="flex justify-end">
-          <Button
-            type="submit"
+          <SubmitButton
+            pendingLabel="Salvando..."
             className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
           >
             Salvar perfil
-          </Button>
+          </SubmitButton>
         </div>
       </form>
     </div>

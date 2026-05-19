@@ -75,7 +75,9 @@ async function main() {
   const stamp = Date.now();
   const fakeEmail = `smoke-corretora-${stamp}@milsaca.test`;
   const fakeCorretoraName = `Smoke Corretora ${stamp}`;
-  const fakeCnpj = "12345678000190";
+  // CNPJ com DV correto — aprovarCorretoraSchema agora valida via Zod.
+  // Antes era 12345678000190 (length-only); falha desde a Fase E1.
+  const fakeCnpj = "11222333000181";
   const fakeCity = "Manhuaçu";
 
   console.log("\n=== SMOKE TEST: aprovação de corretora ===\n");
