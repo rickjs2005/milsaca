@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Coffee } from "lucide-react";
 import { requestPasswordReset } from "./_actions";
 import { Button } from "@/components/ui/button";
+import { MilsacaLogo } from "@/components/milsaca-logo";
 import {
   Card,
   CardContent,
@@ -26,13 +26,8 @@ export default async function EsqueciSenhaPage({
   return (
     <main className="flex min-h-screen items-center justify-center bg-milsaca-cream px-6 py-10">
       <div className="w-full max-w-md">
-        <div className="mb-8 flex items-center justify-center gap-2">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-milsaca-verde text-milsaca-dourado">
-            <Coffee className="h-5 w-5" />
-          </span>
-          <span className="text-xl font-semibold tracking-tight text-milsaca-verde">
-            Milsaca
-          </span>
+        <div className="mb-6 flex items-center justify-center">
+          <MilsacaLogo size={160} priority />
         </div>
 
         <Card className="border-milsaca-cream-escuro">

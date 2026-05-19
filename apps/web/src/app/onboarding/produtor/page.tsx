@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +7,7 @@ import { MunicipioAutocomplete } from "@/components/municipio-autocomplete";
 import { MaskedInput } from "@/components/forms/masked-input";
 import { UfSelect } from "@/components/forms/uf-select";
 import { SubmitButton } from "@/components/submit-button";
+import { MilsacaLogo } from "@/components/milsaca-logo";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile, requireUser } from "@/lib/auth";
 import {
@@ -51,13 +51,8 @@ export default async function OnboardingProdutorPage({
   return (
     <main className="min-h-screen bg-milsaca-cream">
       <div className="mx-auto max-w-2xl px-6 py-12">
-        <header className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-milsaca-verde text-milsaca-dourado">
-            <Coffee className="h-5 w-5" />
-          </span>
-          <span className="text-lg font-semibold tracking-tight text-milsaca-verde">
-            Milsaca
-          </span>
+        <header className="flex items-center">
+          <MilsacaLogo size={96} />
         </header>
 
         <div className="mt-8">

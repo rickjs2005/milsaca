@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
-import { Handshake, Sprout, ArrowRight, Coffee } from "lucide-react";
+import { Handshake, Sprout, ArrowRight } from "lucide-react";
 import { getProfile, panelFor } from "@/lib/auth";
 import { selectRole } from "./_actions";
 import { Card, CardContent } from "@/components/ui/card";
+import { MilsacaLogo } from "@/components/milsaca-logo";
 
 export const metadata = { title: "Escolha o painel — Milsaca" };
 
@@ -48,9 +49,7 @@ export default async function EscolherPainelPage() {
     <main className="flex min-h-screen items-center justify-center bg-milsaca-cream px-6 py-12">
       <div className="w-full max-w-2xl">
         <div className="mb-8 flex flex-col items-center text-center">
-          <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-milsaca-verde text-milsaca-dourado">
-            <Coffee className="h-5 w-5" />
-          </span>
+          <MilsacaLogo size={120} className="mb-3" />
           <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
             Como você quer entrar hoje?
           </h1>
