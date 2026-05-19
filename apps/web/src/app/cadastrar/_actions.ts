@@ -91,7 +91,17 @@ export async function signUp(formData: FormData) {
   });
 
   if (error) {
-    params.set("error", error.message);
+    // Anti-enumeration: nunca dizer "email já existe", "senha fraca pra
+    // este email" etc. Esses códigos vazam quais emails têm conta no
+    // Milsaca pra qualquer um que use o /cadastrar como oráculo.
+    // Mensagens reais vão pro console.error em dev pra debug.
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[cadastrar] signUp error:", error);
+    }
+    const generic = error.message?.match(/password/i)
+      ? "Senha não atende aos requisitos. Use 8+ caracteres com letras e números."
+      : "Não foi possível concluir o cadastro. Tente novamente em alguns minutos.";
+    params.set("error", generic);
     redirect(`/cadastrar?${params.toString()}`);
   }
 
