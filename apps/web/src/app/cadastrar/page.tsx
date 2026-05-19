@@ -10,6 +10,8 @@ type SearchParams = Promise<{
   role?: string;
   corretora_name?: string;
   corretora_city?: string;
+  corretora_uf?: string;
+  corretora_whatsapp?: string;
   error?: string;
 }>;
 
@@ -25,7 +27,7 @@ export default async function CadastrarPage({
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-milsaca-cream px-6 py-10">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-2xl">
         <div className="mb-8 flex items-center justify-center gap-2">
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-milsaca-verde text-milsaca-dourado">
             <Coffee className="h-5 w-5" />
@@ -35,14 +37,14 @@ export default async function CadastrarPage({
           </span>
         </div>
 
-        <Card className="border-milsaca-cream-escuro">
-          <CardHeader>
+        <Card className="border-milsaca-cream-escuro shadow-sm">
+          <CardHeader className="space-y-1.5 pb-2">
             <CardTitle className="text-2xl">Criar conta</CardTitle>
             <CardDescription>
               Você é produtor ou está abrindo uma corretora?
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-4">
             <CadastroForm
               action={signUp}
               initialRole={initialRole}
@@ -50,7 +52,10 @@ export default async function CadastrarPage({
                 email: sp.email ?? "",
                 full_name: sp.full_name ?? "",
                 corretora_name: sp.corretora_name ?? "",
+                corretora_cnpj: "",
                 corretora_city: sp.corretora_city ?? "",
+                corretora_uf: sp.corretora_uf ?? "",
+                corretora_whatsapp: sp.corretora_whatsapp ?? "",
               }}
               error={sp.error ?? null}
             />

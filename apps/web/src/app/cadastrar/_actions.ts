@@ -5,6 +5,12 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { defaultRouteFor } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
+import {
+  citySchema,
+  cnpjSchema,
+  ufSchema,
+  whatsappOptionalSchema,
+} from "@/lib/brasil-schemas";
 import { createHash } from "node:crypto";
 import type { Profile } from "@milsaca/types";
 
@@ -15,11 +21,6 @@ type RoleChoice = "produtor" | "corretora";
 function clean(v: FormDataEntryValue | null): string | null {
   if (v == null) return null;
   const s = String(v).trim();
-  return s || null;
-}
-
-function cleanDigits(v: FormDataEntryValue | null): string | null {
-  const s = String(v ?? "").replace(/\D/g, "");
   return s || null;
 }
 
@@ -43,16 +44,25 @@ export async function signUp(formData: FormData) {
   const confirm = String(formData.get("confirm") ?? "");
   const fullName = clean(formData.get("full_name"));
 
-  // Campos extras quando role=corretora
+  // Campos extras quando role=corretora — cnpj/uf/cidade/whatsapp passam
+  // por schemas Zod com DV-check + normalização. UI manda já normalizado
+  // via MaskedInput hidden, mas re-normalizamos no server por defesa.
   const corretoraName = clean(formData.get("corretora_name"));
-  const corretoraCnpj = cleanDigits(formData.get("corretora_cnpj"));
-  const corretoraCity = clean(formData.get("corretora_city"));
+  const corretoraCnpjRaw = String(formData.get("corretora_cnpj") ?? "");
+  const corretoraCityRaw = String(formData.get("corretora_city") ?? "");
+  const corretoraUfRaw = String(formData.get("corretora_uf") ?? "");
+  const corretoraWhatsappRaw = String(
+    formData.get("corretora_whatsapp") ?? "",
+  );
 
   const params = new URLSearchParams({ role });
   if (email) params.set("email", email);
   if (fullName) params.set("full_name", fullName);
   if (corretoraName) params.set("corretora_name", corretoraName);
-  if (corretoraCity) params.set("corretora_city", corretoraCity);
+  if (corretoraCityRaw) params.set("corretora_city", corretoraCityRaw);
+  if (corretoraUfRaw) params.set("corretora_uf", corretoraUfRaw);
+  if (corretoraWhatsappRaw)
+    params.set("corretora_whatsapp", corretoraWhatsappRaw);
 
   const missing: string[] = [];
   if (!fullName) missing.push("nome");
@@ -60,8 +70,6 @@ export async function signUp(formData: FormData) {
   if (!password) missing.push("senha");
   if (role === "corretora") {
     if (!corretoraName) missing.push("nome da corretora");
-    if (!corretoraCnpj) missing.push("CNPJ");
-    if (!corretoraCity) missing.push("cidade da corretora");
   }
   if (missing.length > 0) {
     params.set("error", "Preencha: " + missing.join(", "));
@@ -74,6 +82,45 @@ export async function signUp(formData: FormData) {
   if (password !== confirm) {
     params.set("error", "Senhas não conferem");
     redirect(`/cadastrar?${params.toString()}`);
+  }
+
+  // Valida dados da corretora com DV check / UF enum / cidade limpa.
+  // Pra produtor esses campos são ignorados.
+  let corretoraCnpj: string | null = null;
+  let corretoraCity: string | null = null;
+  let corretoraUf: string | null = null;
+  let corretoraWhatsapp: string | null = null;
+  if (role === "corretora") {
+    const cnpjParsed = cnpjSchema.safeParse(corretoraCnpjRaw);
+    if (!cnpjParsed.success) {
+      params.set("error", "Informe um CNPJ válido (com DV correto).");
+      redirect(`/cadastrar?${params.toString()}`);
+    }
+    corretoraCnpj = cnpjParsed.data;
+
+    const cityParsed = citySchema.safeParse(corretoraCityRaw);
+    if (!cityParsed.success) {
+      params.set(
+        "error",
+        cityParsed.error.issues[0]?.message ?? "Cidade inválida.",
+      );
+      redirect(`/cadastrar?${params.toString()}`);
+    }
+    corretoraCity = cityParsed.data;
+
+    const ufParsed = ufSchema.safeParse(corretoraUfRaw);
+    if (!ufParsed.success) {
+      params.set("error", "Selecione o estado.");
+      redirect(`/cadastrar?${params.toString()}`);
+    }
+    corretoraUf = ufParsed.data;
+
+    const waParsed = whatsappOptionalSchema.safeParse(corretoraWhatsappRaw);
+    if (!waParsed.success) {
+      params.set("error", "Informe um WhatsApp válido (com DDD).");
+      redirect(`/cadastrar?${params.toString()}`);
+    }
+    corretoraWhatsapp = waParsed.data;
   }
 
   const lgpdConsent = formData.get("lgpd_consent") === "on";
@@ -110,6 +157,8 @@ export async function signUp(formData: FormData) {
     metadata.corretora_name = corretoraName;
     metadata.corretora_cnpj = corretoraCnpj;
     metadata.corretora_city = corretoraCity;
+    metadata.corretora_uf = corretoraUf;
+    if (corretoraWhatsapp) metadata.corretora_whatsapp = corretoraWhatsapp;
   }
 
   const { data, error } = await supabase.auth.signUp({

@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FormField } from "@/components/forms/form-field";
+import { MaskedInput } from "@/components/forms/masked-input";
+import { UfSelect } from "@/components/forms/uf-select";
+import { SubmitButton } from "@/components/submit-button";
 
 type Role = "produtor" | "corretora";
 
@@ -11,7 +13,10 @@ type Defaults = {
   email: string;
   full_name: string;
   corretora_name: string;
+  corretora_cnpj: string;
   corretora_city: string;
+  corretora_uf: string;
+  corretora_whatsapp: string;
 };
 
 export function CadastroForm({
@@ -28,7 +33,7 @@ export function CadastroForm({
   const [role, setRole] = useState<Role>(initialRole);
 
   return (
-    <form action={action} className="space-y-4">
+    <form action={action} className="space-y-5">
       <fieldset className="space-y-2">
         <legend className="text-xs font-medium uppercase tracking-wide text-milsaca-verde-claro">
           Você é
@@ -52,66 +57,72 @@ export function CadastroForm({
         <input type="hidden" name="role" value={role} />
       </fieldset>
 
-      <div className="space-y-2">
-        <Label htmlFor="full_name">Seu nome completo</Label>
-        <Input
-          id="full_name"
-          name="full_name"
-          type="text"
-          required
-          autoComplete="name"
-          defaultValue={defaults.full_name}
-          placeholder="João da Silva"
-        />
-      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <FormField label="Seu nome completo" htmlFor="full_name" required>
+          <Input
+            id="full_name"
+            name="full_name"
+            type="text"
+            required
+            autoComplete="name"
+            defaultValue={defaults.full_name}
+            placeholder="João da Silva"
+          />
+        </FormField>
 
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          required
-          autoComplete="email"
-          defaultValue={defaults.email}
-          placeholder="voce@exemplo.com"
-        />
-      </div>
+        <FormField label="Email" htmlFor="email" required>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            required
+            autoComplete="email"
+            defaultValue={defaults.email}
+            placeholder="voce@exemplo.com"
+          />
+        </FormField>
 
-      <div className="space-y-2">
-        <Label htmlFor="password">Senha</Label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
+        <FormField
+          label="Senha"
+          htmlFor="password"
           required
-          autoComplete="new-password"
-          minLength={8}
-          placeholder="Mínimo 8 caracteres"
-        />
-      </div>
+          helper="Mínimo 8 caracteres"
+        >
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            required
+            autoComplete="new-password"
+            minLength={8}
+            placeholder="Mínimo 8 caracteres"
+          />
+        </FormField>
 
-      <div className="space-y-2">
-        <Label htmlFor="confirm">Confirmar senha</Label>
-        <Input
-          id="confirm"
-          name="confirm"
-          type="password"
-          required
-          autoComplete="new-password"
-          minLength={8}
-          placeholder="Repita a senha"
-        />
+        <FormField label="Confirmar senha" htmlFor="confirm" required>
+          <Input
+            id="confirm"
+            name="confirm"
+            type="password"
+            required
+            autoComplete="new-password"
+            minLength={8}
+            placeholder="Repita a senha"
+          />
+        </FormField>
       </div>
 
       {role === "corretora" ? (
-        <div className="space-y-4 rounded-md border border-milsaca-dourado/30 bg-milsaca-dourado/5 p-4">
+        <div className="space-y-4 rounded-lg border border-milsaca-dourado/30 bg-milsaca-dourado/5 p-4">
           <p className="text-xs text-milsaca-verde">
             Dados da corretora — admin valida antes de liberar acesso.
           </p>
 
-          <div className="space-y-2">
-            <Label htmlFor="corretora_name">Nome da corretora</Label>
+          <FormField
+            label="Nome da corretora"
+            htmlFor="corretora_name"
+            required
+          >
             <Input
               id="corretora_name"
               name="corretora_name"
@@ -120,69 +131,99 @@ export function CadastroForm({
               defaultValue={defaults.corretora_name}
               placeholder="Café & Cia Corretagem"
             />
+          </FormField>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <FormField label="CNPJ" htmlFor="corretora_cnpj" required>
+              <MaskedInput
+                id="corretora_cnpj"
+                type="cnpj"
+                name="corretora_cnpj"
+                required
+                defaultValue={defaults.corretora_cnpj}
+                validateOnBlur
+              />
+            </FormField>
+
+            <FormField
+              label="WhatsApp"
+              htmlFor="corretora_whatsapp"
+              helper="Opcional, mas acelera o contato dos produtores."
+            >
+              <MaskedInput
+                id="corretora_whatsapp"
+                type="phone"
+                name="corretora_whatsapp"
+                defaultValue={defaults.corretora_whatsapp}
+                validateOnBlur
+              />
+            </FormField>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="corretora_cnpj">CNPJ</Label>
-            <Input
-              id="corretora_cnpj"
-              name="corretora_cnpj"
-              type="text"
-              required
-              inputMode="numeric"
-              placeholder="00.000.000/0000-00"
-            />
-          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_8rem]">
+            <FormField label="Cidade" htmlFor="corretora_city" required>
+              <Input
+                id="corretora_city"
+                name="corretora_city"
+                type="text"
+                required
+                defaultValue={defaults.corretora_city}
+                placeholder="Manhuaçu"
+                autoComplete="address-level2"
+              />
+            </FormField>
 
-          <div className="space-y-2">
-            <Label htmlFor="corretora_city">Cidade</Label>
-            <Input
-              id="corretora_city"
-              name="corretora_city"
-              type="text"
-              required
-              defaultValue={defaults.corretora_city}
-              placeholder="Manhuaçu/MG"
-            />
+            <FormField label="UF" htmlFor="corretora_uf" required>
+              <UfSelect
+                id="corretora_uf"
+                name="corretora_uf"
+                required
+                defaultValue={defaults.corretora_uf || "MG"}
+              />
+            </FormField>
           </div>
         </div>
       ) : null}
 
-      <div className="space-y-2 rounded-md border border-milsaca-cream-escuro bg-milsaca-cream/40 p-3 text-xs text-milsaca-verde-claro">
-        <label className="flex items-start gap-2">
+      <div className="rounded-lg border border-milsaca-cream-escuro bg-milsaca-cream/60 p-4">
+        <label className="flex items-start gap-3 text-sm text-milsaca-verde">
           <input
             type="checkbox"
             name="lgpd_consent"
             value="on"
             required
-            className="mt-0.5"
+            className="mt-0.5 h-5 w-5 cursor-pointer accent-milsaca-verde"
           />
-          <span>
+          <span className="leading-relaxed">
             Concordo com a{" "}
             <a
               href="/politica-privacidade"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium text-milsaca-verde underline-offset-2 hover:underline"
+              className="font-medium underline-offset-2 hover:underline"
             >
               Política de Privacidade
             </a>{" "}
             e autorizo o Milsaca a usar meus dados pra conectar com{" "}
-            {role === "corretora" ? "produtores" : "corretoras"} de café,
-            conforme descrito. Posso revogar a qualquer momento em{" "}
-            <code>contato@milsaca.app</code>.
+            {role === "corretora" ? "produtores" : "corretoras"} de café.
+            Posso revogar a qualquer momento em{" "}
+            <code className="text-xs">contato@milsaca.app</code>.
           </span>
         </label>
       </div>
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? (
+        <p role="alert" className="text-sm font-medium text-destructive">
+          {error}
+        </p>
+      ) : null}
 
-      <Button
-        type="submit"
+      <SubmitButton
+        pendingLabel="Enviando..."
         className="w-full bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
       >
         {role === "corretora" ? "Enviar pra aprovação" : "Criar conta"}
-      </Button>
+      </SubmitButton>
     </form>
   );
 }
@@ -205,6 +246,7 @@ function RoleOption({
     <button
       type="button"
       onClick={() => onSelect(value)}
+      aria-pressed={selected}
       className={
         selected
           ? "rounded-xl border-2 border-milsaca-verde bg-milsaca-verde/5 px-3 py-3 text-left transition-colors"
