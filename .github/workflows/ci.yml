@@ -1,8 +1,8 @@
 name: CI
 
 # Validação automática a cada push no main e em todo pull request.
-# Roda lint + type-check + build. Testes (Vitest/Playwright) ainda
-# não existem; entram em Etapa 10.
+# Roda lint + type-check + vitest + build. Playwright E2E ainda
+# não existe; entra quando vir benefício.
 
 on:
   push:
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   validate:
-    name: Lint + Type-check + Build
+    name: Lint + Type-check + Test + Build
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -54,6 +54,9 @@ jobs:
 
       - name: Type-check
         run: pnpm -w type-check
+
+      - name: Unit tests
+        run: pnpm -w test
 
       - name: Build (web)
         run: pnpm --filter @milsaca/web build
