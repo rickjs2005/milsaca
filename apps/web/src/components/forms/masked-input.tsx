@@ -3,14 +3,17 @@
 import { useId, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import {
+  formatCEP,
   formatCNPJ,
   formatCPF,
   formatCpfOrCnpj,
   formatPhoneBR,
+  isValidCEP,
   isValidCNPJ,
   isValidCPF,
   isValidCpfOrCnpj,
   isValidPhoneBR,
+  normalizeCEP,
   normalizeCNPJ,
   normalizeCPF,
   normalizeCpfOrCnpj,
@@ -19,7 +22,7 @@ import {
 } from "@/lib/brasil";
 import { cn } from "@/lib/utils";
 
-export type MaskType = "cpf" | "cnpj" | "cpf-cnpj" | "phone";
+export type MaskType = "cpf" | "cnpj" | "cpf-cnpj" | "phone" | "cep";
 
 const META: Record<
   MaskType,
@@ -65,6 +68,15 @@ const META: Record<
     isValid: isValidPhoneBR,
     inputMode: "tel",
     autoComplete: "tel",
+  },
+  cep: {
+    placeholder: "00000-000",
+    maxDigits: 8,
+    format: formatCEP,
+    normalize: (v) => normalizeCEP(v),
+    isValid: isValidCEP,
+    inputMode: "numeric",
+    autoComplete: "postal-code",
   },
 };
 

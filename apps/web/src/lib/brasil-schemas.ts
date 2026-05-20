@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  isValidCEP,
   isValidCNPJ,
   isValidCPF,
   isValidCityName,
@@ -163,6 +164,18 @@ export const cityOptionalSchema = z
   .transform((v) => (v.length === 0 ? null : v))
   .refine((v) => v === null || isValidCityName(v), {
     message: "Cidade inválida. Use só letras e espaços.",
+  });
+
+// =================================================================
+// CEP
+// =================================================================
+
+export const cepOptionalSchema = z
+  .preprocess((v) => asString(v), z.string())
+  .transform((v) => v.replace(/\D+/g, ""))
+  .transform((v) => (v.length === 0 ? null : v))
+  .refine((v) => v === null || isValidCEP(v), {
+    message: "CEP inválido. Use 8 dígitos.",
   });
 
 // =================================================================

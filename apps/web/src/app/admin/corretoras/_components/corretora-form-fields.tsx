@@ -152,12 +152,15 @@ export function CorretoraFormFields({
       <Section title="Endereço">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="space-y-1 sm:col-span-1">
-            <label className={labelCls}>CEP</label>
-            <input
+            <label htmlFor="cep" className={labelCls}>
+              CEP
+            </label>
+            <MaskedInput
+              id="cep"
+              type="cep"
               name="cep"
               defaultValue={d.cep ?? ""}
-              placeholder="36900-000"
-              className={inputCls}
+              validateOnBlur
             />
           </div>
           <div className="space-y-1 sm:col-span-2">

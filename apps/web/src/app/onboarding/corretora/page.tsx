@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MaskedInput } from "@/components/forms/masked-input";
 import { UfSelect } from "@/components/forms/uf-select";
+import { MunicipioAutocomplete } from "@/components/municipio-autocomplete";
 import { SubmitButton } from "@/components/submit-button";
 import { SignOutButton } from "@/components/sign-out-button";
 import { MilsacaLogo } from "@/components/milsaca-logo";
@@ -133,11 +134,11 @@ export default async function OnboardingCorretoraPage({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="space-y-2">
                 <Label htmlFor="cep">CEP</Label>
-                <Input
+                <MaskedInput
                   id="cep"
+                  type="cep"
                   name="cep"
-                  inputMode="numeric"
-                  placeholder="36900-000"
+                  validateOnBlur
                 />
               </div>
               <div className="space-y-2 sm:col-span-2">
@@ -156,13 +157,13 @@ export default async function OnboardingCorretoraPage({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="city">Cidade *</Label>
-                <Input
-                  id="city"
+                <MunicipioAutocomplete
                   name="city"
-                  required
                   defaultValue={corretora?.city ?? ""}
+                  uf={corretora?.state ?? "MG"}
+                  ufFieldId="state"
+                  required
                   placeholder="Manhuaçu"
-                  autoComplete="address-level2"
                 />
               </div>
               <div className="space-y-2">

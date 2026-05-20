@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/forms/form-field";
 import { MaskedInput } from "@/components/forms/masked-input";
 import { UfSelect } from "@/components/forms/uf-select";
+import { MunicipioAutocomplete } from "@/components/municipio-autocomplete";
 import { SubmitButton } from "@/components/submit-button";
 
 type Role = "produtor" | "corretora";
@@ -162,14 +163,13 @@ export function CadastroForm({
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_8rem]">
             <FormField label="Cidade" htmlFor="corretora_city" required>
-              <Input
-                id="corretora_city"
+              <MunicipioAutocomplete
                 name="corretora_city"
-                type="text"
-                required
                 defaultValue={defaults.corretora_city}
+                uf={defaults.corretora_uf || "MG"}
+                ufFieldId="corretora_uf"
+                required
                 placeholder="Manhuaçu"
-                autoComplete="address-level2"
               />
             </FormField>
 

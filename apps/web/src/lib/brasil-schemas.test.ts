@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  cepOptionalSchema,
   citySchema,
   cityOptionalSchema,
   cnpjOptionalSchema,
@@ -218,5 +219,27 @@ describe("cityOptionalSchema", () => {
 
   it("preenchido inválido falha", () => {
     expect(cityOptionalSchema.safeParse("Cidade [SP]").success).toBe(false);
+  });
+});
+
+describe("cepOptionalSchema", () => {
+  it("vazio vira null", () => {
+    const r = cepOptionalSchema.safeParse("");
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data).toBeNull();
+  });
+
+  it("aceita mascarado e devolve dígitos", () => {
+    const r = cepOptionalSchema.safeParse("36900-000");
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data).toBe("36900000");
+  });
+
+  it("rejeita CEP incompleto", () => {
+    expect(cepOptionalSchema.safeParse("3690000").success).toBe(false);
+  });
+
+  it("rejeita CEP todo zero", () => {
+    expect(cepOptionalSchema.safeParse("00000000").success).toBe(false);
   });
 });

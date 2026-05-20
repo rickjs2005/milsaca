@@ -309,3 +309,27 @@ export function isValidCityName(
   if (CITY_INVALID_CHARS.test(v)) return false;
   return true;
 }
+
+// =================================================================
+// CEP
+// =================================================================
+
+export function formatCEP(value: string | null | undefined): string {
+  const d = onlyDigits(value).slice(0, 8);
+  if (d.length <= 5) return d;
+  return `${d.slice(0, 5)}-${d.slice(5)}`;
+}
+
+export function isValidCEP(value: string | null | undefined): boolean {
+  const d = onlyDigits(value);
+  if (d.length !== 8) return false;
+  if (isAllSameDigit(d)) return false;
+  return true;
+}
+
+export function normalizeCEP(
+  value: string | null | undefined,
+): string | null {
+  const d = onlyDigits(value);
+  return d.length === 8 ? d : null;
+}

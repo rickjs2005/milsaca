@@ -1,17 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
   buildWhatsAppLink,
+  formatCEP,
   formatCNPJ,
   formatCPF,
   formatCityName,
   formatCpfOrCnpj,
   formatPhoneBR,
+  isValidCEP,
   isValidCNPJ,
   isValidCPF,
   isValidCityName,
   isValidCpfOrCnpj,
   isValidPhoneBR,
   isValidUF,
+  normalizeCEP,
   normalizeCNPJ,
   normalizeCPF,
   normalizeCpfOrCnpj,
@@ -307,5 +310,38 @@ describe("city", () => {
 
   it("isValidCityName rejeita acima de 100 caracteres", () => {
     expect(isValidCityName("a".repeat(101))).toBe(false);
+  });
+});
+
+describe("cep", () => {
+  it("formatCEP aplica máscara progressiva", () => {
+    expect(formatCEP("")).toBe("");
+    expect(formatCEP("36")).toBe("36");
+    expect(formatCEP("36900")).toBe("36900");
+    expect(formatCEP("369000")).toBe("36900-0");
+    expect(formatCEP("36900000")).toBe("36900-000");
+    expect(formatCEP("36.900-000")).toBe("36900-000");
+  });
+
+  it("formatCEP limita a 8 dígitos", () => {
+    expect(formatCEP("369000001234")).toBe("36900-000");
+  });
+
+  it("isValidCEP exige 8 dígitos e rejeita repetições", () => {
+    expect(isValidCEP("36900-000")).toBe(true);
+    expect(isValidCEP("36900000")).toBe(true);
+    expect(isValidCEP("3690000")).toBe(false);
+    expect(isValidCEP("00000000")).toBe(false);
+    expect(isValidCEP("11111111")).toBe(false);
+    expect(isValidCEP("")).toBe(false);
+    expect(isValidCEP(null)).toBe(false);
+  });
+
+  it("normalizeCEP devolve só dígitos ou null", () => {
+    expect(normalizeCEP("36900-000")).toBe("36900000");
+    expect(normalizeCEP("36.900-000")).toBe("36900000");
+    expect(normalizeCEP("3690000")).toBeNull();
+    expect(normalizeCEP("")).toBeNull();
+    expect(normalizeCEP(null)).toBeNull();
   });
 });
