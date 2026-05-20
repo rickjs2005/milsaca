@@ -28,9 +28,15 @@ export async function notify(params: {
   });
 
   if (error) {
-    console.error("[notify] falha ao inserir notification:", error.message, {
-      userId: params.userId,
-      kind: params.kind,
-    });
+    // Em prod: só código/mensagem do erro + kind (não-PII).
+    // Em dev: detalhes pra debug, incluindo userId.
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[notify] falha ao inserir notification:", error.message, {
+        userId: params.userId,
+        kind: params.kind,
+      });
+    } else {
+      console.error("[notify] falha:", error.message, { kind: params.kind });
+    }
   }
 }

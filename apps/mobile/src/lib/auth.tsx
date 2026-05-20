@@ -21,6 +21,7 @@ import {
   type ReactNode,
 } from "react";
 import * as SecureStore from "expo-secure-store";
+import * as Linking from "expo-linking";
 import type { Session, User } from "@supabase/supabase-js";
 import type { Profile, UserRole } from "@milsaca/types";
 
@@ -234,7 +235,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const trimmed = email.trim().toLowerCase();
     if (!trimmed) return { error: "Informe seu email." };
 
-    const { error } = await supabase.auth.resetPasswordForEmail(trimmed);
+    // Deep link pra o próprio app reabrir na tela de redefinir senha,
+    // em vez de jogar pro web (que não existe nesse fluxo no mobile).
+    // Scheme `milsaca://` declarado em app.json.
+    const redirectTo = Linking.createURL("/redefinir-senha");
+    const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
+      redirectTo,
+    });
     if (error) return { error: error.message };
     return {};
   }, []);

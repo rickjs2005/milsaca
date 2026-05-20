@@ -60,3 +60,11 @@ jobs:
 
       - name: Build (web)
         run: pnpm --filter @milsaca/web build
+
+      # Mobile build real só roda via EAS (cloud), mas expo-doctor pega
+      # regressões de config local (app.json, deps incompatíveis, etc).
+      # continue-on-error: doctor às vezes alerta sobre versões mismatch
+      # que não bloqueiam build — não queremos quebrar PR por warning.
+      - name: Expo doctor (mobile)
+        run: pnpm --filter @milsaca/mobile exec npx expo-doctor
+        continue-on-error: true

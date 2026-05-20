@@ -118,8 +118,8 @@ export function needsOnboarding(
 }
 
 // Mascara CPF/CNPJ pra exibição pública (laudos, espelhos).
-// CPF: XXX.***.***-XX
-// CNPJ: XX.***.***\/***X-XX
+// CPF:  XXX.***.***-XX           (mostra 3 primeiros + DV)
+// CNPJ: XX.***.***/***X-XX       (mostra 2 primeiros + 1 dígito da filial + DV)
 export function maskDoc(raw: string | null): string | null {
   if (!raw) return null;
   const digits = raw.replace(/\D/g, "");

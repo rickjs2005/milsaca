@@ -19,7 +19,9 @@ import {
   fetchCepeaArabica,
   fetchCepeaOfficial,
   fetchIceArabica,
-  fetchIceRobusta,
+  // fetchIceRobusta removido: Stooq passou a exigir apikey em 2025 e
+  // sempre retorna null. Reativar quando tivermos fonte alternativa
+  // (CME, Investing.com via scraping, ou pagar a API).
   type Quote,
 } from "./_lib/adapters.ts";
 
@@ -44,7 +46,7 @@ async function fetchCepea(): Promise<Quote | null> {
 const ADAPTERS: Array<{ name: string; run: () => Promise<Quote | null> }> = [
   { name: "cepea", run: fetchCepea },
   { name: "ice_arabica", run: fetchIceArabica },
-  { name: "ice_robusta", run: fetchIceRobusta },
+  // { name: "ice_robusta", run: fetchIceRobusta }, — desabilitado (ver import)
   { name: "bcb_ptax", run: fetchBcbPtax },
 ];
 
