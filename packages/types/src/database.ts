@@ -489,6 +489,7 @@ export type Database = {
       cotacoes: {
         Row: {
           coffee_type: string
+          corretora_id: string
           created_at: string
           id: string
           payload: Json
@@ -501,6 +502,7 @@ export type Database = {
         }
         Insert: {
           coffee_type: string
+          corretora_id: string
           created_at?: string
           id?: string
           payload?: Json
@@ -513,6 +515,7 @@ export type Database = {
         }
         Update: {
           coffee_type?: string
+          corretora_id?: string
           created_at?: string
           id?: string
           payload?: Json
@@ -523,7 +526,15 @@ export type Database = {
           source?: string | null
           specie?: Database["public"]["Enums"]["coffee_specie"] | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cotacoes_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras"
+            referencedColumnName: "id"
+          },
+        ]
       }
       entregas: {
         Row: {
