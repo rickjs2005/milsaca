@@ -10,22 +10,29 @@ import type { NextConfig } from "next";
  *   - IBGE (autocomplete de cidades)
  *   - unpkg (Leaflet marker icons via URL absoluta)
  *   - Google Fonts (next/font carrega via CSS @font-face)
- *   - wa.me (WhatsApp redirect via form-action)
  *
  * 'unsafe-inline' em style-src é necessário pra Tailwind/Next runtime;
  * mover pra hash-based CSP fica como dívida.
  *
- * 'unsafe-eval' em script-src ainda é necessário pra Next dev/turbo.
+ * 'unsafe-eval' em script-src é injetado SÓ em dev (necessário pro Next
+ * Turbo). Prod fecha — qualquer eval em prod indica ou dependência
+ * insegura ou ataque.
+ *
+ * form-action: removida diretiva pra wa.me — wa.me é anchor href,
+ * nunca destino de form submit. Manter só 'self'.
  */
-function buildCspHeader(): string {
+function buildCspHeader(isDev: boolean): string {
   const supabaseHost =
     process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/^https?:\/\//, "") ?? "";
   const supabaseHttps = supabaseHost ? `https://${supabaseHost}` : "";
   const supabaseWss = supabaseHost ? `wss://${supabaseHost}` : "";
 
+  const scriptSrc = ["'self'", "'unsafe-inline'"];
+  if (isDev) scriptSrc.push("'unsafe-eval'");
+
   const directives: Record<string, string[]> = {
     "default-src": ["'self'"],
-    "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+    "script-src": scriptSrc,
     "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
     "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
     "img-src": [
@@ -46,7 +53,7 @@ function buildCspHeader(): string {
     "frame-src": ["'self'"],
     "object-src": ["'none'"],
     "base-uri": ["'self'"],
-    "form-action": ["'self'", "https://wa.me"],
+    "form-action": ["'self'"],
     "frame-ancestors": ["'none'"],
     "upgrade-insecure-requests": [],
   };
@@ -70,7 +77,10 @@ const config: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          { key: "Content-Security-Policy", value: buildCspHeader() },
+          {
+            key: "Content-Security-Policy",
+            value: buildCspHeader(process.env.NODE_ENV !== "production"),
+          },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

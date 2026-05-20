@@ -1,12 +1,11 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MunicipioAutocomplete } from "@/components/municipio-autocomplete";
 import { MaskedInput } from "@/components/forms/masked-input";
 import { UfSelect } from "@/components/forms/uf-select";
 import { SubmitButton } from "@/components/submit-button";
+import { SignOutButton } from "@/components/sign-out-button";
 import { MilsacaLogo } from "@/components/milsaca-logo";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile, requireUser } from "@/lib/auth";
@@ -223,14 +222,9 @@ export default async function OnboardingProdutorPage({
           </Section>
 
           <div className="flex flex-col items-stretch gap-3 pt-2 sm:flex-row sm:justify-end">
-            <Button
-              asChild
-              variant="outline"
-              type="button"
-              className="text-milsaca-verde-claro"
-            >
-              <Link href="/sair">Sair</Link>
-            </Button>
+            <SignOutButton className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-milsaca-verde-claro hover:bg-accent hover:text-accent-foreground">
+              Sair
+            </SignOutButton>
             <SubmitButton
               size="lg"
               pendingLabel="Salvando..."

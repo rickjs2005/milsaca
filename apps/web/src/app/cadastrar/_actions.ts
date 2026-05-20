@@ -168,17 +168,18 @@ export async function signUp(formData: FormData) {
   });
 
   if (error) {
-    // Anti-enumeration: nunca dizer "email já existe", "senha fraca pra
-    // este email" etc. Esses códigos vazam quais emails têm conta no
-    // Milsaca pra qualquer um que use o /cadastrar como oráculo.
-    // Mensagens reais vão pro console.error em dev pra debug.
+    // Anti-enumeration ESTRITO: mensagem totalmente genérica, sem variar
+    // por tipo do erro. Variar (ex.: "senha fraca" vs "erro genérico")
+    // permite ao atacante usar /cadastrar como oráculo de email existente
+    // — bastaria mandar senhas diferentes e ver qual ramo dispara.
+    // Mensagem técnica vai só pro console.error em dev.
     if (process.env.NODE_ENV !== "production") {
       console.error("[cadastrar] signUp error:", error);
     }
-    const generic = error.message?.match(/password/i)
-      ? "Senha não atende aos requisitos. Use 8+ caracteres com letras e números."
-      : "Não foi possível concluir o cadastro. Tente novamente em alguns minutos.";
-    params.set("error", generic);
+    params.set(
+      "error",
+      "Não foi possível concluir o cadastro. Verifique os dados e tente novamente em alguns minutos.",
+    );
     redirect(`/cadastrar?${params.toString()}`);
   }
 

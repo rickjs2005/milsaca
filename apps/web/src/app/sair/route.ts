@@ -2,14 +2,24 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@milsaca/db/web/server";
 
 /**
- * Logout. Suporta GET e POST para facilitar links e formulários.
+ * Logout. SOMENTE POST.
+ *
+ * Por que não GET: prefetch de browser (e Gmail Safe Links) pode pegar
+ * qualquer <a href="/sair"> e deslogar o user antes do click acontecer.
+ * O mesmo motivo do magic link OTP — qualquer GET com side-effect é
+ * vulnerável. Use <form action="/sair" method="post"> nos call sites.
  */
-async function handler(request: NextRequest) {
+export async function POST(request: NextRequest) {
   const supabase = await createClient();
   await supabase.auth.signOut();
   const { origin } = new URL(request.url);
-  return NextResponse.redirect(`${origin}/entrar`);
+  return NextResponse.redirect(`${origin}/entrar`, { status: 303 });
 }
 
-export const GET = handler;
-export const POST = handler;
+// GET intencionalmente ausente — ver comentário acima.
+export function GET() {
+  return new NextResponse(
+    "Method Not Allowed — POST /sair em form (anti-prefetch)",
+    { status: 405, headers: { Allow: "POST" } },
+  );
+}
