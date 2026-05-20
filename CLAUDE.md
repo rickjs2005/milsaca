@@ -30,16 +30,39 @@ Este arquivo orienta sessões futuras do Claude Code que trabalharem neste monor
 
 ## Identidade visual
 
-Paleta Milsaca:
+Paleta Milsaca — define em `packages/config-tailwind/tokens.js`.
 
-| Token | Hex |
-| --- | --- |
-| `milsaca.verde` | `#2D3A2E` |
-| `milsaca.verde-claro` | `#4A5C4C` |
-| `milsaca.dourado` | `#C9A961` |
-| `milsaca.dourado-claro` | `#E0C68A` |
-| `milsaca.cream` | `#FAF7F0` |
-| `milsaca.cream-escuro` | `#EFEADB` |
+**Legacy (em uso desde 2026-05) — manter pra compat:**
+
+| Token | Hex | Uso |
+| --- | --- | --- |
+| `milsaca.verde` | `#2D3A2E` | UIs já existentes, painel produtor/corretora |
+| `milsaca.verde-claro` | `#4A5C4C` | Texto secundário |
+| `milsaca.dourado` | `#C9A961` | Destaques (CTA, ativo, badges) |
+| `milsaca.dourado-claro` | `#E0C68A` | Hover dourado |
+| `milsaca.cream` | `#FAF7F0` | Fundo principal claro |
+| `milsaca.cream-escuro` | `#EFEADB` | Borda suave, divisores |
+
+**Premium (Fase 2 redesign admin, 2026-05-20) — usar em componentes novos:**
+
+| Token | Hex | Uso |
+| --- | --- | --- |
+| `milsaca.cafezal` | `#0F3D2E` | Sidebar admin, headers escuros premium |
+| `milsaca.folha` | `#1B5E3F` | Success states, hover em itens dark |
+| `milsaca.preto` | `#1A1A1A` | Texto principal em fundo claro |
+| `milsaca.cream-claro` | `#F5E6C8` | Hover suave em cards |
+
+**Shadows nomeados** (também no preset):
+- `shadow-card` — sombra padrão de card (sutil)
+- `shadow-card-hover` — hover em card interativo
+- `shadow-elevated` — modal, dropdown, popover
+
+**Radius nomeados:**
+- `rounded-card` (16px) — cards padrão admin
+- `rounded-pill` (9999px) — chips, badges, pílulas
+- `rounded-milsaca` (16px) — alias legacy
+
+**Regra de uso:** ao refatorar telas críticas (admin shell, sidebar, hero, dashboard), prefira keys premium. UIs existentes ficam com legacy até serem tocadas.
 
 Fonte: **Inter** (via `next/font/google` no web, `@expo-google-fonts/inter` no mobile).
 

@@ -12,6 +12,7 @@ module.exports = {
       colors: tokens.colors,
       fontFamily: tokens.fontFamily,
       borderRadius: tokens.borderRadius,
+      boxShadow: tokens.boxShadow,
     },
   },
   plugins: [],
