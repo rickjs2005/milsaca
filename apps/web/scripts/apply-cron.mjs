@@ -55,25 +55,28 @@ function escapeSqlLiteral(s) {
 async function main() {
   const env = await loadEnv();
   const url = env.NEXT_PUBLIC_SUPABASE_URL;
-  const token = process.env.SUPABASE_ACCESS_TOKEN;
-  const cronSecret = process.env.CRON_SECRET;
+  // Tanto PAT quanto CRON_SECRET aceitam vir do process.env (override)
+  // ou do .env.local (default). Process vence.
+  const token = process.env.SUPABASE_ACCESS_TOKEN ?? env.SUPABASE_ACCESS_TOKEN;
+  const cronSecret = process.env.CRON_SECRET ?? env.CRON_SECRET;
 
   if (!url) {
     fail("NEXT_PUBLIC_SUPABASE_URL ausente em apps/web/.env.local");
     process.exit(1);
   }
   if (!token) {
-    fail("SUPABASE_ACCESS_TOKEN não setado.");
+    fail("SUPABASE_ACCESS_TOKEN não setado (.env.local ou process.env).");
     console.error(
       "  Crie em https://supabase.com/dashboard/account/tokens e exporte:",
     );
     console.error('  $env:SUPABASE_ACCESS_TOKEN = "sbp_xxx"');
+    console.error("  OU adicione SUPABASE_ACCESS_TOKEN=... no apps/web/.env.local");
     process.exit(1);
   }
   if (!cronSecret || cronSecret.length < 16) {
     fail("CRON_SECRET ausente ou muito curto (mín 16 chars).");
     console.error("  Gere com: openssl rand -hex 32");
-    console.error('  $env:CRON_SECRET = "..."');
+    console.error('  $env:CRON_SECRET = "..." (ou adicionar no .env.local)');
     process.exit(1);
   }
 

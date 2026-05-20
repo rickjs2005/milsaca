@@ -46,17 +46,21 @@ async function main() {
 
   const env = await loadEnv();
   const url = env.NEXT_PUBLIC_SUPABASE_URL;
-  const token = process.env.SUPABASE_ACCESS_TOKEN;
+  // PAT pode vir do process.env (preferível pra CI/uso pontual) OU do
+  // .env.local (conveniente pra dev local recorrente). Process vence
+  // pra permitir override pontual sem editar o arquivo.
+  const token = process.env.SUPABASE_ACCESS_TOKEN ?? env.SUPABASE_ACCESS_TOKEN;
   if (!url) {
     fail("NEXT_PUBLIC_SUPABASE_URL ausente em apps/web/.env.local");
     process.exit(1);
   }
   if (!token) {
-    fail("SUPABASE_ACCESS_TOKEN não setado.");
+    fail("SUPABASE_ACCESS_TOKEN não setado (.env.local ou process.env).");
     console.error(
       "  Crie em https://supabase.com/dashboard/account/tokens e exporte:",
     );
     console.error('  $env:SUPABASE_ACCESS_TOKEN = "sbp_xxx"');
+    console.error("  OU adicione SUPABASE_ACCESS_TOKEN=... no apps/web/.env.local");
     process.exit(1);
   }
 
