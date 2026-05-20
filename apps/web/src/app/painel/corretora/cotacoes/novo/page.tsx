@@ -10,6 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/submit-button";
 import { createCotacao } from "../_actions";
 
 export const metadata = { title: "Nova cotação — Milsaca" };
@@ -145,12 +146,12 @@ export default async function NovaCotacaoPage({
               <Button asChild variant="outline">
                 <Link href="/painel/corretora/cotacoes">Cancelar</Link>
               </Button>
-              <Button
-                type="submit"
+              <SubmitButton
+                pendingLabel="Cadastrando..."
                 className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
               >
                 Cadastrar cotação
-              </Button>
+              </SubmitButton>
             </div>
           </form>
         </CardContent>

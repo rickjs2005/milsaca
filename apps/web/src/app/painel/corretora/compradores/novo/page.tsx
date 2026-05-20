@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/submit-button";
 import { requireRole } from "@/lib/auth";
 import { CompradorFormFields } from "../_form";
 import { createComprador } from "../_actions";
@@ -52,12 +53,12 @@ export default async function NovoCompradorPage({
           <Button asChild variant="outline">
             <Link href="/painel/corretora/compradores">Cancelar</Link>
           </Button>
-          <Button
-            type="submit"
+          <SubmitButton
+            pendingLabel="Criando..."
             className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
           >
             Criar comprador
-          </Button>
+          </SubmitButton>
         </div>
       </form>
     </div>

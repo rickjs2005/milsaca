@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Shield } from "lucide-react";
 import { MilsacaLogo } from "@/components/milsaca-logo";
@@ -11,7 +10,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/submit-button";
+import { SignOutButton } from "@/components/sign-out-button";
 import { createClient } from "@milsaca/db/web/server";
 import { verifyMfa } from "../_actions";
 
@@ -83,21 +83,18 @@ export default async function MfaChallengePage({
                 <p className="text-sm text-destructive">{sp.error}</p>
               ) : null}
 
-              <Button
-                type="submit"
+              <SubmitButton
+                pendingLabel="Verificando..."
                 className="w-full bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
               >
                 Confirmar
-              </Button>
+              </SubmitButton>
             </form>
 
             <p className="mt-6 text-center text-xs text-milsaca-verde-claro">
-              <Link
-                href="/sair"
-                className="font-medium hover:text-milsaca-verde hover:underline"
-              >
+              <SignOutButton className="font-medium hover:text-milsaca-verde hover:underline">
                 Cancelar e sair
-              </Link>
+              </SignOutButton>
             </p>
           </CardContent>
         </Card>

@@ -12,6 +12,8 @@ type SubmitButtonProps = {
   variant?: React.ComponentProps<typeof Button>["variant"];
   size?: React.ComponentProps<typeof Button>["size"];
   formAction?: (formData: FormData) => void | Promise<void>;
+  /** Disable adicional, combinado com `pending` via OR. */
+  disabled?: boolean;
 };
 
 /**
@@ -29,6 +31,7 @@ export function SubmitButton({
   variant,
   size,
   formAction,
+  disabled,
 }: SubmitButtonProps) {
   const { pending } = useFormStatus();
 
@@ -38,7 +41,7 @@ export function SubmitButton({
       variant={variant}
       size={size}
       formAction={formAction}
-      disabled={pending}
+      disabled={pending || disabled}
       className={cn(className)}
     >
       {pending ? (

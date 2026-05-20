@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getProfile } from "@/lib/auth";
@@ -145,12 +146,12 @@ export default async function NovaEntregaPage({
             <Button asChild variant="outline">
               <Link href="/painel/corretora/entregas">Cancelar</Link>
             </Button>
-            <Button
-              type="submit"
+            <SubmitButton
+              pendingLabel="Criando..."
               className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
             >
               Criar entrega
-            </Button>
+            </SubmitButton>
           </div>
         </form>
       )}

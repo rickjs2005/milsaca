@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/submit-button";
 import { getProfile } from "@/lib/auth";
 import {
   listProdutoresReais,
@@ -289,13 +290,13 @@ export default async function NovoContratoPage({
                 <Button asChild variant="outline">
                   <Link href="/painel/corretora/contratos">Cancelar</Link>
                 </Button>
-                <Button
-                  type="submit"
+                <SubmitButton
+                  pendingLabel="Criando..."
                   className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
                   disabled={!!leadProdutorMissing}
                 >
                   Criar contrato
-                </Button>
+                </SubmitButton>
               </div>
             </form>
           </CardContent>

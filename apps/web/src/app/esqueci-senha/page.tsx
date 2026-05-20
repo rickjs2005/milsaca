@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requestPasswordReset } from "./_actions";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/submit-button";
 import { MilsacaLogo } from "@/components/milsaca-logo";
 import {
   Card,
@@ -61,12 +61,12 @@ export default async function EsqueciSenhaPage({
                 <p className="text-sm text-destructive">{sp.error}</p>
               ) : null}
 
-              <Button
-                type="submit"
+              <SubmitButton
+                pendingLabel="Enviando..."
                 className="w-full bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
               >
                 Enviar link
-              </Button>
+              </SubmitButton>
             </form>
 
             <p className="mt-6 text-center text-sm text-milsaca-verde-claro">
