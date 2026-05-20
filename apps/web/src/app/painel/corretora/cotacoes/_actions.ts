@@ -6,6 +6,7 @@ import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { uuidSchema } from "../_lib/schemas";
+import { requireActiveSubscription } from "../_lib/corretora";
 import type { CoffeeProcesso, CoffeeSpecie } from "@milsaca/types";
 
 const SPECIES: readonly CoffeeSpecie[] = ["arabica", "conillon"];
@@ -43,6 +44,10 @@ export async function createCotacao(formData: FormData) {
   if (!profile?.corretora_id) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
   }
+  await requireActiveSubscription(
+    profile.corretora_id,
+    "/painel/corretora/cotacoes",
+  );
 
   const specieRaw = String(formData.get("specie") ?? "").trim();
   const processRaw = String(formData.get("process") ?? "").trim();
@@ -68,6 +73,7 @@ export async function createCotacao(formData: FormData) {
 
   const supabase = await createClient();
   const { error } = await supabase.from("cotacoes").insert({
+    corretora_id: profile.corretora_id,
     coffee_type: COFFEE_TYPE_LABEL[specie],
     specie,
     process,
@@ -88,14 +94,20 @@ export async function createCotacao(formData: FormData) {
 
 export async function deleteCotacao(formData: FormData) {
   const profile = await getProfile();
-  if (!profile?.corretora_id) redirect("/painel");
+  if (!profile?.corretora_id) redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
 
   const idParsed = uuidSchema.safeParse(String(formData.get("id") ?? "").trim());
   if (!idParsed.success) redirect("/painel/corretora/cotacoes");
   const id = idParsed.data;
 
+  // Filtra por corretora_id explicitamente — defesa em profundidade:
+  // a RLS já bloqueia, mas o SDK não precisa nem chegar lá.
   const supabase = await createClient();
-  await supabase.from("cotacoes").delete().eq("id", id);
+  await supabase
+    .from("cotacoes")
+    .delete()
+    .eq("id", id)
+    .eq("corretora_id", profile.corretora_id);
 
   revalidateAffected();
   redirect("/painel/corretora/cotacoes");
