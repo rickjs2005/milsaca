@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
-import { Handshake, Sprout, ArrowRight } from "lucide-react";
+import { Handshake, Sprout, ArrowRight, AlertCircle } from "lucide-react";
 import { getProfile, panelFor } from "@/lib/auth";
 import { selectRole } from "./_actions";
 import { Card, CardContent } from "@/components/ui/card";
 import { MilsacaLogo } from "@/components/milsaca-logo";
+import { SignOutButton } from "@/components/sign-out-button";
 
 export const metadata = { title: "Escolha o painel — Milsaca" };
 
@@ -39,10 +40,46 @@ export default async function EscolherPainelPage() {
     (r): r is ClientRole => r === "produtor" || r === "corretora",
   );
 
-  if (clientRoles.length <= 1) {
-    const only = clientRoles[0];
-    if (only) redirect(panelFor(only));
-    redirect("/");
+  if (clientRoles.length === 1) {
+    redirect(panelFor(clientRoles[0]!));
+  }
+
+  // Estado degenerado: user logado sem nenhum papel cliente. Pode
+  // acontecer se trigger handle_new_user falhou em popular roles, ou
+  // se admin removeu manualmente. Em vez de jogar pra landing pública
+  // (perde contexto), mostra mensagem honesta + Sair.
+  if (clientRoles.length === 0) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-milsaca-cream px-6 py-12">
+        <div className="w-full max-w-md">
+          <div className="mb-6 flex justify-center">
+            <MilsacaLogo size={120} />
+          </div>
+          <Card className="border-milsaca-cream-escuro">
+            <CardContent className="space-y-4 p-6">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                  <AlertCircle className="h-5 w-5" />
+                </span>
+                <div className="space-y-1">
+                  <p className="font-semibold text-milsaca-verde">
+                    Perfil sem painel disponível
+                  </p>
+                  <p className="text-sm text-milsaca-verde-claro">
+                    Sua conta não tem papel de produtor nem corretora
+                    vinculado. Saia e entre de novo — se persistir, fale com o
+                    suporte (rickjanuario0@gmail.com).
+                  </p>
+                </div>
+              </div>
+              <SignOutButton className="w-full justify-center rounded-md bg-milsaca-verde px-4 py-2 text-sm font-medium text-milsaca-cream hover:bg-milsaca-verde-claro">
+                Sair
+              </SignOutButton>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    );
   }
 
   return (

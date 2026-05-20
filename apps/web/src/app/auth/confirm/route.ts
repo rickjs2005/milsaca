@@ -37,6 +37,15 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Se o caller especificou `next` explicitamente (diferente do default
+  // `/painel`), vence — padroniza com /auth/callback, importante pra
+  // fluxos como reset de senha que precisam pousar em /redefinir-senha
+  // em vez do painel.
+  const nextWasExplicit = searchParams.get("next") !== null;
+  if (nextWasExplicit) {
+    return NextResponse.redirect(`${origin}${next}`);
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("roles")

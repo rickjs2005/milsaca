@@ -75,7 +75,7 @@ export default function Home() {
               size="lg"
               className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
             >
-              <Link href="/entrar/corretora">
+              <Link href="/entrar">
                 Sou corretora
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
@@ -200,7 +200,7 @@ export default function Home() {
                 size="lg"
                 className="bg-milsaca-dourado text-milsaca-verde hover:bg-milsaca-dourado-claro"
               >
-                <Link href="/entrar/corretora">
+                <Link href="/entrar">
                   Entrar como corretora
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>

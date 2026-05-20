@@ -125,9 +125,11 @@ export async function updateCorretora(formData: FormData) {
 
 export async function toggleCorretoraVerified(formData: FormData) {
   const actor = await requireAppAdmin();
-  const id = String(formData.get("id") ?? "");
+
+  const idParsed = uuidSchema.safeParse(String(formData.get("id") ?? "").trim());
+  if (!idParsed.success) return;
+  const id = idParsed.data;
   const next = formData.get("verified") === "true";
-  if (!id) return;
 
   const supabase = await createClient();
   await supabase.from("corretoras").update({ verified: next }).eq("id", id);
@@ -269,25 +271,37 @@ export async function rejeitarCorretora(formData: FormData) {
 
 export async function linkProfileToCorretora(formData: FormData) {
   const actor = await requireAppAdmin();
-  const profileId = String(formData.get("profile_id") ?? "");
-  const corretoraId = String(formData.get("corretora_id") ?? "");
-  if (!profileId) return;
+
+  const profileParsed = uuidSchema.safeParse(
+    String(formData.get("profile_id") ?? "").trim(),
+  );
+  if (!profileParsed.success) return;
+  const profileId = profileParsed.data;
+
+  // corretora_id é opcional: vazio significa "desvincular"
+  const rawCorretora = String(formData.get("corretora_id") ?? "").trim();
+  let corretoraId: string | null = null;
+  if (rawCorretora) {
+    const corretoraParsed = uuidSchema.safeParse(rawCorretora);
+    if (!corretoraParsed.success) return;
+    corretoraId = corretoraParsed.data;
+  }
 
   const supabase = await createClient();
   await supabase
     .from("profiles")
     .update({
-      corretora_id: corretoraId || null,
+      corretora_id: corretoraId,
     })
     .eq("id", profileId);
 
   await supabase.from("audit_log").insert({
     actor_id: actor.id,
-    corretora_id: corretoraId || null,
+    corretora_id: corretoraId,
     action: corretoraId ? "link_profile_corretora" : "unlink_profile_corretora",
     entity: "profile",
     entity_id: profileId,
-    payload: { corretora_id: corretoraId || null },
+    payload: { corretora_id: corretoraId },
   });
 
   revalidatePath("/admin");
