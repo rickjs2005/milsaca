@@ -39,15 +39,21 @@ type PropostaRow = {
 async function loadCotacoes(): Promise<CotacaoCard[]> {
   const supabase = await createClient();
   // Últimas 2 cotações de cada tipo principal pra calcular variação.
+  // Promise.all em vez de for-await pra cortar 1 RTT.
   const types = ["arabica", "conillon"];
+  const queries = await Promise.all(
+    types.map((t) =>
+      supabase
+        .from("cotacoes")
+        .select("coffee_type, price, source, reference_date")
+        .eq("coffee_type", t)
+        .order("reference_date", { ascending: false })
+        .limit(2),
+    ),
+  );
+
   const result: CotacaoCard[] = [];
-  for (const t of types) {
-    const { data } = await supabase
-      .from("cotacoes")
-      .select("coffee_type, price, source, reference_date")
-      .eq("coffee_type", t)
-      .order("reference_date", { ascending: false })
-      .limit(2);
+  for (const { data } of queries) {
     const rows = (data ?? []) as Array<{
       coffee_type: string;
       price: number;

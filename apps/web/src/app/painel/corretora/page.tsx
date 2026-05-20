@@ -62,7 +62,7 @@ type CotacaoCard = {
   source: string | null;
 };
 
-async function loadKpis(): Promise<Kpi[]> {
+async function loadKpis(corretoraId: string): Promise<Kpi[]> {
   const supabase = await createClient();
 
   const monthStart = new Date();
@@ -70,6 +70,9 @@ async function loadKpis(): Promise<Kpi[]> {
   monthStart.setUTCHours(0, 0, 0, 0);
   const monthStartIso = monthStart.toISOString();
 
+  // Filtro explícito de corretora_id em TODAS as queries — defesa em
+  // profundidade. RLS via current_corretora() já gateia, mas se algum dia
+  // a policy mudar não queremos vazar contagem cross-tenant.
   const [
     novos,
     emNegociacao,
@@ -80,23 +83,28 @@ async function loadKpis(): Promise<Kpi[]> {
     supabase
       .from("leads")
       .select("*", { count: "exact", head: true })
+      .eq("corretora_id", corretoraId)
       .eq("status", "novo"),
     supabase
       .from("leads")
       .select("*", { count: "exact", head: true })
+      .eq("corretora_id", corretoraId)
       .eq("status", "em_negociacao"),
     supabase
       .from("leads")
       .select("*", { count: "exact", head: true })
+      .eq("corretora_id", corretoraId)
       .eq("status", "convertido")
       .gte("updated_at", monthStartIso),
     supabase
       .from("contratos")
       .select("*", { count: "exact", head: true })
+      .eq("corretora_id", corretoraId)
       .eq("status", "ativo"),
     supabase
       .from("contratos")
       .select("comissao_total")
+      .eq("corretora_id", corretoraId)
       .in("status", ["ativo", "finalizado"])
       .gte("updated_at", monthStartIso),
   ]);
@@ -143,13 +151,14 @@ async function loadKpis(): Promise<Kpi[]> {
   ];
 }
 
-async function loadLeadsRecentes(): Promise<LeadRow[]> {
+async function loadLeadsRecentes(corretoraId: string): Promise<LeadRow[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("leads")
     .select(
       "id, status, coffee_type, bag_count, created_at, produtor:profiles!leads_produtor_id_fkey(full_name)",
     )
+    .eq("corretora_id", corretoraId)
     .order("created_at", { ascending: false })
     .limit(6);
 
@@ -183,14 +192,21 @@ async function loadLeadsRecentes(): Promise<LeadRow[]> {
 async function loadCotacoes(): Promise<CotacaoCard[]> {
   const supabase = await createClient();
   const types = ["arabica", "conillon"];
+
+  // Promise.all em vez de await sequencial: 1 RTT em vez de 2.
+  const queries = await Promise.all(
+    types.map((t) =>
+      supabase
+        .from("cotacoes")
+        .select("coffee_type, price, source, reference_date")
+        .eq("coffee_type", t)
+        .order("reference_date", { ascending: false })
+        .limit(2),
+    ),
+  );
+
   const result: CotacaoCard[] = [];
-  for (const t of types) {
-    const { data } = await supabase
-      .from("cotacoes")
-      .select("coffee_type, price, source, reference_date")
-      .eq("coffee_type", t)
-      .order("reference_date", { ascending: false })
-      .limit(2);
+  for (const { data } of queries) {
     const rows = (data ?? []) as Array<{
       coffee_type: string;
       price: number;
@@ -214,9 +230,14 @@ async function loadCotacoes(): Promise<CotacaoCard[]> {
 
 export default async function InicioCorretoraPage() {
   const profile = await getProfile();
+  // Sem corretora vinculada o layout já redireciona pra /painel/escolher
+  // antes de chegar aqui. Mas defesa em profundidade: usa string vazia
+  // (que nunca casa em UUID) e devolve KPIs zerados em vez de panic.
+  const corretoraId = profile?.corretora_id ?? "";
+
   const [kpis, leads, cotacoes, entregasSnap] = await Promise.all([
-    loadKpis(),
-    loadLeadsRecentes(),
+    loadKpis(corretoraId),
+    loadLeadsRecentes(corretoraId),
     loadCotacoes(),
     profile?.corretora_id
       ? listEntregasHojeEAtrasadas(profile.corretora_id)
