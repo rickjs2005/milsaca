@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile, getUser } from "@/lib/auth";
+import { getCorretoraSubscriptionInfo } from "../../../_lib/corretora";
 import { calcularLaudo, calcularPVA } from "@milsaca/cob";
 import type { DefeitosCrus, OpcoesCalculo } from "@milsaca/cob";
 import type { Json } from "@milsaca/types/database";
@@ -30,6 +31,23 @@ export async function saveClassificacao(input: ClassificarInput) {
   const user = await getUser();
   if (!profile?.corretora_id || !user) {
     return { ok: false as const, error: "Sessão inválida" };
+  }
+
+  // Gate de subscription. Como esta action é chamada do client e retorna
+  // {ok,error} em vez de redirecionar, fazemos check manual.
+  const sub = await getCorretoraSubscriptionInfo(profile.corretora_id);
+  if (!sub.isUsable) {
+    return {
+      ok: false as const,
+      error:
+        sub.effectiveStatus === "canceled"
+          ? "Assinatura cancelada. Fale com o suporte."
+          : sub.effectiveStatus === "expired"
+            ? "Trial expirado. Fale com o suporte."
+            : sub.effectiveStatus === "past_due"
+              ? "Pagamento em atraso. Fale com o suporte."
+              : "Sem assinatura ativa. Fale com o suporte.",
+    };
   }
 
   const opts: OpcoesCalculo = {

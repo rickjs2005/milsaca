@@ -57,7 +57,9 @@ export async function createContato(formData: FormData) {
 
 export async function updateContato(formData: FormData) {
   const profile = await getProfile();
-  if (!profile?.corretora_id) redirect("/painel");
+  if (!profile?.corretora_id) {
+    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
+  }
 
   const id = String(formData.get("id") ?? "").trim();
   if (!id) redirect("/painel/corretora/produtores");
@@ -97,7 +99,9 @@ export async function updateContato(formData: FormData) {
 
 export async function deleteContato(formData: FormData) {
   const profile = await getProfile();
-  if (!profile?.corretora_id) redirect("/painel");
+  if (!profile?.corretora_id) {
+    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
+  }
 
   const id = String(formData.get("id") ?? "").trim();
   if (!id) redirect("/painel/corretora/produtores");

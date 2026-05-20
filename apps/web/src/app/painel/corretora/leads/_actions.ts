@@ -7,6 +7,7 @@ import type { Json } from "@milsaca/types/database";
 import { getProfile, getUser } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { notify } from "@/lib/notify";
+import { requireActiveSubscription } from "../_lib/corretora";
 import type { LeadStatus } from "./_lib/queries";
 import { LEAD_STATUS_ORDER } from "./_lib/queries";
 
@@ -80,6 +81,10 @@ export async function createLead(formData: FormData) {
   if (!profile?.corretora_id || !user) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
   }
+  await requireActiveSubscription(
+    profile.corretora_id,
+    "/painel/corretora/leads",
+  );
 
   const targetRaw = String(formData.get("target") ?? "").trim();
   const target = parseTarget(targetRaw);
@@ -115,8 +120,10 @@ export async function createLead(formData: FormData) {
     .single();
 
   if (error || !data) {
+    // Sanitiza erro cru (vai pro toast). Inconsistente vazar texto
+    // bruto do Postgres aqui se updateLeadFields já usa friendly.
     const params = new URLSearchParams({
-      error: error?.message ?? "Falha ao criar lead",
+      error: friendlyPostgresError(error ?? null),
     });
     redirect(`/painel/corretora/leads/novo?${params.toString()}`);
   }
@@ -158,7 +165,9 @@ export async function createLead(formData: FormData) {
 export async function updateLeadFields(formData: FormData) {
   const profile = await getProfile();
   const user = await getUser();
-  if (!profile?.corretora_id || !user) redirect("/painel");
+  if (!profile?.corretora_id || !user) {
+    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
+  }
 
   const id = String(formData.get("id") ?? "").trim();
   if (!id) redirect("/painel/corretora/leads");
@@ -200,7 +209,13 @@ export async function updateLeadFields(formData: FormData) {
 export async function updateLeadStatus(formData: FormData) {
   const profile = await getProfile();
   const user = await getUser();
-  if (!profile?.corretora_id || !user) redirect("/painel");
+  if (!profile?.corretora_id || !user) {
+    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
+  }
+  await requireActiveSubscription(
+    profile.corretora_id,
+    "/painel/corretora/leads",
+  );
 
   const id = String(formData.get("id") ?? "").trim();
   const next = String(formData.get("status") ?? "").trim();
@@ -277,7 +292,13 @@ export async function updateLeadStatus(formData: FormData) {
 export async function addLeadComment(formData: FormData) {
   const profile = await getProfile();
   const user = await getUser();
-  if (!profile?.corretora_id || !user) redirect("/painel");
+  if (!profile?.corretora_id || !user) {
+    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
+  }
+  await requireActiveSubscription(
+    profile.corretora_id,
+    "/painel/corretora/leads",
+  );
 
   const id = String(formData.get("id") ?? "").trim();
   const text = clean(formData.get("text"));

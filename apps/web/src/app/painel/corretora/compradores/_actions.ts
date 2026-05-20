@@ -11,6 +11,7 @@ import {
   formDataToObject,
   uuidSchema,
 } from "../_lib/schemas";
+import { requireActiveSubscription } from "../_lib/corretora";
 import type { RegimeTributario } from "./_lib/queries";
 
 const REGIMES: RegimeTributario[] = [
@@ -38,6 +39,10 @@ async function ensureCorretora() {
 
 export async function createComprador(formData: FormData) {
   const profile = await ensureCorretora();
+  await requireActiveSubscription(
+    profile.corretora_id,
+    "/painel/corretora/compradores",
+  );
 
   const parsed = compradorSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) {

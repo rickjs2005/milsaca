@@ -130,6 +130,10 @@ export async function createEntrega(formData: FormData) {
 // Atalho do detalhe do contrato — gera 1 entrega única com sacas = contrato.bag_count
 export async function gerarEntregaDoContrato(formData: FormData) {
   const profile = await ensureCorretora();
+  await requireActiveSubscription(
+    profile.corretora_id,
+    "/painel/corretora/entregas",
+  );
   const supabase = await createClient();
   const contratoId = String(formData.get("contrato_id") ?? "");
   if (!contratoId) return;
@@ -189,6 +193,10 @@ export async function gerarEntregaDoContrato(formData: FormData) {
 
 export async function updateEntregaStatus(formData: FormData) {
   const profile = await ensureCorretora();
+  await requireActiveSubscription(
+    profile.corretora_id,
+    "/painel/corretora/entregas",
+  );
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "") as EntregaStatus;

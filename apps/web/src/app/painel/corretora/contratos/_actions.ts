@@ -149,7 +149,9 @@ export async function createContrato(formData: FormData) {
 
 export async function updateContratoFields(formData: FormData) {
   const profile = await getProfile();
-  if (!profile?.corretora_id) redirect("/painel");
+  if (!profile?.corretora_id) {
+    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
+  }
 
   const id = String(formData.get("id") ?? "").trim();
   if (!id) redirect("/painel/corretora/contratos");
@@ -193,7 +195,13 @@ export async function updateContratoFields(formData: FormData) {
 
 export async function updateContratoStatus(formData: FormData) {
   const profile = await getProfile();
-  if (!profile?.corretora_id) redirect("/painel");
+  if (!profile?.corretora_id) {
+    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
+  }
+  await requireActiveSubscription(
+    profile.corretora_id,
+    "/painel/corretora/contratos",
+  );
 
   const id = String(formData.get("id") ?? "").trim();
   const next = String(formData.get("status") ?? "").trim();
