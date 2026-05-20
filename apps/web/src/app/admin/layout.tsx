@@ -1,8 +1,7 @@
-import { Toaster } from "sonner";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { AdminShell } from "./_components/admin-shell";
-import { ToastFromSearchParams } from "./_components/toast-from-search-params";
+import { ToastFromSearchParams } from "@/components/toast-from-search-params";
 
 export const metadata = {
   title: "Admin — Milsaca",
@@ -49,7 +48,6 @@ export default async function AdminLayout({
         {children}
       </AdminShell>
       <ToastFromSearchParams />
-      <Toaster richColors position="top-right" />
     </>
   );
 }

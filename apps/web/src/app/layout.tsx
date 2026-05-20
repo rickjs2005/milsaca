@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const inter = Inter({
@@ -35,6 +36,8 @@ export default function RootLayout({
     <html lang="pt-BR" className={inter.variable}>
       <body className="min-h-screen bg-milsaca-cream font-sans text-milsaca-verde">
         {children}
+        {/* Toaster global — montar uma única vez pro app inteiro. */}
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );

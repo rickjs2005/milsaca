@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { enforceProfileStatus, getProfile, requireUser } from "@/lib/auth";
+import { ToastFromSearchParams } from "@/components/toast-from-search-params";
 import { ProdutorSidebar } from "./_components/sidebar";
 import { getProdutorByProfileId, needsOnboarding } from "./_lib/produtor";
 
@@ -35,6 +36,7 @@ export default async function PainelProdutorLayout({
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-6xl px-8 py-10">{children}</div>
       </div>
+      <ToastFromSearchParams />
     </div>
   );
 }

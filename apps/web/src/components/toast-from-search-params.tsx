@@ -13,7 +13,8 @@ import { toast } from "sonner";
  *   - error=<msg>   → toast.error(msg)
  *   - saved=1       → toast.success("Alterações salvas")
  *
- * Roda dentro do admin layout — funciona pra qualquer página filha.
+ * Monte uma vez por área (admin, painel corretora, painel produtor) —
+ * funciona pra qualquer página filha porque escuta `useSearchParams`.
  */
 export function ToastFromSearchParams() {
   const params = useSearchParams();

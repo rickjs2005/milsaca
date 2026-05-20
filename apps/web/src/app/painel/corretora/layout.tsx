@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireUser, getProfile, enforceProfileStatus } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
+import { ToastFromSearchParams } from "@/components/toast-from-search-params";
 import { CorretoraSidebar } from "./_components/sidebar";
 import { SubscriptionBanner } from "./_components/subscription-banner";
 import {
@@ -65,6 +66,7 @@ export default async function PainelCorretoraLayout({
           {children}
         </div>
       </div>
+      <ToastFromSearchParams />
     </div>
   );
 }
