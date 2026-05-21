@@ -11,6 +11,7 @@ export type DashboardMetrics = {
   leadsTotal: number;
   contratosTotal: number;
   pendentesCount: number;
+  laudosTotal: number;
   // Assinaturas
   mrrCents: number;
   activeSubs: number;
@@ -21,6 +22,9 @@ export type DashboardMetrics = {
   novosLeads30d: number;
   novosContratos30d: number;
   whatsappClicks30d: number;
+  novosLaudos30d: number;
+  // Saúde plataforma
+  cotacoesLastSync: string | null;
 };
 
 export async function loadDashboardMetrics(): Promise<DashboardMetrics> {
@@ -37,6 +41,7 @@ export async function loadDashboardMetrics(): Promise<DashboardMetrics> {
     { count: leadsTotal },
     { count: contratosTotal },
     { count: pendentesCount },
+    { count: laudosTotal },
     { count: activeSubs },
     { count: trialSubs },
     { count: pastDueSubs },
@@ -44,7 +49,9 @@ export async function loadDashboardMetrics(): Promise<DashboardMetrics> {
     { count: novosLeads30d },
     { count: novosContratos30d },
     { count: whatsappClicks30d },
+    { count: novosLaudos30d },
     { data: activeSubsRows },
+    { data: cotacaoMaisRecente },
   ] = await Promise.all([
     supabase.from("corretoras").select("*", { count: "exact", head: true }),
     supabase.from("produtores").select("*", { count: "exact", head: true }),
@@ -56,6 +63,9 @@ export async function loadDashboardMetrics(): Promise<DashboardMetrics> {
       .select("*", { count: "exact", head: true })
       .eq("status", "pendente")
       .contains("roles", ["corretora"]),
+    supabase
+      .from("classificacoes_cob")
+      .select("*", { count: "exact", head: true }),
     supabase
       .from("subscriptions")
       .select("*", { count: "exact", head: true })
@@ -87,9 +97,19 @@ export async function loadDashboardMetrics(): Promise<DashboardMetrics> {
       .select("*", { count: "exact", head: true })
       .gte("created_at", ago30d),
     supabase
+      .from("classificacoes_cob")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", ago30d),
+    supabase
       .from("subscriptions")
       .select("plans(price_cents, billing_period)")
       .eq("status", "active"),
+    supabase
+      .from("market_quotes")
+      .select("fetched_at")
+      .order("fetched_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   // MRR = soma dos planos active normalizados pra valor mensal
@@ -110,6 +130,7 @@ export async function loadDashboardMetrics(): Promise<DashboardMetrics> {
     leadsTotal: leadsTotal ?? 0,
     contratosTotal: contratosTotal ?? 0,
     pendentesCount: pendentesCount ?? 0,
+    laudosTotal: laudosTotal ?? 0,
     mrrCents: Math.round(mrrCents),
     activeSubs: activeSubs ?? 0,
     trialSubs: trialSubs ?? 0,
@@ -118,6 +139,9 @@ export async function loadDashboardMetrics(): Promise<DashboardMetrics> {
     novosLeads30d: novosLeads30d ?? 0,
     novosContratos30d: novosContratos30d ?? 0,
     whatsappClicks30d: whatsappClicks30d ?? 0,
+    novosLaudos30d: novosLaudos30d ?? 0,
+    cotacoesLastSync:
+      (cotacaoMaisRecente as { fetched_at: string } | null)?.fetched_at ?? null,
   };
 }
 
