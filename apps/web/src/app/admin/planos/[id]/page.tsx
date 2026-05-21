@@ -13,13 +13,12 @@ export const metadata = { title: "Editar plano · Admin Milsaca" };
 
 interface PageProps {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ saved?: string; error?: string }>;
 }
 
-export default async function EditPlanoPage({ params, searchParams }: PageProps) {
+// `?saved=1` / `?error=` capturados pelo ToastFromSearchParams global.
+export default async function EditPlanoPage({ params }: PageProps) {
   await requireAppAdmin();
   const { id } = await params;
-  const { saved, error } = await searchParams;
 
   const supabase = await createClient();
   const { data } = await supabase
@@ -50,17 +49,6 @@ export default async function EditPlanoPage({ params, searchParams }: PageProps)
           )
         }
       />
-
-      {saved ? (
-        <p className="mb-4 rounded-md border border-emerald-500/30 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          Alterações salvas.
-        </p>
-      ) : null}
-      {error ? (
-        <p className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
 
       <form
         action={updatePlano}

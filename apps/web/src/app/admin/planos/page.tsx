@@ -126,7 +126,7 @@ export default async function PlanosAdminPage({
               }
               confirmButtonLabel="Desativar"
               confirmButtonVariant="destructive"
-              pendingLabel="Aguarde..."
+              pendingLabel={p.active ? "Desativando..." : "Ativando..."}
             >
               {p.active ? "Desativar" : "Ativar"}
             </ConfirmSubmit>

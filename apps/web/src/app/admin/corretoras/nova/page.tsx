@@ -8,13 +8,9 @@ import { CorretoraFormFields } from "../_components/corretora-form-fields";
 
 export const metadata = { title: "Nova corretora · Admin Milsaca" };
 
-interface PageProps {
-  searchParams: Promise<{ error?: string }>;
-}
-
-export default async function NovaCorretoraPage({ searchParams }: PageProps) {
+// `?error=` é capturado pelo ToastFromSearchParams global do admin layout.
+export default async function NovaCorretoraPage() {
   await requireAppAdmin();
-  const { error } = await searchParams;
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -28,12 +24,6 @@ export default async function NovaCorretoraPage({ searchParams }: PageProps) {
           { label: "Nova" },
         ]}
       />
-
-      {error ? (
-        <p className="mb-4 rounded-md border border-rose-500/30 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          {error}
-        </p>
-      ) : null}
 
       <form
         action={createCorretora}

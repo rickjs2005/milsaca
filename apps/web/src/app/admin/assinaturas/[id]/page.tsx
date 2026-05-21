@@ -27,7 +27,6 @@ const STATUS_KEY: Record<SubStatus, StatusKey> = {
 
 interface PageProps {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ saved?: string; error?: string }>;
 }
 
 function toInputDate(iso: string | null): string {
@@ -52,13 +51,10 @@ function fmtDateTime(iso: string | null): string {
   }
 }
 
-export default async function AssinaturaDetalhePage({
-  params,
-  searchParams,
-}: PageProps) {
+// `?saved=1` / `?error=` capturados pelo ToastFromSearchParams global.
+export default async function AssinaturaDetalhePage({ params }: PageProps) {
   await requireAppAdmin();
   const { id } = await params;
-  const { saved, error } = await searchParams;
 
   const supabase = await createClient();
 
@@ -126,17 +122,6 @@ export default async function AssinaturaDetalhePage({
         ]}
         actions={<StatusBadge status={STATUS_KEY[s.status]} />}
       />
-
-      {saved ? (
-        <p className="mb-4 rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
-          Alterações salvas.
-        </p>
-      ) : null}
-      {error ? (
-        <p className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-2 text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 mb-6">
         <Stat label="Plano" value={s.plans?.name ?? "—"} />

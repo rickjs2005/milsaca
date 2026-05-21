@@ -8,13 +8,9 @@ import { PlanFormFields } from "../_components/plan-form-fields";
 
 export const metadata = { title: "Novo plano · Admin Milsaca" };
 
-interface PageProps {
-  searchParams: Promise<{ error?: string }>;
-}
-
-export default async function NovoPlanoPage({ searchParams }: PageProps) {
+// `?error=` capturado pelo ToastFromSearchParams global do admin layout.
+export default async function NovoPlanoPage() {
   await requireAppAdmin();
-  const { error } = await searchParams;
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -28,12 +24,6 @@ export default async function NovoPlanoPage({ searchParams }: PageProps) {
           { label: "Novo" },
         ]}
       />
-
-      {error ? (
-        <p className="mb-4 rounded-md border border-rose-500/30 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          {error}
-        </p>
-      ) : null}
 
       <form
         action={createPlano}
