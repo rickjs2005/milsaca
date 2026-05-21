@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, Shield, X } from "lucide-react";
 import { AdminSidebar } from "./sidebar";
+import { AdminTopbar } from "./admin-topbar";
 
 type Props = {
   adminName: string;
@@ -13,8 +14,8 @@ type Props = {
 };
 
 /**
- * Casco do admin com sidebar responsiva.
- *   - lg+: sidebar fixa lateral 256px
+ * Casco do admin com sidebar responsiva + topbar desktop.
+ *   - lg+: sidebar fixa lateral 256px + AdminTopbar com breadcrumb/perfil
  *   - <lg: header com hamburger que abre drawer overlay
  *
  * Fecha o drawer automaticamente quando muda de rota (navegação).
@@ -44,7 +45,7 @@ export function AdminShell({
   }, [open]);
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-milsaca-cream">
       {/* Desktop sidebar */}
       <div className="hidden lg:flex">
         <AdminSidebar
@@ -60,7 +61,7 @@ export function AdminShell({
           type="button"
           aria-label="Fechar menu"
           onClick={() => setOpen(false)}
-          className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-milsaca-cafezal/60 backdrop-blur-sm lg:hidden"
         />
       )}
 
@@ -81,7 +82,7 @@ export function AdminShell({
             type="button"
             onClick={() => setOpen(false)}
             aria-label="Fechar menu"
-            className="absolute right-3 top-3 rounded-md p-1 text-slate-300 hover:bg-slate-800"
+            className="absolute right-3 top-3 rounded-md p-1 text-milsaca-cream/80 hover:bg-milsaca-folha/70 hover:text-white"
           >
             <X className="h-5 w-5" />
           </button>
@@ -89,9 +90,12 @@ export function AdminShell({
       </div>
 
       {/* Content area */}
-      <div className="flex-1 overflow-y-auto">
-        {/* Mobile topbar */}
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm lg:hidden">
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Desktop topbar (lg+) */}
+        <AdminTopbar adminName={adminName} adminEmail={adminEmail} />
+
+        {/* Mobile topbar (<lg) */}
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur shadow-sm lg:hidden">
           <button
             type="button"
             onClick={() => setOpen(true)}
@@ -101,19 +105,21 @@ export function AdminShell({
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-milsaca-dourado text-slate-900">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-milsaca-dourado text-milsaca-cafezal">
               <Shield className="h-3.5 w-3.5" />
             </span>
-            <span className="text-sm font-semibold text-slate-900">
+            <span className="text-sm font-semibold text-milsaca-cafezal">
               Milsaca Admin
             </span>
           </div>
           <div className="w-7" />
         </header>
 
-        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
-          {children}
-        </div>
+        <main className="flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   );

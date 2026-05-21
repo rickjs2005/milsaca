@@ -1,12 +1,14 @@
-import Link from "next/link";
+import { Inbox } from "lucide-react";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
+import { FormField } from "@/components/forms/form-field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { MaskedInput } from "@/components/forms/masked-input";
 import { UfSelect } from "@/components/forms/uf-select";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { SubmitButton } from "@/components/submit-button";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
 import { aprovarCorretora, rejeitarCorretora } from "../_actions";
 
 export const metadata = { title: "Aprovações · Admin Milsaca" };
@@ -53,163 +55,136 @@ export default async function AdminAprovacoesPage({
   const rows: PendingSignup[] = (data ?? []) as PendingSignup[];
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <Link
-            href="/admin"
-            className="text-xs text-milsaca-dourado hover:underline"
-          >
-            ← Admin
-          </Link>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight text-milsaca-verde">
-            Aprovações de corretora
-          </h1>
-          <p className="mt-1 text-sm text-milsaca-verde-claro">
-            {rows.length} aguardando análise.
-          </p>
-        </div>
-      </div>
+    <>
+      <PageHeader
+        eyebrow="Gestão"
+        title="Aprovações de corretora"
+        description={
+          rows.length > 0
+            ? `${rows.length} ${rows.length === 1 ? "cadastro" : "cadastros"} aguardando análise.`
+            : "Tudo em dia — nenhum cadastro pendente no momento."
+        }
+        breadcrumbs={[
+          { label: "Admin", href: "/admin" },
+          { label: "Aprovações" },
+        ]}
+      />
 
       {rpcError ? (
-        <p className="mt-6 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          Erro ao listar pendentes: {rpcError.message}
+        <p className="mb-6 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          Não foi possível carregar pendentes agora. Tente novamente em alguns
+          minutos.
         </p>
       ) : null}
 
-      <div className="mt-8 space-y-6">
-        {rows.length === 0 ? (
-          <div className="rounded-2xl border border-milsaca-verde/10 bg-white p-10 text-center text-sm text-milsaca-verde-claro">
-            Nenhuma corretora aguardando aprovação.
-          </div>
-        ) : null}
-
-        {rows.map((row) => (
-          <article
-            key={row.profile_id}
-            className="rounded-2xl border border-milsaca-verde/10 bg-white p-6 shadow-sm"
-          >
-            <header className="flex flex-wrap items-start justify-between gap-2 border-b border-milsaca-cream-escuro pb-4">
-              <div>
-                <h2 className="text-lg font-semibold text-milsaca-verde">
-                  {row.corretora_name ?? "Corretora sem nome"}
-                </h2>
-                <p className="mt-0.5 text-xs text-milsaca-verde-claro">
-                  Solicitado por{" "}
-                  <span className="font-medium">
-                    {row.full_name ?? "—"}
-                  </span>{" "}
-                  · {row.email ?? "sem email"} · {fmtDate(row.signup_at)}
-                </p>
-              </div>
-            </header>
-
-            <form action={aprovarCorretora} className="mt-4 space-y-4">
-              <input type="hidden" name="profile_id" value={row.profile_id} />
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field
-                  label="Nome da corretora"
-                  name="name"
-                  defaultValue={row.corretora_name ?? ""}
-                  required
-                />
-                <div className="space-y-1.5">
-                  <Label htmlFor={`cnpj-${row.profile_id}`}>CNPJ *</Label>
-                  <MaskedInput
-                    id={`cnpj-${row.profile_id}`}
-                    type="cnpj"
-                    name="cnpj"
-                    required
-                    defaultValue={row.corretora_cnpj ?? ""}
-                    validateOnBlur
-                  />
+      {rows.length === 0 ? (
+        <div className="rounded-card border border-slate-200 bg-white shadow-card">
+          <EmptyState
+            icon={Inbox}
+            title="Nenhuma corretora aguardando aprovação"
+            description="Quando alguém se cadastrar como corretora, o pedido aparece aqui pra você revisar e ativar."
+            secondaryCta={{ label: "Ver corretoras ativas", href: "/admin/corretoras" }}
+          />
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {rows.map((row) => (
+            <article
+              key={row.profile_id}
+              className="rounded-card border border-slate-200 bg-white p-6 shadow-card"
+            >
+              <header className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-100 pb-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-milsaca-preto">
+                    {row.corretora_name ?? "Corretora sem nome"}
+                  </h2>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Solicitado por{" "}
+                    <span className="font-medium text-slate-700">
+                      {row.full_name ?? "—"}
+                    </span>{" "}
+                    · {row.email ?? "sem email"} · {fmtDate(row.signup_at)}
+                  </p>
                 </div>
-                <Field
-                  label="Cidade"
-                  name="city"
-                  defaultValue={row.corretora_city ?? ""}
-                  required
-                />
-                <div className="space-y-1.5">
-                  <Label htmlFor={`state-${row.profile_id}`}>UF *</Label>
-                  <UfSelect
-                    id={`state-${row.profile_id}`}
-                    name="state"
-                    required
-                    defaultValue={row.corretora_uf ?? "MG"}
-                  />
+              </header>
+
+              <form action={aprovarCorretora} className="mt-4 space-y-4">
+                <input type="hidden" name="profile_id" value={row.profile_id} />
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <FormField label="Nome da corretora" htmlFor={`name-${row.profile_id}`} required>
+                    <Input
+                      id={`name-${row.profile_id}`}
+                      name="name"
+                      defaultValue={row.corretora_name ?? ""}
+                      required
+                    />
+                  </FormField>
+                  <FormField label="CNPJ" htmlFor={`cnpj-${row.profile_id}`} required>
+                    <MaskedInput
+                      id={`cnpj-${row.profile_id}`}
+                      type="cnpj"
+                      name="cnpj"
+                      required
+                      defaultValue={row.corretora_cnpj ?? ""}
+                      validateOnBlur
+                    />
+                  </FormField>
+                  <FormField label="Cidade" htmlFor={`city-${row.profile_id}`} required>
+                    <Input
+                      id={`city-${row.profile_id}`}
+                      name="city"
+                      defaultValue={row.corretora_city ?? ""}
+                      required
+                    />
+                  </FormField>
+                  <FormField label="UF" htmlFor={`state-${row.profile_id}`} required>
+                    <UfSelect
+                      id={`state-${row.profile_id}`}
+                      name="state"
+                      required
+                      defaultValue={row.corretora_uf ?? "MG"}
+                    />
+                  </FormField>
                 </div>
-              </div>
 
-              <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
-                <ConfirmSubmit
-                  formAction={rejeitarCorretora}
-                  variant="outline"
-                  className="text-destructive hover:text-destructive"
-                  confirmTitle="Rejeitar cadastro?"
-                  confirmMessage={
-                    <>
-                      <p>
-                        A corretora <strong>{row.corretora_name ?? "—"}</strong>{" "}
-                        terá o cadastro <strong>bloqueado</strong> e não vai
-                        conseguir acessar a plataforma.
-                      </p>
-                      <p className="mt-2">
-                        Ação reversível só via banco (atualizar{" "}
-                        <code>profiles.status</code>).
-                      </p>
-                    </>
-                  }
-                  confirmButtonLabel="Rejeitar"
-                  pendingLabel="Rejeitando..."
-                >
-                  Rejeitar
-                </ConfirmSubmit>
-                <SubmitButton
-                  className="gap-2 bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
-                  pendingLabel="Aprovando..."
-                >
-                  Aprovar e criar corretora
-                </SubmitButton>
-              </div>
-            </form>
-          </article>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  name,
-  defaultValue,
-  required,
-  maxLength,
-  placeholder,
-}: {
-  label: string;
-  name: string;
-  defaultValue?: string;
-  required?: boolean;
-  maxLength?: number;
-  placeholder?: string;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <Label htmlFor={name}>
-        {label}
-        {required ? " *" : ""}
-      </Label>
-      <Input
-        id={name}
-        name={name}
-        defaultValue={defaultValue}
-        required={required}
-        maxLength={maxLength}
-        placeholder={placeholder}
-      />
-    </div>
+                <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+                  <ConfirmSubmit
+                    formAction={rejeitarCorretora}
+                    variant="outline"
+                    className="text-destructive hover:text-destructive"
+                    confirmTitle="Rejeitar cadastro?"
+                    confirmMessage={
+                      <>
+                        <p>
+                          A corretora{" "}
+                          <strong>{row.corretora_name ?? "—"}</strong> terá o
+                          cadastro <strong>bloqueado</strong> e não vai
+                          conseguir acessar a plataforma.
+                        </p>
+                        <p className="mt-2">
+                          Ação reversível só via banco (atualizar{" "}
+                          <code>profiles.status</code>).
+                        </p>
+                      </>
+                    }
+                    confirmButtonLabel="Rejeitar"
+                    pendingLabel="Rejeitando..."
+                  >
+                    Rejeitar
+                  </ConfirmSubmit>
+                  <SubmitButton
+                    className="gap-2 bg-milsaca-cafezal text-milsaca-cream hover:bg-milsaca-folha"
+                    pendingLabel="Aprovando..."
+                  >
+                    Aprovar e criar corretora
+                  </SubmitButton>
+                </div>
+              </form>
+            </article>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
