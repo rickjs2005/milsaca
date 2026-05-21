@@ -1,6 +1,7 @@
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { AdminShell } from "./_components/admin-shell";
+import { CommandPalette } from "./_components/command-palette";
 import { ToastFromSearchParams } from "@/components/toast-from-search-params";
 
 export const metadata = {
@@ -47,6 +48,7 @@ export default async function AdminLayout({
       >
         {children}
       </AdminShell>
+      <CommandPalette />
       <ToastFromSearchParams />
     </>
   );

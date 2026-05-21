@@ -26,6 +26,9 @@ const LABELS: Record<string, string> = {
   marketplace: "Marketplace",
   moderacao: "Moderação",
   "lead-waitlist": "Lista de espera",
+  cotacoes: "Cotações",
+  eudr: "EUDR",
+  fiscal: "Fiscal",
   novo: "Novo",
   nova: "Nova",
 };
@@ -107,21 +110,22 @@ export function AdminTopbar({ adminName, adminEmail }: Props) {
         </ol>
       </nav>
 
-      {/* Busca placeholder */}
+      {/* Busca global — abre CommandPalette */}
       <div className="hidden xl:block">
-        <div className="relative">
-          <Search
-            aria-hidden
-            className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
-          />
-          <input
-            type="search"
-            disabled
-            placeholder="Buscar (em breve)..."
-            aria-label="Busca global (em breve)"
-            className="h-9 w-64 cursor-not-allowed rounded-md border border-slate-200 bg-slate-50 pl-8 pr-3 text-xs text-slate-400 placeholder:text-slate-400"
-          />
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            window.dispatchEvent(new Event("milsaca:open-command-palette"));
+          }}
+          aria-label="Abrir busca global (Cmd+K)"
+          className="group flex h-9 w-64 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 text-xs text-slate-500 transition-colors hover:border-milsaca-dourado/60 hover:bg-white"
+        >
+          <Search className="h-3.5 w-3.5 text-slate-400 group-hover:text-milsaca-cafezal" aria-hidden />
+          <span className="flex-1 text-left">Buscar...</span>
+          <kbd className="rounded border border-slate-200 bg-white px-1 py-0.5 font-mono text-[10px] text-slate-500">
+            ⌘K
+          </kbd>
+        </button>
       </div>
 
       {/* Perfil + logout */}

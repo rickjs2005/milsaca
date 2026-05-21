@@ -23,6 +23,9 @@ import {
   Store,
   ShieldAlert,
   Users,
+  TrendingUp,
+  Leaf,
+  FileSignature,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -81,6 +84,14 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/planos", label: "Planos", icon: Wallet },
       { href: "/admin/assinaturas", label: "Assinaturas", icon: Receipt },
+    ],
+  },
+  {
+    label: "Compliance",
+    items: [
+      { href: "/admin/cotacoes", label: "Cotações", icon: TrendingUp },
+      { href: "/admin/eudr", label: "EUDR", icon: Leaf },
+      { href: "/admin/fiscal", label: "Fiscal", icon: FileSignature },
     ],
   },
   {
