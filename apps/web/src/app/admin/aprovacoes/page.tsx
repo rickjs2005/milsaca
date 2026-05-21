@@ -9,6 +9,7 @@ import { ConfirmSubmit } from "@/components/confirm-submit";
 import { SubmitButton } from "@/components/submit-button";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { fmtDateTime } from "@/lib/format";
 import { aprovarCorretora, rejeitarCorretora } from "../_actions";
 
 export const metadata = { title: "Aprovações · Admin Milsaca" };
@@ -27,20 +28,6 @@ type PendingSignup = {
 
 interface PageProps {
   searchParams: Promise<{ ok?: string; error?: string }>;
-}
-
-function fmtDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
 }
 
 export default async function AdminAprovacoesPage({
@@ -103,7 +90,7 @@ export default async function AdminAprovacoesPage({
                     <span className="font-medium text-slate-700">
                       {row.full_name ?? "—"}
                     </span>{" "}
-                    · {row.email ?? "sem email"} · {fmtDate(row.signup_at)}
+                    · {row.email ?? "sem email"} · {fmtDateTime(row.signup_at)}
                   </p>
                 </div>
               </header>

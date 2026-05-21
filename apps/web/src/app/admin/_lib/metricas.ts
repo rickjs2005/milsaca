@@ -145,12 +145,9 @@ export async function loadDashboardMetrics(): Promise<DashboardMetrics> {
   };
 }
 
-export function formatBRL(cents: number): string {
-  return (cents / 100).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
+// Re-export do helper centralizado em lib/format.ts — mantém o nome
+// "formatBRL" usado por 14 arquivos que já importavam daqui.
+export { fmtBRL as formatBRL } from "@/lib/format";
 
 export type MonthBucket = {
   ym: string; // "2026-05"

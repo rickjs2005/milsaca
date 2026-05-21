@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { SubmitButton } from "@/components/submit-button";
+import { fmtDate } from "@/lib/format";
 import {
   cancelSubscription,
   markSubscriptionPaid,
@@ -38,18 +39,6 @@ function toInputDate(iso: string | null): string {
   }
 }
 
-function fmtDateTime(iso: string | null): string {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  } catch {
-    return iso;
-  }
-}
 
 // `?saved=1` / `?error=` capturados pelo ToastFromSearchParams global.
 export default async function AssinaturaDetalhePage({ params }: PageProps) {
@@ -112,7 +101,7 @@ export default async function AssinaturaDetalhePage({ params }: PageProps) {
   return (
     <div className="mx-auto max-w-3xl">
       <PageHeader
-        eyebrow={`Desde ${fmtDateTime(s.started_at)}`}
+        eyebrow={`Desde ${fmtDate(s.started_at)}`}
         title={corretoraName}
         description={localCNPJ || "Detalhes da assinatura."}
         breadcrumbs={[
@@ -127,13 +116,13 @@ export default async function AssinaturaDetalhePage({ params }: PageProps) {
         <Stat label="Plano" value={s.plans?.name ?? "—"} />
         <Stat
           label={s.status === "trial" ? "Trial até" : "Período até"}
-          value={fmtDateTime(
+          value={fmtDate(
             s.status === "trial" ? s.trial_ends_at : s.current_period_end,
           )}
         />
         <Stat
           label="Cancelado em"
-          value={fmtDateTime(s.canceled_at)}
+          value={fmtDate(s.canceled_at)}
         />
       </div>
 

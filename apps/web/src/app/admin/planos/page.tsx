@@ -8,20 +8,13 @@ import { StatusBadge } from "@/components/status-badge";
 import { DataTable, type Column } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import { ConfirmSubmit } from "@/components/confirm-submit";
+import { formatPriceBR } from "@/lib/format";
 import { togglePlanoActive } from "./_actions";
 
 export const metadata = { title: "Planos · Admin Milsaca" };
 
 interface PageProps {
   searchParams: Promise<{ ok?: string; error?: string }>;
-}
-
-function formatPrice(cents: number, period: "monthly" | "yearly"): string {
-  const reais = (cents / 100).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-  return `${reais}/${period === "yearly" ? "ano" : "mês"}`;
 }
 
 type Row = {
@@ -64,7 +57,7 @@ export default async function PlanosAdminPage({
       key: "preco",
       header: "Preço",
       mobileLabel: "Preço",
-      cell: (p) => formatPrice(p.price_cents, p.billing_period),
+      cell: (p) => formatPriceBR(p.price_cents, p.billing_period),
     },
     {
       key: "features",

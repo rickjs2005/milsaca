@@ -8,6 +8,7 @@ import { DataTable, type Column } from "@/components/data-table";
 import { FilterBar } from "@/components/filter-bar";
 import { Button } from "@/components/ui/button";
 import { maskPhoneBR } from "@/lib/mask";
+import { fmtDate } from "@/lib/format";
 import {
   listProdutores,
   PRODUTORES_PAGE_SIZE,
@@ -31,14 +32,6 @@ type SP = {
 
 interface PageProps {
   searchParams: Promise<SP>;
-}
-
-function fmtDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString("pt-BR");
-  } catch {
-    return iso;
-  }
 }
 
 export default async function ProdutoresAdminPage({ searchParams }: PageProps) {

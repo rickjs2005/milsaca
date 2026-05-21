@@ -8,6 +8,7 @@ import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { DataTable, type Column } from "@/components/data-table";
 import { KpiCard } from "@/components/kpi-card";
 import { Button } from "@/components/ui/button";
+import { fmtDateTime } from "@/lib/format";
 import { loadFunnelStats } from "./_lib/funnel";
 
 export const metadata = { title: "Leads · Admin Milsaca" };
@@ -44,20 +45,6 @@ type SP = {
 
 interface PageProps {
   searchParams: Promise<SP>;
-}
-
-function fmtDateTime(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
 }
 
 type Row = {

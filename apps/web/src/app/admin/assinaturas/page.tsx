@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { StatusBadge, type StatusKey } from "@/components/status-badge";
 import { DataTable, type Column } from "@/components/data-table";
+import { fmtDate } from "@/lib/format";
 
 export const metadata = { title: "Assinaturas · Admin Milsaca" };
 
@@ -13,19 +14,6 @@ type SubStatus = "trial" | "active" | "past_due" | "canceled" | "expired";
 
 interface PageProps {
   searchParams: Promise<{ ok?: string; error?: string }>;
-}
-
-function fmtDate(iso: string | null): string {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  } catch {
-    return iso;
-  }
 }
 
 function effectiveStatus(sub: {

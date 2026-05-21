@@ -16,6 +16,7 @@ import { DataTable, type Column } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
 import { formatCpfCnpj } from "@/lib/mask";
 import { formatPhoneBR } from "@/lib/brasil";
+import { fmtDate, fmtMoney } from "@/lib/format";
 import {
   getProdutorDetalhe,
   listProdutorLeads,
@@ -43,19 +44,6 @@ const CONTRATO_STATUS_LABEL: Record<string, string> = {
   finalizado: "Finalizado",
   cancelado: "Cancelado",
 };
-
-function fmtDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString("pt-BR");
-  } catch {
-    return iso;
-  }
-}
-
-function fmtMoney(v: number | null): string {
-  if (v == null) return "—";
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
 
 function fmtPhone(p: string | null): string {
   if (!p) return "—";

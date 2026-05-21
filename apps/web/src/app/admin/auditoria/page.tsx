@@ -8,6 +8,7 @@ import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { DataTable, type Column } from "@/components/data-table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { fmtDateTime } from "@/lib/format";
 
 export const metadata = { title: "Auditoria · Admin Milsaca" };
 
@@ -41,20 +42,6 @@ const ACTION_LABEL: Record<string, string> = {
   subscription_paid: "Marcou assinatura como paga",
   subscription_canceled: "Cancelou assinatura",
 };
-
-function fmtDateTime(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
-}
 
 function actionTone(action: string): StatusTone {
   if (
