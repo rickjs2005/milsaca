@@ -7,6 +7,7 @@ import { StatusBadge, type StatusKey } from "@/components/status-badge";
 import { DataTable, type Column } from "@/components/data-table";
 import { FilterBar } from "@/components/filter-bar";
 import { Button } from "@/components/ui/button";
+import { maskPhoneBR } from "@/lib/mask";
 import {
   listProdutores,
   PRODUTORES_PAGE_SIZE,
@@ -30,15 +31,6 @@ type SP = {
 
 interface PageProps {
   searchParams: Promise<SP>;
-}
-
-function maskPhone(p: string | null): string {
-  if (!p) return "—";
-  const d = p.replace(/\D/g, "");
-  if (d.length < 10) return p;
-  const ddd = d.slice(-11, -9);
-  const last4 = d.slice(-4);
-  return `(${ddd}) *****-${last4}`;
 }
 
 function fmtDate(iso: string): string {
@@ -98,7 +90,7 @@ export default async function ProdutoresAdminPage({ searchParams }: PageProps) {
       mobileLabel: "Telefone",
       cell: (r) => (
         <span className="font-mono text-xs text-slate-600">
-          {maskPhone(r.phone ?? r.whatsapp)}
+          {maskPhoneBR(r.phone ?? r.whatsapp)}
         </span>
       ),
     },

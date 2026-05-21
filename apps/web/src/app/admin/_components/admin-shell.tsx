@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, Shield, X } from "lucide-react";
+import { LogOut, Menu, Shield, X } from "lucide-react";
 import { AdminSidebar } from "./sidebar";
 import { AdminTopbar } from "./admin-topbar";
 
@@ -112,7 +112,15 @@ export function AdminShell({
               Milsaca Admin
             </span>
           </div>
-          <div className="w-7" />
+          <form action="/sair" method="post">
+            <button
+              type="submit"
+              aria-label="Sair da sessão"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-slate-600 transition-colors hover:bg-slate-100 hover:text-milsaca-cafezal"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </form>
         </header>
 
         <main className="flex-1 overflow-y-auto">

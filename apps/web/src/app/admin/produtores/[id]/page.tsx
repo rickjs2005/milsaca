@@ -14,6 +14,8 @@ import { StatusBadge, type StatusKey } from "@/components/status-badge";
 import { KpiCard } from "@/components/kpi-card";
 import { DataTable, type Column } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
+import { formatCpfCnpj } from "@/lib/mask";
+import { formatPhoneBR } from "@/lib/brasil";
 import {
   getProdutorDetalhe,
   listProdutorLeads,
@@ -55,31 +57,9 @@ function fmtMoney(v: number | null): string {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function fmtCpfCnpj(s: string | null): string {
-  if (!s) return "—";
-  const d = s.replace(/\D/g, "");
-  if (d.length === 11) {
-    return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
-  }
-  if (d.length === 14) {
-    return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
-  }
-  return s;
-}
-
 function fmtPhone(p: string | null): string {
   if (!p) return "—";
-  const d = p.replace(/\D/g, "");
-  if (d.length === 13) {
-    return `+${d.slice(0, 2)} (${d.slice(2, 4)}) ${d.slice(4, 9)}-${d.slice(9)}`;
-  }
-  if (d.length === 11) {
-    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-  }
-  if (d.length === 10) {
-    return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
-  }
-  return p;
+  return formatPhoneBR(p) || p;
 }
 
 type LeadRow = {
@@ -245,7 +225,7 @@ export default async function ProdutorDetalheAdminPage({ params }: PageProps) {
           <Field label="Nome completo" value={detalhe.full_name} />
           <Field label="Telefone" value={fmtPhone(detalhe.phone)} />
           <Field label="WhatsApp" value={fmtPhone(detalhe.whatsapp)} />
-          <Field label="CPF/CNPJ" value={fmtCpfCnpj(detalhe.cpf_cnpj)} />
+          <Field label="CPF/CNPJ" value={formatCpfCnpj(detalhe.cpf_cnpj)} />
           <Field label="Cadastro em" value={fmtDate(detalhe.created_at)} />
         </Panel>
 
