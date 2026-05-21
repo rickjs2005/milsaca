@@ -45,7 +45,7 @@ export function AdminShell({
   }, [open]);
 
   return (
-    <div className="flex min-h-screen bg-milsaca-cream">
+    <div className="flex h-screen overflow-hidden bg-milsaca-cream">
       {/* Desktop sidebar */}
       <div className="hidden lg:flex">
         <AdminSidebar

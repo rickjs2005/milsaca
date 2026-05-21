@@ -83,7 +83,7 @@ export function AdminSidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-milsaca-cafezal/40 bg-milsaca-cafezal text-milsaca-cream">
+    <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r border-milsaca-cafezal/40 bg-milsaca-cafezal text-milsaca-cream">
       {/* Brand */}
       <div className="flex items-center gap-2.5 px-5 py-5">
         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-milsaca-dourado text-milsaca-cafezal shadow-card">
