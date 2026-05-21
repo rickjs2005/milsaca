@@ -15,6 +15,11 @@ import {
   MessageCircle,
   Lock,
   LogOut,
+  Cpu,
+  Filter,
+  MessageSquare,
+  ListChecks,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -54,6 +59,20 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Operação",
     items: [
       { href: "/admin/leads", label: "Leads WhatsApp", icon: MessageCircle },
+    ],
+  },
+  {
+    label: "Plataforma",
+    items: [
+      { href: "/admin/automacoes", label: "Automações", icon: Cpu },
+      { href: "/admin/regras-leads", label: "Regras de leads", icon: Filter },
+      { href: "/admin/comunicacao", label: "Comunicação", icon: MessageSquare },
+      { href: "/admin/fila-eventos", label: "Fila & Eventos", icon: ListChecks },
+    ],
+  },
+  {
+    label: "Comercial",
+    items: [
       { href: "/admin/planos", label: "Planos", icon: Wallet },
       { href: "/admin/assinaturas", label: "Assinaturas", icon: Receipt },
     ],
@@ -67,7 +86,10 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "Configuração",
-    items: [{ href: "/admin/seguranca", label: "Segurança", icon: Lock }],
+    items: [
+      { href: "/admin/configuracoes", label: "Configurações", icon: Settings },
+      { href: "/admin/seguranca", label: "Segurança", icon: Lock },
+    ],
   },
 ];
 
