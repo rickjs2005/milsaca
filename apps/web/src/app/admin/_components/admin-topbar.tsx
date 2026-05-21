@@ -23,6 +23,8 @@ const LABELS: Record<string, string> = {
   "regras-leads": "Regras de leads",
   comunicacao: "Comunicação",
   "fila-eventos": "Fila & Eventos",
+  marketplace: "Marketplace",
+  moderacao: "Moderação",
   novo: "Novo",
   nova: "Nova",
 };

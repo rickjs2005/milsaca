@@ -1,10 +1,23 @@
-import { Cpu, Clock, type LucideIcon } from "lucide-react";
+import { Cpu, Clock, Play, type LucideIcon } from "lucide-react";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
+import { SubmitButton } from "@/components/submit-button";
 import { fmtDateTime } from "@/lib/format";
+import { triggerJob } from "./_actions";
+
+/**
+ * Jobs que têm função SQL plugada — recebem botão "Rodar agora".
+ * Deve casar com `RUNNABLE` em ./_actions.ts.
+ */
+const RUNNABLE_KINDS = new Set<string>([
+  "cron.expire-trials.run",
+  "cron.expire-subscriptions.run",
+  "cron.nudge-trial-ending.run",
+  "cron.nudge-stale-leads.run",
+]);
 
 export const metadata = { title: "Automações · Admin Milsaca" };
 
@@ -34,34 +47,34 @@ const JOBS: JobSpec[] = [
   {
     kind: "cron.expire-trials.run",
     label: "Expirar trials vencidos",
-    schedule: "06:00 · diário",
+    schedule: "06:00 · diário (cron pendente)",
     description:
-      "Marca subscriptions trial cujo trial_ends_at já passou como expired. Bloqueia acesso da corretora ao painel.",
-    state: "pending_setup",
+      "Marca subscriptions trial cujo trial_ends_at já passou como expired. Função SQL plugada — pode rodar agora.",
+    state: "active",
   },
   {
     kind: "cron.expire-subscriptions.run",
     label: "Expirar assinaturas vencidas",
-    schedule: "06:15 · diário",
+    schedule: "06:15 · diário (cron pendente)",
     description:
-      "Marca subscriptions active cujo current_period_end passou como past_due. Cria notification de aviso.",
-    state: "pending_setup",
+      "Marca subscriptions active cujo current_period_end passou como past_due. Função SQL plugada.",
+    state: "active",
   },
   {
     kind: "cron.nudge-trial-ending.run",
     label: "Lembrete — trial expirando em 3 dias",
-    schedule: "10:00 · diário",
+    schedule: "10:00 · diário (cron pendente)",
     description:
-      "Dispara template email trial_expira_3d pra corretoras com trial_ends_at entre +2 e +3 dias.",
-    state: "pending_setup",
+      "Cria message_dispatches pendentes do template trial_expira_3d pra corretoras com trial entre +2 e +4 dias.",
+    state: "active",
   },
   {
     kind: "cron.nudge-stale-leads.run",
     label: "Lembrete — lead parado há 3 dias",
-    schedule: "09:00 · diário",
+    schedule: "09:00 · diário (cron pendente)",
     description:
-      "Dispara template whatsapp lead_parado_3d pra corretoras com lead em em_negociacao sem evento há 3+ dias.",
-    state: "pending_setup",
+      "Cria message_dispatches pendentes do template lead_parado_3d pra corretoras com lead em_negociacao sem update há 3+ dias.",
+    state: "active",
   },
   {
     kind: "cron.nudge-delivery-late.run",
@@ -250,8 +263,8 @@ function JobCard({
 
       <p className="text-xs text-slate-600">{job.description}</p>
 
-      <footer className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
-        <span className="text-slate-500">
+      <footer className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3 text-xs">
+        <span className="min-w-0 flex-1 truncate text-slate-500">
           {last ? (
             <>
               Última execução:{" "}
@@ -265,9 +278,24 @@ function JobCard({
             "Sem registro de execução ainda."
           )}
         </span>
-        <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600">
-          {job.kind}
-        </code>
+        {RUNNABLE_KINDS.has(job.kind) ? (
+          <form action={triggerJob}>
+            <input type="hidden" name="kind" value={job.kind} />
+            <SubmitButton
+              size="sm"
+              variant="outline"
+              className="h-7 gap-1 px-2.5 text-[11px]"
+              pendingLabel="Rodando..."
+            >
+              <Play className="h-3 w-3" />
+              Rodar agora
+            </SubmitButton>
+          </form>
+        ) : (
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600">
+            {job.kind}
+          </code>
+        )}
       </footer>
     </article>
   );

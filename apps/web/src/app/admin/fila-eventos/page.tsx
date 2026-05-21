@@ -1,4 +1,4 @@
-import { ListChecks } from "lucide-react";
+import { ListChecks, RotateCw } from "lucide-react";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { PageHeader } from "@/components/page-header";
@@ -7,7 +7,9 @@ import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { DataTable, type Column } from "@/components/data-table";
 import { KpiCard } from "@/components/kpi-card";
 import { FilterBar } from "@/components/filter-bar";
+import { SubmitButton } from "@/components/submit-button";
 import { fmtDateTime } from "@/lib/format";
+import { reprocessEvent } from "./_actions";
 
 export const metadata = { title: "Fila & Eventos · Admin Milsaca" };
 
@@ -171,6 +173,26 @@ export default async function FilaEventosPage({ searchParams }: PageProps) {
         </details>
       ),
       hideOnMobile: true,
+    },
+    {
+      key: "actions",
+      header: <span className="sr-only">Ações</span>,
+      align: "right",
+      cell: (r) =>
+        r.status === "failed" || r.status === "skipped" ? (
+          <form action={reprocessEvent}>
+            <input type="hidden" name="id" value={r.id} />
+            <SubmitButton
+              size="sm"
+              variant="outline"
+              className="h-7 gap-1 px-2.5 text-[11px]"
+              pendingLabel="..."
+            >
+              <RotateCw className="h-3 w-3" />
+              Reprocessar
+            </SubmitButton>
+          </form>
+        ) : null,
     },
   ];
 
