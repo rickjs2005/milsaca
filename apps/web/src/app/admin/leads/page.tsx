@@ -1,7 +1,12 @@
 import Link from "next/link";
+import { Handshake, MessageCircle } from "lucide-react";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
-import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
+import { StatusBadge, type StatusTone } from "@/components/status-badge";
+import { DataTable, type Column } from "@/components/data-table";
+import { KpiCard } from "@/components/kpi-card";
 import { Button } from "@/components/ui/button";
 import { loadFunnelStats } from "./_lib/funnel";
 
@@ -24,11 +29,11 @@ const SOURCE_LABEL: Record<string, string> = {
   outro: "Outro",
 };
 
-const SOURCE_COLOR: Record<string, string> = {
-  catalogo_corretoras: "bg-emerald-100 text-emerald-700 hover:bg-emerald-100",
-  perfil_corretora: "bg-blue-100 text-blue-700 hover:bg-blue-100",
-  home_publica: "bg-amber-100 text-amber-800 hover:bg-amber-100",
-  outro: "bg-slate-200 text-slate-700 hover:bg-slate-200",
+const SOURCE_TONE: Record<string, StatusTone> = {
+  catalogo_corretoras: "success",
+  perfil_corretora: "info",
+  home_publica: "warning",
+  outro: "neutral",
 };
 
 type SP = {
@@ -54,6 +59,18 @@ function fmtDateTime(iso: string): string {
     return iso;
   }
 }
+
+type Row = {
+  id: string;
+  corretora_id: string;
+  produtor_id: string | null;
+  source: string;
+  message: string | null;
+  user_agent: string | null;
+  created_at: string;
+  corretoraName: string | null;
+  produtorName: string | null;
+};
 
 export default async function LeadsAdminPage({ searchParams }: PageProps) {
   await requireAppAdmin();
@@ -81,14 +98,13 @@ export default async function LeadsAdminPage({ searchParams }: PageProps) {
 
   const { data, count } = await q;
 
-  // Lista de corretoras pra filtro (limit alto, são poucas)
   const { data: corretorasList } = await supabase
     .from("corretoras")
     .select("id, name")
     .order("name", { ascending: true })
     .limit(200);
 
-  type Row = {
+  type Raw = {
     id: string;
     corretora_id: string;
     produtor_id: string | null;
@@ -99,7 +115,7 @@ export default async function LeadsAdminPage({ searchParams }: PageProps) {
     corretoras: { name: string } | { name: string }[] | null;
     profiles: { full_name: string | null } | { full_name: string | null }[] | null;
   };
-  const rows = ((data ?? []) as unknown as Row[]).map((r) => ({
+  const rows: Row[] = ((data ?? []) as unknown as Raw[]).map((r) => ({
     ...r,
     corretoraName: Array.isArray(r.corretoras)
       ? r.corretoras[0]?.name ?? null
@@ -113,45 +129,110 @@ export default async function LeadsAdminPage({ searchParams }: PageProps) {
   const funnel = await loadFunnelStats(corretoraId);
   const conversionPct = (funnel.conversionRate * 100).toFixed(1);
 
-  return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-          Leads WhatsApp
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Cliques no botão &ldquo;Falar no WhatsApp&rdquo; registrados antes do redirect.{" "}
-          {count != null ? `${count} registro${count === 1 ? "" : "s"}.` : ""}
-        </p>
-      </div>
+  const columns: Column<Row>[] = [
+    {
+      key: "quando",
+      header: "Quando",
+      mobileLabel: "Quando",
+      cell: (r) => (
+        <span className="whitespace-nowrap text-xs text-slate-600">
+          {fmtDateTime(r.created_at)}
+        </span>
+      ),
+    },
+    {
+      key: "corretora",
+      header: "Corretora",
+      mobileLabel: "Corretora",
+      cell: (r) =>
+        r.corretoraName ? (
+          <span className="font-medium text-slate-900">{r.corretoraName}</span>
+        ) : (
+          <span className="text-slate-400">—</span>
+        ),
+    },
+    {
+      key: "produtor",
+      header: "Produtor",
+      mobileLabel: "Produtor",
+      cell: (r) =>
+        r.produtorName ?? (
+          <span className="text-xs italic text-slate-400">anônimo</span>
+        ),
+    },
+    {
+      key: "origem",
+      header: "Origem",
+      mobileLabel: "Origem",
+      cell: (r) => (
+        <StatusBadge tone={SOURCE_TONE[r.source] ?? "neutral"}>
+          {SOURCE_LABEL[r.source] ?? r.source}
+        </StatusBadge>
+      ),
+    },
+    {
+      key: "msg",
+      header: "Mensagem",
+      mobileLabel: "Mensagem",
+      cell: (r) =>
+        r.message ? (
+          <details>
+            <summary className="cursor-pointer text-xs font-medium text-milsaca-cafezal underline-offset-4 hover:underline">
+              ver
+            </summary>
+            <p className="mt-1 max-w-md rounded-md bg-slate-50 p-2 text-[11px] text-slate-700">
+              {r.message}
+            </p>
+          </details>
+        ) : (
+          <span className="text-slate-400">—</span>
+        ),
+      hideOnMobile: true,
+    },
+  ];
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FunnelKpi
+  return (
+    <>
+      <PageHeader
+        eyebrow="Operação"
+        title="Leads WhatsApp"
+        description={`Cliques no botão "Falar no WhatsApp" registrados antes do redirect. ${count ?? 0} ${count === 1 ? "registro" : "registros"} no total.`}
+        breadcrumbs={[
+          { label: "Admin", href: "/admin" },
+          { label: "Leads WhatsApp" },
+        ]}
+      />
+
+      <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <KpiCard
           label="Cliques totais"
           value={funnel.totalClicks}
-          hint="incluindo anônimos"
+          icon={MessageCircle}
+          hint="Incluindo anônimos."
         />
-        <FunnelKpi
+        <KpiCard
           label="Pares únicos"
           value={funnel.uniquePairs}
-          hint="corretora ↔ produtor"
+          icon={Handshake}
+          hint="Corretora ↔ produtor."
         />
-        <FunnelKpi
+        <KpiCard
           label="Viraram contrato"
           value={funnel.convertedPairs}
-          hint="pelo menos 1 contrato após o click"
+          tone="success"
+          hint="Pelo menos 1 contrato após o click."
         />
-        <FunnelKpi
+        <KpiCard
           label="Taxa de conversão"
           value={`${conversionPct}%`}
-          hint="contratos / pares únicos"
-          accent
+          tone="premium"
+          hint="Contratos / pares únicos."
         />
       </div>
 
       <form
         method="get"
-        className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+        className="mb-6 flex flex-wrap items-end gap-3 rounded-card border border-slate-200 bg-white p-4 shadow-card"
       >
         <div className="space-y-1">
           <label
@@ -164,7 +245,7 @@ export default async function LeadsAdminPage({ searchParams }: PageProps) {
             id="corretora"
             name="corretora"
             defaultValue={corretoraId ?? ""}
-            className="flex h-9 w-72 rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-sm"
+            className="flex h-9 w-72 rounded-md border border-slate-200 bg-white px-2 py-1 text-sm shadow-sm focus:border-milsaca-dourado focus:outline-none focus:ring-2 focus:ring-milsaca-dourado/30"
           >
             <option value="">Todas</option>
             {(corretorasList ?? []).map((c) => (
@@ -185,7 +266,7 @@ export default async function LeadsAdminPage({ searchParams }: PageProps) {
             id="source"
             name="source"
             defaultValue={source ?? ""}
-            className="flex h-9 w-48 rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-sm"
+            className="flex h-9 w-48 rounded-md border border-slate-200 bg-white px-2 py-1 text-sm shadow-sm focus:border-milsaca-dourado focus:outline-none focus:ring-2 focus:ring-milsaca-dourado/30"
           >
             {SOURCES.map((s) => (
               <option key={s.value} value={s.value}>
@@ -204,73 +285,30 @@ export default async function LeadsAdminPage({ searchParams }: PageProps) {
         )}
       </form>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        {rows.length === 0 ? (
-          <p className="p-8 text-center text-sm text-slate-500">
-            Nenhum lead registrado.
-          </p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="px-4 py-3">Quando</th>
-                <th className="px-4 py-3">Corretora</th>
-                <th className="px-4 py-3">Produtor</th>
-                <th className="px-4 py-3">Origem</th>
-                <th className="px-4 py-3">Mensagem</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {rows.map((r) => (
-                <tr key={r.id} className="align-top hover:bg-slate-50">
-                  <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-600">
-                    {fmtDateTime(r.created_at)}
-                  </td>
-                  <td className="px-4 py-3 text-sm font-medium text-slate-900">
-                    {r.corretoraName ?? (
-                      <span className="text-slate-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-700">
-                    {r.produtorName ?? (
-                      <span className="text-xs italic text-slate-400">
-                        anônimo
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge
-                      className={
-                        SOURCE_COLOR[r.source] ??
-                        "bg-slate-200 text-slate-700 hover:bg-slate-200"
-                      }
-                    >
-                      {SOURCE_LABEL[r.source] ?? r.source}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-slate-600">
-                    {r.message ? (
-                      <details>
-                        <summary className="cursor-pointer text-milsaca-dourado hover:underline">
-                          ver
-                        </summary>
-                        <p className="mt-1 max-w-md rounded bg-slate-50 p-2 text-[11px] text-slate-700">
-                          {r.message}
-                        </p>
-                      </details>
-                    ) : (
-                      <span className="text-slate-400">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <DataTable
+        columns={columns}
+        data={rows}
+        rowKey={(r) => r.id}
+        empty={
+          <EmptyState
+            icon={MessageCircle}
+            title="Nenhum lead registrado ainda"
+            description={
+              corretoraId || source
+                ? "Tente ajustar os filtros — talvez a busca esteja restrita demais."
+                : "Quando produtores clicarem em \"Falar no WhatsApp\" no catálogo, os cliques aparecem aqui antes do redirect."
+            }
+            secondaryCta={
+              corretoraId || source
+                ? { label: "Limpar filtros", href: "/admin/leads" }
+                : undefined
+            }
+          />
+        }
+      />
 
       {totalPages > 1 ? (
-        <div className="flex items-center justify-between text-sm text-slate-600">
+        <div className="mt-6 flex items-center justify-between text-sm text-slate-600">
           <span>
             Página {page} de {totalPages}
           </span>
@@ -288,43 +326,7 @@ export default async function LeadsAdminPage({ searchParams }: PageProps) {
           </div>
         </div>
       ) : null}
-    </div>
-  );
-}
-
-function FunnelKpi({
-  label,
-  value,
-  hint,
-  accent,
-}: {
-  label: string;
-  value: string | number;
-  hint: string;
-  accent?: boolean;
-}) {
-  return (
-    <div
-      className={
-        accent
-          ? "rounded-2xl border border-emerald-300 bg-emerald-50 p-4 shadow-sm"
-          : "rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-      }
-    >
-      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-        {label}
-      </p>
-      <p
-        className={
-          accent
-            ? "mt-2 text-2xl font-bold text-emerald-700"
-            : "mt-2 text-2xl font-bold text-slate-900"
-        }
-      >
-        {value}
-      </p>
-      <p className="mt-0.5 text-[11px] text-slate-500">{hint}</p>
-    </div>
+    </>
   );
 }
 

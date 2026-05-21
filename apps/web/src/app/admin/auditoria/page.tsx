@@ -1,7 +1,11 @@
 import Link from "next/link";
+import { ScrollText } from "lucide-react";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
-import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
+import { StatusBadge, type StatusTone } from "@/components/status-badge";
+import { DataTable, type Column } from "@/components/data-table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -21,7 +25,6 @@ interface PageProps {
 }
 
 const ACTION_LABEL: Record<string, string> = {
-  // corretora
   create_corretora: "Criou corretora",
   update_corretora: "Editou corretora",
   verify_corretora: "Marcou como verificada",
@@ -30,12 +33,10 @@ const ACTION_LABEL: Record<string, string> = {
   rejeitar_corretora: "Rejeitou cadastro de corretora",
   link_profile_corretora: "Vinculou perfil a corretora",
   unlink_profile_corretora: "Desvinculou perfil de corretora",
-  // plan
   create_plan: "Criou plano",
   update_plan: "Editou plano",
   activate_plan: "Ativou plano",
   deactivate_plan: "Desativou plano",
-  // subscription
   update_subscription: "Editou assinatura",
   subscription_paid: "Marcou assinatura como paga",
   subscription_canceled: "Cancelou assinatura",
@@ -55,11 +56,7 @@ function fmtDateTime(iso: string): string {
   }
 }
 
-function actionBadge(action: string): {
-  label: string;
-  className: string;
-} {
-  const label = ACTION_LABEL[action] ?? action;
+function actionTone(action: string): StatusTone {
   if (
     action.startsWith("rejeitar") ||
     action.startsWith("deactivate") ||
@@ -67,11 +64,9 @@ function actionBadge(action: string): {
     action.startsWith("subscription_canceled") ||
     action.startsWith("unlink")
   ) {
-    return { label, className: "bg-rose-100 text-rose-700 hover:bg-rose-100" };
+    return "danger";
   }
-  if (action.startsWith("update") || action.startsWith("link")) {
-    return { label, className: "bg-blue-100 text-blue-700 hover:bg-blue-100" };
-  }
+  if (action.startsWith("update") || action.startsWith("link")) return "info";
   if (
     action.startsWith("create") ||
     action.startsWith("aprovar") ||
@@ -79,13 +74,23 @@ function actionBadge(action: string): {
     action.startsWith("verify") ||
     action.startsWith("subscription_paid")
   ) {
-    return {
-      label,
-      className: "bg-emerald-100 text-emerald-700 hover:bg-emerald-100",
-    };
+    return "success";
   }
-  return { label, className: "bg-slate-200 text-slate-700 hover:bg-slate-200" };
+  return "neutral";
 }
+
+type Row = {
+  id: string;
+  actor_id: string | null;
+  corretora_id: string | null;
+  action: string;
+  entity: string;
+  entity_id: string | null;
+  payload: unknown;
+  created_at: string;
+  profiles: { full_name: string | null } | null;
+  corretoras: { name: string } | null;
+};
 
 export default async function AuditoriaAdminPage({ searchParams }: PageProps) {
   await requireAppAdmin();
@@ -113,38 +118,100 @@ export default async function AuditoriaAdminPage({ searchParams }: PageProps) {
   if (actor) query = query.eq("actor_id", actor);
 
   const { data, count } = await query;
-
-  type Row = {
-    id: string;
-    actor_id: string | null;
-    corretora_id: string | null;
-    action: string;
-    entity: string;
-    entity_id: string | null;
-    payload: unknown;
-    created_at: string;
-    profiles: { full_name: string | null } | null;
-    corretoras: { name: string } | null;
-  };
   const rows = (data ?? []) as unknown as Row[];
-
   const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
+  const hasFilters = Boolean(entity || action || actor);
+
+  const columns: Column<Row>[] = [
+    {
+      key: "quando",
+      header: "Quando",
+      mobileLabel: "Quando",
+      cell: (r) => (
+        <span className="whitespace-nowrap text-xs text-slate-600">
+          {fmtDateTime(r.created_at)}
+        </span>
+      ),
+    },
+    {
+      key: "acao",
+      header: "Ação",
+      mobileLabel: "Ação",
+      cell: (r) => (
+        <div>
+          <StatusBadge tone={actionTone(r.action)}>
+            {ACTION_LABEL[r.action] ?? r.action}
+          </StatusBadge>
+          <p className="mt-0.5 font-mono text-[10px] text-slate-400">
+            {r.action}
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: "quem",
+      header: "Quem",
+      mobileLabel: "Quem",
+      cell: (r) => (
+        <div className="text-xs">
+          <p className="text-slate-700">
+            {r.profiles?.full_name ?? (
+              <span className="text-slate-400">—</span>
+            )}
+          </p>
+          <p className="mt-0.5 font-mono text-[10px] text-slate-400">
+            {r.actor_id?.slice(0, 8) ?? "sistema"}
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: "onde",
+      header: "Onde",
+      mobileLabel: "Onde",
+      cell: (r) => (
+        <div className="text-xs">
+          <p className="font-medium text-slate-700">
+            {r.corretoras?.name ?? <span className="text-slate-400">—</span>}
+          </p>
+          <p className="mt-0.5 font-mono text-[10px] text-slate-400">
+            {r.entity} {r.entity_id?.slice(0, 8) ?? ""}
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: "payload",
+      header: "Detalhes",
+      cell: (r) => (
+        <details className="text-xs">
+          <summary className="cursor-pointer font-medium text-milsaca-cafezal underline-offset-4 hover:underline">
+            payload
+          </summary>
+          <pre className="mt-1 max-w-md overflow-x-auto rounded-md bg-slate-50 p-2 font-mono text-[10px] text-slate-700">
+            {JSON.stringify(r.payload, null, 2)}
+          </pre>
+        </details>
+      ),
+      hideOnMobile: true,
+    },
+  ];
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-          Auditoria
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Histórico de ações administrativas e mudanças sensíveis.
-          {count != null ? ` ${count} registro${count === 1 ? "" : "s"} no total.` : ""}
-        </p>
-      </div>
+    <>
+      <PageHeader
+        eyebrow="Insights"
+        title="Auditoria"
+        description={`Histórico de ações administrativas e mudanças sensíveis.${count != null ? ` ${count} ${count === 1 ? "registro" : "registros"} no total.` : ""}`}
+        breadcrumbs={[
+          { label: "Admin", href: "/admin" },
+          { label: "Auditoria" },
+        ]}
+      />
 
       <form
         method="get"
-        className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+        className="mb-6 flex flex-wrap items-end gap-3 rounded-card border border-slate-200 bg-white p-4 shadow-card"
       >
         <div className="space-y-1">
           <label
@@ -157,7 +224,7 @@ export default async function AuditoriaAdminPage({ searchParams }: PageProps) {
             id="entity"
             name="entity"
             defaultValue={entity ?? ""}
-            placeholder="corretora, plan, subscription, profile..."
+            placeholder="corretora, plan, subscription..."
             className="h-9 w-56"
           />
         </div>
@@ -194,106 +261,59 @@ export default async function AuditoriaAdminPage({ searchParams }: PageProps) {
         <Button type="submit" variant="outline" className="h-9">
           Filtrar
         </Button>
-        {(entity || action || actor) && (
+        {hasFilters ? (
           <Button asChild variant="ghost" className="h-9 text-slate-500">
             <Link href="/admin/auditoria">Limpar</Link>
           </Button>
-        )}
+        ) : null}
       </form>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        {rows.length === 0 ? (
-          <p className="p-8 text-center text-sm text-slate-500">
-            Nenhum evento encontrado com esses filtros.
-          </p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="px-4 py-3">Quando</th>
-                <th className="px-4 py-3">Ação</th>
-                <th className="px-4 py-3">Quem</th>
-                <th className="px-4 py-3">Onde</th>
-                <th className="px-4 py-3">Detalhes</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {rows.map((r) => {
-                const meta = actionBadge(r.action);
-                return (
-                  <tr key={r.id} className="align-top hover:bg-slate-50">
-                    <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-600">
-                      {fmtDateTime(r.created_at)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge className={meta.className}>{meta.label}</Badge>
-                      <p className="mt-0.5 font-mono text-[10px] text-slate-400">
-                        {r.action}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-700">
-                      {r.profiles?.full_name ?? (
-                        <span className="text-slate-400">—</span>
-                      )}
-                      <p className="mt-0.5 font-mono text-[10px] text-slate-400">
-                        {r.actor_id?.slice(0, 8) ?? "sistema"}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3 text-xs">
-                      <p className="font-medium text-slate-700">
-                        {r.corretoras?.name ?? (
-                          <span className="text-slate-400">—</span>
-                        )}
-                      </p>
-                      <p className="mt-0.5 font-mono text-[10px] text-slate-400">
-                        {r.entity} {r.entity_id?.slice(0, 8) ?? ""}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <details className="text-xs">
-                        <summary className="cursor-pointer text-milsaca-dourado hover:underline">
-                          payload
-                        </summary>
-                        <pre className="mt-1 max-w-md overflow-x-auto rounded bg-slate-50 p-2 font-mono text-[10px] text-slate-700">
-                          {JSON.stringify(r.payload, null, 2)}
-                        </pre>
-                      </details>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <DataTable
+        columns={columns}
+        data={rows}
+        rowKey={(r) => r.id}
+        empty={
+          <EmptyState
+            icon={ScrollText}
+            title={
+              hasFilters
+                ? "Nenhum evento encontrado com esses filtros"
+                : "Sem eventos auditados ainda"
+            }
+            description={
+              hasFilters
+                ? "Tente uma combinação diferente — talvez a busca esteja restrita demais."
+                : "Ações administrativas (criar/editar/aprovar/desativar) ficam registradas aqui pra rastreabilidade."
+            }
+            secondaryCta={
+              hasFilters
+                ? { label: "Limpar filtros", href: "/admin/auditoria" }
+                : undefined
+            }
+          />
+        }
+      />
 
       {totalPages > 1 ? (
-        <div className="flex items-center justify-between text-sm text-slate-600">
+        <div className="mt-6 flex items-center justify-between text-sm text-slate-600">
           <span>
             Página {page} de {totalPages}
           </span>
           <div className="flex gap-2">
             {page > 1 ? (
               <Button asChild variant="outline" size="sm">
-                <Link
-                  href={buildHref(sp, page - 1)}
-                  className="font-medium"
-                >
-                  ← Anterior
-                </Link>
+                <Link href={buildHref(sp, page - 1)}>← Anterior</Link>
               </Button>
             ) : null}
             {page < totalPages ? (
               <Button asChild variant="outline" size="sm">
-                <Link href={buildHref(sp, page + 1)} className="font-medium">
-                  Próxima →
-                </Link>
+                <Link href={buildHref(sp, page + 1)}>Próxima →</Link>
               </Button>
             ) : null}
           </div>
         </div>
       ) : null}
-    </div>
+    </>
   );
 }
 
