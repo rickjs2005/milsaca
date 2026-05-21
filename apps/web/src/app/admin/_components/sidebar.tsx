@@ -22,6 +22,7 @@ import {
   Settings,
   Store,
   ShieldAlert,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -70,6 +71,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/admin/regras-leads", label: "Regras de leads", icon: Filter },
       { href: "/admin/comunicacao", label: "Comunicação", icon: MessageSquare },
       { href: "/admin/fila-eventos", label: "Fila & Eventos", icon: ListChecks },
+      { href: "/admin/lead-waitlist", label: "Lista de espera", icon: Users },
       { href: "/admin/marketplace", label: "Marketplace", icon: Store },
       { href: "/admin/moderacao", label: "Moderação", icon: ShieldAlert },
     ],

@@ -15,6 +15,7 @@ const RUNNABLE: Record<string, string> = {
   "cron.expire-subscriptions.run": "expire_subscriptions",
   "cron.nudge-trial-ending.run": "nudge_trial_ending",
   "cron.nudge-stale-leads.run": "nudge_stale_leads",
+  "cron.process-dispatches.run": "process_pending_dispatches",
 };
 
 export async function triggerJob(formData: FormData) {

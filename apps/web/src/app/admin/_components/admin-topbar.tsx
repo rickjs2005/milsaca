@@ -25,6 +25,7 @@ const LABELS: Record<string, string> = {
   "fila-eventos": "Fila & Eventos",
   marketplace: "Marketplace",
   moderacao: "Moderação",
+  "lead-waitlist": "Lista de espera",
   novo: "Novo",
   nova: "Nova",
 };

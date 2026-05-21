@@ -17,6 +17,7 @@ const RUNNABLE_KINDS = new Set<string>([
   "cron.expire-subscriptions.run",
   "cron.nudge-trial-ending.run",
   "cron.nudge-stale-leads.run",
+  "cron.process-dispatches.run",
 ]);
 
 export const metadata = { title: "Automações · Admin Milsaca" };
@@ -47,7 +48,7 @@ const JOBS: JobSpec[] = [
   {
     kind: "cron.expire-trials.run",
     label: "Expirar trials vencidos",
-    schedule: "06:00 · diário (cron pendente)",
+    schedule: "06:00 · diário (pg_cron)",
     description:
       "Marca subscriptions trial cujo trial_ends_at já passou como expired. Função SQL plugada — pode rodar agora.",
     state: "active",
@@ -55,7 +56,7 @@ const JOBS: JobSpec[] = [
   {
     kind: "cron.expire-subscriptions.run",
     label: "Expirar assinaturas vencidas",
-    schedule: "06:15 · diário (cron pendente)",
+    schedule: "06:15 · diário (pg_cron)",
     description:
       "Marca subscriptions active cujo current_period_end passou como past_due. Função SQL plugada.",
     state: "active",
@@ -63,7 +64,7 @@ const JOBS: JobSpec[] = [
   {
     kind: "cron.nudge-trial-ending.run",
     label: "Lembrete — trial expirando em 3 dias",
-    schedule: "10:00 · diário (cron pendente)",
+    schedule: "10:00 · diário (pg_cron)",
     description:
       "Cria message_dispatches pendentes do template trial_expira_3d pra corretoras com trial entre +2 e +4 dias.",
     state: "active",
@@ -71,9 +72,17 @@ const JOBS: JobSpec[] = [
   {
     kind: "cron.nudge-stale-leads.run",
     label: "Lembrete — lead parado há 3 dias",
-    schedule: "09:00 · diário (cron pendente)",
+    schedule: "09:00 BRT · diário (pg_cron)",
     description:
       "Cria message_dispatches pendentes do template lead_parado_3d pra corretoras com lead em_negociacao sem update há 3+ dias.",
+    state: "active",
+  },
+  {
+    kind: "cron.process-dispatches.run",
+    label: "Worker de envio (placeholder)",
+    schedule: "*/15min (pg_cron)",
+    description:
+      "Marca message_dispatches pendentes como failed com motivo 'no_provider_configured'. Substituir esta função quando o provider real (Meta Cloud / Resend) for plugado.",
     state: "active",
   },
   {
