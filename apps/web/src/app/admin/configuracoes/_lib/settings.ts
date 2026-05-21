@@ -16,7 +16,9 @@ export type SettingKey =
   | "region_default"
   | "lead_distribution_mode"
   | "lead_max_per_corretora_solo"
-  | "lead_max_per_corretora_pro";
+  | "lead_max_per_corretora_pro"
+  | "dispatch_worker_url"
+  | "dispatch_worker_secret";
 
 export type SettingRow = {
   key: string;
@@ -76,6 +78,12 @@ export const SETTING_SECTIONS: {
     title: "Defaults",
     description: "Valores padrão de catálogos públicos.",
     keys: ["region_default"],
+  },
+  {
+    title: "Worker de comunicação",
+    description:
+      "Endpoint HTTP que envia message_dispatches. Vazio = stub local marca como no_provider. Setar quando edge function send-dispatch estiver deployada.",
+    keys: ["dispatch_worker_url", "dispatch_worker_secret"],
   },
 ];
 
@@ -143,6 +151,14 @@ export const SETTING_TYPES: Record<SettingKey, SettingType> = {
     max: 9999,
     suffix: "leads/mês",
   },
+  dispatch_worker_url: {
+    kind: "string",
+    placeholder: "https://<ref>.supabase.co/functions/v1/send-dispatch",
+  },
+  dispatch_worker_secret: {
+    kind: "string",
+    placeholder: "<bearer-secret-de-32-chars>",
+  },
 };
 
 export const SETTING_LABELS: Record<SettingKey, string> = {
@@ -158,4 +174,6 @@ export const SETTING_LABELS: Record<SettingKey, string> = {
   lead_distribution_mode: "Modo de distribuição de leads",
   lead_max_per_corretora_solo: "Limite mensal — plano Solo",
   lead_max_per_corretora_pro: "Limite mensal — plano Pro",
+  dispatch_worker_url: "URL do worker (edge function)",
+  dispatch_worker_secret: "Bearer secret do worker",
 };

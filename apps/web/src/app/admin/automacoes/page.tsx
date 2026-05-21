@@ -17,6 +17,7 @@ const RUNNABLE_KINDS = new Set<string>([
   "cron.expire-subscriptions.run",
   "cron.nudge-trial-ending.run",
   "cron.nudge-stale-leads.run",
+  "cron.nudge-delivery-late.run",
   "cron.process-dispatches.run",
 ]);
 
@@ -88,10 +89,10 @@ const JOBS: JobSpec[] = [
   {
     kind: "cron.nudge-delivery-late.run",
     label: "Lembrete — entrega atrasada",
-    schedule: "07:00 · diário",
+    schedule: "07:00 BRT · diário (pg_cron)",
     description:
-      "Notifica corretora quando uma entrega passou da data prevista sem confirmação.",
-    state: "pending_setup",
+      "Cria message_dispatches do template entrega_atrasada pra corretoras com entregas em status programada/em_transito cuja data_prevista já passou. Dedup 7 dias.",
+    state: "active",
   },
 ];
 
