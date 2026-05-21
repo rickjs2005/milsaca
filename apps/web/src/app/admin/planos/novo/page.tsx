@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireAppAdmin } from "@/lib/auth";
+import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/submit-button";
 import { createPlano } from "../_actions";
@@ -16,33 +17,35 @@ export default async function NovoPlanoPage({ searchParams }: PageProps) {
   const { error } = await searchParams;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <Link
-        href="/admin/planos"
-        className="text-xs text-milsaca-dourado hover:underline"
-      >
-        ← Planos
-      </Link>
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-          Novo plano
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Define nome, preço, período e features que aparecem pra corretora.
-        </p>
-      </div>
+    <div className="mx-auto max-w-3xl">
+      <PageHeader
+        eyebrow="Operação"
+        title="Novo plano"
+        description="Defina nome, preço, período e features que aparecem pra corretora ao escolher assinatura."
+        breadcrumbs={[
+          { label: "Admin", href: "/admin" },
+          { label: "Planos", href: "/admin/planos" },
+          { label: "Novo" },
+        ]}
+      />
 
-      <form action={createPlano} className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      {error ? (
+        <p className="mb-4 rounded-md border border-rose-500/30 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          {error}
+        </p>
+      ) : null}
+
+      <form
+        action={createPlano}
+        className="space-y-6 rounded-card border border-slate-200 bg-white p-6 shadow-card"
+      >
         <PlanFormFields />
-        {error ? (
-          <p className="text-sm text-destructive">{error}</p>
-        ) : null}
-        <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+        <div className="flex flex-col-reverse items-stretch justify-end gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center">
           <Button variant="outline" asChild>
             <Link href="/admin/planos">Cancelar</Link>
           </Button>
           <SubmitButton
-            className="gap-2 bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+            className="gap-2 bg-milsaca-cafezal text-milsaca-cream hover:bg-milsaca-folha"
             pendingLabel="Criando..."
           >
             Criar plano

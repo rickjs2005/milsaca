@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
+import { PageHeader } from "@/components/page-header";
+import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/submit-button";
 import { updatePlano } from "../_actions";
@@ -30,32 +32,40 @@ export default async function EditPlanoPage({ params, searchParams }: PageProps)
   const features = Array.isArray(data.features) ? (data.features as string[]) : [];
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <Link
-        href="/admin/planos"
-        className="text-xs text-milsaca-dourado hover:underline"
-      >
-        ← Planos
-      </Link>
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-          {data.name}
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">Editar valores e features.</p>
-      </div>
+    <div className="mx-auto max-w-3xl">
+      <PageHeader
+        eyebrow={`Slug · ${data.slug}`}
+        title={data.name}
+        description="Atualize valores, período e features. Mudanças refletem no catálogo imediatamente."
+        breadcrumbs={[
+          { label: "Admin", href: "/admin" },
+          { label: "Planos", href: "/admin/planos" },
+          { label: data.name },
+        ]}
+        actions={
+          data.active ? (
+            <StatusBadge status="ativo" />
+          ) : (
+            <StatusBadge status="inativo" />
+          )
+        }
+      />
 
       {saved ? (
-        <p className="rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
-          Salvo.
+        <p className="mb-4 rounded-md border border-emerald-500/30 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          Alterações salvas.
         </p>
       ) : null}
       {error ? (
-        <p className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-2 text-sm text-destructive">
+        <p className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {error}
         </p>
       ) : null}
 
-      <form action={updatePlano} className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <form
+        action={updatePlano}
+        className="space-y-6 rounded-card border border-slate-200 bg-white p-6 shadow-card"
+      >
         <input type="hidden" name="id" value={id} />
         <PlanFormFields
           defaults={{
@@ -68,15 +78,15 @@ export default async function EditPlanoPage({ params, searchParams }: PageProps)
             active: data.active,
           }}
         />
-        <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+        <div className="flex flex-col-reverse items-stretch justify-end gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center">
           <Button variant="outline" asChild>
             <Link href="/admin/planos">Voltar</Link>
           </Button>
           <SubmitButton
-            className="gap-2 bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+            className="gap-2 bg-milsaca-cafezal text-milsaca-cream hover:bg-milsaca-folha"
             pendingLabel="Salvando..."
           >
-            Salvar
+            Salvar alterações
           </SubmitButton>
         </div>
       </form>

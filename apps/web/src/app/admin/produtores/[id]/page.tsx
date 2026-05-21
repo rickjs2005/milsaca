@@ -1,16 +1,19 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  ArrowLeft,
   MapPin,
   Sprout,
   Wallet,
   Handshake,
   FileSignature,
   Star,
+  type LucideIcon,
 } from "lucide-react";
 import { requireAppAdmin } from "@/lib/auth";
-import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/page-header";
+import { StatusBadge, type StatusKey } from "@/components/status-badge";
+import { KpiCard } from "@/components/kpi-card";
+import { DataTable, type Column } from "@/components/data-table";
+import { EmptyState } from "@/components/empty-state";
 import {
   getProdutorDetalhe,
   listProdutorLeads,
@@ -22,13 +25,6 @@ export const metadata = { title: "Produtor · Admin Milsaca" };
 interface PageProps {
   params: Promise<{ id: string }>;
 }
-
-type StatusMeta = { label: string; className: string };
-const STATUS_META = {
-  ativo: { label: "Ativo", className: "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" },
-  pendente: { label: "Pendente", className: "bg-amber-100 text-amber-800 hover:bg-amber-100" },
-  bloqueado: { label: "Bloqueado", className: "bg-rose-100 text-rose-700 hover:bg-rose-100" },
-} satisfies Record<string, StatusMeta>;
 
 const LEAD_STATUS_LABEL: Record<string, string> = {
   novo: "Novo",
@@ -86,6 +82,26 @@ function fmtPhone(p: string | null): string {
   return p;
 }
 
+type LeadRow = {
+  id: string;
+  status: string;
+  coffee_type: string | null;
+  bag_count: number | null;
+  proposed_price: number | null;
+  created_at: string;
+  corretora: { name: string } | null;
+};
+
+type ContratoRow = {
+  id: string;
+  code: string;
+  status: string;
+  bag_count: number | null;
+  total_value: number | null;
+  created_at: string;
+  corretora: { name: string } | null;
+};
+
 export default async function ProdutorDetalheAdminPage({ params }: PageProps) {
   await requireAppAdmin();
   const { id } = await params;
@@ -98,54 +114,133 @@ export default async function ProdutorDetalheAdminPage({ params }: PageProps) {
     listProdutorContratos(id, 20),
   ]);
 
-  const statusMeta = STATUS_META[detalhe.status];
+  const leadColumns: Column<LeadRow>[] = [
+    {
+      key: "corretora",
+      header: "Corretora",
+      mobileLabel: "Corretora",
+      cell: (l) => l.corretora?.name ?? "—",
+    },
+    {
+      key: "cafe",
+      header: "Café",
+      mobileLabel: "Café",
+      cell: (l) => l.coffee_type ?? "—",
+    },
+    {
+      key: "sacas",
+      header: "Sacas",
+      mobileLabel: "Sacas",
+      cell: (l) => l.bag_count ?? "—",
+    },
+    {
+      key: "preco",
+      header: "Preço proposto",
+      mobileLabel: "Preço",
+      cell: (l) => fmtMoney(l.proposed_price),
+    },
+    {
+      key: "status",
+      header: "Status",
+      mobileLabel: "Status",
+      cell: (l) => (
+        <span className="text-xs text-slate-600">
+          {LEAD_STATUS_LABEL[l.status] ?? l.status}
+        </span>
+      ),
+    },
+    {
+      key: "quando",
+      header: "Quando",
+      cell: (l) => (
+        <span className="text-xs text-slate-500">{fmtDate(l.created_at)}</span>
+      ),
+      hideOnMobile: true,
+    },
+  ];
+
+  const contratoColumns: Column<ContratoRow>[] = [
+    {
+      key: "code",
+      header: "Código",
+      mobileLabel: "Código",
+      cell: (c) => (
+        <span className="font-mono text-xs text-slate-700">{c.code}</span>
+      ),
+    },
+    {
+      key: "corretora",
+      header: "Corretora",
+      mobileLabel: "Corretora",
+      cell: (c) => c.corretora?.name ?? "—",
+    },
+    {
+      key: "sacas",
+      header: "Sacas",
+      mobileLabel: "Sacas",
+      cell: (c) => c.bag_count ?? "—",
+    },
+    {
+      key: "valor",
+      header: "Valor",
+      mobileLabel: "Valor",
+      cell: (c) => fmtMoney(c.total_value),
+    },
+    {
+      key: "status",
+      header: "Status",
+      mobileLabel: "Status",
+      cell: (c) => (
+        <span className="text-xs text-slate-600">
+          {CONTRATO_STATUS_LABEL[c.status] ?? c.status}
+        </span>
+      ),
+    },
+    {
+      key: "quando",
+      header: "Quando",
+      cell: (c) => (
+        <span className="text-xs text-slate-500">{fmtDate(c.created_at)}</span>
+      ),
+      hideOnMobile: true,
+    },
+  ];
 
   return (
-    <div className="space-y-8">
-      <Link
-        href="/admin/produtores"
-        className="inline-flex items-center gap-1 text-xs text-milsaca-dourado hover:underline"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Produtores
-      </Link>
+    <>
+      <PageHeader
+        eyebrow={`ID · ${detalhe.profile_id.slice(0, 8)}`}
+        title={detalhe.full_name ?? "Produtor sem nome"}
+        description="Visão completa do produtor — read-only. Edição é feita pelo próprio produtor ou pela corretora vinculada."
+        breadcrumbs={[
+          { label: "Admin", href: "/admin" },
+          { label: "Produtores", href: "/admin/produtores" },
+          { label: detalhe.full_name ?? "Detalhe" },
+        ]}
+        actions={<StatusBadge status={detalhe.status as StatusKey} />}
+      />
 
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-            {detalhe.full_name ?? "Produtor sem nome"}
-          </h1>
-          <p className="mt-0.5 font-mono text-[11px] text-slate-500">
-            {detalhe.profile_id}
-          </p>
-        </div>
-        <Badge className={statusMeta.className}>{statusMeta.label}</Badge>
-      </header>
-
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat
-          icon={Handshake}
-          label="Leads"
-          value={detalhe.leadsCount}
-        />
-        <Stat
-          icon={FileSignature}
+      <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <KpiCard label="Leads" value={detalhe.leadsCount} icon={Handshake} />
+        <KpiCard
           label="Contratos"
           value={detalhe.contratosCount}
+          icon={FileSignature}
         />
-        <Stat
-          icon={Star}
-          label="Corretoras favoritadas"
+        <KpiCard
+          label="Corretoras favoritas"
           value={detalhe.favoritasCount}
+          icon={Star}
+          tone="premium"
         />
-        <Stat
-          icon={Wallet}
+        <KpiCard
           label="Preço alvo"
           value={fmtMoney(detalhe.preco_alvo)}
+          icon={Wallet}
         />
-      </section>
+      </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Panel title="Dados pessoais" icon={Sprout}>
           <Field label="Nome completo" value={detalhe.full_name} />
           <Field label="Telefone" value={fmtPhone(detalhe.phone)} />
@@ -159,7 +254,7 @@ export default async function ProdutorDetalheAdminPage({ params }: PageProps) {
           <Field
             label="Localização"
             value={
-              [detalhe.city, detalhe.state].filter(Boolean).join("/") || null
+              [detalhe.city, detalhe.state].filter(Boolean).join(" / ") || null
             }
           />
           <Field
@@ -187,123 +282,51 @@ export default async function ProdutorDetalheAdminPage({ params }: PageProps) {
         </Panel>
       </div>
 
-      <Panel title={`Leads (${leads.length})`} icon={Handshake} compact>
-        {leads.length === 0 ? (
-          <p className="py-4 text-center text-xs text-slate-500">
-            Sem leads registrados.
-          </p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="text-left text-[11px] uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="py-2">Corretora</th>
-                <th className="py-2">Café</th>
-                <th className="py-2">Sacas</th>
-                <th className="py-2">Preço proposto</th>
-                <th className="py-2">Status</th>
-                <th className="py-2">Quando</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {leads.map((l) => (
-                <tr key={l.id}>
-                  <td className="py-2 text-slate-700">
-                    {l.corretora?.name ?? "—"}
-                  </td>
-                  <td className="py-2 text-slate-600">
-                    {l.coffee_type ?? "—"}
-                  </td>
-                  <td className="py-2 text-slate-600">{l.bag_count ?? "—"}</td>
-                  <td className="py-2 text-slate-600">
-                    {fmtMoney(l.proposed_price)}
-                  </td>
-                  <td className="py-2 text-xs text-slate-500">
-                    {LEAD_STATUS_LABEL[l.status] ?? l.status}
-                  </td>
-                  <td className="py-2 text-xs text-slate-500">
-                    {fmtDate(l.created_at)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </Panel>
+      <section className="mb-8">
+        <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-milsaca-preto">
+          <Handshake className="h-4 w-4 text-milsaca-dourado" />
+          Leads ({leads.length})
+        </h2>
+        <DataTable
+          columns={leadColumns}
+          data={leads as LeadRow[]}
+          rowKey={(l) => l.id}
+          empty={
+            <EmptyState
+              compact
+              icon={Handshake}
+              title="Sem leads registrados"
+              description="Quando uma corretora abrir uma negociação com esse produtor, o lead aparece aqui."
+            />
+          }
+        />
+      </section>
 
-      <Panel
-        title={`Contratos (${contratos.length})`}
-        icon={FileSignature}
-        compact
-      >
-        {contratos.length === 0 ? (
-          <p className="py-4 text-center text-xs text-slate-500">
-            Sem contratos.
-          </p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="text-left text-[11px] uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="py-2">Código</th>
-                <th className="py-2">Corretora</th>
-                <th className="py-2">Sacas</th>
-                <th className="py-2">Valor</th>
-                <th className="py-2">Status</th>
-                <th className="py-2">Quando</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {contratos.map((c) => (
-                <tr key={c.id}>
-                  <td className="py-2 font-mono text-xs text-slate-700">
-                    {c.code}
-                  </td>
-                  <td className="py-2 text-slate-700">
-                    {c.corretora?.name ?? "—"}
-                  </td>
-                  <td className="py-2 text-slate-600">{c.bag_count ?? "—"}</td>
-                  <td className="py-2 text-slate-600">
-                    {fmtMoney(c.total_value)}
-                  </td>
-                  <td className="py-2 text-xs text-slate-500">
-                    {CONTRATO_STATUS_LABEL[c.status] ?? c.status}
-                  </td>
-                  <td className="py-2 text-xs text-slate-500">
-                    {fmtDate(c.created_at)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </Panel>
+      <section className="mb-8">
+        <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-milsaca-preto">
+          <FileSignature className="h-4 w-4 text-milsaca-dourado" />
+          Contratos ({contratos.length})
+        </h2>
+        <DataTable
+          columns={contratoColumns}
+          data={contratos as ContratoRow[]}
+          rowKey={(c) => c.id}
+          empty={
+            <EmptyState
+              compact
+              icon={FileSignature}
+              title="Sem contratos"
+              description="Contratos assinados pela corretora pra esse produtor vão aparecer aqui."
+            />
+          }
+        />
+      </section>
 
       <p className="text-center text-xs text-slate-400">
         Esta tela é apenas leitura. Edição de produtor é feita pela própria
         corretora vinculada ou pelo produtor no painel dele.
       </p>
-    </div>
-  );
-}
-
-function Stat({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof Sprout;
-  label: string;
-  value: string | number;
-}) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-          {label}
-        </p>
-        <Icon className="h-4 w-4 text-slate-400" />
-      </div>
-      <p className="mt-2 text-2xl font-bold text-slate-900">{value}</p>
-    </div>
+    </>
   );
 }
 
@@ -311,20 +334,18 @@ function Panel({
   title,
   icon: Icon,
   children,
-  compact,
 }: {
   title: string;
-  icon: typeof Sprout;
+  icon: LucideIcon;
   children: React.ReactNode;
-  compact?: boolean;
 }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="rounded-card border border-slate-200 bg-white p-6 shadow-card">
       <header className="mb-4 flex items-center gap-2">
         <Icon className="h-4 w-4 text-milsaca-dourado" />
-        <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+        <h2 className="text-base font-semibold text-milsaca-preto">{title}</h2>
       </header>
-      {compact ? children : <div className="space-y-2">{children}</div>}
+      <div className="space-y-2">{children}</div>
     </section>
   );
 }
@@ -337,7 +358,7 @@ function Field({
   value: string | null;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-slate-50 py-1.5 last:border-0">
+    <div className="flex items-center justify-between gap-4 border-b border-slate-100 py-1.5 last:border-0">
       <p className="text-xs text-slate-500">{label}</p>
       <p className="text-sm text-slate-800">
         {value ?? <span className="text-slate-400">—</span>}

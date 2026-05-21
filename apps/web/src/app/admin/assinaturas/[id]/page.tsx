@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
-import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/page-header";
+import { StatusBadge, type StatusKey } from "@/components/status-badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ConfirmSubmit } from "@/components/confirm-submit";
@@ -14,6 +14,16 @@ import {
 } from "../_actions";
 
 export const metadata = { title: "Assinatura · Admin Milsaca" };
+
+type SubStatus = "trial" | "active" | "past_due" | "canceled" | "expired";
+
+const STATUS_KEY: Record<SubStatus, StatusKey> = {
+  trial: "trial",
+  active: "ativo",
+  past_due: "past_due",
+  canceled: "cancelado",
+  expired: "expirado",
+};
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -82,7 +92,7 @@ export default async function AssinaturaDetalhePage({
 
   type SubFull = {
     id: string;
-    status: "trial" | "active" | "past_due" | "canceled" | "expired";
+    status: SubStatus;
     plan_id: string | null;
     started_at: string;
     trial_ends_at: string | null;
@@ -95,44 +105,40 @@ export default async function AssinaturaDetalhePage({
     plans: { id: string; name: string; billing_period: "monthly" | "yearly"; price_cents: number } | null;
   };
   const s = sub as unknown as SubFull;
+  const corretoraName = s.corretoras?.name ?? "—";
+  const localCNPJ = [
+    [s.corretoras?.city, s.corretoras?.state].filter(Boolean).join(" / "),
+    s.corretoras?.cnpj ? `CNPJ ${s.corretoras.cnpj}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <Link
-        href="/admin/assinaturas"
-        className="text-xs text-milsaca-dourado hover:underline"
-      >
-        ← Assinaturas
-      </Link>
-
-      <header className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            {s.corretoras?.name ?? "—"}
-          </h1>
-          <p className="mt-0.5 text-xs text-slate-500">
-            {[s.corretoras?.city, s.corretoras?.state].filter(Boolean).join("/")}
-            {s.corretoras?.cnpj ? ` · CNPJ ${s.corretoras.cnpj}` : ""}
-          </p>
-        </div>
-        <Badge variant="outline" className="text-slate-600">
-          Desde {fmtDateTime(s.started_at)}
-        </Badge>
-      </header>
+    <div className="mx-auto max-w-3xl">
+      <PageHeader
+        eyebrow={`Desde ${fmtDateTime(s.started_at)}`}
+        title={corretoraName}
+        description={localCNPJ || "Detalhes da assinatura."}
+        breadcrumbs={[
+          { label: "Admin", href: "/admin" },
+          { label: "Assinaturas", href: "/admin/assinaturas" },
+          { label: corretoraName },
+        ]}
+        actions={<StatusBadge status={STATUS_KEY[s.status]} />}
+      />
 
       {saved ? (
-        <p className="rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
-          Salvo.
+        <p className="mb-4 rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
+          Alterações salvas.
         </p>
       ) : null}
       {error ? (
-        <p className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-2 text-sm text-destructive">
+        <p className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-2 text-sm text-destructive">
           {error}
         </p>
       ) : null}
 
-      <section className="grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-3">
-        <Stat label="Status" value={s.status} />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 mb-6">
         <Stat label="Plano" value={s.plans?.name ?? "—"} />
         <Stat
           label={s.status === "trial" ? "Trial até" : "Período até"}
@@ -140,17 +146,21 @@ export default async function AssinaturaDetalhePage({
             s.status === "trial" ? s.trial_ends_at : s.current_period_end,
           )}
         />
-      </section>
+        <Stat
+          label="Cancelado em"
+          value={fmtDateTime(s.canceled_at)}
+        />
+      </div>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+      <section className="mb-6 rounded-card border border-slate-200 bg-white p-6 shadow-card">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-500">
           Ações rápidas
         </h2>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <form action={markSubscriptionPaid}>
             <input type="hidden" name="id" value={s.id} />
             <SubmitButton
-              className="gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
+              className="w-full gap-2 bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
               pendingLabel="Renovando..."
             >
               Marcar como paga · +1 período
@@ -161,15 +171,14 @@ export default async function AssinaturaDetalhePage({
               <input type="hidden" name="id" value={s.id} />
               <ConfirmSubmit
                 variant="outline"
-                className="text-destructive hover:text-destructive"
+                className="w-full text-destructive hover:text-destructive sm:w-auto"
                 confirmTitle="Cancelar assinatura?"
                 confirmMessage={
                   <>
                     <p>
-                      <strong>{s.corretoras?.name ?? "Esta corretora"}</strong>{" "}
-                      terá a assinatura marcada como cancelada agora. O acesso
-                      ao painel pode parar de funcionar dependendo do gate
-                      configurado.
+                      <strong>{corretoraName}</strong> terá a assinatura marcada
+                      como cancelada agora. O acesso ao painel pode parar de
+                      funcionar dependendo do gate configurado.
                     </p>
                     <p className="mt-2">
                       Reverter exige criar nova assinatura ou editar o status
@@ -189,10 +198,10 @@ export default async function AssinaturaDetalhePage({
 
       <form
         action={updateSubscription}
-        className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+        className="space-y-5 rounded-card border border-slate-200 bg-white p-6 shadow-card"
       >
         <input type="hidden" name="id" value={s.id} />
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-500">
           Editar manualmente
         </h2>
 
@@ -203,7 +212,7 @@ export default async function AssinaturaDetalhePage({
               id="plan_id"
               name="plan_id"
               defaultValue={s.plan_id ?? ""}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+              className="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-sm shadow-sm focus:border-milsaca-dourado focus:outline-none focus:ring-2 focus:ring-milsaca-dourado/30"
             >
               <option value="">— sem plano —</option>
               {(plans ?? []).map((p) => (
@@ -220,7 +229,7 @@ export default async function AssinaturaDetalhePage({
               id="status"
               name="status"
               defaultValue={s.status}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+              className="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-sm shadow-sm focus:border-milsaca-dourado focus:outline-none focus:ring-2 focus:ring-milsaca-dourado/30"
             >
               <option value="trial">Trial</option>
               <option value="active">Ativa</option>
@@ -259,16 +268,16 @@ export default async function AssinaturaDetalhePage({
             rows={3}
             defaultValue={s.notes ?? ""}
             placeholder="Pagou via PIX em DD/MM, próxima cobrança..."
-            className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm"
+            className="flex w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-milsaca-dourado focus:outline-none focus:ring-2 focus:ring-milsaca-dourado/30"
           />
         </div>
 
         <div className="flex justify-end border-t border-slate-100 pt-4">
           <SubmitButton
-            className="gap-2 bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+            className="w-full gap-2 bg-milsaca-cafezal text-milsaca-cream hover:bg-milsaca-folha sm:w-auto"
             pendingLabel="Salvando..."
           >
-            Salvar
+            Salvar alterações
           </SubmitButton>
         </div>
       </form>
@@ -278,9 +287,11 @@ export default async function AssinaturaDetalhePage({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 font-semibold text-slate-900">{value}</p>
+    <div className="rounded-card border border-slate-200 bg-white p-4 shadow-card">
+      <p className="text-[10px] font-medium uppercase tracking-widest text-slate-500">
+        {label}
+      </p>
+      <p className="mt-1 text-sm font-semibold text-milsaca-preto">{value}</p>
     </div>
   );
 }
