@@ -1,4 +1,4 @@
-// Tela Negociações (produtor) / Leads (corretora).
+// Tela Negociações — só produtor (mobile não tem painel corretora).
 // Lista com filtros pill por status + botão WhatsApp por card.
 
 import { Ionicons } from "@expo/vector-icons";
@@ -19,7 +19,6 @@ import {
   LEAD_STATUS_BADGE,
   LEAD_STATUS_LABEL,
   LEAD_STATUS_ORDER,
-  listLeadsDaCorretora,
   listMinhasNegociacoes,
   type LeadItem,
 } from "../../src/lib/queries";
@@ -41,22 +40,16 @@ const FILTERS: { value: LeadStatus | "all"; label: string }[] = [
 ];
 
 export default function NegociacoesScreen() {
-  const { profile, activeRole } = useAuth();
+  const { profile } = useAuth();
   const [filter, setFilter] = useState<LeadStatus | "all">("all");
   const [items, setItems] = useState<LeadItem[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const isCorretora = activeRole === "corretora";
-
   const load = useCallback(async () => {
     if (!profile) return;
     const filterArg = filter === "all" ? {} : { status: filter };
-    if (isCorretora && profile.corretora_id) {
-      setItems(await listLeadsDaCorretora(profile.corretora_id, filterArg));
-    } else {
-      setItems(await listMinhasNegociacoes(profile.id, filterArg));
-    }
-  }, [filter, isCorretora, profile]);
+    setItems(await listMinhasNegociacoes(profile.id, filterArg));
+  }, [filter, profile]);
 
   useEffect(() => {
     load();
@@ -69,9 +62,7 @@ export default function NegociacoesScreen() {
   }, [load]);
 
   const openWhatsApp = (item: LeadItem) => {
-    const msg = isCorretora
-      ? `Olá! Sou ${profile?.full_name ?? "da corretora"} e queria conversar sobre a proposta de ${item.coffee_type ?? "café"}.`
-      : `Olá ${item.corretora_nome}, queria conversar sobre a proposta de ${item.coffee_type ?? "café"}${item.bag_count ? ` (${item.bag_count} sacas)` : ""}.`;
+    const msg = `Olá ${item.corretora_nome}, queria conversar sobre a proposta de ${item.coffee_type ?? "café"}${item.bag_count ? ` (${item.bag_count} sacas)` : ""}.`;
     const url = buildWhatsAppUrl(item.corretora_phone, msg);
     if (!url) return;
     Linking.openURL(url).catch(() => {
@@ -95,13 +86,13 @@ export default function NegociacoesScreen() {
           className="text-base text-milsaca-dourado"
           style={{ fontFamily: "Inter_500Medium" }}
         >
-          {isCorretora ? "Operação" : "Mercado do café"}
+          Mercado do café
         </Text>
         <Text
           className="mt-1 text-2xl text-milsaca-cream"
           style={{ fontFamily: "Inter_700Bold" }}
         >
-          {isCorretora ? "Leads" : "Negociações"}
+          Negociações
         </Text>
 
         {/* Filtros pill */}
@@ -148,15 +139,13 @@ export default function NegociacoesScreen() {
               className="text-sm text-milsaca-cream/80"
               style={{ fontFamily: "Inter_400Regular" }}
             >
-              {isCorretora
-                ? "Nenhum lead nesse filtro."
-                : "Nenhuma proposta pra você nesse filtro."}
+              Nenhuma proposta pra você nesse filtro.
             </Text>
             <Text
               className="mt-2 text-xs text-milsaca-cream/60"
               style={{ fontFamily: "Inter_400Regular" }}
             >
-              Use o painel web em milsaca.app pra criar leads (corretora).
+              Favorite corretoras na aba Corretoras pra receber propostas.
             </Text>
           </View>
         ) : (

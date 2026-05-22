@@ -56,31 +56,16 @@ const AuthContext = createContext<AuthValue | null>(null);
 
 function pickDefaultRole(
   roles: UserRole[] | null | undefined,
-  previous: UserRole | null,
+  _previous: UserRole | null,
 ): UserRole | null {
   if (!roles || roles.length === 0) return null;
 
-  // Mobile não suporta admin (admin opera pelo painel web). Se o user
-  // tem só role admin, retornamos "admin" mesmo — o gate em (painel)/_layout
-  // detecta e mostra "use o web". Pra escolher entre produtor/corretora,
-  // ignoramos admin no cálculo.
-  const mobileRoles = roles.filter((r) => r !== "admin");
-
-  if (mobileRoles.length === 0) {
-    // Só tem admin → retorna admin pro gate mostrar mensagem "use o web"
-    return roles.includes("admin") ? "admin" : null;
-  }
-
-  if (
-    previous &&
-    previous !== "admin" &&
-    mobileRoles.includes(previous)
-  ) {
-    return previous;
-  }
-  if (mobileRoles.length === 1) return mobileRoles[0] ?? null;
-
-  // 2+ roles mobile (produtor + corretora) → tela /escolher decide
+  // Mobile é EXCLUSIVO PRO PRODUTOR. Corretora e admin operam no painel
+  // web (milsaca.app). Decisão tomada em 2026-05-22 — quem entra no mobile
+  // com role apenas corretora/admin vê a tela "Use o web" em (painel)/_layout.
+  if (roles.includes("produtor")) return "produtor";
+  if (roles.includes("admin")) return "admin"; // gate específico
+  if (roles.includes("corretora")) return "corretora"; // gate específico
   return null;
 }
 

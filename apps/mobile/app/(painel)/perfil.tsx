@@ -45,16 +45,12 @@ const EMPTY_FAZENDA: FazendaForm = {
 };
 
 export default function PerfilScreen() {
-  const { user, profile, activeRole, signOut, setActiveRole, reloadProfile } =
-    useAuth();
+  const { user, profile, signOut, reloadProfile } = useAuth();
   const [pf, setPf] = useState<ProfileForm>({ full_name: "", phone: "" });
   const [fz, setFz] = useState<FazendaForm>(EMPTY_FAZENDA);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
-
-  const isProdutor = activeRole === "produtor";
-  const isCorretora = activeRole === "corretora";
 
   const load = useCallback(async () => {
     if (!profile) return;
@@ -62,22 +58,14 @@ export default function PerfilScreen() {
       full_name: profile.full_name ?? "",
       phone: profile.phone ?? "",
     });
-    if (isProdutor) {
-      const fz = await getProdutorFazenda(profile.id);
-      hydrateFazenda(setFz, fz);
-    }
+    const fz = await getProdutorFazenda(profile.id);
+    hydrateFazenda(setFz, fz);
     setLoading(false);
-  }, [profile, isProdutor]);
+  }, [profile]);
 
   useEffect(() => {
     load();
   }, [load]);
-
-  // Roles podem ter mudado fora do app (admin promoveu o user a corretora).
-  // Refresh ao montar pra mostrar botão "Trocar painel" se ganhou multi-role.
-  useEffect(() => {
-    reloadProfile();
-  }, [reloadProfile]);
 
   const onSave = async () => {
     if (!profile) return;
@@ -99,30 +87,26 @@ export default function PerfilScreen() {
       return;
     }
 
-    if (isProdutor) {
-      const area = fz.area_ha.trim() ? Number(fz.area_ha.replace(",", ".")) : null;
-      const alt = fz.altitude_m.trim()
-        ? Number(fz.altitude_m.replace(",", "."))
-        : null;
+    const area = fz.area_ha.trim() ? Number(fz.area_ha.replace(",", ".")) : null;
+    const alt = fz.altitude_m.trim()
+      ? Number(fz.altitude_m.replace(",", "."))
+      : null;
 
-      const { error: fErr } = await supabase
-        .from("produtores")
-        .upsert(
-          {
-            profile_id: profile.id,
-            fazenda_nome: fz.fazenda_nome.trim() || null,
-            city: fz.city.trim() || null,
-            state: fz.state.trim() || null,
-            area_ha: Number.isFinite(area) ? area : null,
-            altitude_m: Number.isFinite(alt) ? alt : null,
-          },
-          { onConflict: "profile_id" },
-        );
-      if (fErr) {
-        setSaving(false);
-        Alert.alert("Erro ao salvar fazenda", fErr.message);
-        return;
-      }
+    const { error: fErr } = await supabase.from("produtores").upsert(
+      {
+        profile_id: profile.id,
+        fazenda_nome: fz.fazenda_nome.trim() || null,
+        city: fz.city.trim() || null,
+        state: fz.state.trim() || null,
+        area_ha: Number.isFinite(area) ? area : null,
+        altitude_m: Number.isFinite(alt) ? alt : null,
+      },
+      { onConflict: "profile_id" },
+    );
+    if (fErr) {
+      setSaving(false);
+      Alert.alert("Erro ao salvar fazenda", fErr.message);
+      return;
     }
 
     setSaving(false);
@@ -204,15 +188,14 @@ export default function PerfilScreen() {
                 </Field>
               </View>
 
-              {/* Card fazenda (só produtor) */}
-              {isProdutor ? (
-                <View className="mt-4 rounded-2xl border border-milsaca-dourado/20 bg-milsaca-verde-claro p-5">
-                  <Text
-                    className="text-xs text-milsaca-dourado"
-                    style={{ fontFamily: "Inter_500Medium" }}
-                  >
-                    FAZENDA
-                  </Text>
+              {/* Card fazenda */}
+              <View className="mt-4 rounded-2xl border border-milsaca-dourado/20 bg-milsaca-verde-claro p-5">
+                <Text
+                  className="text-xs text-milsaca-dourado"
+                  style={{ fontFamily: "Inter_500Medium" }}
+                >
+                  FAZENDA
+                </Text>
                   <Field label="Nome da fazenda">
                     <TextInput
                       value={fz.fazenda_nome}
@@ -293,25 +276,6 @@ export default function PerfilScreen() {
                     </View>
                   </View>
                 </View>
-              ) : null}
-
-              {isCorretora ? (
-                <View className="mt-4 rounded-2xl border border-milsaca-dourado/20 bg-milsaca-verde-claro p-5">
-                  <Text
-                    className="text-xs text-milsaca-dourado"
-                    style={{ fontFamily: "Inter_500Medium" }}
-                  >
-                    CORRETORA
-                  </Text>
-                  <Text
-                    className="mt-2 text-sm text-milsaca-cream/80"
-                    style={{ fontFamily: "Inter_400Regular" }}
-                  >
-                    Os dados da empresa só são editáveis pelo administrador.
-                    Fale com a equipe Milsaca pra alterar nome, slug ou cidade.
-                  </Text>
-                </View>
-              ) : null}
 
               {/* Salvar */}
               <Pressable
@@ -338,75 +302,6 @@ export default function PerfilScreen() {
                   {savedMsg}
                 </Text>
               ) : null}
-
-              {/* Papéis da conta — chips clicáveis pra trocar painel direto */}
-              <View className="mt-4 rounded-2xl border border-milsaca-dourado/20 bg-milsaca-verde-claro p-5">
-                <Text
-                  className="text-xs text-milsaca-dourado"
-                  style={{ fontFamily: "Inter_500Medium" }}
-                >
-                  PAPÉIS DA CONTA
-                </Text>
-                <Text
-                  className="mt-1 text-[11px] text-milsaca-cream/60"
-                  style={{ fontFamily: "Inter_400Regular" }}
-                >
-                  Toque pra ativar
-                </Text>
-                <View className="mt-2 flex-row flex-wrap gap-2">
-                  {(profile?.roles ?? []).map((r) => (
-                    <Pressable
-                      key={r}
-                      onPress={() => setActiveRole(r)}
-                      className={
-                        r === activeRole
-                          ? "rounded-full bg-milsaca-dourado px-3 py-1.5 active:opacity-80"
-                          : "rounded-full border border-milsaca-dourado/40 px-3 py-1.5 active:opacity-60"
-                      }
-                    >
-                      <Text
-                        className={
-                          r === activeRole
-                            ? "text-xs text-milsaca-verde"
-                            : "text-xs text-milsaca-cream"
-                        }
-                        style={{ fontFamily: "Inter_600SemiBold" }}
-                      >
-                        {r === "produtor"
-                          ? "Produtor"
-                          : r === "corretora"
-                            ? "Corretora"
-                            : r}
-                        {r === activeRole ? " · ativo" : ""}
-                      </Text>
-                    </Pressable>
-                  ))}
-                  {(profile?.roles?.length ?? 0) === 0 ? (
-                    <Text
-                      className="text-xs italic text-milsaca-cream/60"
-                      style={{ fontFamily: "Inter_400Regular" }}
-                    >
-                      Sem papéis definidos
-                    </Text>
-                  ) : null}
-                </View>
-                <Pressable
-                  onPress={async () => {
-                    await reloadProfile();
-                    setSavedMsg("Conta atualizada");
-                    setTimeout(() => setSavedMsg(null), 2500);
-                  }}
-                  className="mt-3 flex-row items-center gap-1.5 self-start active:opacity-60"
-                >
-                  <Ionicons name="refresh" size={12} color="#C9A961" />
-                  <Text
-                    className="text-[11px] text-milsaca-dourado"
-                    style={{ fontFamily: "Inter_500Medium" }}
-                  >
-                    Atualizar
-                  </Text>
-                </Pressable>
-              </View>
 
               {/* Sair */}
               <Pressable

@@ -1,4 +1,4 @@
-// Tela Contratos — paridade /painel/produtor/contratos e /painel/corretora/contratos.
+// Tela Contratos — produtor only (mobile não tem painel corretora).
 // Read-only. Filtros pill por status. Indicador de assinatura (CheckCircle)
 // quando ativo/finalizado.
 
@@ -20,7 +20,6 @@ import {
   CONTRATO_STATUS_BADGE,
   CONTRATO_STATUS_LABEL,
   CONTRATO_STATUS_ORDER,
-  listContratosDaCorretora,
   listMeusContratos,
   type ContratoItem,
 } from "../../src/lib/queries";
@@ -51,24 +50,16 @@ function fmtDate(iso: string | null) {
 }
 
 export default function ContratosScreen() {
-  const { profile, activeRole } = useAuth();
+  const { profile } = useAuth();
   const [filter, setFilter] = useState<ContratoStatus | "all">("all");
   const [items, setItems] = useState<ContratoItem[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const isCorretora = activeRole === "corretora";
-
   const load = useCallback(async () => {
     if (!profile) return;
     const filterArg = filter === "all" ? {} : { status: filter };
-    if (isCorretora && profile.corretora_id) {
-      setItems(
-        await listContratosDaCorretora(profile.corretora_id, filterArg),
-      );
-    } else {
-      setItems(await listMeusContratos(profile.id, filterArg));
-    }
-  }, [filter, isCorretora, profile]);
+    setItems(await listMeusContratos(profile.id, filterArg));
+  }, [filter, profile]);
 
   useEffect(() => {
     load();

@@ -76,25 +76,24 @@ export default function PainelLayout() {
     );
   }
 
-  if (!activeRole && roles.length > 1) {
-    return <Redirect href="/escolher" />;
-  }
-
-  // App é pro produtor/corretora. Admin opera no painel web.
-  if (activeRole === "admin") {
+  // Mobile é EXCLUSIVO pro produtor. Admin e corretora caem aqui (sem
+  // tabs) com mensagem direcionando pro painel web.
+  if (activeRole !== "produtor") {
     return (
       <View className="flex-1 items-center justify-center bg-milsaca-verde px-6">
         <Text
           className="text-center text-lg text-milsaca-cream"
           style={{ fontFamily: "Inter_700Bold" }}
         >
-          Painel administrativo
+          O Milsaca mobile é pra produtor
         </Text>
         <Text
           className="mt-3 text-center text-sm text-milsaca-cream/70"
           style={{ fontFamily: "Inter_400Regular" }}
         >
-          O admin opera pelo painel web em milsaca.app/admin.
+          {activeRole === "admin"
+            ? "Admin opera pelo painel web em milsaca.app/admin."
+            : "Sua conta é de corretora. Acesse o painel completo em milsaca.app/painel/corretora pelo navegador."}
         </Text>
         <Pressable
           onPress={signOut}
@@ -110,8 +109,6 @@ export default function PainelLayout() {
       </View>
     );
   }
-
-  const isCorretora = activeRole === "corretora";
 
   return (
     <Tabs
@@ -155,8 +152,6 @@ export default function PainelLayout() {
         name="corretoras"
         options={{
           title: "Corretoras",
-          // Tab visível só pro produtor — corretora vê os próprios produtores em "Leads".
-          href: isCorretora ? null : "/(painel)/corretoras",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="business-outline" size={size} color={color} />
           ),
@@ -165,7 +160,7 @@ export default function PainelLayout() {
       <Tabs.Screen
         name="negociacoes"
         options={{
-          title: isCorretora ? "Leads" : "Negociações",
+          title: "Negociações",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="chatbubbles-outline" size={size} color={color} />
           ),

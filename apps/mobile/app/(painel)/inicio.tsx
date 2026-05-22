@@ -21,9 +21,7 @@ import { useAuth } from "../../src/lib/auth";
 import {
   CONTRATO_STATUS_LABEL,
   LEAD_STATUS_LABEL,
-  listContratosDaCorretora,
   listCotacoes,
-  listLeadsDaCorretora,
   listMeusContratos,
   listMinhasNegociacoes,
   type ContratoItem,
@@ -48,7 +46,7 @@ interface Snapshot {
 }
 
 export default function InicioScreen() {
-  const { profile, activeRole, signOut } = useAuth();
+  const { profile, signOut } = useAuth();
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,33 +69,18 @@ export default function InicioScreen() {
         if (data) corretoraCasa = data as Snapshot["corretoraCasa"];
       }
 
-      if (activeRole === "corretora" && profile.corretora_id) {
-        const [leads, contratos] = await Promise.all([
-          listLeadsDaCorretora(profile.corretora_id),
-          listContratosDaCorretora(profile.corretora_id),
-        ]);
-        setSnap({
-          cotacao,
-          leadsAbertos: leads.filter((l) =>
-            ["novo", "em_negociacao"].includes(l.status),
-          ),
-          contratosAtivos: contratos.filter((c) => c.status === "ativo"),
-          corretoraCasa,
-        });
-      } else {
-        const [leads, contratos] = await Promise.all([
-          listMinhasNegociacoes(profile.id),
-          listMeusContratos(profile.id),
-        ]);
-        setSnap({
-          cotacao,
-          leadsAbertos: leads.filter((l) =>
-            ["novo", "em_negociacao"].includes(l.status),
-          ),
-          contratosAtivos: contratos.filter((c) => c.status === "ativo"),
-          corretoraCasa,
-        });
-      }
+      const [leads, contratos] = await Promise.all([
+        listMinhasNegociacoes(profile.id),
+        listMeusContratos(profile.id),
+      ]);
+      setSnap({
+        cotacao,
+        leadsAbertos: leads.filter((l) =>
+          ["novo", "em_negociacao"].includes(l.status),
+        ),
+        contratosAtivos: contratos.filter((c) => c.status === "ativo"),
+        corretoraCasa,
+      });
     } catch (err) {
       setError(
         err instanceof Error
@@ -105,7 +88,7 @@ export default function InicioScreen() {
           : "Não conseguimos carregar os dados.",
       );
     }
-  }, [activeRole, profile]);
+  }, [profile]);
 
   useEffect(() => {
     load();
@@ -116,8 +99,6 @@ export default function InicioScreen() {
     await load();
     setRefreshing(false);
   }, [load]);
-
-  const isCorretora = activeRole === "corretora";
 
   return (
     <SafeAreaView className="flex-1 bg-milsaca-verde" edges={["top"]}>
@@ -163,7 +144,7 @@ export default function InicioScreen() {
             className="text-sm text-milsaca-dourado"
             style={{ fontFamily: "Inter_500Medium" }}
           >
-            Olá, {isCorretora ? "corretor(a)" : "produtor(a)"}
+            Olá, produtor(a)
           </Text>
           <Text
             className="mt-1 text-3xl leading-9 text-milsaca-cream"
@@ -173,9 +154,8 @@ export default function InicioScreen() {
           </Text>
         </View>
 
-        {/* 2 botões grandes — Ver Preço + Falar Corretora (produtor MVP rural) */}
-        {!isCorretora ? (
-          <View className="mt-6 gap-3">
+        {/* 2 botões grandes — Ver Preço + Falar Corretora */}
+        <View className="mt-6 gap-3">
             <Pressable
               onPress={() => router.push("/(painel)/cotacoes")}
               className="flex-row items-center gap-3 rounded-2xl bg-milsaca-dourado p-5 active:opacity-80"
@@ -254,16 +234,14 @@ export default function InicioScreen() {
                 <Ionicons name="chevron-forward" size={20} color="#FAF7F0" />
               </Pressable>
             )}
-          </View>
-        ) : null}
+        </View>
 
         {/* Indicadores ao vivo (lê de market_quotes, populada pela
             edge function sync-cotacoes 21h UTC dias úteis) */}
         <IndicadoresLive />
 
         {/* Grid de atalhos (telas extras) */}
-        {!isCorretora ? (
-          <View className="mt-5 flex-row flex-wrap gap-3">
+        <View className="mt-5 flex-row flex-wrap gap-3">
             <Shortcut
               icon="document-text"
               label="Laudos"
@@ -284,8 +262,7 @@ export default function InicioScreen() {
               label="Avisos"
               onPress={() => router.push("/(painel)/notificacoes")}
             />
-          </View>
-        ) : null}
+        </View>
 
         {error ? (
           <View className="mt-12 items-center px-2">
@@ -348,7 +325,7 @@ export default function InicioScreen() {
             {/* Cards de KPI */}
             <View className="mt-4 flex-row gap-3">
               <KpiCard
-                label={isCorretora ? "Leads abertos" : "Propostas abertas"}
+                label="Propostas abertas"
                 value={snap.leadsAbertos.length.toString()}
                 icon="chatbubbles"
                 onPress={() => router.push("/(painel)/negociacoes")}
@@ -368,7 +345,7 @@ export default function InicioScreen() {
                   className="text-xs text-milsaca-dourado"
                   style={{ fontFamily: "Inter_500Medium" }}
                 >
-                  {isCorretora ? "ÚLTIMOS LEADS" : "PROPOSTAS PENDENTES"}
+                  PROPOSTAS PENDENTES
                 </Text>
                 <View className="mt-2 gap-2">
                   {snap.leadsAbertos.slice(0, 3).map((lead) => (
