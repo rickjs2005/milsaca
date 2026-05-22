@@ -199,36 +199,61 @@ export default function InicioScreen() {
               </View>
               <Ionicons name="chevron-forward" size={20} color="#2D3A2E" />
             </Pressable>
-            <Pressable
-              disabled={!snap?.corretoraCasa?.phone}
-              onPress={() => {
-                const url = buildWhatsAppUrl(
-                  snap?.corretoraCasa?.phone ?? null,
-                  `Olá ${snap?.corretoraCasa?.name ?? ""}, sou ${profile?.full_name ?? "produtor"}.`,
-                );
-                if (url) Linking.openURL(url).catch(() => undefined);
-              }}
-              className="flex-row items-center gap-3 rounded-2xl bg-milsaca-verde-claro p-5 active:opacity-80 disabled:opacity-50"
-            >
-              <View className="h-12 w-12 items-center justify-center rounded-full bg-milsaca-dourado">
-                <Ionicons name="logo-whatsapp" size={24} color="#2D3A2E" />
-              </View>
-              <View className="flex-1">
-                <Text
-                  className="text-base text-milsaca-cream"
-                  style={{ fontFamily: "Inter_700Bold" }}
-                >
-                  Falar com corretora
-                </Text>
-                <Text
-                  className="text-xs text-milsaca-cream/70"
-                  style={{ fontFamily: "Inter_500Medium" }}
-                >
-                  {snap?.corretoraCasa?.name ?? "Sem corretora vinculada"}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#FAF7F0" />
-            </Pressable>
+            {snap?.corretoraCasa?.phone ? (
+              <Pressable
+                onPress={() => {
+                  const url = buildWhatsAppUrl(
+                    snap.corretoraCasa?.phone ?? null,
+                    `Olá ${snap.corretoraCasa?.name ?? ""}, sou ${profile?.full_name ?? "produtor"}.`,
+                  );
+                  if (url) Linking.openURL(url).catch(() => undefined);
+                }}
+                className="flex-row items-center gap-3 rounded-2xl bg-milsaca-verde-claro p-5 active:opacity-80"
+              >
+                <View className="h-12 w-12 items-center justify-center rounded-full bg-milsaca-dourado">
+                  <Ionicons name="logo-whatsapp" size={24} color="#2D3A2E" />
+                </View>
+                <View className="flex-1">
+                  <Text
+                    className="text-base text-milsaca-cream"
+                    style={{ fontFamily: "Inter_700Bold" }}
+                  >
+                    Falar com corretora
+                  </Text>
+                  <Text
+                    className="text-xs text-milsaca-cream/70"
+                    style={{ fontFamily: "Inter_500Medium" }}
+                  >
+                    {snap.corretoraCasa.name}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#FAF7F0" />
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={() => router.push("/(painel)/corretoras")}
+                className="flex-row items-center gap-3 rounded-2xl bg-milsaca-verde-claro p-5 active:opacity-80"
+              >
+                <View className="h-12 w-12 items-center justify-center rounded-full bg-milsaca-dourado">
+                  <Ionicons name="business" size={24} color="#2D3A2E" />
+                </View>
+                <View className="flex-1">
+                  <Text
+                    className="text-base text-milsaca-cream"
+                    style={{ fontFamily: "Inter_700Bold" }}
+                  >
+                    Ver corretoras
+                  </Text>
+                  <Text
+                    className="text-xs text-milsaca-cream/70"
+                    style={{ fontFamily: "Inter_500Medium" }}
+                  >
+                    Conheça e fale com qualquer corretora cadastrada
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#FAF7F0" />
+              </Pressable>
+            )}
           </View>
         ) : null}
 

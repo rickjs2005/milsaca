@@ -697,3 +697,132 @@ export async function getProdutorFazenda(
     altitude_m: row.altitude_m != null ? Number(row.altitude_m) : null,
   };
 }
+
+// ----------------------------------------------------------------- //
+// CORRETORAS (vitrine pro produtor)
+// ----------------------------------------------------------------- //
+
+export interface CorretoraVitrineItem {
+  id: string;
+  name: string;
+  slug: string;
+  city: string | null;
+  state: string | null;
+  phone: string | null;
+  email: string | null;
+  verified: boolean;
+  regioes_atendimento: string[];
+  is_favorita: boolean;
+  qtd_negociacoes: number;
+  qtd_contratos: number;
+}
+
+/**
+ * Vitrine de corretoras pro produtor — todas as corretoras cadastradas
+ * (não só as vinculadas), via view pública `corretoras_publicas` que
+ * filtra colunas sensíveis (cnpj, endereço completo).
+ */
+export async function listCorretorasParaProdutor(
+  produtorId: string,
+): Promise<CorretoraVitrineItem[]> {
+  const [corretorasRes, favoritosRes, leadsRes, contratosRes] =
+    await Promise.all([
+      supabase
+        .from("corretoras_publicas")
+        .select(
+          "id, name, slug, city, state, phone, email, verified, regioes_atendimento",
+        )
+        .order("verified", { ascending: false })
+        .order("name", { ascending: true })
+        .limit(500),
+      supabase
+        .from("favoritos")
+        .select("corretora_id")
+        .eq("produtor_id", produtorId),
+      supabase
+        .from("leads")
+        .select("corretora_id")
+        .eq("produtor_id", produtorId),
+      supabase
+        .from("contratos")
+        .select("corretora_id")
+        .eq("produtor_id", produtorId),
+    ]);
+
+  const favoritas = new Set(
+    ((favoritosRes.data ?? []) as { corretora_id: string }[]).map(
+      (r) => r.corretora_id,
+    ),
+  );
+  const leadsCount = new Map<string, number>();
+  for (const r of (leadsRes.data ?? []) as { corretora_id: string }[]) {
+    leadsCount.set(r.corretora_id, (leadsCount.get(r.corretora_id) ?? 0) + 1);
+  }
+  const contratosCount = new Map<string, number>();
+  for (const r of (contratosRes.data ?? []) as { corretora_id: string }[]) {
+    contratosCount.set(
+      r.corretora_id,
+      (contratosCount.get(r.corretora_id) ?? 0) + 1,
+    );
+  }
+
+  type Row = {
+    id: string | null;
+    name: string | null;
+    slug: string | null;
+    city: string | null;
+    state: string | null;
+    phone: string | null;
+    email: string | null;
+    verified: boolean | null;
+    regioes_atendimento: string[] | null;
+  };
+
+  const rows = ((corretorasRes.data ?? []) as Row[])
+    .filter((c): c is Row & { id: string; name: string; slug: string } =>
+      !!c.id && !!c.name && !!c.slug,
+    )
+    .map((c) => ({
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      city: c.city,
+      state: c.state,
+      phone: c.phone,
+      email: c.email,
+      verified: c.verified ?? false,
+      regioes_atendimento: c.regioes_atendimento ?? [],
+      is_favorita: favoritas.has(c.id),
+      qtd_negociacoes: leadsCount.get(c.id) ?? 0,
+      qtd_contratos: contratosCount.get(c.id) ?? 0,
+    }));
+
+  return rows.sort((a, b) => {
+    if (a.is_favorita !== b.is_favorita) return a.is_favorita ? -1 : 1;
+    if (a.verified !== b.verified) return a.verified ? -1 : 1;
+    return a.name.localeCompare(b.name, "pt-BR");
+  });
+}
+
+export async function toggleFavoritoCorretora(
+  produtorId: string,
+  corretoraId: string,
+  action: "add" | "remove",
+): Promise<{ error?: string }> {
+  if (action === "add") {
+    const { error } = await supabase
+      .from("favoritos")
+      .insert({ produtor_id: produtorId, corretora_id: corretoraId });
+    if (error && !error.message.includes("duplicate")) {
+      return { error: error.message };
+    }
+    return {};
+  }
+  const { error } = await supabase
+    .from("favoritos")
+    .delete()
+    .eq("produtor_id", produtorId)
+    .eq("corretora_id", corretoraId);
+  if (error) return { error: error.message };
+  return {};
+}

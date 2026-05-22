@@ -152,6 +152,17 @@ export default function PainelLayout() {
         }}
       />
       <Tabs.Screen
+        name="corretoras"
+        options={{
+          title: "Corretoras",
+          // Tab visível só pro produtor — corretora vê os próprios produtores em "Leads".
+          href: isCorretora ? null : "/(painel)/corretoras",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="business-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="negociacoes"
         options={{
           title: isCorretora ? "Leads" : "Negociações",
