@@ -29,6 +29,9 @@ const LABELS: Record<string, string> = {
   cotacoes: "Cotações",
   eudr: "EUDR",
   fiscal: "Fiscal",
+  tipos: "Tipos de café",
+  pracas: "Praças",
+  fontes: "Fontes",
   novo: "Novo",
   nova: "Nova",
 };

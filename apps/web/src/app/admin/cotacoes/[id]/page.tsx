@@ -1,36 +1,50 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { PageHeader } from "@/components/page-header";
+import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/submit-button";
-import { createCotacaoAdmin } from "../_actions";
+import { ConfirmSubmit } from "@/components/confirm-submit";
+import { updateCotacaoAdmin, deleteCotacaoAdmin } from "../_actions";
 
-export const metadata = { title: "Nova cotação · Admin Milsaca" };
+export const metadata = { title: "Editar cotação · Admin Milsaca" };
 
-type SearchParams = Promise<{ error?: string }>;
+const STATUS_TONE: Record<string, StatusTone> = {
+  active: "success",
+  stale: "warning",
+  error: "danger",
+  hidden: "neutral",
+};
 
-function todayISO() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
+const STATUS_LABEL: Record<string, string> = {
+  active: "Ativa",
+  stale: "Desatualizada",
+  error: "Erro",
+  hidden: "Oculta",
+};
 
-export default async function NovaCotacaoAdminPage({
-  searchParams,
+export default async function EditCotacaoPage({
+  params,
 }: {
-  searchParams: SearchParams;
+  params: Promise<{ id: string }>;
 }) {
   await requireAppAdmin();
-  const { error } = await searchParams;
-
+  const { id } = await params;
   const supabase = await createClient();
-  const [{ data: corretoras }, { data: produtos }, { data: pracas }, { data: fontes }] =
+
+  const [{ data: row }, { data: corretoras }, { data: produtos }, { data: pracas }, { data: fontes }] =
     await Promise.all([
+      supabase
+        .from("cotacoes")
+        .select(
+          "id, corretora_id, product_id, region_id, source_id, coffee_type, specie, process, region, source, reference_date, price, currency, unit, valid_until, status",
+        )
+        .eq("id", id)
+        .maybeSingle(),
       supabase
         .from("corretoras")
         .select("id, name, city, state")
@@ -38,7 +52,7 @@ export default async function NovaCotacaoAdminPage({
         .limit(500),
       supabase
         .from("coffee_types")
-        .select("id, name, species, process")
+        .select("id, name")
         .eq("active", true)
         .order("species", { ascending: true })
         .order("name", { ascending: true }),
@@ -56,6 +70,8 @@ export default async function NovaCotacaoAdminPage({
         .order("name", { ascending: true }),
     ]);
 
+  if (!row) notFound();
+
   const corretorasList =
     (corretoras ?? []) as {
       id: string;
@@ -63,8 +79,7 @@ export default async function NovaCotacaoAdminPage({
       city: string | null;
       state: string | null;
     }[];
-  const produtosList =
-    (produtos ?? []) as { id: string; name: string; species: string }[];
+  const produtosList = (produtos ?? []) as { id: string; name: string }[];
   const pracasList =
     (pracas ?? []) as {
       id: string;
@@ -74,45 +89,39 @@ export default async function NovaCotacaoAdminPage({
     }[];
   const fontesList = (fontes ?? []) as { id: string; slug: string; name: string }[];
 
-  // Default source: admin_manual
-  const defaultSourceId =
-    fontesList.find((f) => f.slug === "admin_manual")?.id ?? "";
-
   return (
     <div className="mx-auto max-w-3xl">
       <PageHeader
         eyebrow="Compliance · Cotações"
-        title="Nova cotação manual"
-        description="Posta cotação em nome de uma corretora. Aparece no painel do produtor (com nome da corretora) e em /painel/corretora/cotacoes."
+        title={`Editar cotação · ${row.coffee_type}`}
+        description={`Atualize qualquer campo. Mudança propaga pro painel da corretora e do produtor em segundos.`}
         breadcrumbs={[
           { label: "Admin", href: "/admin" },
           { label: "Cotações", href: "/admin/cotacoes" },
-          { label: "Nova" },
+          { label: "Editar" },
         ]}
+        actions={
+          <StatusBadge tone={STATUS_TONE[row.status] ?? "neutral"}>
+            {STATUS_LABEL[row.status] ?? row.status}
+          </StatusBadge>
+        }
       />
 
-      {error ? (
-        <p className="mb-4 rounded-md border border-rose-500/30 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          {error}
-        </p>
-      ) : null}
-
       <form
-        action={createCotacaoAdmin}
+        action={updateCotacaoAdmin}
         className="grid gap-5 rounded-card border border-slate-200 bg-white p-6 shadow-card sm:grid-cols-2"
       >
+        <input type="hidden" name="id" value={row.id} />
+
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="corretora_id">Corretora *</Label>
           <select
             id="corretora_id"
             name="corretora_id"
             required
-            defaultValue=""
+            defaultValue={row.corretora_id}
             className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-milsaca-dourado focus:outline-none focus:ring-2 focus:ring-milsaca-dourado/30"
           >
-            <option value="" disabled>
-              Selecione...
-            </option>
             {corretorasList.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -125,26 +134,20 @@ export default async function NovaCotacaoAdminPage({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="product_id">Tipo de café *</Label>
+          <Label htmlFor="product_id">Tipo de café</Label>
           <select
             id="product_id"
             name="product_id"
-            required
-            defaultValue=""
+            defaultValue={row.product_id ?? ""}
             className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-milsaca-dourado focus:outline-none focus:ring-2 focus:ring-milsaca-dourado/30"
           >
-            <option value="" disabled>
-              Selecione...
-            </option>
+            <option value="">— (manter texto antigo)</option>
             {produtosList.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
               </option>
             ))}
           </select>
-          <p className="text-[10px] text-slate-500">
-            Catálogo em /admin/cotacoes/tipos.
-          </p>
         </div>
 
         <div className="space-y-2">
@@ -152,7 +155,7 @@ export default async function NovaCotacaoAdminPage({
           <select
             id="region_id"
             name="region_id"
-            defaultValue=""
+            defaultValue={row.region_id ?? ""}
             className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-milsaca-dourado focus:outline-none focus:ring-2 focus:ring-milsaca-dourado/30"
           >
             <option value="">— (sem praça)</option>
@@ -163,9 +166,6 @@ export default async function NovaCotacaoAdminPage({
               </option>
             ))}
           </select>
-          <p className="text-[10px] text-slate-500">
-            Catálogo em /admin/cotacoes/pracas.
-          </p>
         </div>
 
         <div className="space-y-2">
@@ -175,7 +175,7 @@ export default async function NovaCotacaoAdminPage({
             name="reference_date"
             type="date"
             required
-            defaultValue={todayISO()}
+            defaultValue={row.reference_date}
           />
         </div>
 
@@ -185,7 +185,7 @@ export default async function NovaCotacaoAdminPage({
             id="valid_until"
             name="valid_until"
             type="date"
-            placeholder="(opcional)"
+            defaultValue={row.valid_until ? row.valid_until.slice(0, 10) : ""}
           />
         </div>
 
@@ -197,7 +197,7 @@ export default async function NovaCotacaoAdminPage({
             type="text"
             inputMode="decimal"
             required
-            placeholder="1.850,00"
+            defaultValue={String(row.price).replace(".", ",")}
           />
         </div>
 
@@ -207,7 +207,7 @@ export default async function NovaCotacaoAdminPage({
             <select
               id="currency"
               name="currency"
-              defaultValue="BRL"
+              defaultValue={row.currency ?? "BRL"}
               className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-milsaca-dourado focus:outline-none focus:ring-2 focus:ring-milsaca-dourado/30"
             >
               <option value="BRL">BRL</option>
@@ -219,7 +219,7 @@ export default async function NovaCotacaoAdminPage({
             <select
               id="unit"
               name="unit"
-              defaultValue="saca_60kg"
+              defaultValue={row.unit ?? "saca_60kg"}
               className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-milsaca-dourado focus:outline-none focus:ring-2 focus:ring-milsaca-dourado/30"
             >
               <option value="saca_60kg">Saca 60kg</option>
@@ -232,11 +232,11 @@ export default async function NovaCotacaoAdminPage({
         </div>
 
         <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="source_id">Fonte da cotação</Label>
+          <Label htmlFor="source_id">Fonte</Label>
           <select
             id="source_id"
             name="source_id"
-            defaultValue={defaultSourceId}
+            defaultValue={row.source_id ?? ""}
             className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-milsaca-dourado focus:outline-none focus:ring-2 focus:ring-milsaca-dourado/30"
           >
             <option value="">— (sem fonte)</option>
@@ -248,7 +248,20 @@ export default async function NovaCotacaoAdminPage({
           </select>
         </div>
 
-        <input type="hidden" name="status" value="active" />
+        <div className="space-y-2 sm:col-span-2">
+          <Label htmlFor="status">Status</Label>
+          <select
+            id="status"
+            name="status"
+            defaultValue={row.status}
+            className="flex h-10 w-full max-w-xs rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-milsaca-dourado focus:outline-none focus:ring-2 focus:ring-milsaca-dourado/30"
+          >
+            <option value="active">Ativa — produtor vê</option>
+            <option value="hidden">Oculta — produtor não vê</option>
+            <option value="stale">Desatualizada</option>
+            <option value="error">Erro</option>
+          </select>
+        </div>
 
         <div className="flex flex-col-reverse items-stretch justify-end gap-3 border-t border-slate-100 pt-4 sm:col-span-2 sm:flex-row sm:items-center">
           <Button asChild variant="outline">
@@ -256,11 +269,36 @@ export default async function NovaCotacaoAdminPage({
           </Button>
           <SubmitButton
             className="gap-2 bg-milsaca-cafezal text-milsaca-cream hover:bg-milsaca-folha"
-            pendingLabel="Cadastrando..."
+            pendingLabel="Salvando..."
           >
-            Cadastrar cotação
+            Salvar alterações
           </SubmitButton>
         </div>
+      </form>
+
+      <form
+        action={deleteCotacaoAdmin}
+        className="mt-6 flex justify-end"
+      >
+        <input type="hidden" name="id" value={row.id} />
+        <ConfirmSubmit
+          variant="ghost"
+          size="sm"
+          className="text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+          confirmTitle="Apagar cotação?"
+          confirmMessage={
+            <p>
+              Cotação é removida permanentemente. Produtor deixa de ver. Pra
+              ocultar temporariamente, prefira mudar o status pra{" "}
+              <strong>Oculta</strong> acima.
+            </p>
+          }
+          confirmButtonLabel="Apagar"
+          confirmButtonVariant="destructive"
+          pendingLabel="Apagando..."
+        >
+          Apagar cotação permanentemente
+        </ConfirmSubmit>
       </form>
     </div>
   );

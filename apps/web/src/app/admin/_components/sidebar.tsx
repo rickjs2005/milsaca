@@ -26,6 +26,9 @@ import {
   TrendingUp,
   Leaf,
   FileSignature,
+  Coffee,
+  MapPin,
+  Database,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -90,6 +93,9 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Compliance",
     items: [
       { href: "/admin/cotacoes", label: "Cotações", icon: TrendingUp },
+      { href: "/admin/cotacoes/tipos", label: "Tipos de café", icon: Coffee },
+      { href: "/admin/cotacoes/pracas", label: "Praças", icon: MapPin },
+      { href: "/admin/cotacoes/fontes", label: "Fontes", icon: Database },
       { href: "/admin/eudr", label: "EUDR", icon: Leaf },
       { href: "/admin/fiscal", label: "Fiscal", icon: FileSignature },
     ],

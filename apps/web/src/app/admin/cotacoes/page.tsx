@@ -275,27 +275,35 @@ export default async function CotacoesAdminPage() {
       header: <span className="sr-only">Ações</span>,
       align: "right",
       cell: (c) => (
-        <form action={deleteCotacaoAdmin}>
-          <input type="hidden" name="id" value={c.id} />
-          <ConfirmSubmit
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700"
-            confirmTitle="Apagar cotação?"
-            confirmMessage={
-              <p>
-                Cotação de <strong>{c.corretoraName ?? "—"}</strong> em{" "}
-                <strong>{fmtDate(c.reference_date)}</strong> ({fmtMoney(c.price)}
-                ) será removida pra sempre. Produtor deixa de ver no app.
-              </p>
-            }
-            confirmButtonLabel="Apagar"
-            confirmButtonVariant="destructive"
-            pendingLabel="Apagando..."
+        <div className="flex items-center justify-end gap-3">
+          <Link
+            href={`/admin/cotacoes/${c.id}`}
+            className="text-xs font-medium text-milsaca-cafezal underline-offset-4 hover:underline"
           >
-            Apagar
-          </ConfirmSubmit>
-        </form>
+            Editar
+          </Link>
+          <form action={deleteCotacaoAdmin}>
+            <input type="hidden" name="id" value={c.id} />
+            <ConfirmSubmit
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+              confirmTitle="Apagar cotação?"
+              confirmMessage={
+                <p>
+                  Cotação de <strong>{c.corretoraName ?? "—"}</strong> em{" "}
+                  <strong>{fmtDate(c.reference_date)}</strong> ({fmtMoney(c.price)}
+                  ) será removida pra sempre. Produtor deixa de ver no app.
+                </p>
+              }
+              confirmButtonLabel="Apagar"
+              confirmButtonVariant="destructive"
+              pendingLabel="Apagando..."
+            >
+              Apagar
+            </ConfirmSubmit>
+          </form>
+        </div>
       ),
     },
   ];

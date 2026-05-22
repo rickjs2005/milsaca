@@ -63,6 +63,10 @@ const STATIC_ACTIONS: StaticAction[] = [
   { group: "Plataforma", title: "Moderação", href: "/admin/moderacao", icon: ShieldAlert },
   // Compliance
   { group: "Compliance", title: "Cotações", href: "/admin/cotacoes", icon: TrendingUp },
+  { group: "Compliance", title: "Nova cotação manual", href: "/admin/cotacoes/nova", icon: TrendingUp },
+  { group: "Compliance", title: "Tipos de café", href: "/admin/cotacoes/tipos", icon: TrendingUp },
+  { group: "Compliance", title: "Praças", href: "/admin/cotacoes/pracas", icon: TrendingUp },
+  { group: "Compliance", title: "Fontes de cotação", href: "/admin/cotacoes/fontes", icon: TrendingUp },
   { group: "Compliance", title: "EUDR", href: "/admin/eudr", icon: Sprout },
   { group: "Compliance", title: "Fiscal", href: "/admin/fiscal", icon: FileSignature },
   // Comercial

@@ -92,6 +92,66 @@ export async function createCotacao(formData: FormData) {
   redirect("/painel/corretora/cotacoes");
 }
 
+export async function updateCotacao(formData: FormData) {
+  const profile = await getProfile();
+  if (!profile?.corretora_id) {
+    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
+  }
+  await requireActiveSubscription(
+    profile.corretora_id,
+    "/painel/corretora/cotacoes",
+  );
+
+  const idParsed = uuidSchema.safeParse(String(formData.get("id") ?? "").trim());
+  if (!idParsed.success) redirect("/painel/corretora/cotacoes");
+  const id = idParsed.data;
+
+  const specieRaw = String(formData.get("specie") ?? "").trim();
+  const processRaw = String(formData.get("process") ?? "").trim();
+  const region = String(formData.get("region") ?? "").trim() || null;
+  const source = String(formData.get("source") ?? "").trim() || null;
+  const reference_date = String(formData.get("reference_date") ?? "").trim();
+  const price = parsePriceBRL(formData.get("price"));
+
+  const errors: string[] = [];
+  if (!SPECIES.includes(specieRaw as CoffeeSpecie)) errors.push("Espécie inválida");
+  if (!reference_date) errors.push("Data obrigatória");
+  if (price == null) errors.push("Preço inválido");
+
+  if (errors.length > 0) {
+    const params = new URLSearchParams({ error: errors.join(", ") });
+    redirect(`/painel/corretora/cotacoes/${id}?${params.toString()}`);
+  }
+
+  const specie = specieRaw as CoffeeSpecie;
+  const process = PROCESSOS.includes(processRaw as CoffeeProcesso)
+    ? (processRaw as CoffeeProcesso)
+    : null;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("cotacoes")
+    .update({
+      coffee_type: COFFEE_TYPE_LABEL[specie],
+      specie,
+      process,
+      region,
+      source,
+      reference_date,
+      price: price as number,
+    })
+    .eq("id", id)
+    .eq("corretora_id", profile.corretora_id);
+
+  if (error) {
+    const params = new URLSearchParams({ error: friendlyPostgresError(error) });
+    redirect(`/painel/corretora/cotacoes/${id}?${params.toString()}`);
+  }
+
+  revalidateAffected();
+  redirect(`/painel/corretora/cotacoes/${id}?saved=1`);
+}
+
 export async function deleteCotacao(formData: FormData) {
   const profile = await getProfile();
   if (!profile?.corretora_id) redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
