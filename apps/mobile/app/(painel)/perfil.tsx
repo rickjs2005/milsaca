@@ -74,6 +74,12 @@ export default function PerfilScreen() {
     load();
   }, [load]);
 
+  // Roles podem ter mudado fora do app (admin promoveu o user a corretora).
+  // Refresh ao montar pra mostrar botão "Trocar painel" se ganhou multi-role.
+  useEffect(() => {
+    reloadProfile();
+  }, [reloadProfile]);
+
   const onSave = async () => {
     if (!profile) return;
     setSaving(true);

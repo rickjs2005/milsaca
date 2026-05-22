@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Redirect, router } from "expo-router";
+import { useEffect } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -29,7 +30,13 @@ const ROLES: {
 ];
 
 export default function EscolherScreen() {
-  const { status, profile, setActiveRole } = useAuth();
+  const { status, profile, setActiveRole, reloadProfile } = useAuth();
+
+  // Roles podem ter sido alteradas pelo admin enquanto o app estava aberto
+  // (ex: produtor virou também corretora). Recarrega fresh ao abrir.
+  useEffect(() => {
+    reloadProfile();
+  }, [reloadProfile]);
 
   if (status === "signed_out") return <Redirect href="/(auth)/entrar" />;
   if (status === "loading") return null;
