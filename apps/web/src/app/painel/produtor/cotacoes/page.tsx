@@ -3,6 +3,7 @@ import {
   Activity,
   ArrowDownRight,
   ArrowUpRight,
+  Bell,
   Building2,
   Coffee,
   MapPin,
@@ -110,14 +111,23 @@ export default async function CotacoesProdutorPage({
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
-          Cotações
-        </h1>
-        <p className="text-sm text-milsaca-verde-claro">
-          Acompanhe o preço da saca pelo mercado e pelas corretoras que você
-          segue.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
+            Cotações
+          </h1>
+          <p className="text-sm text-milsaca-verde-claro">
+            Acompanhe o preço da saca pelo mercado e pelas corretoras que você
+            segue.
+          </p>
+        </div>
+        <Link
+          href="/painel/produtor/cotacoes/alvos"
+          className="inline-flex items-center gap-1.5 rounded-md border border-milsaca-cream-escuro bg-white px-3 py-2 text-sm text-milsaca-verde transition-colors hover:border-milsaca-dourado hover:bg-milsaca-cream"
+        >
+          <Bell className="h-4 w-4 text-milsaca-dourado" />
+          Meus alvos
+        </Link>
       </header>
 
       {/* Filtros */}

@@ -19,6 +19,8 @@ const RUNNABLE_KINDS = new Set<string>([
   "cron.nudge-stale-leads.run",
   "cron.nudge-delivery-late.run",
   "cron.process-dispatches.run",
+  "cron.check-price-targets.run",
+  "cron.mark-stale-cotacoes.run",
 ]);
 
 export const metadata = { title: "Automações · Admin Milsaca" };
@@ -92,6 +94,22 @@ const JOBS: JobSpec[] = [
     schedule: "07:00 BRT · diário (pg_cron)",
     description:
       "Cria message_dispatches do template entrega_atrasada pra corretoras com entregas em status programada/em_transito cuja data_prevista já passou. Dedup 7 dias.",
+    state: "active",
+  },
+  {
+    kind: "cron.mark-stale-cotacoes.run",
+    label: "Marcar cotações desatualizadas",
+    schedule: "02:00 UTC · diário (pg_cron)",
+    description:
+      "Atualiza cotacoes com reference_date >7d ou valid_until passado pra status='stale'. Produtor vê badge 'desatualizada' em vez de preço atual.",
+    state: "active",
+  },
+  {
+    kind: "cron.check-price-targets.run",
+    label: "Verificar alvos de preço",
+    schedule: "12:30 + 21:30 UTC · dias úteis (pg_cron)",
+    description:
+      "Pra cada alvo ativo, busca última cotação do product/region e dispara notification + message_dispatch se bateu condição. Dedup 24h.",
     state: "active",
   },
 ];
