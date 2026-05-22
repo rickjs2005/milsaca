@@ -25,6 +25,9 @@ export interface CotacaoRow {
   reference_date: string;
   created_at: string;
   variacao_pct: number | null;
+  corretora_id?: string;
+  corretora_name?: string | null;
+  status?: "active" | "stale" | "error" | "hidden";
 }
 
 export interface CotacaoCard {
@@ -36,8 +39,31 @@ export interface CotacaoCard {
   current_price: number;
   current_date: string;
   variacao_pct: number | null;
+  variacao_7d_pct?: number | null;
+  variacao_30d_pct?: number | null;
   source: string | null;
   series: number[];
+  corretora_id?: string;
+  corretora_name?: string | null;
+  status?: "active" | "stale" | "error" | "hidden";
+}
+
+export interface MarketIndicator {
+  source: string;
+  symbol: string;
+  label: string;
+  sublabel: string;
+  price: number | null;
+  currency: "BRL" | "USD";
+  variation_pct: number | null;
+  fetched_at: string;
+  stale: boolean;
+}
+
+export interface ProdutorCotacoesMobile {
+  market: MarketIndicator[];
+  minhasCorretoras: CotacaoCard[];
+  outrasPracas: CotacaoCard[];
 }
 
 function groupKey(r: {
@@ -139,6 +165,213 @@ export function agruparCotacoes(
   });
 
   return cards;
+}
+
+// Bloco B — Carrega cotações organizadas em 3 seções pra produtor.
+
+const MARKET_INDICATORS_MOBILE = [
+  {
+    source: "cepea_esalq",
+    symbol: "arabica_bica_corrida_esalq",
+    label: "Arábica CEPEA",
+    sublabel: "Bica corrida · 60kg",
+  },
+  {
+    source: "ice_us",
+    symbol: "KC.F",
+    label: "Arábica NY",
+    sublabel: "ICE · US¢/lb",
+  },
+  {
+    source: "bcb_ptax",
+    symbol: "USDBRL",
+    label: "Dólar PTAX",
+    sublabel: "Banco Central",
+  },
+];
+
+function calcVar(current: number, previous: number | null): number | null {
+  if (previous == null || previous <= 0) return null;
+  return ((current - previous) / previous) * 100;
+}
+
+export async function loadProdutorCotacoesMobile(
+  produtorId: string,
+  filter: { specie?: CoffeeSpecie } = {},
+): Promise<ProdutorCotacoesMobile> {
+  // Favoritos
+  const { data: favRows } = await supabase
+    .from("favoritos")
+    .select("corretora_id")
+    .eq("produtor_id", produtorId);
+
+  const fav = new Set(
+    (favRows ?? []).map((r) => (r as { corretora_id: string }).corretora_id),
+  );
+
+  // Cotações
+  let q = supabase
+    .from("cotacoes")
+    .select(
+      "id, coffee_type, specie, process, region, price, source, reference_date, created_at, status, corretora_id, corretoras(name)",
+    )
+    .in("status", ["active", "stale"])
+    .order("reference_date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(300);
+
+  if (filter.specie) q = q.eq("specie", filter.specie);
+
+  const { data } = await q;
+  type Raw = {
+    id: string;
+    coffee_type: string;
+    specie: CoffeeSpecie | null;
+    process: CoffeeProcesso | null;
+    region: string | null;
+    price: number;
+    source: string | null;
+    reference_date: string;
+    created_at: string;
+    status: CotacaoRow["status"];
+    corretora_id: string;
+    corretoras: { name: string } | { name: string }[] | null;
+  };
+  const allRows: CotacaoRow[] = ((data ?? []) as unknown as Raw[]).map((r) => ({
+    ...r,
+    price: Number(r.price),
+    corretora_id: r.corretora_id,
+    corretora_name: Array.isArray(r.corretoras)
+      ? r.corretoras[0]?.name ?? null
+      : r.corretoras?.name ?? null,
+    variacao_pct: null,
+  }));
+
+  // Agrupa por (corretora, specie, process, region)
+  function gKey(r: CotacaoRow) {
+    return [
+      r.corretora_id ?? "",
+      r.specie ?? r.coffee_type,
+      r.process ?? "",
+      r.region ?? "",
+    ].join("|");
+  }
+
+  const grouped = new Map<string, CotacaoRow[]>();
+  for (const r of allRows) {
+    const k = gKey(r);
+    const arr = grouped.get(k) ?? [];
+    arr.push(r);
+    grouped.set(k, arr);
+  }
+
+  const cards: CotacaoCard[] = [];
+  for (const [k, list] of grouped) {
+    list.sort((a, b) => {
+      const c = b.reference_date.localeCompare(a.reference_date);
+      return c !== 0 ? c : b.created_at.localeCompare(a.created_at);
+    });
+    const [current] = list;
+    if (!current) continue;
+    const currentRow = current;
+    const previous = list[1] ?? null;
+    const currentMs = new Date(currentRow.reference_date).getTime();
+    const priceAt = (days: number): number | null => {
+      const t = currentMs - days * 86400000;
+      const found = list.find(
+        (r) =>
+          r.id !== currentRow.id &&
+          new Date(r.reference_date).getTime() <= t,
+      );
+      return found ? found.price : null;
+    };
+    cards.push({
+      key: k,
+      specie: current.specie,
+      process: current.process,
+      coffee_type: current.coffee_type,
+      region: current.region,
+      current_price: current.price,
+      current_date: current.reference_date,
+      variacao_pct: previous ? calcVar(current.price, previous.price) : null,
+      variacao_7d_pct: calcVar(current.price, priceAt(7)),
+      variacao_30d_pct: calcVar(current.price, priceAt(30)),
+      source: current.source,
+      series: list.slice(0, 10).map((r) => r.price).reverse(),
+      corretora_id: current.corretora_id,
+      corretora_name: current.corretora_name,
+      status: current.status,
+    });
+  }
+
+  const minhasCorretoras: CotacaoCard[] = [];
+  const outrasPracas: CotacaoCard[] = [];
+  for (const c of cards) {
+    if (c.corretora_id && fav.has(c.corretora_id)) minhasCorretoras.push(c);
+    else outrasPracas.push(c);
+  }
+
+  // Mercado
+  const { data: marketRows } = await supabase
+    .from("market_quotes")
+    .select(
+      "source, symbol, price_brl_cents, price_usd_cents, variation_pct, fetched_at",
+    )
+    .in(
+      "source",
+      MARKET_INDICATORS_MOBILE.map((m) => m.source),
+    );
+
+  type MarketRow = {
+    source: string;
+    symbol: string;
+    price_brl_cents: number | null;
+    price_usd_cents: number | null;
+    variation_pct: number | string | null;
+    fetched_at: string;
+  };
+
+  const marketMap = new Map<string, MarketRow>();
+  for (const r of (marketRows ?? []) as MarketRow[]) {
+    marketMap.set(`${r.source}|${r.symbol}`, r);
+  }
+
+  const STALE_MS = 48 * 3600_000;
+  const market: MarketIndicator[] = MARKET_INDICATORS_MOBILE.map((spec) => {
+    const r = marketMap.get(`${spec.source}|${spec.symbol}`);
+    if (!r)
+      return {
+        source: spec.source,
+        symbol: spec.symbol,
+        label: spec.label,
+        sublabel: spec.sublabel,
+        price: null,
+        currency: "BRL",
+        variation_pct: null,
+        fetched_at: "",
+        stale: true,
+      };
+    const isBRL = r.price_brl_cents != null;
+    const price = isBRL
+      ? (r.price_brl_cents as number) / 100
+      : r.price_usd_cents != null
+        ? r.price_usd_cents / 100
+        : null;
+    const ageMs = Date.now() - new Date(r.fetched_at).getTime();
+    return {
+      source: spec.source,
+      symbol: spec.symbol,
+      label: spec.label,
+      sublabel: spec.sublabel,
+      price,
+      currency: (isBRL ? "BRL" : "USD") as "BRL" | "USD",
+      variation_pct: r.variation_pct != null ? Number(r.variation_pct) : null,
+      fetched_at: r.fetched_at,
+      stale: ageMs > STALE_MS,
+    };
+  });
+
+  return { market, minhasCorretoras, outrasPracas };
 }
 
 // ----------------------------------------------------------------- //

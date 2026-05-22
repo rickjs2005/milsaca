@@ -79,3 +79,36 @@ export function formatPriceBR(
 ): string {
   return `${fmtBRL(cents)}/${period === "yearly" ? "ano" : "mês"}`;
 }
+
+/**
+ * "há 3h", "há 2 dias", "há 5 min". Pra timestamps recentes em pt-BR.
+ *
+ *   timeAgo(iso) → "há 3h"
+ *   timeAgo(null) → "—"
+ *
+ * Granularidade:
+ *   < 1min   → "agora"
+ *   < 60min  → "há Xmin"
+ *   < 24h    → "há Xh"
+ *   < 30d    → "há X dia(s)"
+ *   senão    → "há X meses"
+ */
+export function timeAgo(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  let ms: number;
+  try {
+    ms = Date.now() - new Date(iso).getTime();
+  } catch {
+    return "—";
+  }
+  if (!Number.isFinite(ms) || ms < 0) return "agora";
+  const mins = Math.floor(ms / 60000);
+  if (mins < 1) return "agora";
+  if (mins < 60) return `há ${mins}min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `há ${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `há ${days} ${days === 1 ? "dia" : "dias"}`;
+  const months = Math.floor(days / 30);
+  return `há ${months} ${months === 1 ? "mês" : "meses"}`;
+}
