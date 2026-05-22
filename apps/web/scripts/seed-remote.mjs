@@ -188,7 +188,17 @@ async function main() {
   // ============================================================
   // 4) Cotações tipadas (specie + process)
   // ============================================================
-  console.log("> Cotações (Arábica × 3 datas, Conillón × 2 datas)...");
+  // GUARD: cotações fake bloqueadas em modo real (default).
+  // Pra dev local rodar com QUOTES_MODE=demo na linha de comando.
+  const quotesMode = process.env.QUOTES_MODE ?? "real";
+  if (quotesMode !== "demo") {
+    console.log(
+      "> Cotações: PULADO (QUOTES_MODE != 'demo'). " +
+        "Pra seedar cotações fake em dev, use: " +
+        "QUOTES_MODE=demo pnpm --filter @milsaca/web seed <email>",
+    );
+  } else {
+    console.log("> Cotações DEMO (QUOTES_MODE=demo) — 6 cotações fake...");
   const cotacoes = [
     {
       coffee_type: "Arábica",
@@ -245,22 +255,25 @@ async function main() {
       source: "CEPEA",
     },
   ];
-  for (const c of cotacoes) {
-    const { data: existing } = await admin
-      .from("cotacoes")
-      .select("id")
-      .eq("specie", c.specie)
-      .eq("reference_date", c.reference_date)
-      .eq("process", c.process)
-      .maybeSingle();
-    if (existing) {
-      await admin.from("cotacoes").update(c).eq("id", existing.id);
-    } else {
-      const { error } = await admin.from("cotacoes").insert(c);
-      if (error) throw error;
+    for (const c of cotacoes) {
+      const cWithTenant = { ...c, corretora_id: cooxupe.id };
+      const { data: existing } = await admin
+        .from("cotacoes")
+        .select("id")
+        .eq("specie", c.specie)
+        .eq("reference_date", c.reference_date)
+        .eq("process", c.process)
+        .eq("corretora_id", cooxupe.id)
+        .maybeSingle();
+      if (existing) {
+        await admin.from("cotacoes").update(cWithTenant).eq("id", existing.id);
+      } else {
+        const { error } = await admin.from("cotacoes").insert(cWithTenant);
+        if (error) throw error;
+      }
     }
+    console.log(`  ${cotacoes.length} cotações DEMO ok`);
   }
-  console.log(`  ${cotacoes.length} cotações ok`);
 
   // ============================================================
   // 5) Contatos sombra da Cooxupé (Fase 2)

@@ -125,6 +125,7 @@ export default function CotacoesScreen() {
           />
         }
       >
+        <DemoBadgeMobile />
         <View>
           <Text
             className="text-2xl text-milsaca-verde"
@@ -432,6 +433,23 @@ function CotacaoCardView({ c, accent }: { c: CotacaoCard; accent?: boolean }) {
           </View>
         ) : null}
       </View>
+    </View>
+  );
+}
+
+function DemoBadgeMobile() {
+  const mode =
+    (process.env.EXPO_PUBLIC_QUOTES_MODE as string | undefined) ?? "real";
+  if (mode !== "demo") return null;
+  return (
+    <View className="flex-row items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2">
+      <Ionicons name="warning" size={14} color="#b45309" />
+      <Text
+        className="flex-1 text-[11px] text-amber-900"
+        style={{ fontFamily: "Inter_500Medium" }}
+      >
+        Modo Demonstração — cotações podem ser dados de exemplo.
+      </Text>
     </View>
   );
 }

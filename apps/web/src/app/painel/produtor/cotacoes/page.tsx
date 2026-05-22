@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { timeAgo } from "@/lib/format";
+import { DemoModeBadge } from "@/components/demo-mode-badge";
 import {
   Card,
   CardContent,
@@ -111,6 +112,7 @@ export default async function CotacoesProdutorPage({
 
   return (
     <div className="space-y-8">
+      <DemoModeBadge />
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
