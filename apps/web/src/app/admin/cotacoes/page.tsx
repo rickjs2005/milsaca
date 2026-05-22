@@ -1,15 +1,19 @@
-import { TrendingUp, Coffee, DollarSign, Clock } from "lucide-react";
+import Link from "next/link";
+import { TrendingUp, Coffee, DollarSign, Clock, Plus } from "lucide-react";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { PageHeader } from "@/components/page-header";
 import { KpiCard } from "@/components/kpi-card";
 import { EmptyState } from "@/components/empty-state";
 import { DataTable, type Column } from "@/components/data-table";
-import { fmtDateTime, fmtBRL } from "@/lib/format";
-
-type KpiTone = "default" | "success" | "warning" | "danger";
+import { Button } from "@/components/ui/button";
+import { ConfirmSubmit } from "@/components/confirm-submit";
+import { fmtDateTime, fmtBRL, fmtDate, fmtMoney } from "@/lib/format";
+import { deleteCotacaoAdmin } from "./_actions";
 
 export const metadata = { title: "Cotações · Admin Milsaca" };
+
+type KpiTone = "default" | "success" | "warning" | "danger";
 
 type MarketQuote = {
   source: string;
@@ -23,8 +27,17 @@ type MarketQuote = {
 };
 
 type ManualQuote = {
-  source: string;
-  total: number;
+  id: string;
+  corretora_id: string;
+  coffee_type: string;
+  specie: string | null;
+  process: string | null;
+  region: string | null;
+  source: string | null;
+  reference_date: string;
+  price: number;
+  created_at: string;
+  corretoras: { name: string } | { name: string }[] | null;
 };
 
 function statusTone(ageHours: number): KpiTone {
@@ -39,6 +52,18 @@ function statusLabel(ageHours: number): string {
   return "Crítico";
 }
 
+function processoLabel(p: string | null): string {
+  if (!p) return "—";
+  const labels: Record<string, string> = {
+    natural: "Natural",
+    cereja_descascado: "Cereja descascado",
+    cd_desmucilado: "CD desmucilado",
+    despolpado: "Despolpado",
+    fermentacao_induzida: "Fermentação induzida",
+  };
+  return labels[p] ?? p;
+}
+
 export default async function CotacoesAdminPage() {
   await requireAppAdmin();
   const supabase = await createClient();
@@ -47,7 +72,7 @@ export default async function CotacoesAdminPage() {
     { data: marketRows },
     { data: lastSync },
     { count: cotacoesManuais },
-    { data: corretorasComCotacao },
+    { data: cotacoesList },
   ] = await Promise.all([
     supabase
       .from("market_quotes")
@@ -62,13 +87,14 @@ export default async function CotacoesAdminPage() {
       .order("fetched_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    supabase.from("cotacoes").select("*", { count: "exact", head: true }),
     supabase
       .from("cotacoes")
-      .select("*", { count: "exact", head: true }),
-    supabase
-      .from("cotacoes")
-      .select("source, corretora_id")
-      .limit(500),
+      .select(
+        "id, corretora_id, coffee_type, specie, process, region, source, reference_date, price, created_at, corretoras(name)",
+      )
+      .order("created_at", { ascending: false })
+      .limit(100),
   ]);
 
   const quotes = (marketRows ?? []) as MarketQuote[];
@@ -77,15 +103,13 @@ export default async function CotacoesAdminPage() {
     : Infinity;
   const ageHours = Math.floor(ageMs / 3_600_000);
 
-  // Agrupa cotações manuais por source pra dashboard.
-  const manualBySource = new Map<string, number>();
-  for (const c of (corretorasComCotacao ?? []) as { source: string | null }[]) {
-    const k = c.source ?? "manual";
-    manualBySource.set(k, (manualBySource.get(k) ?? 0) + 1);
-  }
-  const manualBreakdown: ManualQuote[] = Array.from(
-    manualBySource.entries(),
-  ).map(([source, total]) => ({ source, total }));
+  const manualRaw = (cotacoesList ?? []) as unknown as ManualQuote[];
+  const manuals = manualRaw.map((m) => ({
+    ...m,
+    corretoraName: Array.isArray(m.corretoras)
+      ? m.corretoras[0]?.name ?? null
+      : m.corretoras?.name ?? null,
+  }));
 
   // Latest snapshot por (source, symbol) — primeiro encontro no order desc.
   const latestKey = new Set<string>();
@@ -96,7 +120,7 @@ export default async function CotacoesAdminPage() {
     return true;
   });
 
-  const columns: Column<MarketQuote>[] = [
+  const marketColumns: Column<MarketQuote>[] = [
     {
       key: "source",
       header: "Fonte",
@@ -118,7 +142,9 @@ export default async function CotacoesAdminPage() {
       header: "BRL",
       mobileLabel: "BRL",
       cell: (q) =>
-        q.price_brl_cents != null ? fmtBRL(q.price_brl_cents) : (
+        q.price_brl_cents != null ? (
+          fmtBRL(q.price_brl_cents)
+        ) : (
           <span className="text-slate-400">—</span>
         ),
     },
@@ -163,9 +189,114 @@ export default async function CotacoesAdminPage() {
       key: "quoted",
       header: "Cotada em",
       cell: (q) => (
-        <span className="text-xs text-slate-500">{fmtDateTime(q.quoted_at)}</span>
+        <span className="text-xs text-slate-500">
+          {fmtDateTime(q.quoted_at)}
+        </span>
       ),
       hideOnMobile: true,
+    },
+  ];
+
+  type ManualRow = (typeof manuals)[number];
+
+  const manualColumns: Column<ManualRow>[] = [
+    {
+      key: "data",
+      header: "Data",
+      mobileLabel: "Data",
+      cell: (c) => (
+        <span className="whitespace-nowrap text-xs text-slate-600">
+          {fmtDate(c.reference_date)}
+        </span>
+      ),
+    },
+    {
+      key: "corretora",
+      header: "Corretora",
+      mobileLabel: "Corretora",
+      cell: (c) =>
+        c.corretoraName ? (
+          <span className="text-sm font-medium text-slate-900">
+            {c.corretoraName}
+          </span>
+        ) : (
+          <span className="text-slate-400">—</span>
+        ),
+    },
+    {
+      key: "cafe",
+      header: "Café",
+      mobileLabel: "Café",
+      cell: (c) => (
+        <div>
+          <p className="text-sm text-slate-900">
+            {c.specie === "arabica"
+              ? "Arábica"
+              : c.specie === "conillon"
+                ? "Conillón"
+                : c.coffee_type}
+          </p>
+          <p className="text-[11px] text-slate-500">
+            {processoLabel(c.process)}
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: "regiao",
+      header: "Praça",
+      mobileLabel: "Praça",
+      cell: (c) => c.region ?? <span className="text-slate-400">—</span>,
+      hideOnMobile: true,
+    },
+    {
+      key: "preco",
+      header: "Preço/saca",
+      mobileLabel: "Preço",
+      align: "right",
+      cell: (c) => (
+        <span className="font-mono text-sm font-semibold text-milsaca-cafezal">
+          {fmtMoney(c.price)}
+        </span>
+      ),
+    },
+    {
+      key: "fonte",
+      header: "Fonte",
+      cell: (c) => (
+        <span className="text-xs text-slate-500">
+          {c.source ?? <span className="text-slate-400">—</span>}
+        </span>
+      ),
+      hideOnMobile: true,
+    },
+    {
+      key: "actions",
+      header: <span className="sr-only">Ações</span>,
+      align: "right",
+      cell: (c) => (
+        <form action={deleteCotacaoAdmin}>
+          <input type="hidden" name="id" value={c.id} />
+          <ConfirmSubmit
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+            confirmTitle="Apagar cotação?"
+            confirmMessage={
+              <p>
+                Cotação de <strong>{c.corretoraName ?? "—"}</strong> em{" "}
+                <strong>{fmtDate(c.reference_date)}</strong> ({fmtMoney(c.price)}
+                ) será removida pra sempre. Produtor deixa de ver no app.
+              </p>
+            }
+            confirmButtonLabel="Apagar"
+            confirmButtonVariant="destructive"
+            pendingLabel="Apagando..."
+          >
+            Apagar
+          </ConfirmSubmit>
+        </form>
+      ),
     },
   ];
 
@@ -174,11 +305,22 @@ export default async function CotacoesAdminPage() {
       <PageHeader
         eyebrow="Compliance"
         title="Cotações"
-        description="Monitor de cotações de mercado coletadas pelo cron sync-cotacoes (CEPEA + ICE + BCB) e contagem de cotações manuais postadas pelas corretoras."
+        description="Monitor de cotações de mercado (CEPEA + ICE + BCB) sincronizadas pelo cron + lista de cotações manuais que admin posta em nome das corretoras."
         breadcrumbs={[
           { label: "Admin", href: "/admin" },
           { label: "Cotações" },
         ]}
+        actions={
+          <Button
+            asChild
+            className="bg-milsaca-cafezal text-milsaca-cream hover:bg-milsaca-folha"
+          >
+            <Link href="/admin/cotacoes/nova">
+              <Plus className="mr-1.5 h-4 w-4" />
+              Nova cotação manual
+            </Link>
+          </Button>
+        }
       />
 
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -192,7 +334,7 @@ export default async function CotacoesAdminPage() {
           label="Cotações manuais"
           value={cotacoesManuais ?? 0}
           icon={Coffee}
-          hint="Postadas pela corretora no painel."
+          hint="Postadas em nome de corretoras."
         />
         <KpiCard
           label="Última sincronização"
@@ -202,11 +344,11 @@ export default async function CotacoesAdminPage() {
           icon={Clock}
           tone={
             lastSync?.fetched_at
-              ? (statusTone(ageHours) === "success"
-                  ? "success"
-                  : statusTone(ageHours) === "warning"
-                    ? "warning"
-                    : "danger")
+              ? statusTone(ageHours) === "success"
+                ? "success"
+                : statusTone(ageHours) === "warning"
+                  ? "warning"
+                  : "danger"
               : "default"
           }
           hint={
@@ -217,32 +359,31 @@ export default async function CotacoesAdminPage() {
         />
         <KpiCard
           label="Status sync"
-          value={
-            lastSync?.fetched_at ? statusLabel(ageHours) : "Pendente"
-          }
+          value={lastSync?.fetched_at ? statusLabel(ageHours) : "Pendente"}
           icon={DollarSign}
-          tone={
-            lastSync?.fetched_at ? statusTone(ageHours) : "default"
-          }
+          tone={lastSync?.fetched_at ? statusTone(ageHours) : "default"}
           hint="OK se <24h, Crítico se >48h."
         />
       </div>
 
       <section className="mb-8">
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">
-          Snapshot atual do mercado
+          Cotações manuais (todas as corretoras)
         </h2>
         <DataTable
-          columns={columns}
-          data={latest}
-          rowKey={(q) => `${q.source}|${q.symbol}`}
+          columns={manualColumns}
+          data={manuals}
+          rowKey={(c) => c.id}
           empty={
             <EmptyState
               compact
-              icon={TrendingUp}
-              title="Nenhuma cotação sincronizada ainda"
-              description="O cron sync-cotacoes roda 21:00 UTC dias úteis. Verifique em /admin/automacoes se está agendado e veja /admin/fila-eventos pra falhas."
-              secondaryCta={{ label: "Ver automações", href: "/admin/automacoes" }}
+              icon={Coffee}
+              title="Nenhuma cotação manual ainda"
+              description="Clique em 'Nova cotação manual' acima pra postar a primeira em nome de uma corretora. Ela aparece automaticamente no app do produtor com o nome da corretora."
+              cta={{
+                label: "Cadastrar primeira cotação",
+                href: "/admin/cotacoes/nova",
+              }}
             />
           }
         />
@@ -250,36 +391,25 @@ export default async function CotacoesAdminPage() {
 
       <section>
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">
-          Cotações manuais por fonte
+          Snapshot do mercado (automático — sync-cotacoes)
         </h2>
-        {manualBreakdown.length === 0 ? (
-          <div className="rounded-card border border-slate-200 bg-white shadow-card">
+        <DataTable
+          columns={marketColumns}
+          data={latest}
+          rowKey={(q) => `${q.source}|${q.symbol}`}
+          empty={
             <EmptyState
               compact
-              icon={Coffee}
-              title="Sem cotações manuais"
-              description="Corretoras ainda não postaram cotações na praça delas."
+              icon={TrendingUp}
+              title="Nenhuma cotação sincronizada ainda"
+              description="O cron sync-cotacoes roda 21:00 UTC dias úteis. Verifique em /admin/automacoes se está agendado."
+              secondaryCta={{
+                label: "Ver automações",
+                href: "/admin/automacoes",
+              }}
             />
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {manualBreakdown
-              .sort((a, b) => b.total - a.total)
-              .map((m) => (
-                <div
-                  key={m.source}
-                  className="rounded-card border border-slate-200 bg-white p-4 shadow-card"
-                >
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                    {m.source || "—"}
-                  </p>
-                  <p className="mt-2 text-2xl font-semibold text-milsaca-preto">
-                    {m.total}
-                  </p>
-                </div>
-              ))}
-          </div>
-        )}
+          }
+        />
       </section>
     </>
   );
