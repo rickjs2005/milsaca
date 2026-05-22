@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Redirect, router } from "expo-router";
@@ -7,6 +7,17 @@ import { useAuth } from "../src/lib/auth";
 
 export default function HomeScreen() {
   const { status } = useAuth();
+
+  // Enquanto AuthProvider restaura sessão persistida (Keychain + refresh
+  // token), evita mostrar a hero/CTA. Senão o usuário tenta clicar Entrar
+  // antes da sessão velha chegar.
+  if (status === "loading") {
+    return (
+      <View className="flex-1 items-center justify-center bg-milsaca-verde">
+        <ActivityIndicator color="#C9A961" />
+      </View>
+    );
+  }
 
   if (status === "signed_in") {
     return <Redirect href="/(painel)/inicio" />;
