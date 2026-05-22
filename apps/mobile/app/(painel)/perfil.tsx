@@ -340,6 +340,69 @@ export default function PerfilScreen() {
                 </Text>
               ) : null}
 
+              {/* Status da conta (sempre visível pra ajudar o user a saber
+                  quais papéis tem; aparece dropdown "Trocar painel" se 2+) */}
+              <View className="mt-4 rounded-2xl border border-milsaca-dourado/20 bg-milsaca-verde-claro p-5">
+                <Text
+                  className="text-xs text-milsaca-dourado"
+                  style={{ fontFamily: "Inter_500Medium" }}
+                >
+                  PAPÉIS DA CONTA
+                </Text>
+                <View className="mt-2 flex-row flex-wrap gap-2">
+                  {(profile?.roles ?? []).map((r) => (
+                    <View
+                      key={r}
+                      className={
+                        r === activeRole
+                          ? "rounded-full bg-milsaca-dourado px-3 py-1"
+                          : "rounded-full border border-milsaca-dourado/30 px-3 py-1"
+                      }
+                    >
+                      <Text
+                        className={
+                          r === activeRole
+                            ? "text-xs text-milsaca-verde"
+                            : "text-xs text-milsaca-cream"
+                        }
+                        style={{ fontFamily: "Inter_600SemiBold" }}
+                      >
+                        {r === "produtor"
+                          ? "Produtor"
+                          : r === "corretora"
+                            ? "Corretora"
+                            : r}
+                        {r === activeRole ? " · ativo" : ""}
+                      </Text>
+                    </View>
+                  ))}
+                  {(profile?.roles?.length ?? 0) === 0 ? (
+                    <Text
+                      className="text-xs italic text-milsaca-cream/60"
+                      style={{ fontFamily: "Inter_400Regular" }}
+                    >
+                      Sem papéis definidos
+                    </Text>
+                  ) : null}
+                </View>
+                <Pressable
+                  onPress={async () => {
+                    await reloadProfile();
+                    setSavedMsg("Conta atualizada");
+                    setTimeout(() => setSavedMsg(null), 2500);
+                  }}
+                  className="mt-3 flex-row items-center gap-1.5 self-start active:opacity-60"
+                >
+                  <Ionicons name="refresh" size={12} color="#C9A961" />
+                  <Text
+                    className="text-[11px] text-milsaca-dourado"
+                    style={{ fontFamily: "Inter_500Medium" }}
+                  >
+                    Atualizar
+                  </Text>
+                </Pressable>
+              </View>
+
               {/* Trocar painel */}
               {hasMultiRole ? (
                 <Pressable
