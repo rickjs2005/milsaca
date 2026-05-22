@@ -321,9 +321,51 @@ export async function fetchCepeaOfficial(): Promise<Quote | null> {
 //    por algumas semanas.
 // ---------------------------------------------------------------------------
 export async function fetchCepeaArabica(): Promise<Quote | null> {
-  const url =
-    "https://www.noticiasagricolas.com.br/cotacoes/cafe/indicador-cepea-esalq-cafe-arabica";
-  const res = await fetchWithTimeout(url, {
+  return fetchCepeaPageNoticias({
+    url: "https://www.noticiasagricolas.com.br/cotacoes/cafe/indicador-cepea-esalq-cafe-arabica",
+    symbol: "arabica_bica_corrida_esalq",
+    sanityMin: 800,
+    sanityMax: 5000,
+    // Arábica formato: "1.604,50" (4 dígitos com ponto)
+    pricePattern: /(\d{1,2}\.\d{3},\d{2})/g,
+    // Pula até <tbody>, depois pega o segundo <td> da primeira <tr> (1º é data)
+    tablePattern:
+      /Valor\s+R\$[\s\S]*?<tbody[\s\S]*?<tr[\s\S]*?<td[^>]*>\s*\d{1,2}\/\d{1,2}\/\d{4}\s*<\/td>\s*<td[^>]*>\s*(\d{1,3}(?:\.\d{3})*,\d{2})\s*<\/td>/i,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 6) Conilon CEPEA ES via Notícias Agrícolas (SCRAPING)
+//    Mesmo motor de scraping, URL e faixa de sanidade diferentes (Conilon
+//    custa ~50-60% do Arábica BR).
+// ---------------------------------------------------------------------------
+export async function fetchCepeaConilon(): Promise<Quote | null> {
+  return fetchCepeaPageNoticias({
+    url: "https://www.noticiasagricolas.com.br/cotacoes/cafe/indicador-cepea-esalq-cafe-conillon",
+    symbol: "conilon_es_esalq",
+    sanityMin: 500,
+    sanityMax: 2500,
+    // Conilon pode aparecer como "921,88" (sem ponto de milhar) ou "1.234,56"
+    pricePattern: /(\d{1,3}(?:\.\d{3})*,\d{2})/g,
+    // Pula até <tbody>, depois pega o segundo <td> da primeira <tr> (1º é data)
+    tablePattern:
+      /Valor\s+R\$[\s\S]*?<tbody[\s\S]*?<tr[\s\S]*?<td[^>]*>\s*\d{1,2}\/\d{1,2}\/\d{4}\s*<\/td>\s*<td[^>]*>\s*(\d{1,3}(?:\.\d{3})*,\d{2})\s*<\/td>/i,
+  });
+}
+
+interface CepeaScrapeSpec {
+  url: string;
+  symbol: string;
+  sanityMin: number;
+  sanityMax: number;
+  pricePattern: RegExp;
+  tablePattern: RegExp;
+}
+
+async function fetchCepeaPageNoticias(
+  spec: CepeaScrapeSpec,
+): Promise<Quote | null> {
+  const res = await fetchWithTimeout(spec.url, {
     headers: { "User-Agent": UA, Accept: "text/html" },
     redirect: "follow",
   });
@@ -332,31 +374,34 @@ export async function fetchCepeaArabica(): Promise<Quote | null> {
 
   let priceReais: number | null = null;
 
-  // Nível 1 — tabela estruturada com <th>Valor R$</th><td>1.804,50</td>
-  const tableMatch = html.match(
-    /Valor\s+R\$[\s\S]{0,200}?<td[^>]*>\s*(\d{1,3}(?:\.\d{3})+,\d{2})\s*<\/td>/i,
-  );
+  const tableMatch = html.match(spec.tablePattern);
   if (tableMatch) {
     priceReais = parseFloat(tableMatch[1].replace(/\./g, "").replace(",", "."));
   }
 
-  // Nível 2 — fallback tolerante com sanidade (R$ 500-5000)
-  if (!Number.isFinite(priceReais) || priceReais! < 500 || priceReais! > 5000) {
-    const all = html.match(/(\d{1,2}\.\d{3},\d{2})/g) ?? [];
+  if (
+    !Number.isFinite(priceReais) ||
+    priceReais! < spec.sanityMin ||
+    priceReais! > spec.sanityMax
+  ) {
+    const all = html.match(spec.pricePattern) ?? [];
     for (const m of all) {
       const v = parseFloat(m.replace(/\./g, "").replace(",", "."));
-      if (v >= 500 && v <= 5000) {
+      if (v >= spec.sanityMin && v <= spec.sanityMax) {
         priceReais = v;
         break;
       }
     }
   }
 
-  if (!Number.isFinite(priceReais) || priceReais! < 500 || priceReais! > 5000) {
+  if (
+    !Number.isFinite(priceReais) ||
+    priceReais! < spec.sanityMin ||
+    priceReais! > spec.sanityMax
+  ) {
     return null;
   }
 
-  // Variação best-effort
   const varMatch =
     html.match(/\(\s*([+-]?\d+[.,]\d+)\s*%\s*\)/) ??
     html.match(/Var[^<]*?([+-]?\d+[.,]\d+)\s*%/i);
@@ -367,11 +412,11 @@ export async function fetchCepeaArabica(): Promise<Quote | null> {
 
   return {
     source: "cepea_esalq",
-    symbol: "arabica_bica_corrida_esalq",
+    symbol: spec.symbol,
     price_brl_cents: Math.round(priceReais! * 100),
     variation_pct: variation,
     quoted_at: new Date().toISOString(),
-    source_url: url,
+    source_url: spec.url,
     meta: {
       provider_chain: "noticias_agricolas",
       unit: "BRL/saca-60kg",

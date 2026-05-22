@@ -23,15 +23,23 @@ type MarketQuote = {
   source_url: string | null;
 };
 
+type FormatCtx = { usdBrl: number | null };
+
 type Indicador = {
   key: string;
   label: string;
   sublabel: string;
   source: string;
   symbol: string;
-  formatPrice: (q: MarketQuote) => string | null;
+  format: (
+    q: MarketQuote,
+    ctx: FormatCtx,
+  ) => { primary: string; secondary?: string } | null;
   externalUrl?: string;
 };
+
+// 1 saca de 60kg = 132.27735731 libras (1 lb = 0.45359237 kg)
+const LB_PER_SACA_60KG = 132.27735731;
 
 const BRL = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -39,10 +47,10 @@ const BRL = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 2,
 });
 
-const USD = new Intl.NumberFormat("en-US", {
+const BRL_PTAX = new Intl.NumberFormat("pt-BR", {
   style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 2,
+  currency: "BRL",
+  maximumFractionDigits: 4,
 });
 
 const INDICADORES: Indicador[] = [
@@ -52,10 +60,25 @@ const INDICADORES: Indicador[] = [
     sublabel: "Bica corrida, R$/saca 60kg",
     source: "cepea_esalq",
     symbol: "arabica_bica_corrida_esalq",
-    formatPrice: (q) =>
-      q.price_brl_cents != null ? BRL.format(q.price_brl_cents / 100) : null,
+    format: (q) =>
+      q.price_brl_cents != null
+        ? { primary: BRL.format(q.price_brl_cents / 100) }
+        : null,
     externalUrl:
       "https://www.cepea.esalq.usp.br/br/indicador/cafe.aspx",
+  },
+  {
+    key: "cepea-conilon",
+    label: "Conilon CEPEA",
+    sublabel: "Espírito Santo, R$/saca 60kg",
+    source: "cepea_esalq",
+    symbol: "conilon_es_esalq",
+    format: (q) =>
+      q.price_brl_cents != null
+        ? { primary: BRL.format(q.price_brl_cents / 100) }
+        : null,
+    externalUrl:
+      "https://www.noticiasagricolas.com.br/cotacoes/cafe/indicador-cepea-esalq-cafe-conillon",
   },
   {
     key: "ice-arabica",
@@ -63,23 +86,15 @@ const INDICADORES: Indicador[] = [
     sublabel: "Arábica, US¢/lb",
     source: "ice_us",
     symbol: "KC.F",
-    formatPrice: (q) =>
-      q.price_usd_cents != null
-        ? `${(q.price_usd_cents / 100).toFixed(2)} ¢/lb`
-        : null,
+    format: (q, ctx) => {
+      if (q.price_usd_cents == null) return null;
+      const centsPerLb = q.price_usd_cents / 100;
+      const primary = `${centsPerLb.toFixed(2)} ¢/lb`;
+      if (ctx.usdBrl == null) return { primary };
+      const brlPerSaca = (centsPerLb / 100) * LB_PER_SACA_60KG * ctx.usdBrl;
+      return { primary, secondary: `≈ ${BRL.format(brlPerSaca)}/saca` };
+    },
     externalUrl: "https://finance.yahoo.com/quote/KC=F/",
-  },
-  {
-    key: "robusta",
-    label: "Robusta (London)",
-    sublabel: "ICE RC.F, USD/ton",
-    source: "ice_eu",
-    symbol: "RC.F",
-    formatPrice: (q) =>
-      q.price_usd_cents != null
-        ? USD.format(q.price_usd_cents / 100) + "/ton"
-        : null,
-    externalUrl: "https://stooq.com/q/?s=rc.f",
   },
   {
     key: "ptax",
@@ -87,9 +102,9 @@ const INDICADORES: Indicador[] = [
     sublabel: "PTAX venda, BCB",
     source: "bcb_ptax",
     symbol: "USDBRL",
-    formatPrice: (q) =>
+    format: (q) =>
       q.price_brl_cents != null
-        ? `R$ ${(q.price_brl_cents / 100).toFixed(4)}`
+        ? { primary: BRL_PTAX.format(q.price_brl_cents / 100) }
         : null,
     externalUrl:
       "https://www.bcb.gov.br/estabilidadefinanceira/historicocotacoes",
@@ -121,9 +136,14 @@ export async function IndicadoresLive() {
     rows.map((r) => [`${r.source}/${r.symbol}`, r] as const),
   );
 
-  // Se nenhum dado existe ainda, esconde o bloco em vez de mostrar 4 cards vazios
+  // Se nenhum dado existe ainda, esconde o bloco em vez de mostrar cards vazios
   const haveAny = INDICADORES.some((i) => byKey.has(`${i.source}/${i.symbol}`));
   if (!haveAny) return null;
+
+  const ptax = byKey.get("bcb_ptax/USDBRL");
+  const usdBrl =
+    ptax?.price_brl_cents != null ? ptax.price_brl_cents / 100 : null;
+  const ctx: FormatCtx = { usdBrl };
 
   return (
     <section className="space-y-3">
@@ -139,6 +159,7 @@ export async function IndicadoresLive() {
               key={ind.key}
               indicador={ind}
               quote={q ?? null}
+              ctx={ctx}
             />
           );
         })}
@@ -150,9 +171,11 @@ export async function IndicadoresLive() {
 function IndicadorCard({
   indicador,
   quote,
+  ctx,
 }: {
   indicador: Indicador;
   quote: MarketQuote | null;
+  ctx: FormatCtx;
 }) {
   if (!quote) {
     return (
@@ -171,7 +194,7 @@ function IndicadorCard({
     );
   }
 
-  const price = indicador.formatPrice(quote);
+  const formatted = indicador.format(quote, ctx);
   const variation = quote.variation_pct != null ? Number(quote.variation_pct) : null;
   const up = variation != null && variation >= 0;
   const Arrow = up ? ArrowUpRight : ArrowDownRight;
@@ -204,8 +227,13 @@ function IndicadorCard({
       </CardHeader>
       <CardContent>
         <p className="text-2xl font-semibold tracking-tight text-milsaca-verde">
-          {price ?? "—"}
+          {formatted?.primary ?? "—"}
         </p>
+        {formatted?.secondary ? (
+          <p className="mt-0.5 text-xs font-medium text-milsaca-dourado">
+            {formatted.secondary}
+          </p>
+        ) : null}
         <p className="mt-1 flex items-center gap-2 text-[11px] text-milsaca-verde-claro/80">
           <span>atualizado há {fmtAge(quote.fetched_at)}</span>
           {stale ? (

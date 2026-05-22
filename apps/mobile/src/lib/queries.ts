@@ -184,13 +184,19 @@ const MARKET_INDICATORS_MOBILE = [
     source: "cepea_esalq",
     symbol: "arabica_bica_corrida_esalq",
     label: "Arábica CEPEA",
-    sublabel: "Bica corrida · 60kg",
+    sublabel: "Bica corrida · R$/saca 60kg",
+  },
+  {
+    source: "cepea_esalq",
+    symbol: "conilon_es_esalq",
+    label: "Conilon CEPEA",
+    sublabel: "Espírito Santo · R$/saca 60kg",
   },
   {
     source: "ice_us",
     symbol: "KC.F",
-    label: "Arábica NY",
-    sublabel: "ICE · US¢/lb",
+    label: "Arábica NY (KC)",
+    sublabel: "ICE futuros · US¢/lb",
   },
   {
     source: "bcb_ptax",

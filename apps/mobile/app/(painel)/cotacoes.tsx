@@ -32,11 +32,15 @@ const BRL = new Intl.NumberFormat("pt-BR", {
   currency: "BRL",
   minimumFractionDigits: 2,
 });
-const USD = new Intl.NumberFormat("en-US", {
+const BRL_PTAX = new Intl.NumberFormat("pt-BR", {
   style: "currency",
-  currency: "USD",
-  minimumFractionDigits: 2,
+  currency: "BRL",
+  minimumFractionDigits: 4,
+  maximumFractionDigits: 4,
 });
+
+// 1 saca de 60kg = 132.27735731 libras
+const LB_PER_SACA_60KG = 132.27735731;
 
 const SPECIES: { value: CoffeeSpecie | "all"; label: string }[] = [
   { value: "all", label: "Todos" },
@@ -118,6 +122,11 @@ export default function CotacoesScreen() {
     );
   }
 
+  const ptax = data.market.find(
+    (m) => m.source === "bcb_ptax" && m.symbol === "USDBRL",
+  );
+  const marketCtx = { usdBrl: ptax?.price ?? null };
+
   return (
     <SafeAreaView className="flex-1 bg-milsaca-cream">
       <ScrollView
@@ -183,19 +192,19 @@ export default function CotacoesScreen() {
               className="text-base text-milsaca-verde"
               style={{ fontFamily: "Inter_600SemiBold" }}
             >
-              Mercado
+              Mercado ({data.market.length})
             </Text>
           </View>
           <View style={{ gap: 8 }}>
             {data.market.map((m) => (
-              <MarketCard key={`${m.source}-${m.symbol}`} m={m} />
+              <MarketCard key={`${m.source}-${m.symbol}`} m={m} ctx={marketCtx} />
             ))}
           </View>
           <Text
             className="text-[10px] text-milsaca-verde-claro/80"
             style={{ fontFamily: "Inter_400Regular" }}
           >
-            Robusta/Conilon de mercado: fonte automática indisponível.
+            Robusta de mercado: fonte automática indisponível.
             Veja cotações manuais das corretoras abaixo.
           </Text>
         </View>
@@ -291,10 +300,38 @@ export default function CotacoesScreen() {
   );
 }
 
-function MarketCard({ m }: { m: MarketIndicator }) {
-  const fmtFn = m.currency === "USD" ? USD : BRL;
+function MarketCard({
+  m,
+  ctx,
+}: {
+  m: MarketIndicator;
+  ctx: { usdBrl: number | null };
+}) {
   const up = m.variation_pct != null && m.variation_pct > 0.001;
   const down = m.variation_pct != null && m.variation_pct < -0.001;
+
+  // NY KC (US¢/lb) com conversão pra R$/saca usando PTAX atual
+  const isKC =
+    m.source === "ice_us" && m.symbol === "KC.F" && m.price != null;
+  const isPTAX =
+    m.source === "bcb_ptax" && m.symbol === "USDBRL" && m.price != null;
+
+  let primary: string;
+  let secondary: string | null = null;
+  if (m.price == null) {
+    primary = "—";
+  } else if (isKC) {
+    primary = `${m.price.toFixed(2)} ¢/lb`;
+    if (ctx.usdBrl != null) {
+      const brlPerSaca = (m.price / 100) * LB_PER_SACA_60KG * ctx.usdBrl;
+      secondary = `≈ ${BRL.format(brlPerSaca)}/saca`;
+    }
+  } else if (isPTAX) {
+    primary = BRL_PTAX.format(m.price);
+  } else {
+    primary = BRL.format(m.price);
+  }
+
   return (
     <View
       className={
@@ -330,7 +367,7 @@ function MarketCard({ m }: { m: MarketIndicator }) {
               className="text-xl text-milsaca-verde"
               style={{ fontFamily: "Inter_700Bold" }}
             >
-              {fmtFn.format(m.price)}
+              {primary}
             </Text>
             {m.variation_pct != null ? (
               <Text
@@ -348,6 +385,14 @@ function MarketCard({ m }: { m: MarketIndicator }) {
               </Text>
             ) : null}
           </View>
+          {secondary ? (
+            <Text
+              className="mt-0.5 text-xs text-milsaca-dourado"
+              style={{ fontFamily: "Inter_600SemiBold" }}
+            >
+              {secondary}
+            </Text>
+          ) : null}
           <Text
             className={
               m.stale

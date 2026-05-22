@@ -18,13 +18,20 @@ type MarketQuote = {
   fetched_at: string;
 };
 
+// Conversão NY (US¢/lb) → R$/saca de 60kg.
+// 1 lb = 0.45359237 kg → 60 kg/saca / 0.45359237 = 132.27735731 lb/saca.
+const LB_PER_SACA_60KG = 132.27735731;
+
 type Indicador = {
   key: string;
   label: string;
   sublabel: string;
   source: string;
   symbol: string;
-  formatPrice: (q: MarketQuote) => string | null;
+  format: (q: MarketQuote, ctx: { usdBrl: number | null }) => {
+    primary: string;
+    secondary?: string;
+  } | null;
 };
 
 const BRL = new Intl.NumberFormat("pt-BR", {
@@ -33,10 +40,10 @@ const BRL = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 2,
 });
 
-const USD = new Intl.NumberFormat("en-US", {
+const BRL_PTAX = new Intl.NumberFormat("pt-BR", {
   style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 2,
+  currency: "BRL",
+  maximumFractionDigits: 4,
 });
 
 const INDICADORES: Indicador[] = [
@@ -46,8 +53,21 @@ const INDICADORES: Indicador[] = [
     sublabel: "Bica corrida · R$/saca 60kg",
     source: "cepea_esalq",
     symbol: "arabica_bica_corrida_esalq",
-    formatPrice: (q) =>
-      q.price_brl_cents != null ? BRL.format(q.price_brl_cents / 100) : null,
+    format: (q) =>
+      q.price_brl_cents != null
+        ? { primary: BRL.format(q.price_brl_cents / 100) }
+        : null,
+  },
+  {
+    key: "cepea-conilon",
+    label: "Conilon CEPEA",
+    sublabel: "Espírito Santo · R$/saca 60kg",
+    source: "cepea_esalq",
+    symbol: "conilon_es_esalq",
+    format: (q) =>
+      q.price_brl_cents != null
+        ? { primary: BRL.format(q.price_brl_cents / 100) }
+        : null,
   },
   {
     key: "ice-arabica",
@@ -55,21 +75,15 @@ const INDICADORES: Indicador[] = [
     sublabel: "ICE futuros · US¢/lb",
     source: "ice_us",
     symbol: "KC.F",
-    formatPrice: (q) =>
-      q.price_usd_cents != null
-        ? `${(q.price_usd_cents / 100).toFixed(2)} ¢/lb`
-        : null,
-  },
-  {
-    key: "robusta",
-    label: "Robusta",
-    sublabel: "London RC.F · USD/ton",
-    source: "ice_eu",
-    symbol: "RC.F",
-    formatPrice: (q) =>
-      q.price_usd_cents != null
-        ? USD.format(q.price_usd_cents / 100) + "/t"
-        : null,
+    format: (q, ctx) => {
+      if (q.price_usd_cents == null) return null;
+      const centsPerLb = q.price_usd_cents / 100;
+      const primary = `${centsPerLb.toFixed(2)} ¢/lb`;
+      if (ctx.usdBrl == null) return { primary };
+      const brlPerSaca =
+        (centsPerLb / 100) * LB_PER_SACA_60KG * ctx.usdBrl;
+      return { primary, secondary: `≈ ${BRL.format(brlPerSaca)}/saca` };
+    },
   },
   {
     key: "ptax",
@@ -77,9 +91,9 @@ const INDICADORES: Indicador[] = [
     sublabel: "PTAX venda · BCB",
     source: "bcb_ptax",
     symbol: "USDBRL",
-    formatPrice: (q) =>
+    format: (q) =>
       q.price_brl_cents != null
-        ? `R$ ${(q.price_brl_cents / 100).toFixed(4)}`
+        ? { primary: BRL_PTAX.format(q.price_brl_cents / 100) }
         : null,
   },
 ];
@@ -142,11 +156,10 @@ export function IndicadoresLive() {
     );
   }
 
-  // Esconde tudo se nenhum dado existe ainda
-  const haveAny = INDICADORES.some((i) =>
-    quotes.has(`${i.source}/${i.symbol}`),
-  );
-  if (!haveAny) return null;
+  // PTAX usado pra conversão de NY → R$/saca
+  const ptax = quotes.get("bcb_ptax/USDBRL");
+  const usdBrl =
+    ptax?.price_brl_cents != null ? ptax.price_brl_cents / 100 : null;
 
   return (
     <View className="mt-6">
@@ -159,7 +172,14 @@ export function IndicadoresLive() {
       <View className="mt-2 gap-3">
         {INDICADORES.map((ind) => {
           const q = quotes.get(`${ind.source}/${ind.symbol}`);
-          return <IndicadorCard key={ind.key} indicador={ind} quote={q ?? null} />;
+          return (
+            <IndicadorCard
+              key={ind.key}
+              indicador={ind}
+              quote={q ?? null}
+              usdBrl={usdBrl}
+            />
+          );
         })}
       </View>
     </View>
@@ -169,9 +189,11 @@ export function IndicadoresLive() {
 function IndicadorCard({
   indicador,
   quote,
+  usdBrl,
 }: {
   indicador: Indicador;
   quote: MarketQuote | null;
+  usdBrl: number | null;
 }) {
   if (!quote) {
     return (
@@ -183,16 +205,22 @@ function IndicadorCard({
           {indicador.label}
         </Text>
         <Text
-          className="mt-1 text-xs text-milsaca-cream/50"
+          className="mt-0.5 text-[11px] text-milsaca-cream/50"
           style={{ fontFamily: "Inter_400Regular" }}
         >
-          Sem dado ainda
+          {indicador.sublabel}
+        </Text>
+        <Text
+          className="mt-2 text-xs italic text-milsaca-cream/60"
+          style={{ fontFamily: "Inter_400Regular" }}
+        >
+          Aguardando primeira sincronização
         </Text>
       </View>
     );
   }
 
-  const price = indicador.formatPrice(quote);
+  const formatted = indicador.format(quote, { usdBrl });
   const variation =
     quote.variation_pct != null ? Number(quote.variation_pct) : null;
   const up = variation != null && variation >= 0;
@@ -238,8 +266,16 @@ function IndicadorCard({
         className="mt-2 text-2xl text-milsaca-cream"
         style={{ fontFamily: "Inter_700Bold" }}
       >
-        {price ?? "—"}
+        {formatted?.primary ?? "—"}
       </Text>
+      {formatted?.secondary ? (
+        <Text
+          className="mt-0.5 text-xs text-milsaca-dourado"
+          style={{ fontFamily: "Inter_500Medium" }}
+        >
+          {formatted.secondary}
+        </Text>
+      ) : null}
       <Text
         className="mt-0.5 text-[10px] text-milsaca-cream/50"
         style={{ fontFamily: "Inter_400Regular" }}
