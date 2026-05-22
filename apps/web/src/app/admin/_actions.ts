@@ -123,6 +123,83 @@ export async function updateCorretora(formData: FormData) {
   redirect(`/admin/corretoras/${id}?saved=1`);
 }
 
+export async function gerarConviteCorretora(formData: FormData) {
+  const actor = await requireAppAdmin();
+
+  const corretoraIdParsed = uuidSchema.safeParse(
+    String(formData.get("corretora_id") ?? "").trim(),
+  );
+  if (!corretoraIdParsed.success) redirect("/admin/corretoras");
+  const corretoraId = corretoraIdParsed.data;
+
+  const email = String(formData.get("email") ?? "").trim().toLowerCase() || null;
+
+  const supabase = await createClient();
+  const { data: invite, error } = await supabase
+    .from("corretora_invites")
+    .insert({
+      corretora_id: corretoraId,
+      email,
+      created_by: actor.id,
+    })
+    .select("token, expires_at")
+    .single();
+
+  if (error || !invite) {
+    redirect(
+      `/admin/corretoras/${corretoraId}?error=${encodeURIComponent(friendlyPostgresError(error))}`,
+    );
+  }
+
+  await supabase.from("audit_log").insert({
+    actor_id: actor.id,
+    corretora_id: corretoraId,
+    action: "create_corretora_invite",
+    entity: "corretora_invite",
+    entity_id: invite.token,
+    payload: { email, expires_at: invite.expires_at },
+  });
+
+  revalidatePath(`/admin/corretoras/${corretoraId}`);
+  redirect(`/admin/corretoras/${corretoraId}?invite_token=${invite.token}`);
+}
+
+export async function revogarConviteCorretora(formData: FormData) {
+  const actor = await requireAppAdmin();
+
+  const tokenParsed = uuidSchema.safeParse(
+    String(formData.get("token") ?? "").trim(),
+  );
+  const corretoraIdParsed = uuidSchema.safeParse(
+    String(formData.get("corretora_id") ?? "").trim(),
+  );
+  if (!tokenParsed.success || !corretoraIdParsed.success) {
+    redirect("/admin/corretoras");
+  }
+  const token = tokenParsed.data;
+  const corretoraId = corretoraIdParsed.data;
+
+  const supabase = await createClient();
+  // Marcar como expirado em vez de deletar pra manter audit trail.
+  await supabase
+    .from("corretora_invites")
+    .update({ expires_at: new Date(Date.now() - 1000).toISOString() })
+    .eq("token", token)
+    .is("used_at", null);
+
+  await supabase.from("audit_log").insert({
+    actor_id: actor.id,
+    corretora_id: corretoraId,
+    action: "revoke_corretora_invite",
+    entity: "corretora_invite",
+    entity_id: token,
+    payload: {},
+  });
+
+  revalidatePath(`/admin/corretoras/${corretoraId}`);
+  redirect(`/admin/corretoras/${corretoraId}?ok=Convite%20revogado`);
+}
+
 export async function toggleCorretoraVerified(formData: FormData) {
   const actor = await requireAppAdmin();
 
