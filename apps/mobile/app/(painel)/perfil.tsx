@@ -55,7 +55,6 @@ export default function PerfilScreen() {
 
   const isProdutor = activeRole === "produtor";
   const isCorretora = activeRole === "corretora";
-  const hasMultiRole = (profile?.roles?.length ?? 0) > 1;
 
   const load = useCallback(async () => {
     if (!profile) return;
@@ -340,8 +339,7 @@ export default function PerfilScreen() {
                 </Text>
               ) : null}
 
-              {/* Status da conta (sempre visível pra ajudar o user a saber
-                  quais papéis tem; aparece dropdown "Trocar painel" se 2+) */}
+              {/* Papéis da conta — chips clicáveis pra trocar painel direto */}
               <View className="mt-4 rounded-2xl border border-milsaca-dourado/20 bg-milsaca-verde-claro p-5">
                 <Text
                   className="text-xs text-milsaca-dourado"
@@ -349,14 +347,21 @@ export default function PerfilScreen() {
                 >
                   PAPÉIS DA CONTA
                 </Text>
+                <Text
+                  className="mt-1 text-[11px] text-milsaca-cream/60"
+                  style={{ fontFamily: "Inter_400Regular" }}
+                >
+                  Toque pra ativar
+                </Text>
                 <View className="mt-2 flex-row flex-wrap gap-2">
                   {(profile?.roles ?? []).map((r) => (
-                    <View
+                    <Pressable
                       key={r}
+                      onPress={() => setActiveRole(r)}
                       className={
                         r === activeRole
-                          ? "rounded-full bg-milsaca-dourado px-3 py-1"
-                          : "rounded-full border border-milsaca-dourado/30 px-3 py-1"
+                          ? "rounded-full bg-milsaca-dourado px-3 py-1.5 active:opacity-80"
+                          : "rounded-full border border-milsaca-dourado/40 px-3 py-1.5 active:opacity-60"
                       }
                     >
                       <Text
@@ -374,7 +379,7 @@ export default function PerfilScreen() {
                             : r}
                         {r === activeRole ? " · ativo" : ""}
                       </Text>
-                    </View>
+                    </Pressable>
                   ))}
                   {(profile?.roles?.length ?? 0) === 0 ? (
                     <Text
@@ -402,26 +407,6 @@ export default function PerfilScreen() {
                   </Text>
                 </Pressable>
               </View>
-
-              {/* Trocar painel */}
-              {hasMultiRole ? (
-                <Pressable
-                  onPress={async () => {
-                    await setActiveRole(
-                      isProdutor ? "corretora" : "produtor",
-                    );
-                  }}
-                  className="mt-4 items-center rounded-2xl border border-milsaca-dourado/30 py-3 active:opacity-70"
-                >
-                  <Text
-                    className="text-sm text-milsaca-dourado"
-                    style={{ fontFamily: "Inter_500Medium" }}
-                  >
-                    Trocar para painel{" "}
-                    {isProdutor ? "da corretora" : "do produtor"}
-                  </Text>
-                </Pressable>
-              ) : null}
 
               {/* Sair */}
               <Pressable
