@@ -2,6 +2,8 @@
 // Paridade com /painel/produtor/cotacoes do web.
 
 import { Ionicons } from "@expo/vector-icons";
+import * as Linking from "expo-linking";
+import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -18,9 +20,11 @@ import { useAuth } from "../../src/lib/auth";
 import {
   loadProdutorCotacoesMobile,
   type CotacaoCard,
+  type FavoritaSemCotacao,
   type MarketIndicator,
   type ProdutorCotacoesMobile,
 } from "../../src/lib/queries";
+import { buildWhatsAppUrl } from "../../src/lib/whatsapp";
 import type { CoffeeSpecie } from "@milsaca/types";
 
 const BRL = new Intl.NumberFormat("pt-BR", {
@@ -77,6 +81,7 @@ function timeAgo(iso: string): string {
 
 export default function CotacoesScreen() {
   const { profile } = useAuth();
+  const produtorNome = profile?.full_name ?? null;
   const [data, setData] = useState<ProdutorCotacoesMobile | null>(null);
   const [filter, setFilter] = useState<CoffeeSpecie | "all">("all");
   const [refreshing, setRefreshing] = useState(false);
@@ -204,13 +209,21 @@ export default function CotacoesScreen() {
               style={{ fontFamily: "Inter_600SemiBold" }}
             >
               Minhas corretoras
-              {data.minhasCorretoras.length > 0
-                ? ` (${data.minhasCorretoras.length})`
+              {data.minhasCorretoras.length + data.favoritasSemCotacao.length >
+              0
+                ? ` (${
+                    data.minhasCorretoras.length +
+                    data.favoritasSemCotacao.length
+                  })`
                 : ""}
             </Text>
           </View>
-          {data.minhasCorretoras.length === 0 ? (
-            <View className="items-center gap-2 rounded-2xl border border-milsaca-dourado/30 bg-milsaca-dourado/5 p-6">
+          {data.minhasCorretoras.length === 0 &&
+          data.favoritasSemCotacao.length === 0 ? (
+            <Pressable
+              onPress={() => router.push("/(painel)/corretoras")}
+              className="items-center gap-2 rounded-2xl border border-milsaca-dourado/30 bg-milsaca-dourado/5 p-6 active:opacity-80"
+            >
               <Ionicons name="star-outline" size={28} color="#C9A961" />
               <Text
                 className="text-sm text-milsaca-verde"
@@ -222,14 +235,20 @@ export default function CotacoesScreen() {
                 className="text-center text-xs text-milsaca-verde-claro"
                 style={{ fontFamily: "Inter_400Regular" }}
               >
-                Favorite uma corretora na aba Corretoras pra ver as
-                cotações dela aqui em destaque.
+                Toque aqui pra abrir o catálogo e favoritar uma corretora.
               </Text>
-            </View>
+            </Pressable>
           ) : (
             <View style={{ gap: 12 }}>
               {data.minhasCorretoras.map((c) => (
                 <CotacaoCardView key={c.key} c={c} accent />
+              ))}
+              {data.favoritasSemCotacao.map((c) => (
+                <FavoritaSemCotacaoCard
+                  key={c.id}
+                  c={c}
+                  produtorNome={produtorNome}
+                />
               ))}
             </View>
           )}
@@ -450,6 +469,81 @@ function DemoBadgeMobile() {
       >
         Modo Demonstração — cotações podem ser dados de exemplo.
       </Text>
+    </View>
+  );
+}
+
+function FavoritaSemCotacaoCard({
+  c,
+  produtorNome,
+}: {
+  c: FavoritaSemCotacao;
+  produtorNome: string | null;
+}) {
+  const local = [c.city, c.state].filter(Boolean).join(" / ");
+  const onWhatsApp = () => {
+    const url = buildWhatsAppUrl(
+      c.phone,
+      `Oi! Sou ${produtorNome ?? "produtor"} e te favoritei no Milsaca. Pode me passar a cotação atual?`,
+    );
+    if (url) Linking.openURL(url).catch(() => undefined);
+  };
+
+  return (
+    <View className="rounded-2xl border border-milsaca-dourado/40 bg-milsaca-dourado/5 p-4">
+      <View className="flex-row items-start gap-3">
+        <View className="h-10 w-10 items-center justify-center rounded-full bg-milsaca-dourado/25">
+          <Ionicons name="star" size={18} color="#C9A961" />
+        </View>
+        <View className="min-w-0 flex-1">
+          <View className="flex-row flex-wrap items-center gap-x-2">
+            <Text
+              className="text-base text-milsaca-verde"
+              style={{ fontFamily: "Inter_700Bold" }}
+            >
+              {c.name}
+            </Text>
+            {c.verified ? (
+              <View className="rounded-full bg-emerald-100 px-2 py-0.5">
+                <Text
+                  className="text-[10px] text-emerald-800"
+                  style={{ fontFamily: "Inter_500Medium" }}
+                >
+                  Verificada
+                </Text>
+              </View>
+            ) : null}
+          </View>
+          {local ? (
+            <Text
+              className="mt-0.5 text-[11px] text-milsaca-verde-claro"
+              style={{ fontFamily: "Inter_400Regular" }}
+            >
+              {local}
+            </Text>
+          ) : null}
+          <Text
+            className="mt-2 text-xs italic text-milsaca-verde-claro"
+            style={{ fontFamily: "Inter_400Regular" }}
+          >
+            Aguardando cotação publicada
+          </Text>
+        </View>
+      </View>
+      {c.phone ? (
+        <Pressable
+          onPress={onWhatsApp}
+          className="mt-3 flex-row items-center justify-center gap-2 rounded-xl bg-milsaca-dourado py-2.5 active:opacity-80"
+        >
+          <Ionicons name="logo-whatsapp" size={14} color="#2D3A2E" />
+          <Text
+            className="text-xs text-milsaca-verde"
+            style={{ fontFamily: "Inter_600SemiBold" }}
+          >
+            Pedir cotação por WhatsApp
+          </Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }

@@ -60,9 +60,19 @@ export interface MarketIndicator {
   stale: boolean;
 }
 
+export interface FavoritaSemCotacao {
+  id: string;
+  name: string;
+  city: string | null;
+  state: string | null;
+  phone: string | null;
+  verified: boolean;
+}
+
 export interface ProdutorCotacoesMobile {
   market: MarketIndicator[];
   minhasCorretoras: CotacaoCard[];
+  favoritasSemCotacao: FavoritaSemCotacao[];
   outrasPracas: CotacaoCard[];
 }
 
@@ -311,6 +321,44 @@ export async function loadProdutorCotacoesMobile(
     else outrasPracas.push(c);
   }
 
+  // Favoritas que não têm nenhuma cotação ativa — ainda mostradas em
+  // destaque pro produtor saber que a relação tá criada e poder falar
+  // por WhatsApp.
+  const corretorasComCotacao = new Set(
+    minhasCorretoras
+      .map((c) => c.corretora_id)
+      .filter((id): id is string => !!id),
+  );
+  const favoritasSemCotacao: FavoritaSemCotacao[] = [];
+  const favoritasSemCotacaoIds = [...fav].filter(
+    (id) => !corretorasComCotacao.has(id),
+  );
+  if (favoritasSemCotacaoIds.length > 0) {
+    const { data: favCorretoras } = await supabase
+      .from("corretoras_publicas")
+      .select("id, name, city, state, phone, verified")
+      .in("id", favoritasSemCotacaoIds);
+    for (const row of (favCorretoras ?? []) as {
+      id: string | null;
+      name: string | null;
+      city: string | null;
+      state: string | null;
+      phone: string | null;
+      verified: boolean | null;
+    }[]) {
+      if (!row.id || !row.name) continue;
+      favoritasSemCotacao.push({
+        id: row.id,
+        name: row.name,
+        city: row.city,
+        state: row.state,
+        phone: row.phone,
+        verified: row.verified ?? false,
+      });
+    }
+    favoritasSemCotacao.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  }
+
   // Mercado
   const { data: marketRows } = await supabase
     .from("market_quotes")
@@ -371,7 +419,7 @@ export async function loadProdutorCotacoesMobile(
     };
   });
 
-  return { market, minhasCorretoras, outrasPracas };
+  return { market, minhasCorretoras, favoritasSemCotacao, outrasPracas };
 }
 
 // ----------------------------------------------------------------- //
