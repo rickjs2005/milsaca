@@ -1,157 +1,140 @@
 import Link from "next/link";
-import { Plus, Package } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { listLotes } from "./_lib/queries";
-import type { Lote } from "@milsaca/types";
+import { redirect } from "next/navigation";
+import {
+  CheckCircle2,
+  Coffee,
+  Package,
+  Plus,
+  ShoppingBag,
+} from "lucide-react";
+import { KpiCard } from "@/components/kpi-card";
+import { getProfile } from "@/lib/auth";
+import { createClient } from "@milsaca/db/web/server";
+import {
+  listLotes,
+  loadCotacoesRef,
+  loadLotesKpis,
+  LOTE_STATUS_ORDER,
+} from "./_lib/queries";
+import type { LoteStatus } from "./_lib/lote-meta";
+import { LotesGrid } from "./_components/lotes-grid";
 
-export const metadata = { title: "Lotes — Painel da corretora" };
+export const metadata = { title: "Lotes de café — Painel da corretora" };
 
-const SPECIE_LABEL: Record<"arabica" | "conillon", string> = {
-  arabica: "Arábica",
-  conillon: "Conillón",
-};
+type SearchParams = Promise<{
+  status?: string;
+  specie?: string;
+  safra?: string;
+}>;
 
-const STATUS_LABEL: Record<Lote["status"], string> = {
-  rascunho: "Rascunho",
-  aguardando_classificacao: "Aguardando",
-  classificado: "Classificado",
-  fora_de_tipo: "Fora de tipo",
-  rebeneficiar: "Rebeneficiar",
-  vendido: "Vendido",
-  arquivado: "Arquivado",
-};
+function isLoteStatus(v: string | undefined): v is LoteStatus {
+  return !!v && (LOTE_STATUS_ORDER as readonly string[]).includes(v);
+}
 
-const STATUS_COLOR: Record<Lote["status"], string> = {
-  rascunho: "bg-slate-200 text-slate-700",
-  aguardando_classificacao: "bg-milsaca-dourado/20 text-milsaca-verde",
-  classificado: "bg-emerald-100 text-emerald-800",
-  fora_de_tipo: "bg-rose-100 text-rose-800",
-  rebeneficiar: "bg-amber-100 text-amber-800",
-  vendido: "bg-milsaca-verde text-milsaca-cream",
-  arquivado: "bg-slate-200 text-slate-700",
-};
+function isSpecie(v: string | undefined): v is "arabica" | "conillon" {
+  return v === "arabica" || v === "conillon";
+}
 
-export default async function LotesPage() {
-  const lotes = await listLotes();
+const NUM = new Intl.NumberFormat("pt-BR");
+
+async function loadCorretoraName(corretoraId: string): Promise<string> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("corretoras")
+    .select("name")
+    .eq("id", corretoraId)
+    .maybeSingle<{ name: string | null }>();
+  return data?.name ?? "Milsaca";
+}
+
+export default async function LotesPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const profile = await getProfile();
+  if (!profile?.corretora_id) {
+    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
+  }
+
+  const sp = await searchParams;
+  const status = isLoteStatus(sp.status) ? sp.status : undefined;
+  const specie = isSpecie(sp.specie) ? sp.specie : undefined;
+  const safra = typeof sp.safra === "string" && sp.safra ? sp.safra : undefined;
+
+  const [lotes, cotacoes, kpis, corretoraName] = await Promise.all([
+    listLotes(profile.corretora_id, { status, specie }),
+    loadCotacoesRef(),
+    loadLotesKpis(profile.corretora_id),
+    loadCorretoraName(profile.corretora_id),
+  ]);
+
+  const cotacoesBySpecie = {
+    arabica: cotacoes.find((c) => c.specie === "arabica")?.price ?? null,
+    conillon: cotacoes.find((c) => c.specie === "conillon")?.price ?? null,
+  };
 
   return (
-    <div className="space-y-6">
-      <header className="flex items-start justify-between gap-4">
+    <div className="space-y-8">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
-            Lotes
+            Lotes de café
           </h1>
-          <p className="text-sm text-milsaca-verde-claro">
-            Cafés em classificação ou prontos para negociar.
+          <p className="mt-1 text-sm text-milsaca-verde-claro">
+            Vitrine comercial — compartilhe lotes, acompanhe o ciclo de
+            classificação e mova pra vendido com 1 click.
           </p>
         </div>
-        <Button
-          asChild
-          className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+        <Link
+          href="/painel/corretora/lotes/novo"
+          className="inline-flex h-10 items-center gap-1.5 rounded-md bg-milsaca-cafezal px-4 text-sm font-semibold text-milsaca-cream transition-colors hover:bg-milsaca-folha"
         >
-          <Link href="/painel/corretora/lotes/novo">
-            <Plus className="mr-2 h-4 w-4" />
-            Novo lote
-          </Link>
-        </Button>
+          <Plus className="h-4 w-4" />
+          Cadastrar lote
+        </Link>
       </header>
 
-      {lotes.length === 0 ? (
-        <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
-          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-milsaca-verde/10 text-milsaca-verde">
-              <Package className="h-6 w-6" />
-            </span>
-            <p className="text-sm text-milsaca-verde">
-              Nenhum lote registrado ainda.
-            </p>
-            <p className="text-xs text-milsaca-verde-claro">
-              Cadastre o primeiro lote para começar a classificar.
-            </p>
-            <Button
-              asChild
-              size="sm"
-              className="mt-2 bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
-            >
-              <Link href="/painel/corretora/lotes/novo">Cadastrar lote</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="border-milsaca-cream-escuro">
-          <CardContent className="overflow-x-auto p-0">
-            <table className="w-full text-sm">
-              <thead className="bg-milsaca-cream-escuro/40 text-xs uppercase tracking-wider text-milsaca-verde-claro">
-                <tr>
-                  <th className="px-5 py-3 text-left">Código</th>
-                  <th className="px-5 py-3 text-left">Produtor</th>
-                  <th className="px-5 py-3 text-left">Café</th>
-                  <th className="px-5 py-3 text-right">Sacas</th>
-                  <th className="px-5 py-3 text-left">Tipo</th>
-                  <th className="px-5 py-3 text-left">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-milsaca-cream-escuro">
-                {lotes.map((l) => (
-                  <tr
-                    key={l.id}
-                    className="hover:bg-milsaca-cream-escuro/30"
-                  >
-                    <td className="px-5 py-3">
-                      <Link
-                        href={`/painel/corretora/lotes/${l.id}`}
-                        className="font-medium text-milsaca-verde hover:underline"
-                      >
-                        {l.codigo}
-                      </Link>
-                      <p className="text-xs text-milsaca-verde-claro">
-                        {l.safra ?? "—"}
-                      </p>
-                    </td>
-                    <td className="px-5 py-3 text-milsaca-verde">
-                      {l.produtor}
-                    </td>
-                    <td className="px-5 py-3 text-milsaca-verde">
-                      {SPECIE_LABEL[l.specie]}
-                    </td>
-                    <td className="px-5 py-3 text-right text-milsaca-verde">
-                      {l.peso_sacas
-                        ? Number(l.peso_sacas).toLocaleString("pt-BR")
-                        : "—"}
-                    </td>
-                    <td className="px-5 py-3">
-                      {l.ultimo_tipo ? (
-                        <span
-                          className={
-                            l.ultimo_fora_de_tipo
-                              ? "font-medium text-rose-700"
-                              : "font-medium text-milsaca-verde"
-                          }
-                        >
-                          {l.ultimo_fora_de_tipo
-                            ? "Fora de tipo"
-                            : `Tipo ${l.ultimo_tipo}`}
-                        </span>
-                      ) : (
-                        <span className="text-milsaca-verde-claro">—</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3">
-                      <Badge
-                        className={`${STATUS_COLOR[l.status]} hover:${STATUS_COLOR[l.status]}`}
-                      >
-                        {STATUS_LABEL[l.status]}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
-      )}
+      <section
+        aria-label="Indicadores de lotes"
+        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        <KpiCard
+          label="Sacas disponíveis"
+          value={NUM.format(kpis.sacasDisponiveis)}
+          icon={Coffee}
+          tone="premium"
+          hint="Em lotes ativos (60 kg cada)"
+        />
+        <KpiCard
+          label="Lotes ativos"
+          value={NUM.format(kpis.ativos)}
+          icon={Package}
+          tone="premium"
+          hint="Aguardando ou prontos pra venda"
+        />
+        <KpiCard
+          label="Classificados"
+          value={NUM.format(kpis.classificados)}
+          icon={CheckCircle2}
+          tone="info"
+          hint="Prontos pra compartilhar com compradores"
+        />
+        <KpiCard
+          label="Vendidos no mês"
+          value={NUM.format(kpis.vendidosMes)}
+          icon={ShoppingBag}
+          tone="success"
+          hint="Marcados como vendidos a partir do dia 1"
+        />
+      </section>
+
+      <LotesGrid
+        lotes={lotes}
+        corretoraName={corretoraName}
+        cotacoesBySpecie={cotacoesBySpecie}
+        current={{ status, specie, safra }}
+      />
     </div>
   );
 }

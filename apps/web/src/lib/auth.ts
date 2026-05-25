@@ -98,11 +98,12 @@ export async function isAppAdmin(): Promise<boolean> {
 export async function requireAppAdmin() {
   const user = await getUser();
   if (!user) {
-    redirect("/entrar?redirectTo=%2Fadmin");
+    redirect("/admin/login");
   }
   const ok = await isAppAdmin();
   if (!ok) {
-    redirect("/");
+    redirect("/admin/login?error=" +
+      encodeURIComponent("Esta conta não tem acesso ao admin."));
   }
   return user;
 }

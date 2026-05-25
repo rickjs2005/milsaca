@@ -27,7 +27,7 @@ import {
   REGIAO_LABEL,
   REGIOES_CAFEEIRAS,
   type RegiaoCafeeira,
-} from "@/app/admin/corretoras/_components/regioes";
+} from "@/app/admin/(panel)/corretoras/_components/regioes";
 
 export const metadata = { title: "Corretoras — Painel do produtor" };
 

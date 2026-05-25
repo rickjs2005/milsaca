@@ -1,6 +1,13 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { ArrowLeft, Download, ExternalLink, FileSearch, Plus } from "lucide-react";
+import { notFound, redirect } from "next/navigation";
+import {
+  ArrowLeft,
+  Download,
+  ExternalLink,
+  Eye,
+  FileSearch,
+  Plus,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,6 +19,9 @@ import {
 } from "@/components/ui/card";
 import { createClient } from "@milsaca/db/web/server";
 import type { Lote } from "@milsaca/types";
+import { getProfile } from "@/lib/auth";
+import { listPropostasDoLote } from "../../propostas/_lib/queries";
+import { PropostasBlock } from "../../propostas/_components/propostas-block";
 
 export const metadata = { title: "Detalhe do lote — Milsaca" };
 
@@ -89,11 +99,18 @@ export default async function LoteDetalhePage({
 }: {
   params: Params;
 }) {
+  const profile = await getProfile();
+  if (!profile?.corretora_id) {
+    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
+  }
   const { id } = await params;
   const lote = await loadLote(id);
   if (!lote) notFound();
 
-  const classificacoes = await loadClassificacoes(id);
+  const [classificacoes, propostas] = await Promise.all([
+    loadClassificacoes(id),
+    listPropostasDoLote(profile.corretora_id, id),
+  ]);
   const vigente = classificacoes.find((c) => !c.anulada);
 
   return (
@@ -121,15 +138,32 @@ export default async function LoteDetalhePage({
             {lote.safra ? ` · safra ${lote.safra}` : ""}
           </p>
         </div>
-        <Button
-          asChild
-          className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
-        >
-          <Link href={`/painel/corretora/lotes/${id}/classificar`}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nova classificação
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            asChild
+            variant="outline"
+            className="border-milsaca-cafezal text-milsaca-cafezal hover:bg-milsaca-cafezal hover:text-milsaca-cream"
+          >
+            <Link
+              href={`/lote/${id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              Página pública
+              <ExternalLink className="ml-1 h-3 w-3" />
+            </Link>
+          </Button>
+          <Button
+            asChild
+            className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+          >
+            <Link href={`/painel/corretora/lotes/${id}/classificar`}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nova classificação
+            </Link>
+          </Button>
+        </div>
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2">
@@ -305,6 +339,14 @@ export default async function LoteDetalhePage({
           </Card>
         )}
       </section>
+
+      <PropostasBlock
+        propostas={propostas}
+        loteId={id}
+        defaultBagCount={
+          lote.peso_sacas != null ? Number(lote.peso_sacas) : null
+        }
+      />
     </div>
   );
 }

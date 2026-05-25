@@ -5,7 +5,7 @@ import { createClient } from "@milsaca/db/web/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { loadFunnelStats } from "@/app/admin/leads/_lib/funnel";
+import { loadFunnelStats } from "@/app/admin/(panel)/leads/_lib/funnel";
 
 export const metadata = { title: "Leads WhatsApp — Painel da corretora" };
 

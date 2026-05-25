@@ -8,8 +8,9 @@ import { getProfile, getUser } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { notify } from "@/lib/notify";
 import { requireActiveSubscription } from "../_lib/corretora";
-import type { LeadStatus } from "./_lib/queries";
+import type { LeadStatus, LeadOrigem } from "./_lib/queries";
 import { LEAD_STATUS_ORDER } from "./_lib/queries";
+import { LEAD_ORIGEM_ORDER } from "./_lib/lead-meta";
 
 const LEAD_STATUS_LABEL: Record<LeadStatus, string> = {
   novo: "Nova",
@@ -59,6 +60,15 @@ function isLeadStatus(v: string): v is LeadStatus {
   return (LEAD_STATUS_ORDER as readonly string[]).includes(v);
 }
 
+function parseOrigem(v: FormDataEntryValue | null): LeadOrigem | null {
+  if (v == null) return null;
+  const s = String(v).trim();
+  if (!s) return null;
+  return (LEAD_ORIGEM_ORDER as readonly string[]).includes(s)
+    ? (s as LeadOrigem)
+    : null;
+}
+
 function parseTarget(
   raw: string,
 ): { kind: "produtor" | "contato"; id: string } | null {
@@ -92,6 +102,7 @@ export async function createLead(formData: FormData) {
   const bag_count = parseInteger(formData.get("bag_count"));
   const proposed_price = parseNumber(formData.get("proposed_price"));
   const notes = clean(formData.get("notes"));
+  const origem = parseOrigem(formData.get("origem")) ?? "manual";
 
   const errors: string[] = [];
   if (!target) errors.push("Escolha um produtor ou contato");
@@ -111,6 +122,7 @@ export async function createLead(formData: FormData) {
       produtor_id: t.kind === "produtor" ? t.id : null,
       contato_id: t.kind === "contato" ? t.id : null,
       status: "novo",
+      origem,
       coffee_type,
       bag_count,
       proposed_price,

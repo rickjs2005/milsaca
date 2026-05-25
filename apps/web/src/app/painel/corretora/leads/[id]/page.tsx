@@ -34,6 +34,8 @@ import {
   addLeadComment,
 } from "../_actions";
 import { buildWhatsAppInviteUrl } from "../../produtores/_lib/whatsapp";
+import { listPropostasDoLead } from "../../propostas/_lib/queries";
+import { PropostasBlock } from "../../propostas/_components/propostas-block";
 
 export const metadata = { title: "Lead — Milsaca" };
 
@@ -121,6 +123,8 @@ export default async function LeadDetalhePage({
 
   const lead = await getLead(profile.corretora_id, id);
   if (!lead) notFound();
+
+  const propostas = await listPropostasDoLead(profile.corretora_id, lead.id);
 
   const waUrl = buildWhatsAppInviteUrl({
     phone: lead.produtor_phone,
@@ -306,6 +310,12 @@ export default async function LeadDetalhePage({
               </form>
             </CardContent>
           </Card>
+
+          <PropostasBlock
+            propostas={propostas}
+            leadId={lead.id}
+            defaultBagCount={lead.bag_count}
+          />
 
           <Card className="border-milsaca-cream-escuro">
             <CardHeader>

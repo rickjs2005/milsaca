@@ -281,6 +281,161 @@ export async function loadMixCafe(corretoraId: string): Promise<MixItem[]> {
   ].filter((m) => m.sacas > 0);
 }
 
+/**
+ * Métricas extras pedidas no briefing comercial.
+ *  - leadsNovosMes / convertidosMes: contagens do mês corrente
+ *  - sacasEmNegociacao: soma de bag_count nos leads em_negociacao
+ *  - sacasVendidasMes: soma de bag_count nos contratos com signed_at no mês
+ *  - produtoresAtivos: distinct produtor_id em (leads + lotes + contratos)
+ *  - compradoresAtivos: compradores com flag ativo=true
+ */
+export type AnalyticsExtras = {
+  leadsNovosMes: number;
+  convertidosMes: number;
+  sacasEmNegociacao: number;
+  sacasVendidasMes: number;
+  produtoresAtivos: number;
+  compradoresAtivos: number;
+};
+
+export async function loadAnalyticsExtras(
+  corretoraId: string,
+): Promise<AnalyticsExtras> {
+  const supabase = await createClient();
+  const monthStart = new Date();
+  monthStart.setUTCDate(1);
+  monthStart.setUTCHours(0, 0, 0, 0);
+  const monthIso = monthStart.toISOString();
+
+  const [
+    novosMes,
+    convertidosMes,
+    leadsEmNeg,
+    contratosMes,
+    leadProdutorIds,
+    loteProdutorIds,
+    contratoProdutorIds,
+    compradoresAtivos,
+  ] = await Promise.all([
+    supabase
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .eq("corretora_id", corretoraId)
+      .gte("created_at", monthIso),
+    supabase
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .eq("corretora_id", corretoraId)
+      .eq("status", "convertido")
+      .gte("updated_at", monthIso),
+    supabase
+      .from("leads")
+      .select("bag_count")
+      .eq("corretora_id", corretoraId)
+      .eq("status", "em_negociacao"),
+    supabase
+      .from("contratos")
+      .select("bag_count, signed_at")
+      .eq("corretora_id", corretoraId)
+      .in("status", ["ativo", "finalizado"])
+      .gte("signed_at", monthIso),
+    supabase
+      .from("leads")
+      .select("produtor_id")
+      .eq("corretora_id", corretoraId)
+      .not("produtor_id", "is", null),
+    supabase
+      .from("lotes")
+      .select("produtor_id")
+      .eq("corretora_id", corretoraId)
+      .not("produtor_id", "is", null),
+    supabase
+      .from("contratos")
+      .select("produtor_id")
+      .eq("corretora_id", corretoraId)
+      .not("produtor_id", "is", null),
+    supabase
+      .from("compradores")
+      .select("*", { count: "exact", head: true })
+      .eq("corretora_id", corretoraId)
+      .eq("ativo", true),
+  ]);
+
+  const sacasEmNeg = (
+    (leadsEmNeg.data ?? []) as { bag_count: number | null }[]
+  ).reduce((sum, r) => sum + (r.bag_count ?? 0), 0);
+
+  const sacasVendidasMes = (
+    (contratosMes.data ?? []) as {
+      bag_count: number | null;
+      signed_at: string | null;
+    }[]
+  ).reduce((sum, r) => sum + (r.bag_count ?? 0), 0);
+
+  const produtoresUnicos = new Set<string>();
+  for (const row of [
+    ...(leadProdutorIds.data ?? []),
+    ...(loteProdutorIds.data ?? []),
+    ...(contratoProdutorIds.data ?? []),
+  ] as { produtor_id: string | null }[]) {
+    if (row.produtor_id) produtoresUnicos.add(row.produtor_id);
+  }
+
+  return {
+    leadsNovosMes: novosMes.count ?? 0,
+    convertidosMes: convertidosMes.count ?? 0,
+    sacasEmNegociacao: sacasEmNeg,
+    sacasVendidasMes,
+    produtoresAtivos: produtoresUnicos.size,
+    compradoresAtivos: compradoresAtivos.count ?? 0,
+  };
+}
+
+/**
+ * Distribuição de leads por canal de origem (whatsapp / formulario /
+ * vitrine / manual). Lê direto de `leads.origem` (enum criado na Fase 9d).
+ * Leads legados sem origem entram em "Não informada".
+ *
+ * Retorna `null` se a corretora não tem leads ainda.
+ */
+export type OrigemLeads = {
+  whatsapp: number;
+  formulario: number;
+  vitrine: number;
+  manual: number;
+  semOrigem: number;
+  total: number;
+};
+
+export async function loadOrigemLeads(
+  corretoraId: string,
+): Promise<OrigemLeads | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("leads")
+    .select("origem")
+    .eq("corretora_id", corretoraId);
+
+  const rows = (data ?? []) as { origem: string | null }[];
+  if (rows.length === 0) return null;
+
+  const acc = {
+    whatsapp: 0,
+    formulario: 0,
+    vitrine: 0,
+    manual: 0,
+    semOrigem: 0,
+  };
+  for (const r of rows) {
+    if (r.origem === "whatsapp") acc.whatsapp++;
+    else if (r.origem === "formulario") acc.formulario++;
+    else if (r.origem === "vitrine") acc.vitrine++;
+    else if (r.origem === "manual") acc.manual++;
+    else acc.semOrigem++;
+  }
+  return { ...acc, total: rows.length };
+}
+
 export async function loadTopCompradores(
   corretoraId: string,
   limit = 5,

@@ -1,15 +1,19 @@
 import Link from "next/link";
 import {
-  ArrowUpRight,
   ArrowDownRight,
+  ArrowUpRight,
   AlertTriangle,
   Coffee,
   Handshake,
   TrendingUp as TrendingUpIcon,
-  CheckCircle2,
   FileSignature,
   Truck,
   Wallet,
+  Package,
+  Users,
+  Building2,
+  Coins,
+  ArrowRight,
 } from "lucide-react";
 import {
   Card,
@@ -19,11 +23,22 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { createClient } from "@milsaca/db/web/server";
+import { KpiCard } from "@/components/kpi-card";
+import { IndicadoresLive } from "@/components/indicadores-live";
 import type { LeadStatus } from "@milsaca/types";
 import { getProfile } from "@/lib/auth";
 import { listEntregasHojeEAtrasadas } from "./entregas/_lib/queries";
-import { IndicadoresLive } from "@/components/indicadores-live";
+import {
+  loadDashboardKpis,
+  loadLeadsRecentes,
+  loadCotacoesDashboard,
+  loadAutomationSuggestions,
+  type CotacaoDashboard,
+} from "./_lib/dashboard";
+import { getCorretoraSubscriptionInfo } from "./_lib/corretora";
+import { isProOrAbove } from "./_lib/plan-gate";
+import { AutomationCard } from "./_components/automation-card";
+import { LockedHint } from "./_components/locked-hint";
 
 export const metadata = { title: "Início — Painel da corretora" };
 
@@ -38,256 +53,153 @@ const BRL = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 0,
 });
 
-type Kpi = {
-  label: string;
-  value: number;
-  hint: string;
-  icon: typeof Handshake;
-  isCurrency?: boolean;
-};
-
-type LeadRow = {
-  id: string;
-  produtor: string;
-  bag_count: number | null;
-  coffee_type: string | null;
-  status: LeadStatus;
-  data: string;
-};
-
-type CotacaoCard = {
-  coffee_type: string;
-  price: number;
-  variacao: number | null;
-  source: string | null;
-};
-
-async function loadKpis(corretoraId: string): Promise<Kpi[]> {
-  const supabase = await createClient();
-
-  const monthStart = new Date();
-  monthStart.setUTCDate(1);
-  monthStart.setUTCHours(0, 0, 0, 0);
-  const monthStartIso = monthStart.toISOString();
-
-  // Filtro explícito de corretora_id em TODAS as queries — defesa em
-  // profundidade. RLS via current_corretora() já gateia, mas se algum dia
-  // a policy mudar não queremos vazar contagem cross-tenant.
-  const [
-    novos,
-    emNegociacao,
-    convertidosMes,
-    contratosAtivos,
-    contratosDoMes,
-  ] = await Promise.all([
-    supabase
-      .from("leads")
-      .select("*", { count: "exact", head: true })
-      .eq("corretora_id", corretoraId)
-      .eq("status", "novo"),
-    supabase
-      .from("leads")
-      .select("*", { count: "exact", head: true })
-      .eq("corretora_id", corretoraId)
-      .eq("status", "em_negociacao"),
-    supabase
-      .from("leads")
-      .select("*", { count: "exact", head: true })
-      .eq("corretora_id", corretoraId)
-      .eq("status", "convertido")
-      .gte("updated_at", monthStartIso),
-    supabase
-      .from("contratos")
-      .select("*", { count: "exact", head: true })
-      .eq("corretora_id", corretoraId)
-      .eq("status", "ativo"),
-    supabase
-      .from("contratos")
-      .select("comissao_total")
-      .eq("corretora_id", corretoraId)
-      .in("status", ["ativo", "finalizado"])
-      .gte("updated_at", monthStartIso),
-  ]);
-
-  const receitaMes = (
-    (contratosDoMes.data ?? []) as { comissao_total: number | string | null }[]
-  ).reduce(
-    (sum, r) => sum + (r.comissao_total != null ? Number(r.comissao_total) : 0),
-    0,
-  );
-
-  return [
-    {
-      label: "Leads novos",
-      value: novos.count ?? 0,
-      hint: "aguardando contato",
-      icon: Handshake,
-    },
-    {
-      label: "Em negociação",
-      value: emNegociacao.count ?? 0,
-      hint: "propostas abertas",
-      icon: TrendingUpIcon,
-    },
-    {
-      label: "Convertidos no mês",
-      value: convertidosMes.count ?? 0,
-      hint: "leads fechados",
-      icon: CheckCircle2,
-    },
-    {
-      label: "Contratos ativos",
-      value: contratosAtivos.count ?? 0,
-      hint: "em execução",
-      icon: FileSignature,
-    },
-    {
-      label: "Receita do mês",
-      value: receitaMes,
-      hint: "comissão de contratos ativos e finalizados",
-      icon: Wallet,
-      isCurrency: true,
-    },
-  ];
-}
-
-async function loadLeadsRecentes(corretoraId: string): Promise<LeadRow[]> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("leads")
-    .select(
-      "id, status, coffee_type, bag_count, created_at, produtor:profiles!leads_produtor_id_fkey(full_name)",
-    )
-    .eq("corretora_id", corretoraId)
-    .order("created_at", { ascending: false })
-    .limit(6);
-
-  const rows = (data ?? []) as Array<{
-    id: string;
-    status: LeadStatus;
-    coffee_type: string | null;
-    bag_count: number | null;
-    created_at: string;
-    produtor: { full_name: string | null } | { full_name: string | null }[] | null;
-  }>;
-
-  return rows.map((r) => {
-    const produtor = Array.isArray(r.produtor)
-      ? r.produtor[0]?.full_name
-      : r.produtor?.full_name;
-    return {
-      id: r.id,
-      produtor: produtor ?? "Produtor sem nome",
-      bag_count: r.bag_count,
-      coffee_type: r.coffee_type,
-      status: r.status,
-      data: new Date(r.created_at).toLocaleDateString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-      }),
-    };
-  });
-}
-
-async function loadCotacoes(): Promise<CotacaoCard[]> {
-  const supabase = await createClient();
-  const types = ["arabica", "conillon"];
-
-  // Promise.all em vez de await sequencial: 1 RTT em vez de 2.
-  const queries = await Promise.all(
-    types.map((t) =>
-      supabase
-        .from("cotacoes")
-        .select("coffee_type, price, source, reference_date")
-        .eq("coffee_type", t)
-        .order("reference_date", { ascending: false })
-        .limit(2),
-    ),
-  );
-
-  const result: CotacaoCard[] = [];
-  for (const { data } of queries) {
-    const rows = (data ?? []) as Array<{
-      coffee_type: string;
-      price: number;
-      source: string | null;
-      reference_date: string;
-    }>;
-    const [current, previous] = rows;
-    if (!current) continue;
-    const variacao = previous
-      ? ((current.price - previous.price) / previous.price) * 100
-      : null;
-    result.push({
-      coffee_type: current.coffee_type,
-      price: current.price,
-      variacao,
-      source: current.source,
-    });
-  }
-  return result;
-}
+const NUM = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 });
 
 export default async function InicioCorretoraPage() {
   const profile = await getProfile();
-  // Sem corretora vinculada o layout já redireciona pra /painel/escolher
-  // antes de chegar aqui. Mas defesa em profundidade: usa string vazia
-  // (que nunca casa em UUID) e devolve KPIs zerados em vez de panic.
   const corretoraId = profile?.corretora_id ?? "";
 
-  const [kpis, leads, cotacoes, entregasSnap] = await Promise.all([
-    loadKpis(corretoraId),
-    loadLeadsRecentes(corretoraId),
-    loadCotacoes(),
-    profile?.corretora_id
-      ? listEntregasHojeEAtrasadas(profile.corretora_id)
-      : Promise.resolve({ hoje: [], atrasadas: [] }),
-  ]);
+  const [kpis, leads, cotacoes, entregasSnap, suggestions, subscription] =
+    await Promise.all([
+      loadDashboardKpis(corretoraId),
+      loadLeadsRecentes(corretoraId),
+      loadCotacoesDashboard(),
+      corretoraId
+        ? listEntregasHojeEAtrasadas(corretoraId)
+        : Promise.resolve({ hoje: [], atrasadas: [] }),
+      loadAutomationSuggestions(corretoraId),
+      corretoraId
+        ? getCorretoraSubscriptionInfo(corretoraId)
+        : Promise.resolve(null),
+    ]);
+
+  const operationEmpty =
+    kpis.lotesAtivos === 0 &&
+    kpis.produtoresCadastrados === 0 &&
+    kpis.compradoresAtivos === 0;
+  const isPro = isProOrAbove(subscription);
 
   return (
-    <div className="space-y-8">
-      <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
-          Início
-        </h1>
-        <p className="text-sm text-milsaca-verde-claro">
-          Resumo da operação e do mercado.
-        </p>
+    <div className="space-y-10">
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
+            Central comercial
+          </h1>
+          <p className="mt-1 text-sm text-milsaca-verde-claro">
+            Resumo da sua operação, oportunidades em aberto e mercado.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/painel/corretora/lotes/novo"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-milsaca-dourado/40 bg-milsaca-dourado/15 px-3 text-xs font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-dourado/25"
+          >
+            <Package className="h-3.5 w-3.5" />
+            Cadastrar lote
+          </Link>
+          <Link
+            href="/painel/corretora/leads/novo"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-milsaca-cafezal px-3 text-xs font-semibold text-milsaca-cream transition-colors hover:bg-milsaca-folha"
+          >
+            <Handshake className="h-3.5 w-3.5" />
+            Novo lead
+          </Link>
+        </div>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {kpis.map((k) => {
-          const Icon = k.icon;
-          const displayValue = k.isCurrency ? BRL.format(k.value) : k.value;
-          return (
-            <Card key={k.label} className="border-milsaca-cream-escuro">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardDescription className="text-xs uppercase tracking-wider">
-                  {k.label}
-                </CardDescription>
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-milsaca-verde/10 text-milsaca-verde">
-                  <Icon className="h-3.5 w-3.5" />
-                </span>
-              </CardHeader>
-              <CardContent>
-                <p
-                  className={
-                    k.isCurrency
-                      ? "text-2xl font-semibold tracking-tight text-milsaca-verde"
-                      : "text-3xl font-semibold tracking-tight text-milsaca-verde"
-                  }
-                >
-                  {displayValue}
-                </p>
-                <p className="mt-1 text-xs text-milsaca-verde-claro">
-                  {k.hint}
-                </p>
-              </CardContent>
-            </Card>
-          );
-        })}
+      {/* ---------------------------------------------------------------- */}
+      {/* KPIs principais (dourado/premium)                                */}
+      {/* ---------------------------------------------------------------- */}
+      <section
+        aria-label="Indicadores principais"
+        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        <KpiCard
+          label="Sacas disponíveis"
+          value={NUM.format(kpis.sacasDisponiveis)}
+          icon={Coffee}
+          tone="premium"
+          hint="Em lotes classificados e aguardando"
+        />
+        <KpiCard
+          label="Lotes ativos"
+          value={NUM.format(kpis.lotesAtivos)}
+          icon={Package}
+          tone="premium"
+          hint="Aptos pra negociação"
+        />
+        <KpiCard
+          label="Leads novos"
+          value={NUM.format(kpis.leadsNovos)}
+          icon={Handshake}
+          tone="premium"
+          hint="Aguardando primeiro contato"
+        />
+        <KpiCard
+          label="Receita do mês"
+          value={BRL.format(kpis.receitaMes)}
+          icon={Wallet}
+          tone="premium"
+          hint="Comissão de contratos ativos e finalizados"
+        />
       </section>
 
+      {/* ---------------------------------------------------------------- */}
+      {/* KPIs secundários                                                  */}
+      {/* ---------------------------------------------------------------- */}
+      <section
+        aria-label="Outros indicadores"
+        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        <KpiCard
+          label="Em negociação"
+          value={NUM.format(kpis.emNegociacao)}
+          icon={TrendingUpIcon}
+          tone="info"
+          hint="Propostas abertas"
+        />
+        <KpiCard
+          label="Produtores"
+          value={NUM.format(kpis.produtoresCadastrados)}
+          icon={Users}
+          hint="Contatos cadastrados na corretora"
+        />
+        <KpiCard
+          label="Compradores"
+          value={NUM.format(kpis.compradoresAtivos)}
+          icon={Building2}
+          hint="Compradores ativos"
+        />
+        <KpiCard
+          label="Contratos ativos"
+          value={NUM.format(kpis.contratosAtivos)}
+          icon={FileSignature}
+          tone="success"
+          hint="Em execução"
+        />
+      </section>
+
+      {/* ---------------------------------------------------------------- */}
+      {/* Estado vazio — corretora ainda nem começou a usar               */}
+      {/* ---------------------------------------------------------------- */}
+      {operationEmpty ? <FirstStepsCard /> : null}
+
+      {/* ---------------------------------------------------------------- */}
+      {/* Automação comercial                                                */}
+      {/* ---------------------------------------------------------------- */}
+      {isPro ? (
+        <AutomationCard suggestions={suggestions} />
+      ) : (
+        <LockedHint
+          feature="automacao"
+          description="Sugestões automáticas de follow-up: leads sem contato há mais de 24h, lotes parados há mais de 7 dias, negociações esquecidas. Disponível no plano Corretora Pro."
+        />
+      )}
+
+      {/* ---------------------------------------------------------------- */}
+      {/* Entregas hoje + atrasadas                                          */}
+      {/* ---------------------------------------------------------------- */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
@@ -296,7 +208,7 @@ export default async function InicioCorretoraPage() {
           </h2>
           <Link
             href="/painel/corretora/entregas"
-            className="text-xs text-milsaca-dourado hover:underline"
+            className="text-xs font-medium text-milsaca-cafezal hover:underline"
           >
             Ver todas →
           </Link>
@@ -317,19 +229,35 @@ export default async function InicioCorretoraPage() {
         </div>
       </section>
 
+      {/* ---------------------------------------------------------------- */}
+      {/* Leads recentes                                                    */}
+      {/* ---------------------------------------------------------------- */}
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
-          Leads recentes
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
+            Leads recentes
+          </h2>
+          <Link
+            href="/painel/corretora/leads"
+            className="text-xs font-medium text-milsaca-cafezal hover:underline"
+          >
+            Ver central de leads →
+          </Link>
+        </div>
         {leads.length === 0 ? (
-          <EmptyCard message="Nenhum lead na sua corretora ainda." />
+          <EmptyCard
+            title="Nenhum lead na sua corretora ainda."
+            description="Compartilhe seu perfil público pra começar a receber contatos de produtores e compradores."
+            cta={{ href: "/painel/corretora/perfil", label: "Ver perfil público" }}
+          />
         ) : (
           <Card className="border-milsaca-cream-escuro">
             <CardContent className="divide-y divide-milsaca-cream-escuro p-0">
               {leads.map((l) => (
-                <div
+                <Link
                   key={l.id}
-                  className="flex items-center justify-between gap-4 px-5 py-4"
+                  href={`/painel/corretora/leads/${l.id}`}
+                  className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-milsaca-cream/40"
                 >
                   <div>
                     <p className="font-medium text-milsaca-verde">
@@ -344,7 +272,7 @@ export default async function InicioCorretoraPage() {
                     </p>
                   </div>
                   <StatusBadge status={l.status} />
-                </div>
+                </Link>
               ))}
             </CardContent>
           </Card>
@@ -353,12 +281,30 @@ export default async function InicioCorretoraPage() {
 
       <IndicadoresLive />
 
+      {/* ---------------------------------------------------------------- */}
+      {/* Cotações                                                          */}
+      {/* ---------------------------------------------------------------- */}
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
-          Cotações manuais da praça
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
+            Cotações manuais da praça
+          </h2>
+          <Link
+            href="/painel/corretora/cotacoes"
+            className="text-xs font-medium text-milsaca-cafezal hover:underline"
+          >
+            Gerenciar →
+          </Link>
+        </div>
         {cotacoes.length === 0 ? (
-          <EmptyCard message="Nenhuma cotação registrada ainda." />
+          <EmptyCard
+            title="Nenhuma cotação registrada ainda."
+            description="Adicione cotações da sua praça pra acompanhar o mercado e usar como referência em propostas."
+            cta={{
+              href: "/painel/corretora/cotacoes",
+              label: "Registrar cotação",
+            }}
+          />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {cotacoes.map((c) => (
@@ -371,7 +317,81 @@ export default async function InicioCorretoraPage() {
   );
 }
 
-function CotacaoCardView({ cotacao }: { cotacao: CotacaoCard }) {
+/* ====================================================================== */
+/* Subcomponentes                                                         */
+/* ====================================================================== */
+
+function FirstStepsCard() {
+  return (
+    <section className="rounded-card border border-milsaca-dourado/30 bg-gradient-to-br from-milsaca-cream-claro/40 via-white to-white p-6 shadow-card sm:p-8">
+      <div className="flex items-start gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-milsaca-dourado/20 text-milsaca-cafezal ring-1 ring-inset ring-milsaca-dourado/40">
+          <Coins className="h-5 w-5" />
+        </span>
+        <div className="space-y-1">
+          <h2 className="text-base font-semibold text-milsaca-verde">
+            Sua corretora está pronta. Hora de começar a operar.
+          </h2>
+          <p className="text-sm text-milsaca-verde-claro">
+            Configure o básico abaixo pra começar a receber produtores e
+            organizar suas negociações.
+          </p>
+        </div>
+      </div>
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        <FirstStep
+          href="/painel/corretora/produtores/novo"
+          icon={Users}
+          title="Conecte produtores"
+          description="Cadastre o primeiro produtor pra começar a montar sua carteira."
+        />
+        <FirstStep
+          href="/painel/corretora/lotes/novo"
+          icon={Package}
+          title="Cadastre um lote"
+          description="Lance o primeiro lote de café pra atrair interessados."
+        />
+        <FirstStep
+          href="/painel/corretora/compradores/novo"
+          icon={Building2}
+          title="Conecte compradores"
+          description="Registre quem compra de você pra agilizar futuros contratos."
+        />
+      </div>
+    </section>
+  );
+}
+
+function FirstStep({
+  href,
+  icon: Icon,
+  title,
+  description,
+}: {
+  href: string;
+  icon: typeof Users;
+  title: string;
+  description: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group flex flex-col gap-2 rounded-lg border border-milsaca-cream-escuro bg-white p-4 transition-all hover:border-milsaca-dourado/50 hover:shadow-card-hover"
+    >
+      <Icon className="h-4 w-4 text-milsaca-cafezal" />
+      <p className="text-sm font-semibold text-milsaca-verde">{title}</p>
+      <p className="text-xs leading-relaxed text-milsaca-verde-claro">
+        {description}
+      </p>
+      <span className="mt-auto inline-flex items-center gap-1 text-xs font-semibold text-milsaca-cafezal group-hover:gap-2 transition-all">
+        Começar
+        <ArrowRight className="h-3.5 w-3.5" />
+      </span>
+    </Link>
+  );
+}
+
+function CotacaoCardView({ cotacao }: { cotacao: CotacaoDashboard }) {
   const up = (cotacao.variacao ?? 0) >= 0;
   const Arrow = up ? ArrowUpRight : ArrowDownRight;
   const label = COFFEE_LABEL[cotacao.coffee_type] ?? cotacao.coffee_type;
@@ -379,7 +399,7 @@ function CotacaoCardView({ cotacao }: { cotacao: CotacaoCard }) {
     <Card className="border-milsaca-cream-escuro">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-milsaca-verde/10 text-milsaca-verde">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-milsaca-dourado/15 text-milsaca-cafezal ring-1 ring-inset ring-milsaca-dourado/40">
             <Coffee className="h-4 w-4" />
           </span>
           <CardTitle className="text-base">{label}</CardTitle>
@@ -410,13 +430,31 @@ function CotacaoCardView({ cotacao }: { cotacao: CotacaoCard }) {
   );
 }
 
-function EmptyCard({ message }: { message: string }) {
+function EmptyCard({
+  title,
+  description,
+  cta,
+}: {
+  title: string;
+  description: string;
+  cta?: { href: string; label: string };
+}) {
   return (
-    <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
-      <CardContent className="py-6 text-center text-sm text-milsaca-verde-claro">
-        {message}
-      </CardContent>
-    </Card>
+    <div className="rounded-card border border-dashed border-milsaca-cream-escuro bg-white/40 px-6 py-8 text-center">
+      <p className="text-sm font-medium text-milsaca-verde">{title}</p>
+      <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-milsaca-verde-claro">
+        {description}
+      </p>
+      {cta ? (
+        <Link
+          href={cta.href}
+          className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-milsaca-dourado/40 bg-milsaca-dourado/15 px-3 py-1.5 text-xs font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-dourado/25"
+        >
+          {cta.label}
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      ) : null}
+    </div>
   );
 }
 
@@ -429,7 +467,13 @@ function EntregasMiniCard({
   label: string;
   count: number;
   tone: "warn" | "info";
-  items: { id: string; contrato_code: string; produtor_nome: string; data_prevista: string | null; bag_count: number | null }[];
+  items: {
+    id: string;
+    contrato_code: string;
+    produtor_nome: string;
+    data_prevista: string | null;
+    bag_count: number | null;
+  }[];
 }) {
   const isWarn = tone === "warn";
   return (
@@ -451,7 +495,11 @@ function EntregasMiniCard({
               : "flex h-7 w-7 items-center justify-center rounded-full bg-milsaca-verde/10 text-milsaca-verde"
           }
         >
-          {isWarn ? <AlertTriangle className="h-3.5 w-3.5" /> : <Truck className="h-3.5 w-3.5" />}
+          {isWarn ? (
+            <AlertTriangle className="h-3.5 w-3.5" />
+          ) : (
+            <Truck className="h-3.5 w-3.5" />
+          )}
         </span>
       </CardHeader>
       <CardContent>
@@ -518,7 +566,7 @@ function StatusBadge({ status }: { status: LeadStatus }) {
   }
   if (status === "em_negociacao") {
     return (
-      <Badge className="bg-milsaca-dourado/20 text-milsaca-verde hover:bg-milsaca-dourado/20">
+      <Badge className="bg-milsaca-dourado/25 text-milsaca-cafezal hover:bg-milsaca-dourado/25">
         Em negociação
       </Badge>
     );

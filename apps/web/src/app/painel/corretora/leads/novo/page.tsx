@@ -15,6 +15,7 @@ import { SubmitButton } from "@/components/submit-button";
 import { getProfile } from "@/lib/auth";
 import { listLeadTargets } from "../_lib/queries";
 import { createLead } from "../_actions";
+import { LEAD_ORIGEM_LABEL, LEAD_ORIGEM_ORDER } from "../_lib/lead-meta";
 
 export const metadata = { title: "Novo lead — Milsaca" };
 
@@ -150,6 +151,25 @@ export default async function NovoLeadPage({
                   min="0"
                   placeholder="100"
                 />
+              </div>
+
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="origem">Origem do lead</Label>
+                <select
+                  id="origem"
+                  name="origem"
+                  defaultValue="manual"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {LEAD_ORIGEM_ORDER.map((o) => (
+                    <option key={o} value={o}>
+                      {LEAD_ORIGEM_LABEL[o]}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-milsaca-verde-claro">
+                  Por qual canal o produtor chegou — ajuda no analytics depois.
+                </p>
               </div>
 
               <div className="space-y-2 sm:col-span-2">

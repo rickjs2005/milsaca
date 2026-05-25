@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
-import { friendlyPostgresError } from "@/app/admin/_lib/errors";
+import { friendlyPostgresError } from "@/app/admin/(panel)/_lib/errors";
 import {
   SETTING_SECTIONS,
   SETTING_TYPES,

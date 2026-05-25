@@ -1,5 +1,5 @@
 import { createClient } from "@milsaca/db/web/server";
-import type { RegiaoCafeeira } from "@/app/admin/corretoras/_components/regioes";
+import type { RegiaoCafeeira } from "@/app/admin/(panel)/corretoras/_components/regioes";
 
 export type CorretoraListItem = {
   id: string;

@@ -1,52 +1,36 @@
 import { createClient } from "@milsaca/db/web/server";
-import type { Database } from "@milsaca/types/database";
 
-export type LeadStatus = Database["public"]["Enums"]["lead_status"];
+// Re-exports dos metadados puros — pra clients antigos que importam de queries.
+// Novos clients devem importar direto de "./lead-meta".
+export {
+  LEAD_STATUS_ORDER,
+  LEAD_STATUS_LABEL,
+  LEAD_STATUS_COLOR,
+} from "./lead-meta";
+export type {
+  LeadStatus,
+  LeadOrigem,
+  LeadListItem,
+  LeadListFilter,
+  LeadEvent,
+  LeadDetail,
+  LeadTargetOption,
+} from "./lead-meta";
 
-export const LEAD_STATUS_ORDER: LeadStatus[] = [
-  "novo",
-  "em_negociacao",
-  "convertido",
-  "perdido",
-  "arquivado",
-];
-
-export const LEAD_STATUS_LABEL: Record<LeadStatus, string> = {
-  novo: "Novo",
-  em_negociacao: "Em negociação",
-  convertido: "Convertido",
-  perdido: "Perdido",
-  arquivado: "Arquivado",
-};
-
-export const LEAD_STATUS_COLOR: Record<LeadStatus, string> = {
-  novo: "bg-milsaca-dourado/20 text-milsaca-verde",
-  em_negociacao: "bg-sky-100 text-sky-800",
-  convertido: "bg-emerald-100 text-emerald-800",
-  perdido: "bg-rose-100 text-rose-800",
-  arquivado: "bg-slate-200 text-slate-700",
-};
-
-export type LeadListItem = {
-  id: string;
-  status: LeadStatus;
-  coffee_type: string | null;
-  bag_count: number | null;
-  proposed_price: number | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-  produtor_kind: "produtor" | "contato";
-  produtor_id: string;
-  produtor_nome: string;
-  produtor_phone: string | null;
-};
-
-export type LeadListFilter = { status?: LeadStatus };
+import type {
+  LeadStatus,
+  LeadOrigem,
+  LeadListItem,
+  LeadListFilter,
+  LeadEvent,
+  LeadDetail,
+  LeadTargetOption,
+} from "./lead-meta";
 
 type LeadRow = {
   id: string;
   status: LeadStatus;
+  origem: LeadOrigem | null;
   coffee_type: string | null;
   bag_count: number | null;
   proposed_price: number | null;
@@ -56,12 +40,40 @@ type LeadRow = {
   produtor_id: string | null;
   contato_id: string | null;
   produtor:
-    | { id: string; full_name: string | null; phone: string | null }
-    | { id: string; full_name: string | null; phone: string | null }[]
+    | {
+        id: string;
+        full_name: string | null;
+        phone: string | null;
+        produtores:
+          | { city: string | null; state: string | null }
+          | { city: string | null; state: string | null }[]
+          | null;
+      }
+    | {
+        id: string;
+        full_name: string | null;
+        phone: string | null;
+        produtores:
+          | { city: string | null; state: string | null }
+          | { city: string | null; state: string | null }[]
+          | null;
+      }[]
     | null;
   contato:
-    | { id: string; full_name: string; phone: string | null }
-    | { id: string; full_name: string; phone: string | null }[]
+    | {
+        id: string;
+        full_name: string;
+        phone: string | null;
+        city: string | null;
+        state: string | null;
+      }
+    | {
+        id: string;
+        full_name: string;
+        phone: string | null;
+        city: string | null;
+        state: string | null;
+      }[]
     | null;
 };
 
@@ -78,10 +90,10 @@ export async function listLeads(
   let q = supabase
     .from("leads")
     .select(
-      `id, status, coffee_type, bag_count, proposed_price, notes, created_at, updated_at,
+      `id, status, origem, coffee_type, bag_count, proposed_price, notes, created_at, updated_at,
        produtor_id, contato_id,
-       produtor:profiles!leads_produtor_id_fkey(id, full_name, phone),
-       contato:produtor_contatos!leads_contato_id_fkey(id, full_name, phone)`,
+       produtor:profiles!leads_produtor_id_fkey(id, full_name, phone, produtores(city, state)),
+       contato:produtor_contatos!leads_contato_id_fkey(id, full_name, phone, city, state)`,
     )
     .eq("corretora_id", corretoraId)
     .order("updated_at", { ascending: false })
@@ -96,9 +108,11 @@ export async function listLeads(
     const prod = pickOne(r.produtor);
     const cont = pickOne(r.contato);
     const kind: "produtor" | "contato" = prod ? "produtor" : "contato";
+    const prodExt = prod ? pickOne(prod.produtores) : null;
     return {
       id: r.id,
       status: r.status,
+      origem: r.origem,
       coffee_type: r.coffee_type,
       bag_count: r.bag_count,
       proposed_price:
@@ -110,21 +124,11 @@ export async function listLeads(
       produtor_id: prod?.id ?? cont?.id ?? "",
       produtor_nome: prod?.full_name ?? cont?.full_name ?? "—",
       produtor_phone: prod?.phone ?? cont?.phone ?? null,
+      city: prodExt?.city ?? cont?.city ?? null,
+      state: prodExt?.state ?? cont?.state ?? null,
     };
   });
 }
-
-export type LeadEvent = {
-  id: string;
-  kind: string;
-  payload: Record<string, unknown>;
-  actor_name: string | null;
-  created_at: string;
-};
-
-export type LeadDetail = LeadListItem & {
-  events: LeadEvent[];
-};
 
 export async function getLead(
   corretoraId: string,
@@ -134,10 +138,10 @@ export async function getLead(
   const { data } = await supabase
     .from("leads")
     .select(
-      `id, status, coffee_type, bag_count, proposed_price, notes, created_at, updated_at,
+      `id, status, origem, coffee_type, bag_count, proposed_price, notes, created_at, updated_at,
        produtor_id, contato_id,
-       produtor:profiles!leads_produtor_id_fkey(id, full_name, phone),
-       contato:produtor_contatos!leads_contato_id_fkey(id, full_name, phone)`,
+       produtor:profiles!leads_produtor_id_fkey(id, full_name, phone, produtores(city, state)),
+       contato:produtor_contatos!leads_contato_id_fkey(id, full_name, phone, city, state)`,
     )
     .eq("corretora_id", corretoraId)
     .eq("id", leadId)
@@ -181,10 +185,12 @@ export async function getLead(
   const prod = pickOne(r.produtor);
   const cont = pickOne(r.contato);
   const kind: "produtor" | "contato" = prod ? "produtor" : "contato";
+  const prodExt = prod ? pickOne(prod.produtores) : null;
 
   return {
     id: r.id,
     status: r.status,
+    origem: r.origem,
     coffee_type: r.coffee_type,
     bag_count: r.bag_count,
     proposed_price: r.proposed_price != null ? Number(r.proposed_price) : null,
@@ -195,16 +201,11 @@ export async function getLead(
     produtor_id: prod?.id ?? cont?.id ?? "",
     produtor_nome: prod?.full_name ?? cont?.full_name ?? "—",
     produtor_phone: prod?.phone ?? cont?.phone ?? null,
+    city: prodExt?.city ?? cont?.city ?? null,
+    state: prodExt?.state ?? cont?.state ?? null,
     events,
   };
 }
-
-export type LeadTargetOption = {
-  value: string; // "produtor:<uuid>" | "contato:<uuid>"
-  label: string;
-  kind: "produtor" | "contato";
-  sublabel: string | null;
-};
 
 export async function listLeadTargets(
   corretoraId: string,

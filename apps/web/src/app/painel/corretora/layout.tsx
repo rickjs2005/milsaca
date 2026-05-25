@@ -9,6 +9,7 @@ import {
   getCorretoraSubscriptionInfo,
   needsCorretoraOnboarding,
 } from "./_lib/corretora";
+import { loadSidebarBadges } from "./_lib/dashboard";
 
 async function loadCorretora(corretoraId: string | null) {
   if (!corretoraId) return null;
@@ -42,9 +43,14 @@ export default async function PainelCorretoraLayout({
     }
   }
 
-  const subscription = profile?.corretora_id
-    ? await getCorretoraSubscriptionInfo(profile.corretora_id)
-    : null;
+  const [subscription, badges] = await Promise.all([
+    profile?.corretora_id
+      ? getCorretoraSubscriptionInfo(profile.corretora_id)
+      : Promise.resolve(null),
+    profile?.corretora_id
+      ? loadSidebarBadges(profile.corretora_id)
+      : Promise.resolve(undefined),
+  ]);
 
   const corretoraLabel = corretora
     ? [corretora.name, [corretora.city, corretora.state].filter(Boolean).join("/")]
@@ -59,6 +65,7 @@ export default async function PainelCorretoraLayout({
         operatorEmail={user.email ?? ""}
         corretoraLabel={corretoraLabel}
         showSwitcher={showSwitcher}
+        badges={badges}
       />
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-6xl space-y-6 px-8 py-10">

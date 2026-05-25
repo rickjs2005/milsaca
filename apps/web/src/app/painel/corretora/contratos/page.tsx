@@ -5,6 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/auth";
+import { getCorretoraSubscriptionInfo } from "../_lib/corretora";
+import { isProOrAbove } from "../_lib/plan-gate";
+import { LockedHint } from "../_components/locked-hint";
 import {
   listContratos,
   CONTRATO_STATUS_LABEL,
@@ -54,7 +57,11 @@ export default async function ContratosCorretoraPage({
   const sp = await searchParams;
   const status = isContratoStatus(sp.status) ? sp.status : undefined;
 
-  const contratos = await listContratos(profile.corretora_id, { status });
+  const [contratos, subscription] = await Promise.all([
+    listContratos(profile.corretora_id, { status }),
+    getCorretoraSubscriptionInfo(profile.corretora_id),
+  ]);
+  const isPro = isProOrAbove(subscription);
 
   return (
     <div className="space-y-6">
@@ -77,6 +84,13 @@ export default async function ContratosCorretoraPage({
           </Link>
         </Button>
       </header>
+
+      {!isPro ? (
+        <LockedHint
+          feature="contratos"
+          description="Gerencie contratos completos com comissão automática, status e timeline. Disponível no plano Corretora Pro."
+        />
+      ) : null}
 
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="text-milsaca-verde-claro">Status:</span>

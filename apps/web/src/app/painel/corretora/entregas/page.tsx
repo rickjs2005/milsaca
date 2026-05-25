@@ -4,6 +4,9 @@ import { AlertTriangle, Plus, Truck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getProfile } from "@/lib/auth";
+import { getCorretoraSubscriptionInfo } from "../_lib/corretora";
+import { isProOrAbove } from "../_lib/plan-gate";
+import { LockedHint } from "../_components/locked-hint";
 import {
   ENTREGA_STATUS_COLOR,
   ENTREGA_STATUS_LABEL,
@@ -37,8 +40,12 @@ export default async function EntregasPage({
     ? (status as EntregaStatus)
     : undefined;
 
-  const entregas = await listEntregas(profile.corretora_id, { status: filter });
+  const [entregas, subscription] = await Promise.all([
+    listEntregas(profile.corretora_id, { status: filter }),
+    getCorretoraSubscriptionInfo(profile.corretora_id),
+  ]);
   const atrasadasCt = entregas.filter((e) => e.is_atrasada).length;
+  const isPro = isProOrAbove(subscription);
 
   return (
     <div className="space-y-6">
@@ -72,6 +79,13 @@ export default async function EntregasPage({
         <p className="rounded-md border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">
           {error}
         </p>
+      ) : null}
+
+      {!isPro ? (
+        <LockedHint
+          feature="entregas"
+          description="Acompanhe programação, romaneio e ciclo de recebimento dos contratos. Disponível no plano Corretora Pro."
+        />
       ) : null}
 
       {atrasadasCt > 0 && !filter ? (
