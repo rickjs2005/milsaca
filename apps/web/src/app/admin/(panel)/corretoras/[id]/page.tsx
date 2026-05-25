@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Link2, UserPlus } from "lucide-react";
+import { Link2, Sparkles, UserPlus } from "lucide-react";
 import { headers } from "next/headers";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
@@ -12,6 +12,7 @@ import { SubmitButton } from "@/components/submit-button";
 import { fmtDateTime } from "@/lib/format";
 import {
   gerarConviteCorretora,
+  grantCorretoraTier,
   revogarConviteCorretora,
   toggleCorretoraVerified,
   updateCorretora,
@@ -46,8 +47,12 @@ export default async function EditCorretoraPage({
 
   if (!data) notFound();
 
-  // Convites + perfis vinculados (donos)
-  const [{ data: invites }, { data: members }] = await Promise.all([
+  // Convites + perfis vinculados (donos) + subscription (pra bloco de plano)
+  const [
+    { data: invites },
+    { data: members },
+    { data: subscription },
+  ] = await Promise.all([
     supabase
       .from("corretora_invites")
       .select("token, email, expires_at, used_at, created_at")
@@ -59,7 +64,34 @@ export default async function EditCorretoraPage({
       .select("id, full_name, phone, role, status, created_at")
       .eq("corretora_id", id)
       .is("deleted_at", null),
+    supabase
+      .from("subscriptions")
+      .select("status, current_period_end, plans(name, slug)")
+      .eq("corretora_id", id)
+      .maybeSingle(),
   ]);
+
+  type SubRow = {
+    status: "trial" | "active" | "past_due" | "canceled" | "expired";
+    current_period_end: string | null;
+    plans:
+      | { name: string; slug: string }
+      | { name: string; slug: string }[]
+      | null;
+  };
+  const sub = (subscription ?? null) as SubRow | null;
+  const subPlan = sub
+    ? Array.isArray(sub.plans)
+      ? (sub.plans[0] ?? null)
+      : sub.plans
+    : null;
+  const tierAtual: "gratuito" | "pro" | "premium" = (() => {
+    if (!sub || sub.status !== "active") return "gratuito";
+    const slug = subPlan?.slug ?? "";
+    if (slug === "corretora-premium") return "premium";
+    if (slug === "corretora-pro") return "pro";
+    return "gratuito";
+  })();
 
   type InviteRow = {
     token: string;
@@ -250,6 +282,116 @@ export default async function EditCorretoraPage({
             </div>
           ) : null}
         </div>
+      </section>
+
+      {/* Bloco "Plano comercial" — atalho admin pra liberar features */}
+      <section className="mb-6 rounded-card border border-slate-200 bg-white p-5 shadow-card">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-milsaca-cafezal">
+              <Sparkles className="h-4 w-4" />
+              Plano comercial
+            </h2>
+            <p className="mt-1 text-xs text-slate-600">
+              Libera todas as features (Analytics, Automação, Contratos,
+              Entregas) pra esta corretora. Premium é vitalício (+100 anos);
+              Pro vai por 1 ano e renova manualmente.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-slate-500">Hoje:</span>
+            <span
+              className={
+                tierAtual === "premium"
+                  ? "rounded-full bg-milsaca-dourado/20 px-2.5 py-1 font-semibold text-milsaca-cafezal ring-1 ring-inset ring-milsaca-dourado/40"
+                  : tierAtual === "pro"
+                    ? "rounded-full bg-emerald-100 px-2.5 py-1 font-semibold text-emerald-800"
+                    : "rounded-full bg-slate-200 px-2.5 py-1 font-semibold text-slate-700"
+              }
+            >
+              {tierAtual === "premium"
+                ? "Premium"
+                : tierAtual === "pro"
+                  ? "Pro"
+                  : "Gratuito"}
+            </span>
+            {sub?.current_period_end ? (
+              <span className="text-slate-500">
+                · vence {fmtDateTime(sub.current_period_end)}
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <form action={grantCorretoraTier}>
+            <input type="hidden" name="corretora_id" value={data.id} />
+            <input type="hidden" name="tier" value="premium" />
+            <SubmitButton
+              className="gap-1.5 bg-milsaca-dourado text-milsaca-preto shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_6px_18px_-8px_rgba(201,169,97,0.5)] hover:brightness-105 disabled:opacity-60"
+              pendingLabel="Liberando..."
+              disabled={tierAtual === "premium"}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              {tierAtual === "premium"
+                ? "Já é Premium"
+                : "Liberar tudo (Premium)"}
+            </SubmitButton>
+          </form>
+
+          <form action={grantCorretoraTier}>
+            <input type="hidden" name="corretora_id" value={data.id} />
+            <input type="hidden" name="tier" value="pro" />
+            <SubmitButton
+              variant="outline"
+              className="border-emerald-300 text-emerald-800 hover:bg-emerald-50 disabled:opacity-60"
+              pendingLabel="Liberando..."
+              disabled={tierAtual === "pro"}
+            >
+              {tierAtual === "pro" ? "Já é Pro" : "Liberar Pro (+1 ano)"}
+            </SubmitButton>
+          </form>
+
+          {tierAtual !== "gratuito" ? (
+            <form action={grantCorretoraTier}>
+              <input type="hidden" name="corretora_id" value={data.id} />
+              <input type="hidden" name="tier" value="gratuito" />
+              <ConfirmSubmit
+                variant="outline"
+                className="text-slate-600 hover:bg-slate-100"
+                pendingLabel="Rebaixando..."
+                confirmTitle="Rebaixar pra Gratuito?"
+                confirmMessage={
+                  <p>
+                    <strong>{data.name}</strong> perde acesso a Analytics,
+                    Automação, Contratos e Entregas. Dados existentes ficam
+                    em modo leitura.
+                  </p>
+                }
+                confirmButtonLabel="Rebaixar"
+                confirmButtonVariant="destructive"
+              >
+                Voltar pra Gratuito
+              </ConfirmSubmit>
+            </form>
+          ) : null}
+        </div>
+
+        {subPlan ? (
+          <p className="mt-3 text-[11px] text-slate-500">
+            Plano técnico:{" "}
+            <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px]">
+              {subPlan.slug}
+            </code>{" "}
+            · gerência fina em{" "}
+            <Link
+              href="/admin/assinaturas"
+              className="font-medium text-milsaca-cafezal hover:underline"
+            >
+              /admin/assinaturas →
+            </Link>
+          </p>
+        ) : null}
       </section>
 
       <form

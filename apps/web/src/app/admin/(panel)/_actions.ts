@@ -346,6 +346,168 @@ export async function rejeitarCorretora(formData: FormData) {
   );
 }
 
+/**
+ * Libera (ou rebaixa) uma corretora pra um tier — atalho admin pra
+ * deixar a corretora usando todas as features do Pro/Premium sem
+ * precisar passar por /admin/assinaturas.
+ *
+ * Self-healing: se o plano (corretora-pro/corretora-premium) não
+ * existir no banco, é criado na hora com features compatíveis com o
+ * catálogo da Fase 8 (assinatura/_lib/plans-catalog).
+ *
+ * Upsert na subscription da corretora — 1-pra-1 garantido por unique.
+ * Period_end vai pra +1 ano (ou +100 anos pro Premium "vitalício"
+ * usado em corretoras parceiras/teste).
+ *
+ * Tier 'gratuito' cancela a subscription existente (status=canceled)
+ * — fica em modo read-only no painel; nada é deletado.
+ */
+const TIER_PLANS: Record<
+  "pro" | "premium",
+  { slug: string; name: string; description: string; price_cents: number }
+> = {
+  pro: {
+    slug: "corretora-pro",
+    name: "Corretora Pro",
+    description: "Operação comercial completa",
+    price_cents: 29900,
+  },
+  premium: {
+    slug: "corretora-premium",
+    name: "Corretora Premium",
+    description: "Multi-operador + relatórios + API",
+    price_cents: 0, // sob consulta — admin define depois
+  },
+};
+
+export async function grantCorretoraTier(formData: FormData) {
+  const actor = await requireAppAdmin();
+
+  const corretoraIdParsed = uuidSchema.safeParse(
+    String(formData.get("corretora_id") ?? "").trim(),
+  );
+  if (!corretoraIdParsed.success) return;
+  const corretoraId = corretoraIdParsed.data;
+
+  const tier = String(formData.get("tier") ?? "").trim();
+  if (tier !== "gratuito" && tier !== "pro" && tier !== "premium") {
+    redirect(
+      `/admin/corretoras/${corretoraId}?error=${encodeURIComponent("Tier inválido")}`,
+    );
+  }
+
+  const supabase = await createClient();
+
+  if (tier === "gratuito") {
+    // Cancela subscription existente. Painel da corretora cai pra Free
+    // automaticamente (detectCurrentTier resolve "none" como Gratuito).
+    await supabase
+      .from("subscriptions")
+      .update({
+        status: "canceled",
+        canceled_at: new Date().toISOString(),
+      })
+      .eq("corretora_id", corretoraId);
+
+    await supabase.from("audit_log").insert({
+      actor_id: actor.id,
+      corretora_id: corretoraId,
+      action: "grant_tier_gratuito",
+      entity: "subscription",
+      entity_id: corretoraId,
+      payload: { tier: "gratuito" },
+    });
+
+    revalidatePath("/admin/corretoras");
+    revalidatePath(`/admin/corretoras/${corretoraId}`);
+    redirect(
+      `/admin/corretoras/${corretoraId}?saved=${encodeURIComponent("Corretora rebaixada pra Gratuito")}`,
+    );
+  }
+
+  const planMeta = TIER_PLANS[tier as "pro" | "premium"];
+
+  // Self-heal: garante que o plano existe (upsert por slug)
+  const { data: existingPlan } = await supabase
+    .from("plans")
+    .select("id")
+    .eq("slug", planMeta.slug)
+    .maybeSingle<{ id: string }>();
+
+  let planId = existingPlan?.id;
+  if (!planId) {
+    const { data: created, error: planErr } = await supabase
+      .from("plans")
+      .insert({
+        slug: planMeta.slug,
+        name: planMeta.name,
+        description: planMeta.description,
+        price_cents: planMeta.price_cents,
+        billing_period: "monthly",
+        features: [],
+        active: true,
+      })
+      .select("id")
+      .single<{ id: string }>();
+    if (planErr || !created) {
+      redirect(
+        `/admin/corretoras/${corretoraId}?error=${encodeURIComponent(friendlyPostgresError(planErr ?? null))}`,
+      );
+    }
+    planId = created.id;
+  }
+
+  // Period end: Premium = 100 anos (parceiro vitalício), Pro = 1 ano
+  const now = new Date();
+  const periodEnd = new Date(now);
+  if (tier === "premium") {
+    periodEnd.setFullYear(periodEnd.getFullYear() + 100);
+  } else {
+    periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+  }
+
+  // Upsert da subscription. Schema tem corretora_id UNIQUE, então
+  // onConflict resolve em update — sem race condition.
+  const { error: subErr } = await supabase
+    .from("subscriptions")
+    .upsert(
+      {
+        corretora_id: corretoraId,
+        plan_id: planId,
+        status: "active",
+        started_at: now.toISOString(),
+        current_period_start: now.toISOString(),
+        current_period_end: periodEnd.toISOString(),
+        canceled_at: null,
+        trial_ends_at: null,
+      },
+      { onConflict: "corretora_id" },
+    );
+
+  if (subErr) {
+    redirect(
+      `/admin/corretoras/${corretoraId}?error=${encodeURIComponent(friendlyPostgresError(subErr))}`,
+    );
+  }
+
+  await supabase.from("audit_log").insert({
+    actor_id: actor.id,
+    corretora_id: corretoraId,
+    action: `grant_tier_${tier}`,
+    entity: "subscription",
+    entity_id: corretoraId,
+    payload: { tier, plan_id: planId, period_end: periodEnd.toISOString() },
+  });
+
+  revalidatePath("/admin/corretoras");
+  revalidatePath(`/admin/corretoras/${corretoraId}`);
+  revalidatePath("/admin/assinaturas");
+  const label = tier === "premium" ? "Premium (vitalício)" : "Pro (+1 ano)";
+  redirect(
+    `/admin/corretoras/${corretoraId}?saved=${encodeURIComponent(`Liberado plano ${label}`)}`,
+  );
+}
+
 export async function linkProfileToCorretora(formData: FormData) {
   const actor = await requireAppAdmin();
 
