@@ -882,6 +882,141 @@ export async function toggleFavoritoCorretora(
 }
 
 // ----------------------------------------------------------------- //
+// PROPOSTAS — produtor responde proposta da corretora (aceita/rejeita)
+// ----------------------------------------------------------------- //
+// Fase C do redesign do mobile. RLS adicionada em
+// 20260531000000_propostas_produtor_responde.sql permite que o
+// produtor (auth.uid()) leia propostas dos próprios leads e mude
+// status de "enviada" pra "aceita"|"rejeitada".
+
+export type PropostaStatusProdutor =
+  | "rascunho"
+  | "enviada"
+  | "aceita"
+  | "rejeitada"
+  | "expirada";
+
+export interface PropostaParaProdutor {
+  id: string;
+  status: PropostaStatusProdutor;
+  preco_saca: number;
+  bag_count: number | null;
+  mensagem: string | null;
+  validade_ate: string | null;
+  enviada_em: string | null;
+  respondida_em: string | null;
+  created_at: string;
+  /** Lead que a proposta veio (sempre 1) */
+  lead_id: string;
+  /** Corretora que enviou */
+  corretora_id: string;
+  corretora_nome: string;
+  corretora_phone: string | null;
+  /** Café do lead (compatibilidade visual com cards de negociação) */
+  coffee_type: string | null;
+}
+
+/**
+ * Lista propostas dos leads do produtor logado. Por padrão traz só as
+ * que precisam de resposta (status='enviada'), mas aceita filtro.
+ */
+export async function listMinhasPropostas(
+  produtorId: string,
+  opts: { onlyPending?: boolean } = { onlyPending: true },
+): Promise<PropostaParaProdutor[]> {
+  let q = supabase
+    .from("propostas")
+    .select(
+      `id, status, preco_saca, bag_count, mensagem, validade_ate,
+       enviada_em, respondida_em, created_at, lead_id, corretora_id,
+       corretora:corretoras!propostas_corretora_id_fkey(name, phone),
+       lead:leads!propostas_lead_id_fkey(coffee_type, produtor_id)`,
+    )
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (opts.onlyPending) {
+    q = q.eq("status", "enviada");
+  }
+
+  const { data, error } = await q;
+  if (error) {
+    console.warn("listMinhasPropostas:", error.message);
+    return [];
+  }
+
+  type Raw = {
+    id: string;
+    status: PropostaStatusProdutor;
+    preco_saca: number | string;
+    bag_count: number | null;
+    mensagem: string | null;
+    validade_ate: string | null;
+    enviada_em: string | null;
+    respondida_em: string | null;
+    created_at: string;
+    lead_id: string;
+    corretora_id: string;
+    corretora:
+      | { name: string; phone: string | null }
+      | { name: string; phone: string | null }[]
+      | null;
+    lead:
+      | { coffee_type: string | null; produtor_id: string | null }
+      | { coffee_type: string | null; produtor_id: string | null }[]
+      | null;
+  };
+
+  const rows = (data ?? []) as Raw[];
+
+  return rows
+    .map((r): PropostaParaProdutor | null => {
+      const corr = Array.isArray(r.corretora) ? r.corretora[0] : r.corretora;
+      const lead = Array.isArray(r.lead) ? r.lead[0] : r.lead;
+      // Defesa: RLS já filtra mas evita renderizar caso join volte vazio
+      if (lead?.produtor_id !== produtorId) return null;
+      return {
+        id: r.id,
+        status: r.status,
+        preco_saca: Number(r.preco_saca),
+        bag_count: r.bag_count,
+        mensagem: r.mensagem,
+        validade_ate: r.validade_ate,
+        enviada_em: r.enviada_em,
+        respondida_em: r.respondida_em,
+        created_at: r.created_at,
+        lead_id: r.lead_id,
+        corretora_id: r.corretora_id,
+        corretora_nome: corr?.name ?? "Corretora",
+        corretora_phone: corr?.phone ?? null,
+        coffee_type: lead?.coffee_type ?? null,
+      };
+    })
+    .filter((p): p is PropostaParaProdutor => p !== null);
+}
+
+/**
+ * Produtor responde uma proposta enviada (aceita ou rejeita).
+ * Marca `respondida_em = now()`. RLS rejeita transições inválidas
+ * (ex.: tentar aceitar proposta de outro produtor).
+ */
+export async function responderProposta(
+  propostaId: string,
+  resposta: "aceita" | "rejeitada",
+): Promise<{ error?: string }> {
+  const { error } = await supabase
+    .from("propostas")
+    .update({
+      status: resposta,
+      respondida_em: new Date().toISOString(),
+    })
+    .eq("id", propostaId);
+
+  if (error) return { error: error.message };
+  return {};
+}
+
+// ----------------------------------------------------------------- //
 // OFERTAS — produtor manifesta interesse de vender pra uma corretora
 // ----------------------------------------------------------------- //
 // Cria um lead na corretora (status=novo, origem=vitrine), e ela vê

@@ -20,7 +20,10 @@ import {
   LEAD_STATUS_LABEL,
   LEAD_STATUS_ORDER,
   listMinhasNegociacoes,
+  listMinhasPropostas,
+  responderProposta,
   type LeadItem,
+  type PropostaParaProdutor,
 } from "../../src/lib/queries";
 import { buildWhatsAppUrl } from "../../src/lib/whatsapp";
 import type { LeadStatus } from "@milsaca/types";
@@ -43,12 +46,21 @@ export default function NegociacoesScreen() {
   const { profile } = useAuth();
   const [filter, setFilter] = useState<LeadStatus | "all">("all");
   const [items, setItems] = useState<LeadItem[] | null>(null);
+  const [propostas, setPropostas] = useState<PropostaParaProdutor[] | null>(
+    null,
+  );
+  const [respondendoId, setRespondendoId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     if (!profile) return;
     const filterArg = filter === "all" ? {} : { status: filter };
-    setItems(await listMinhasNegociacoes(profile.id, filterArg));
+    const [leads, props] = await Promise.all([
+      listMinhasNegociacoes(profile.id, filterArg),
+      listMinhasPropostas(profile.id, { onlyPending: true }),
+    ]);
+    setItems(leads);
+    setPropostas(props);
   }, [filter, profile]);
 
   useEffect(() => {
@@ -60,6 +72,24 @@ export default function NegociacoesScreen() {
     await load();
     setRefreshing(false);
   }, [load]);
+
+  const onResponder = async (
+    propostaId: string,
+    resposta: "aceita" | "rejeitada",
+  ) => {
+    setRespondendoId(propostaId);
+    const result = await responderProposta(propostaId, resposta);
+    setRespondendoId(null);
+    if (result.error) {
+      // Mantém o card mas sem indicar sucesso. Refresh manual recupera.
+      console.warn("responderProposta:", result.error);
+      return;
+    }
+    // Remove a proposta respondida da lista pendente (optimistic)
+    setPropostas((prev) =>
+      prev ? prev.filter((p) => p.id !== propostaId) : prev,
+    );
+  };
 
   const openWhatsApp = (item: LeadItem) => {
     const msg = `Olá ${item.corretora_nome}, queria conversar sobre a proposta de ${item.coffee_type ?? "café"}${item.bag_count ? ` (${item.bag_count} sacas)` : ""}.`;
@@ -95,12 +125,42 @@ export default function NegociacoesScreen() {
           Negociações
         </Text>
 
+        {/* Bloco de propostas pendentes — aparece só quando tem alguma */}
+        {propostas && propostas.length > 0 ? (
+          <View className="mt-5 gap-3">
+            <View className="flex-row items-center gap-2">
+              <View className="h-2 w-2 rounded-full bg-milsaca-dourado" />
+              <Text
+                className="text-xs uppercase tracking-wider text-milsaca-dourado"
+                style={{ fontFamily: "Inter_600SemiBold" }}
+              >
+                Aguardando sua resposta · {propostas.length}
+              </Text>
+            </View>
+            {propostas.map((p) => (
+              <PropostaCard
+                key={p.id}
+                proposta={p}
+                respondendo={respondendoId === p.id}
+                onAceitar={() => onResponder(p.id, "aceita")}
+                onRejeitar={() => onResponder(p.id, "rejeitada")}
+              />
+            ))}
+          </View>
+        ) : null}
+
         {/* Filtros pill */}
+        <Text
+          className="mt-6 text-xs uppercase tracking-wider text-milsaca-cream/60"
+          style={{ fontFamily: "Inter_500Medium" }}
+        >
+          Histórico
+        </Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ gap: 8 }}
-          className="mt-5 -mx-1 px-1"
+          className="mt-3 -mx-1 px-1"
         >
           {FILTERS.map((f) => {
             const active = filter === f.value;
@@ -241,4 +301,138 @@ export default function NegociacoesScreen() {
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function PropostaCard({
+  proposta,
+  respondendo,
+  onAceitar,
+  onRejeitar,
+}: {
+  proposta: PropostaParaProdutor;
+  respondendo: boolean;
+  onAceitar: () => void;
+  onRejeitar: () => void;
+}) {
+  const total = proposta.bag_count
+    ? proposta.preco_saca * proposta.bag_count
+    : null;
+  const venceEm = proposta.validade_ate
+    ? formatVencimento(proposta.validade_ate)
+    : null;
+
+  return (
+    <View
+      className="rounded-2xl bg-milsaca-verde-claro p-4"
+      style={{ borderWidth: 2, borderColor: "#C9A961" }}
+    >
+      <View className="flex-row items-center justify-between">
+        <Text
+          className="text-sm text-milsaca-cream"
+          style={{ fontFamily: "Inter_600SemiBold" }}
+        >
+          {proposta.corretora_nome}
+        </Text>
+        <Text
+          className="rounded-full bg-milsaca-dourado/20 px-2 py-0.5 text-[10px] text-milsaca-dourado"
+          style={{ fontFamily: "Inter_500Medium" }}
+        >
+          Nova proposta
+        </Text>
+      </View>
+
+      <View className="mt-3">
+        <Text
+          className="text-2xl text-milsaca-dourado"
+          style={{ fontFamily: "Inter_700Bold" }}
+        >
+          {BRL.format(proposta.preco_saca)}
+          <Text
+            className="text-xs text-milsaca-cream/60"
+            style={{ fontFamily: "Inter_400Regular" }}
+          >
+            {" "}/sc
+          </Text>
+        </Text>
+        <Text
+          className="mt-0.5 text-xs text-milsaca-cream/70"
+          style={{ fontFamily: "Inter_400Regular" }}
+        >
+          {proposta.coffee_type ?? "Café"}
+          {proposta.bag_count ? ` · ${proposta.bag_count} sacas` : ""}
+          {total ? ` · total ${BRL.format(total)}` : ""}
+        </Text>
+      </View>
+
+      {proposta.mensagem ? (
+        <Text
+          className="mt-3 rounded-xl bg-milsaca-verde/40 px-3 py-2 text-xs italic text-milsaca-cream/85"
+          style={{ fontFamily: "Inter_400Regular" }}
+        >
+          “{proposta.mensagem}”
+        </Text>
+      ) : null}
+
+      {venceEm ? (
+        <View className="mt-2 flex-row items-center gap-1">
+          <Ionicons name="time-outline" size={12} color="#C9A961" />
+          <Text
+            className="text-[11px] text-milsaca-dourado"
+            style={{ fontFamily: "Inter_500Medium" }}
+          >
+            {venceEm}
+          </Text>
+        </View>
+      ) : null}
+
+      <View className="mt-4 flex-row gap-2">
+        <Pressable
+          onPress={onRejeitar}
+          disabled={respondendo}
+          className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border border-red-300/40 bg-red-500/10 py-3 active:opacity-70 disabled:opacity-50"
+        >
+          <Ionicons name="close-circle-outline" size={16} color="#FCA5A5" />
+          <Text
+            className="text-sm text-red-200"
+            style={{ fontFamily: "Inter_600SemiBold" }}
+          >
+            Rejeitar
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={onAceitar}
+          disabled={respondendo}
+          className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl bg-milsaca-dourado py-3 active:opacity-80 disabled:opacity-50"
+        >
+          {respondendo ? (
+            <ActivityIndicator color="#2D3A2E" size="small" />
+          ) : (
+            <>
+              <Ionicons name="checkmark-circle" size={16} color="#2D3A2E" />
+              <Text
+                className="text-sm text-milsaca-verde"
+                style={{ fontFamily: "Inter_600SemiBold" }}
+              >
+                Aceitar
+              </Text>
+            </>
+          )}
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function formatVencimento(iso: string): string {
+  const venceEm = new Date(iso);
+  const agora = new Date();
+  const diffMs = venceEm.getTime() - agora.getTime();
+  const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDias < 0) return "Vencida";
+  if (diffDias === 0) return "Vence hoje";
+  if (diffDias === 1) return "Vence amanhã";
+  if (diffDias <= 7) return `Vence em ${diffDias} dias`;
+  const dia = String(venceEm.getDate()).padStart(2, "0");
+  const mes = String(venceEm.getMonth() + 1).padStart(2, "0");
+  return `Vale até ${dia}/${mes}`;
 }
