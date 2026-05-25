@@ -109,9 +109,14 @@ export async function listContratos(
 
 export type ContratoDetail = ContratoListItem & {
   notes_lead: string | null;
+  produtor_cpf_cnpj: string | null;
+  produtor_fazenda: string | null;
+  produtor_city: string | null;
+  produtor_state: string | null;
   comprador_id: string | null;
   comprador_nome: string | null;
   comprador_cnpj: string | null;
+  comprador_ie: string | null;
   comprador_city: string | null;
   comprador_state: string | null;
   comissao_pct: number | null;
@@ -129,27 +134,47 @@ export async function getContrato(
       `id, code, status, coffee_type, bag_count, total_value, signed_at,
        created_at, updated_at, produtor_id, lead_id,
        comprador_id, comissao_pct, comissao_total,
-       produtor:profiles!contratos_produtor_id_fkey(id, full_name, phone),
+       produtor:profiles!contratos_produtor_id_fkey(id, full_name, phone, produtores(cpf_cnpj, fazenda_nome, city, state)),
        lead:leads!contratos_lead_id_fkey(notes),
-       comprador:compradores!contratos_comprador_id_fkey(id, name, cnpj, city, state)`,
+       comprador:compradores!contratos_comprador_id_fkey(id, name, cnpj, inscricao_estadual, city, state)`,
     )
     .eq("corretora_id", corretoraId)
     .eq("id", id)
     .maybeSingle();
 
   if (!data) return null;
-  const r = data as ContratoRow & {
+  type ProdExt = {
+    cpf_cnpj: string | null;
+    fazenda_nome: string | null;
+    city: string | null;
+    state: string | null;
+  };
+  type ProdutorWithExt = {
+    id: string;
+    full_name: string | null;
+    phone: string | null;
+    produtores: ProdExt | ProdExt[] | null;
+  };
+  type CompradorDetail = {
+    id: string;
+    name: string;
+    cnpj: string | null;
+    inscricao_estadual: string | null;
+    city: string | null;
+    state: string | null;
+  };
+  type ContratoDetailRow = Omit<ContratoRow, "produtor"> & {
     lead: { notes: string | null } | { notes: string | null }[] | null;
     comprador_id: string | null;
     comissao_pct: number | string | null;
     comissao_total: number | string | null;
-    comprador:
-      | { id: string; name: string; cnpj: string | null; city: string | null; state: string | null }
-      | { id: string; name: string; cnpj: string | null; city: string | null; state: string | null }[]
-      | null;
+    produtor: ProdutorWithExt | ProdutorWithExt[] | null;
+    comprador: CompradorDetail | CompradorDetail[] | null;
   };
+  const r = data as ContratoDetailRow;
 
   const p = pickOne(r.produtor);
+  const pExt = p ? pickOne(p.produtores) : null;
   const lead = pickOne(r.lead);
   const c = pickOne(r.comprador);
   return {
@@ -165,11 +190,16 @@ export async function getContrato(
     produtor_id: r.produtor_id,
     produtor_nome: p?.full_name ?? "—",
     produtor_phone: p?.phone ?? null,
+    produtor_cpf_cnpj: pExt?.cpf_cnpj ?? null,
+    produtor_fazenda: pExt?.fazenda_nome ?? null,
+    produtor_city: pExt?.city ?? null,
+    produtor_state: pExt?.state ?? null,
     lead_id: r.lead_id,
     notes_lead: lead?.notes ?? null,
     comprador_id: r.comprador_id,
     comprador_nome: c?.name ?? null,
     comprador_cnpj: c?.cnpj ?? null,
+    comprador_ie: c?.inscricao_estadual ?? null,
     comprador_city: c?.city ?? null,
     comprador_state: c?.state ?? null,
     comissao_pct: r.comissao_pct != null ? Number(r.comissao_pct) : null,
