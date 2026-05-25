@@ -880,3 +880,123 @@ export async function toggleFavoritoCorretora(
   if (error) return { error: error.message };
   return {};
 }
+
+// ----------------------------------------------------------------- //
+// OFERTAS — produtor manifesta interesse de vender pra uma corretora
+// ----------------------------------------------------------------- //
+// Cria um lead na corretora (status=novo, origem=vitrine), e ela vê
+// aparecer na Central de Leads dela. Sem lote ainda — só o sinal:
+// "tenho X sacas de café Y na fazenda Z, querem comprar?". Quando a
+// corretora aceitar, ela classifica e vira lote real.
+//
+// Reusa o schema `leads` (Fase 4 do redesign) com origem `vitrine`
+// (Fase 9d). RLS de leads já cobre — qualquer authenticated insere
+// se for o próprio produtor_id e a corretora_id existir.
+
+export type OfertaInput = {
+  corretoraId: string;
+  produtorId: string;
+  /** "arabica" | "conillon" — mapeado pra leads.coffee_type texto livre */
+  specie: "arabica" | "conillon";
+  /** opcional — natural / cd_desmucilado / despolpado / fermentacao_induzida */
+  processo?: CoffeeProcesso | null;
+  /** quantidade de sacas de 60kg disponíveis */
+  bagCount: number;
+  /** R$/sc esperado (opcional — quando vazio, fica em aberto) */
+  precoAlvo?: number | null;
+  /** descrição livre do produtor (safra, fazenda, características) */
+  observacoes?: string | null;
+};
+
+const SPECIE_LABEL_PT: Record<"arabica" | "conillon", string> = {
+  arabica: "Arábica",
+  conillon: "Conillón",
+};
+
+export async function criarOfertaProdutor(
+  input: OfertaInput,
+): Promise<{ leadId?: string; error?: string }> {
+  // Monta coffee_type humano pra a corretora ver no card de lead.
+  const coffeeType = input.processo
+    ? `${SPECIE_LABEL_PT[input.specie]} · ${input.processo}`
+    : SPECIE_LABEL_PT[input.specie];
+
+  const { data, error } = await supabase
+    .from("leads")
+    .insert({
+      corretora_id: input.corretoraId,
+      produtor_id: input.produtorId,
+      status: "novo",
+      origem: "vitrine",
+      coffee_type: coffeeType,
+      bag_count: input.bagCount,
+      proposed_price: input.precoAlvo ?? null,
+      notes: input.observacoes ?? null,
+    })
+    .select("id")
+    .single<{ id: string }>();
+
+  if (error) return { error: error.message };
+  if (!data) return { error: "Falha ao criar oferta" };
+  return { leadId: data.id };
+}
+
+/**
+ * Lista corretoras pra picker da tela de oferta — versão mínima da
+ * `listCorretorasParaProdutor` sem dados extras (sem favorito/contagem).
+ * Ordena favoritas primeiro pra reduzir scroll.
+ */
+export type CorretoraPicker = {
+  id: string;
+  name: string;
+  city: string | null;
+  state: string | null;
+  verified: boolean;
+  favorita: boolean;
+};
+
+export async function listCorretorasParaOferta(
+  produtorId: string,
+): Promise<CorretoraPicker[]> {
+  const [corretorasRes, favoritosRes] = await Promise.all([
+    supabase
+      .from("corretoras_publicas")
+      .select("id, name, city, state, verified")
+      .order("verified", { ascending: false })
+      .order("name", { ascending: true })
+      .limit(500),
+    supabase
+      .from("favoritos")
+      .select("corretora_id")
+      .eq("produtor_id", produtorId),
+  ]);
+
+  const favoritosSet = new Set(
+    ((favoritosRes.data ?? []) as { corretora_id: string }[]).map(
+      (f) => f.corretora_id,
+    ),
+  );
+
+  type Row = {
+    id: string;
+    name: string;
+    city: string | null;
+    state: string | null;
+    verified: boolean;
+  };
+  const rows = (corretorasRes.data ?? []) as Row[];
+
+  const items: CorretoraPicker[] = rows.map((r) => ({
+    ...r,
+    favorita: favoritosSet.has(r.id),
+  }));
+
+  // Favoritas primeiro
+  items.sort((a, b) => {
+    if (a.favorita !== b.favorita) return a.favorita ? -1 : 1;
+    if (a.verified !== b.verified) return a.verified ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  return items;
+}

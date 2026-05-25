@@ -4,6 +4,7 @@
 
 import { Ionicons } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
+import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -393,11 +394,28 @@ function CorretoraCard({
         </View>
       ) : null}
 
-      <View className="mt-3 flex-row gap-2">
+      <View className="mt-3 gap-2">
+        <Pressable
+          onPress={() =>
+            router.push({
+              pathname: "/(painel)/ofertar",
+              params: { corretora: c.id },
+            })
+          }
+          className="flex-row items-center justify-center gap-2 rounded-xl border border-milsaca-dourado bg-milsaca-verde/50 py-3 active:opacity-80"
+        >
+          <Ionicons name="cafe-outline" size={16} color="#C9A961" />
+          <Text
+            className="text-sm text-milsaca-dourado"
+            style={{ fontFamily: "Inter_600SemiBold" }}
+          >
+            Ofertar café pra essa corretora
+          </Text>
+        </Pressable>
         <Pressable
           onPress={onWhatsApp}
           disabled={!c.phone}
-          className="flex-1 flex-row items-center justify-center gap-2 rounded-xl bg-milsaca-dourado py-3 active:opacity-80 disabled:opacity-40"
+          className="flex-row items-center justify-center gap-2 rounded-xl bg-milsaca-dourado py-3 active:opacity-80 disabled:opacity-40"
         >
           <Ionicons name="logo-whatsapp" size={16} color="#2D3A2E" />
           <Text

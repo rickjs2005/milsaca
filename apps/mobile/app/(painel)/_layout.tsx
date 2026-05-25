@@ -189,6 +189,7 @@ export default function PainelLayout() {
       <Tabs.Screen name="entregas" options={{ href: null }} />
       <Tabs.Screen name="financeiro" options={{ href: null }} />
       <Tabs.Screen name="notificacoes" options={{ href: null }} />
+      <Tabs.Screen name="ofertar" options={{ href: null }} />
     </Tabs>
   );
 }

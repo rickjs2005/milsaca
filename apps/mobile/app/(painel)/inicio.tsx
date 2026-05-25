@@ -154,8 +154,35 @@ export default function InicioScreen() {
           </Text>
         </View>
 
-        {/* 2 botões grandes — Ver Preço + Falar Corretora */}
+        {/* 3 botões grandes — Ofertar café (CTA principal) + Ver Preço + Falar Corretora */}
         <View className="mt-6 gap-3">
+            <Pressable
+              onPress={() => router.push("/(painel)/ofertar")}
+              className="flex-row items-center gap-3 rounded-2xl bg-milsaca-verde-claro p-5 active:opacity-80"
+              style={{
+                borderWidth: 2,
+                borderColor: "#C9A961",
+              }}
+            >
+              <View className="h-12 w-12 items-center justify-center rounded-full bg-milsaca-dourado">
+                <Ionicons name="cafe" size={24} color="#2D3A2E" />
+              </View>
+              <View className="flex-1">
+                <Text
+                  className="text-base text-milsaca-cream"
+                  style={{ fontFamily: "Inter_700Bold" }}
+                >
+                  Ofertar café
+                </Text>
+                <Text
+                  className="text-xs text-milsaca-cream/70"
+                  style={{ fontFamily: "Inter_500Medium" }}
+                >
+                  Mande sua oferta direto pra corretora
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#FAF7F0" />
+            </Pressable>
             <Pressable
               onPress={() => router.push("/(painel)/cotacoes")}
               className="flex-row items-center gap-3 rounded-2xl bg-milsaca-dourado p-5 active:opacity-80"
