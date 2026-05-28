@@ -36,7 +36,7 @@ values
 on conflict (key) do nothing;
 
 -- 3) Lista de espera de corretora ------------------------------------------
-create table public.corretora_waitlist (
+create table if not exists public.corretora_waitlist (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   whatsapp text,
@@ -52,13 +52,15 @@ create table public.corretora_waitlist (
   updated_at timestamptz not null default now()
 );
 
-create index corretora_waitlist_status_idx on public.corretora_waitlist (status);
-create index corretora_waitlist_created_idx on public.corretora_waitlist (created_at desc);
+create index if not exists corretora_waitlist_status_idx on public.corretora_waitlist (status);
+create index if not exists corretora_waitlist_created_idx on public.corretora_waitlist (created_at desc);
 
+-- tg_set_updated_at() é a função canônica do schema (set_updated_at foi
+-- consolidada/removida em 20260608).
 drop trigger if exists set_corretora_waitlist_updated_at on public.corretora_waitlist;
 create trigger set_corretora_waitlist_updated_at
   before update on public.corretora_waitlist
-  for each row execute function public.set_updated_at();
+  for each row execute function public.tg_set_updated_at();
 
 alter table public.corretora_waitlist enable row level security;
 
