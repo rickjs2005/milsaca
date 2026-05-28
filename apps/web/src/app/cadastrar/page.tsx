@@ -3,6 +3,7 @@ import { signUp } from "./_actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CadastroForm } from "./_components/cadastro-form";
 import { MilsacaLogo } from "@/components/milsaca-logo";
+import { getFounderProgramStatus } from "@/lib/founder-program";
 
 type SearchParams = Promise<{
   email?: string;
@@ -24,6 +25,7 @@ export default async function CadastrarPage({
 }) {
   const sp = await searchParams;
   const initialRole = sp.role === "corretora" ? "corretora" : "produtor";
+  const founder = await getFounderProgramStatus();
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-milsaca-cream px-6 py-10">
@@ -51,6 +53,11 @@ export default async function CadastrarPage({
                 corretora_city: sp.corretora_city ?? "",
                 corretora_uf: sp.corretora_uf ?? "",
                 corretora_whatsapp: sp.corretora_whatsapp ?? "",
+              }}
+              founder={{
+                accepting: founder.accepting,
+                used: founder.used,
+                total: founder.total,
               }}
               error={sp.error ?? null}
             />

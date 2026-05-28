@@ -9,6 +9,8 @@ export type SettingKey =
   | "public_signup_produtor"
   | "public_signup_corretora"
   | "manual_approval_corretora"
+  | "founder_program_open"
+  | "founder_slots_total"
   | "support_whatsapp"
   | "support_email"
   | "whatsapp_provider"
@@ -53,6 +55,8 @@ export const SETTING_SECTIONS: {
       "public_signup_corretora",
       "manual_approval_corretora",
       "trial_days",
+      "founder_program_open",
+      "founder_slots_total",
     ],
   },
   {
@@ -105,6 +109,8 @@ export const SETTING_TYPES: Record<SettingKey, SettingType> = {
   public_signup_produtor: { kind: "boolean" },
   public_signup_corretora: { kind: "boolean" },
   manual_approval_corretora: { kind: "boolean" },
+  founder_program_open: { kind: "boolean" },
+  founder_slots_total: { kind: "number", min: 0, max: 100, suffix: "vagas" },
   support_whatsapp: { kind: "string", placeholder: "5533999999999" },
   support_email: { kind: "string", placeholder: "contato@milsaca.app" },
   whatsapp_provider: {
@@ -166,6 +172,8 @@ export const SETTING_LABELS: Record<SettingKey, string> = {
   public_signup_produtor: "Cadastro público de produtor",
   public_signup_corretora: "Cadastro público de corretora",
   manual_approval_corretora: "Aprovação manual obrigatória pra corretora",
+  founder_program_open: "Programa de fundadoras aberto (cadastro de corretora)",
+  founder_slots_total: "Vagas de fundadora (grátis vitalício)",
   support_whatsapp: "WhatsApp oficial do suporte",
   support_email: "E-mail oficial do suporte",
   whatsapp_provider: "Provider WhatsApp",

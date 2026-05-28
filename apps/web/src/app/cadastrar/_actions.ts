@@ -11,6 +11,7 @@ import {
   ufSchema,
   whatsappOptionalSchema,
 } from "@/lib/brasil-schemas";
+import { getFounderProgramStatus } from "@/lib/founder-program";
 import { createHash } from "node:crypto";
 import type { Profile } from "@milsaca/types";
 
@@ -38,6 +39,15 @@ function clean(v: FormDataEntryValue | null): string | null {
 export async function signUp(formData: FormData) {
   const roleRaw = String(formData.get("role") ?? "produtor");
   const role: RoleChoice = roleRaw === "corretora" ? "corretora" : "produtor";
+
+  // Programa de fundadoras: se o cadastro de corretora está fechado ou as
+  // vagas acabaram, manda pra lista de espera em vez de criar conta pendente.
+  if (role === "corretora") {
+    const founder = await getFounderProgramStatus();
+    if (!founder.accepting) {
+      redirect("/corretoras/espera");
+    }
+  }
 
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");

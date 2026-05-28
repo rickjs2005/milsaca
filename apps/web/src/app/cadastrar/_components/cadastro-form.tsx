@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/forms/form-field";
 import { MaskedInput } from "@/components/forms/masked-input";
@@ -20,18 +21,27 @@ type Defaults = {
   corretora_whatsapp: string;
 };
 
+type Founder = {
+  accepting: boolean;
+  used: number;
+  total: number;
+};
+
 export function CadastroForm({
   action,
   initialRole,
   defaults,
+  founder,
   error,
 }: {
   action: (formData: FormData) => void;
   initialRole: Role;
   defaults: Defaults;
+  founder: Founder;
   error: string | null;
 }) {
   const [role, setRole] = useState<Role>(initialRole);
+  const corretoraClosed = role === "corretora" && !founder.accepting;
 
   return (
     <form action={action} className="space-y-5">
@@ -58,6 +68,10 @@ export function CadastroForm({
         <input type="hidden" name="role" value={role} />
       </fieldset>
 
+      {corretoraClosed ? (
+        <CorretoraClosedPanel total={founder.total} />
+      ) : (
+        <>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <FormField label="Seu nome completo" htmlFor="full_name" required>
           <Input
@@ -115,6 +129,10 @@ export function CadastroForm({
 
       {role === "corretora" ? (
         <div className="space-y-4 rounded-lg border border-milsaca-dourado/30 bg-milsaca-dourado/5 p-4">
+          <div className="rounded-md bg-milsaca-verde px-3 py-2 text-xs font-medium text-milsaca-cream">
+            Programa Fundadoras · {founder.used} de {founder.total} vagas ·
+            grátis vitalício
+          </div>
           <p className="text-xs text-milsaca-verde">
             Dados da corretora — admin valida antes de liberar acesso.
           </p>
@@ -224,7 +242,30 @@ export function CadastroForm({
       >
         {role === "corretora" ? "Enviar pra aprovação" : "Criar conta"}
       </SubmitButton>
+        </>
+      )}
     </form>
+  );
+}
+
+function CorretoraClosedPanel({ total }: { total: number }) {
+  return (
+    <div className="space-y-3 rounded-lg border border-milsaca-dourado/40 bg-milsaca-dourado/5 p-5 text-center">
+      <p className="text-sm font-semibold text-milsaca-verde">
+        Vagas de fundadora encerradas no momento
+      </p>
+      <p className="text-xs leading-relaxed text-milsaca-verde-claro">
+        As {total} vagas do programa de fundadoras (grátis vitalício) não estão
+        abertas agora. Entre na lista de espera que a gente te chama assim que
+        liberar novas vagas.
+      </p>
+      <Link
+        href="/corretoras/espera"
+        className="inline-flex w-full items-center justify-center rounded-md bg-milsaca-verde px-4 py-2.5 text-sm font-medium text-milsaca-cream transition-colors hover:bg-milsaca-verde-claro"
+      >
+        Entrar na lista de espera
+      </Link>
+    </div>
   );
 }
 
