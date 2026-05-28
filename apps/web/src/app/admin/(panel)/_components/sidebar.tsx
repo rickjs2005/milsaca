@@ -29,6 +29,7 @@ import {
   Coffee,
   MapPin,
   Database,
+  Hourglass,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -60,6 +61,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Gestão",
     items: [
       { href: "/admin/aprovacoes", label: "Aprovações", icon: Inbox },
+      { href: "/admin/corretoras-espera", label: "Espera de corretora", icon: Hourglass },
       { href: "/admin/corretoras", label: "Corretoras", icon: Building2 },
       { href: "/admin/produtores", label: "Produtores", icon: Sprout },
     ],
