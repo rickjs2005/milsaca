@@ -55,6 +55,24 @@ export default async function CadastrarPage({
               error={sp.error ?? null}
             />
 
+            <p className="mt-4 text-center text-xs text-milsaca-verde-claro/80">
+              Ao criar conta, você concorda com os{" "}
+              <Link
+                href="/termos"
+                className="font-medium text-milsaca-verde hover:underline"
+              >
+                Termos de Uso
+              </Link>{" "}
+              e a{" "}
+              <Link
+                href="/politica-privacidade"
+                className="font-medium text-milsaca-verde hover:underline"
+              >
+                Política de Privacidade
+              </Link>
+              .
+            </p>
+
             <p className="mt-6 text-center text-sm text-milsaca-verde-claro">
               Já tem conta?{" "}
               <Link

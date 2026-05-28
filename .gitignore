@@ -10,6 +10,9 @@ out/
 .turbo/
 *.tsbuildinfo
 
+# Vercel
+.vercel/
+
 # Expo
 .expo/
 .expo-shared/

@@ -218,8 +218,22 @@ export default function Home() {
         </section>
 
         {/* Footer */}
-        <footer className="mt-16 flex flex-col items-center justify-between gap-2 text-xs text-milsaca-verde-claro/70 sm:flex-row">
+        <footer className="mt-16 flex flex-col items-center justify-between gap-3 text-xs text-milsaca-verde-claro/70 sm:flex-row">
           <span>© {new Date().getFullYear()} Milsaca</span>
+          <nav className="flex items-center gap-4">
+            <Link
+              href="/termos"
+              className="hover:text-milsaca-verde hover:underline"
+            >
+              Termos de Uso
+            </Link>
+            <Link
+              href="/politica-privacidade"
+              className="hover:text-milsaca-verde hover:underline"
+            >
+              Privacidade
+            </Link>
+          </nav>
           <span>Mercado do café · Brasil</span>
         </footer>
       </div>
