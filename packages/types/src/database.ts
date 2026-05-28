@@ -486,6 +486,51 @@ export type Database = {
         }
         Relationships: []
       }
+      corretora_waitlist: {
+        Row: {
+          city: string | null
+          created_at: string
+          email: string | null
+          id: string
+          invited_at: string | null
+          message: string | null
+          name: string
+          notes: string | null
+          state: string | null
+          status: string
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          invited_at?: string | null
+          message?: string | null
+          name: string
+          notes?: string | null
+          state?: string | null
+          status?: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          invited_at?: string | null
+          message?: string | null
+          name?: string
+          notes?: string | null
+          state?: string | null
+          status?: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       cotacoes: {
         Row: {
           coffee_type: string
@@ -1582,6 +1627,7 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"][]
       }
+      founder_program_status: { Args: never; Returns: Json }
       get_laudo_publico: { Args: { p_id: string }; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
       is_app_admin: { Args: never; Returns: boolean }
