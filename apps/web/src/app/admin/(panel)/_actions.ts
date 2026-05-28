@@ -244,6 +244,20 @@ export async function aprovarCorretora(formData: FormData) {
 
   const supabase = await createClient();
 
+  // Programa de fundadoras: cap de vagas. Aprovar além do limite exige
+  // aumentar founder_slots_total em /admin/configuracoes.
+  const { data: fp } = await supabase.rpc("founder_program_status");
+  const founder = (fp ?? {}) as { total?: number; used?: number };
+  const founderTotal = typeof founder.total === "number" ? founder.total : 5;
+  const founderUsed = typeof founder.used === "number" ? founder.used : 0;
+  if (founderUsed >= founderTotal) {
+    redirect(
+      `/admin/aprovacoes?error=${encodeURIComponent(
+        `Limite de ${founderTotal} fundadoras atingido. Aumente as vagas em Configurações pra aprovar mais.`,
+      )}`,
+    );
+  }
+
   const { data: created, error: createErr } = await supabase
     .from("corretoras")
     .insert({
@@ -274,16 +288,44 @@ export async function aprovarCorretora(formData: FormData) {
     );
   }
 
-  // Trial de 30 dias automático. Admin pode trocar/cobrar depois em
-  // /admin/assinaturas/[id]. Falha silenciosa (loga em audit) — não
-  // bloqueia a aprovação.
-  const trialEnds = new Date();
-  trialEnds.setDate(trialEnds.getDate() + 30);
+  // Concede o plano Fundadora: grátis vitalício (ativo, +100 anos).
+  // Self-heal: garante o plano por slug (a migration já cria, mas defende
+  // ambientes onde ela não rodou ainda). Falha silenciosa loga em audit.
+  const { data: existingFounderPlan } = await supabase
+    .from("plans")
+    .select("id")
+    .eq("slug", "corretora-fundador")
+    .maybeSingle<{ id: string }>();
+
+  let founderPlanId = existingFounderPlan?.id;
+  if (!founderPlanId) {
+    const { data: createdPlan } = await supabase
+      .from("plans")
+      .insert({
+        slug: "corretora-fundador",
+        name: "Fundadora",
+        description: "Programa fundador — acesso completo, grátis vitalício.",
+        price_cents: 0,
+        billing_period: "monthly",
+        features: [],
+        active: true,
+      })
+      .select("id")
+      .single<{ id: string }>();
+    founderPlanId = createdPlan?.id;
+  }
+
+  const now = new Date();
+  const lifetimeEnd = new Date(now);
+  lifetimeEnd.setFullYear(lifetimeEnd.getFullYear() + 100);
   const { error: subErr } = await supabase.from("subscriptions").insert({
     corretora_id: created.id,
-    status: "trial",
-    started_at: new Date().toISOString(),
-    trial_ends_at: trialEnds.toISOString(),
+    plan_id: founderPlanId ?? null,
+    status: "active",
+    started_at: now.toISOString(),
+    current_period_start: now.toISOString(),
+    current_period_end: lifetimeEnd.toISOString(),
+    trial_ends_at: null,
   });
 
   await supabase.from("audit_log").insert({
@@ -297,7 +339,8 @@ export async function aprovarCorretora(formData: FormData) {
       cnpj,
       city,
       state,
-      trial_ends_at: trialEnds.toISOString(),
+      plano: "fundador",
+      vitalicio_ate: lifetimeEnd.toISOString(),
       subscription_error: subErr?.message ?? null,
     },
   });
@@ -305,9 +348,10 @@ export async function aprovarCorretora(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/aprovacoes");
   revalidatePath("/admin/corretoras");
+  revalidatePath("/admin/assinaturas");
   redirect(
     "/admin/aprovacoes?ok=" +
-      encodeURIComponent(`${name} aprovada e ativada.`),
+      encodeURIComponent(`${name} aprovada como fundadora (grátis vitalício).`),
   );
 }
 

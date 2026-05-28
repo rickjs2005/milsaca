@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Inbox } from "lucide-react";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
@@ -41,6 +42,21 @@ export default async function AdminAprovacoesPage({
   );
   const rows: PendingSignup[] = (data ?? []) as PendingSignup[];
 
+  const { data: fp } = await supabase.rpc("founder_program_status");
+  const founder = (fp ?? {}) as {
+    open?: boolean;
+    total?: number;
+    used?: number;
+  };
+  const fTotal = typeof founder.total === "number" ? founder.total : 5;
+  const fUsed = typeof founder.used === "number" ? founder.used : 0;
+  const fOpen = founder.open ?? true;
+  const fStatusLabel = !fOpen
+    ? "fechado manualmente"
+    : fUsed >= fTotal
+      ? "cheio — cadastro fechado"
+      : "aberto";
+
   return (
     <>
       <PageHeader
@@ -56,6 +72,25 @@ export default async function AdminAprovacoesPage({
           { label: "Aprovações" },
         ]}
       />
+
+      <div className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-card border border-milsaca-dourado/40 bg-milsaca-dourado/10 px-4 py-3 text-sm">
+        <span className="font-semibold text-milsaca-preto">
+          Programa Fundadoras: {fUsed} de {fTotal} vagas
+        </span>
+        <span
+          className={
+            fOpen && fUsed < fTotal ? "text-emerald-700" : "text-slate-500"
+          }
+        >
+          · {fStatusLabel}
+        </span>
+        <Link
+          href="/admin/configuracoes"
+          className="ml-auto text-xs font-medium text-milsaca-verde hover:underline"
+        >
+          Ajustar vagas
+        </Link>
+      </div>
 
       {rpcError ? (
         <p className="mb-6 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
