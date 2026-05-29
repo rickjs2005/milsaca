@@ -1,0 +1,131 @@
+name: CD
+
+# Deploy automático — só dispara DEPOIS que o workflow "CI" passa verde
+# num push no `main` (workflow_run). Nunca roda em PR nem em CI vermelho.
+#
+# Alvos:
+#   1. deploy-functions  — edge function sync-cotacoes (Supabase)
+#   2. deploy-migrations — supabase db push (com freio: Environment c/ aprovação)
+#   3. deploy-web        — apps/web na Vercel (CLI, prebuilt)
+#
+# Nenhum segredo vive no git: tudo vem de GitHub Secrets.
+# Setup dos secrets + Environment: docs/milsaca/deploy-cd.md
+#
+# Nota: workflow_run só passa a disparar depois que ESTE arquivo já estiver no
+# `main`. O 1º merge instala o workflow; os CIs verdes seguintes acionam o CD.
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+  # Permite rodar manualmente também (Actions → CD → Run workflow).
+  workflow_dispatch:
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy-functions:
+    name: Deploy edge functions (Supabase)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # workflow_run dispara também por PR/falha — só seguimos em push no main
+    # que terminou verde. Em workflow_dispatch não há .workflow_run → libera.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main')
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Só sync-cotacoes. send-dispatch NÃO entra aqui de propósito: o README
+      # (supabase/functions/send-dispatch/README.md) diz "Não deployado" —
+      # providers WhatsApp/Resend não implementados e faltam secrets.
+      # verify_jwt=false já está em supabase/config.toml, então o deploy respeita.
+      - name: Deploy sync-cotacoes
+        run: supabase functions deploy sync-cotacoes --project-ref "$SUPABASE_PROJECT_REF"
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+
+  deploy-migrations:
+    name: Push migrations (prod)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Environment com required reviewer = o job PAUSA esperando sua aprovação
+    # no GitHub antes de tocar o banco. Esse é o freio manual.
+    environment: production-db
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main')
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link projeto
+        run: supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
+
+      # Loga o que SERIA aplicado antes de aplicar (db push é idempotente:
+      # só aplica migrations pendentes via schema_migrations).
+      - name: Dry-run (mostra o que aplicaria)
+        run: supabase db push --dry-run
+
+      - name: db push
+        run: supabase db push
+
+  deploy-web:
+    name: Deploy web (Vercel)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main')
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+
+      # Puxa env vars de produção DA VERCEL (não do git) e gera .vercel/.
+      - name: Vercel pull
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Vercel build
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+
+      - name: Vercel deploy (prebuilt)
+        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
