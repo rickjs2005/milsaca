@@ -4,18 +4,20 @@ Workflow: `.github/workflows/cd.yml`. Dispara **só depois que o CI passa verde
 num push no `main`** (`workflow_run`), e também sob demanda
 (Actions → CD → **Run workflow**).
 
-Dois jobs independentes:
+O CD tem **um job**:
 
 | Job | O que faz | Freio |
 |---|---|---|
 | `deploy-functions` | `supabase functions deploy sync-cotacoes` | — (idempotente) |
-| `deploy-web` | `vercel pull/build/deploy --prebuilt --prod` em `apps/web` | — |
 
 > `send-dispatch` **não** é deployado: providers (WhatsApp/Resend) ainda não
 > implementados — ver `supabase/functions/send-dispatch/README.md`.
 >
-> **Migrations NÃO entram no CD** (decisão 2026-05-29) — `supabase db push` é
-> inseguro neste repo. Aplicação manual via MCP; ver **seção 2**.
+> **Web NÃO entra no CD** (decisão 2026-05-29) — o `apps/web` é deployado pela
+> **integração Git nativa da Vercel**; ver **seção 3**.
+>
+> **Migrations NÃO entram no CD** — `supabase db push` é inseguro neste repo.
+> Aplicação manual via MCP; ver **seção 2**.
 
 ---
 
@@ -28,29 +30,16 @@ Settings → Secrets and variables → **Actions** → New repository secret (ou
 |---|---|
 | `SUPABASE_ACCESS_TOKEN` | PAT `sbp_…` — https://supabase.com/dashboard/account/tokens |
 | `SUPABASE_PROJECT_REF` | ref do projeto (está no `apps/web/.env.local`, na URL `https://<ref>.supabase.co`) |
-| `VERCEL_TOKEN` | Vercel → Account Settings → Tokens |
-| `VERCEL_ORG_ID` | `apps/web/.vercel/project.json` após `vercel link` (campo `orgId`) |
-| `VERCEL_PROJECT_ID` | idem (`projectId`) |
 
-Exemplo via CLI (rode na raiz do repo, com `gh` logado):
+Ambos **já estão configurados** (set nesta sessão a partir do `.env.local`). Pra
+recriar (raiz do repo, `gh` logado):
 
 ```powershell
 gh secret set SUPABASE_ACCESS_TOKEN
 gh secret set SUPABASE_PROJECT_REF
-gh secret set VERCEL_TOKEN
-gh secret set VERCEL_ORG_ID
-gh secret set VERCEL_PROJECT_ID
 ```
 
-### Obter os IDs da Vercel
-
-```powershell
-cd apps\web
-vercel link        # escolha o projeto Milsaca; gera .vercel/project.json
-Get-Content .vercel\project.json   # copie orgId e projectId
-```
-
-`.vercel/` já está no `.gitignore` — não comitar.
+> Não há secrets de Vercel: o web usa a integração Git nativa (seção 3).
 
 ---
 
@@ -80,23 +69,25 @@ Get-Content .vercel\project.json   # copie orgId e projectId
 
 ---
 
-## 3. Desligar o auto-deploy nativo da Vercel (evita deploy dobrado)
+## 3. Web — integração Git nativa da Vercel
 
-Como o web passa a ser deployado pelo Actions (gated no CI verde), desative o
-deploy automático do branch de produção na Vercel pra não subir duas vezes:
+O `apps/web` **não** é deployado pelo CD. Quem cuida é a **integração Git nativa
+da Vercel** (decisão 2026-05-29): sem secrets de Vercel, sem job no Actions, com
+preview por PR de graça. Trade-off aceito: o deploy web não fica "atrás do CI
+verde".
 
-- Vercel → projeto → **Settings → Git**.
-- Desative **"Automatically deploy"** para o Production Branch (`main`).
-- Previews de PR podem continuar ligados (úteis e não conflitam).
-- Confirme **Root Directory = `apps/web`** (Settings → General).
-- As env vars de produção (`NEXT_PUBLIC_SUPABASE_URL`,
-  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`,
-  `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_WHATSAPP_CONTATO`) ficam **na Vercel** —
-  o `vercel pull` as traz pro build. Não vão pro Actions nem pro git.
+Setup (uma vez, no dashboard da Vercel):
 
-> Alternativa: manter o auto-deploy nativo da Vercel e remover o job
-> `deploy-web` do `cd.yml`. Menos manutenção e preview por PR de graça, mas o
-> deploy web deixa de ficar atrás do CI verde.
+1. **Add New → Project** → importar o repo `rickjs2005/milsaca`.
+2. **Root Directory = `apps/web`** (Settings → General).
+3. Manter **"Automatically deploy"** do branch `main` **LIGADO** (Settings → Git).
+4. **Env vars de produção** (Settings → Environment Variables):
+   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
+   `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_WHATSAPP_CONTATO`
+   (+ `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_AUTH_TOKEN` quando provisionar o Sentry).
+5. O `apps/web/vercel.json` (region `gru1`, build) já está versionado.
+
+A partir daí, todo push no `main` deploya o web automaticamente.
 
 ---
 

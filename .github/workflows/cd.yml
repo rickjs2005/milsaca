@@ -3,9 +3,12 @@ name: CD
 # Deploy automático — só dispara DEPOIS que o workflow "CI" passa verde
 # num push no `main` (workflow_run). Nunca roda em PR nem em CI vermelho.
 #
-# Alvos:
-#   1. deploy-functions  — edge function sync-cotacoes (Supabase)
-#   2. deploy-web        — apps/web na Vercel (CLI, prebuilt)
+# Alvo:
+#   - deploy-functions — edge function sync-cotacoes (Supabase)
+#
+# WEB não entra no CD: o `apps/web` é deployado pela INTEGRAÇÃO GIT NATIVA da
+# Vercel (push no `main` → deploy automático; preview por PR). Sem secrets de
+# Vercel aqui. Setup: docs/milsaca/deploy-cd.md.
 #
 # MIGRATIONS NÃO entram no CD: `supabase db push` é inseguro neste repo
 # (histórico do schema_migrations dessincronizado do schema real + 5 filenames
@@ -62,41 +65,3 @@ jobs:
         run: supabase functions deploy sync-cotacoes --project-ref "$SUPABASE_PROJECT_REF"
         env:
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-
-  deploy-web:
-    name: Deploy web (Vercel)
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.event == 'push' &&
-       github.event.workflow_run.head_branch == 'main')
-    defaults:
-      run:
-        working-directory: apps/web
-    env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Install Vercel CLI
-        run: npm i -g vercel@latest
-
-      # Puxa env vars de produção DA VERCEL (não do git) e gera .vercel/.
-      - name: Vercel pull
-        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
-
-      - name: Vercel build
-        run: vercel build --prod --token="$VERCEL_TOKEN"
-
-      - name: Vercel deploy (prebuilt)
-        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
