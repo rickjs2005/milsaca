@@ -22,9 +22,17 @@ export async function entrarNaEspera(formData: FormData) {
   const cityRaw = String(formData.get("city") ?? "");
   const ufRaw = String(formData.get("state") ?? "");
   const message = String(formData.get("message") ?? "").trim() || null;
+  // Honeypot: campo escondido que humano nunca preenche. Se vier algo,
+  // é bot — fingimos sucesso (não damos feedback que ajude o bot a
+  // ajustar) e não gravamos nada. Espelha o padrão anti-spam.
+  const honeypot = String(formData.get("company") ?? "").trim();
 
   const params = new URLSearchParams();
   if (name) params.set("name", name);
+
+  if (honeypot) {
+    redirect("/corretoras/espera?enviado=1");
+  }
 
   if (!name) {
     params.set("error", "Informe seu nome.");

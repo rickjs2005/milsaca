@@ -88,7 +88,9 @@ function buildDefaultMessage(
  *
  * NÃO armazena IP cru. NÃO captura conversa subsequente.
  * Falha-silenciosa em erros não-críticos: sempre retorna { wa_url }
- * pra não travar a UX. Erros vão pro audit interno.
+ * pra não travar a UX. O insert em whatsapp_leads é fire-and-forget —
+ * se falhar, devolvemos { logged: false } e seguimos (não há trilha de
+ * audit interno aqui).
  */
 export async function POST(req: NextRequest) {
   // Rate limit por IP: 30 cliques/min. Generoso pra não atrapalhar uso

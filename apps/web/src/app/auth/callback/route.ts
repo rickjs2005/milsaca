@@ -24,8 +24,14 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
+    // Mensagem genérica fixa: não ecoar error.message cru do Supabase na
+    // query string (evita enumeração/diagnóstico). Padrão de
+    // confirmar-email/_actions.ts.
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[auth/callback] exchangeCodeForSession error:", error);
+    }
     return NextResponse.redirect(
-      `${origin}/entrar?error=${encodeURIComponent(error.message)}`,
+      `${origin}/entrar?error=${encodeURIComponent("Link inválido ou expirado. Peça um novo.")}`,
     );
   }
 

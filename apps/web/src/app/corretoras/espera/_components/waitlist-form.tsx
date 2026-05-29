@@ -18,6 +18,19 @@ export function WaitlistForm({
 }) {
   return (
     <form action={action} className="space-y-5">
+      {/* Honeypot: humano não vê nem tabula; bot preenche. A action
+          descarta o envio (finge sucesso) quando "company" vem preenchido. */}
+      <div aria-hidden="true" className="absolute left-[-9999px] top-[-9999px] h-0 w-0 overflow-hidden">
+        <label htmlFor="company">Não preencha este campo</label>
+        <input
+          id="company"
+          name="company"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+        />
+      </div>
+
       <FormField label="Seu nome" htmlFor="name" required>
         <Input
           id="name"

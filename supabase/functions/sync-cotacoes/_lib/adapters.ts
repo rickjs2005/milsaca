@@ -30,18 +30,50 @@ export interface Quote {
 const UA =
   "MilsacaBot/1.0 (+https://milsaca.com.br; rickjanuario0@gmail.com) cotacao-cache-15min";
 
+/**
+ * fetch com timeout por tentativa (8s) + retry/backoff para falhas
+ * transitórias (erro de rede ou HTTP 5xx). Faz até 3 tentativas com
+ * backoff exponencial (250ms, 500ms) + jitter.
+ *
+ * Não retenta 4xx (erro do cliente/payload) — só rede e 5xx. Mantém a
+ * REGRA DE OURO: se mesmo após os retries a fonte falhar, o adapter que
+ * chamou trata o resultado (res.ok === false → retorna null), nunca
+ * inventa preço.
+ */
 async function fetchWithTimeout(
   url: string,
-  init: RequestInit & { timeoutMs?: number } = {},
+  init: RequestInit & { timeoutMs?: number; retries?: number } = {},
 ): Promise<Response> {
-  const { timeoutMs = 8000, ...rest } = init;
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...rest, signal: ctrl.signal });
-  } finally {
-    clearTimeout(t);
+  const { timeoutMs = 8000, retries = 2, ...rest } = init;
+  const maxAttempts = Math.max(1, retries + 1);
+  let lastErr: unknown = null;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { ...rest, signal: ctrl.signal });
+      // 5xx é transitório (gateway/origem instável) → vale retentar.
+      // 4xx é definitivo → devolve pro caller decidir (sem retry).
+      if (res.status >= 500 && attempt < maxAttempts - 1) {
+        lastErr = new Error(`HTTP ${res.status}`);
+        continue;
+      }
+      return res;
+    } catch (err) {
+      // Erro de rede ou abort por timeout → retenta enquanto houver tentativa.
+      lastErr = err;
+      if (attempt >= maxAttempts - 1) break;
+    } finally {
+      clearTimeout(t);
+    }
+
+    // Backoff exponencial + jitter antes da próxima tentativa.
+    const backoff = 250 * 2 ** attempt + Math.floor(Math.random() * 100);
+    await new Promise((r) => setTimeout(r, backoff));
   }
+
+  throw lastErr ?? new Error(`fetchWithTimeout falhou: ${url}`);
 }
 
 // ---------------------------------------------------------------------------

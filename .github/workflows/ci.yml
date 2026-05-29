@@ -49,6 +49,32 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Lint de timestamps duplicados de migration (auditoria 4.2).
+      # Convenção: cada migration tem um prefixo de 14 chars ÚNICO; o
+      # Supabase CLI ordena por nome, então duplicar a data deixa a ordem
+      # à mercê do sufixo (frágil). Ver docs/milsaca/convencao-migrations.md.
+      #
+      # Allowlist: 5 pares já aplicados no remoto ANTES da convenção (não
+      # podem ser renomeados). Qualquer prefixo duplicado NOVO falha o job.
+      - name: Lint migrations (timestamp único)
+        run: |
+          cd supabase/migrations
+          allow="20260528000000 20260529000000 20260530000000 20260531000000 20260601000000"
+          dup=$(ls *.sql | cut -c1-14 | sort | uniq -d)
+          bad=""
+          for d in $dup; do
+            case " $allow " in
+              *" $d "*) echo "::warning::timestamp duplicado conhecido (allowlist): $d" ;;
+              *) bad="$bad $d" ;;
+            esac
+          done
+          if [ -n "$bad" ]; then
+            echo "::error::timestamps de migration duplicados (não permitidos):$bad"
+            echo "Use um timestamp único. Ver docs/milsaca/convencao-migrations.md."
+            exit 1
+          fi
+          echo "OK: nenhum timestamp duplicado fora da allowlist."
+
       - name: Lint
         run: pnpm -w lint
 

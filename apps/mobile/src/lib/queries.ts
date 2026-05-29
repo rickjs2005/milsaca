@@ -919,33 +919,17 @@ export interface PropostaParaProdutor {
 /**
  * Lista propostas dos leads do produtor logado. Por padrão traz só as
  * que precisam de resposta (status='enviada'), mas aceita filtro.
+ *
+ * Usa a RPC v1 `v1_listar_propostas_produtor` (contrato estável — ver
+ * migration 20260654000000) em vez de PostgREST direto: desacopla o app
+ * publicado do schema (joins por FK, colunas hardcoded). Cast localizado
+ * porque a RPC é nova e os tipos gerados ainda não a conhecem.
  */
 export async function listMinhasPropostas(
   produtorId: string,
   opts: { onlyPending?: boolean } = { onlyPending: true },
 ): Promise<PropostaParaProdutor[]> {
-  let q = supabase
-    .from("propostas")
-    .select(
-      `id, status, preco_saca, bag_count, mensagem, validade_ate,
-       enviada_em, respondida_em, created_at, lead_id, corretora_id,
-       corretora:corretoras!propostas_corretora_id_fkey(name, phone),
-       lead:leads!propostas_lead_id_fkey(coffee_type, produtor_id)`,
-    )
-    .order("created_at", { ascending: false })
-    .limit(200);
-
-  if (opts.onlyPending) {
-    q = q.eq("status", "enviada");
-  }
-
-  const { data, error } = await q;
-  if (error) {
-    console.warn("listMinhasPropostas:", error.message);
-    return [];
-  }
-
-  type Raw = {
+  type V1Row = {
     id: string;
     status: PropostaStatusProdutor;
     preco_saca: number | string;
@@ -957,62 +941,83 @@ export async function listMinhasPropostas(
     created_at: string;
     lead_id: string;
     corretora_id: string;
-    corretora:
-      | { name: string; phone: string | null }
-      | { name: string; phone: string | null }[]
-      | null;
-    lead:
-      | { coffee_type: string | null; produtor_id: string | null }
-      | { coffee_type: string | null; produtor_id: string | null }[]
-      | null;
+    corretora_nome: string | null;
+    corretora_phone: string | null;
+    coffee_type: string | null;
   };
 
-  const rows = (data ?? []) as Raw[];
+  const { data, error } = await (
+    supabase.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: V1Row[] | null; error: { message: string } | null }>
+  )("v1_listar_propostas_produtor", {
+    p_only_pending: opts.onlyPending ?? true,
+  });
 
-  return rows
-    .map((r): PropostaParaProdutor | null => {
-      const corr = Array.isArray(r.corretora) ? r.corretora[0] : r.corretora;
-      const lead = Array.isArray(r.lead) ? r.lead[0] : r.lead;
-      // Defesa: RLS já filtra mas evita renderizar caso join volte vazio
-      if (lead?.produtor_id !== produtorId) return null;
-      return {
-        id: r.id,
-        status: r.status,
-        preco_saca: Number(r.preco_saca),
-        bag_count: r.bag_count,
-        mensagem: r.mensagem,
-        validade_ate: r.validade_ate,
-        enviada_em: r.enviada_em,
-        respondida_em: r.respondida_em,
-        created_at: r.created_at,
-        lead_id: r.lead_id,
-        corretora_id: r.corretora_id,
-        corretora_nome: corr?.name ?? "Corretora",
-        corretora_phone: corr?.phone ?? null,
-        coffee_type: lead?.coffee_type ?? null,
-      };
-    })
-    .filter((p): p is PropostaParaProdutor => p !== null);
+  if (error) {
+    console.warn("listMinhasPropostas:", error.message);
+    return [];
+  }
+
+  // produtorId mantido na assinatura por compat; a RPC já filtra por
+  // auth.uid() server-side (não confiamos no client pra isolamento).
+  void produtorId;
+
+  return (data ?? []).map(
+    (r): PropostaParaProdutor => ({
+      id: r.id,
+      status: r.status,
+      preco_saca: Number(r.preco_saca),
+      bag_count: r.bag_count,
+      mensagem: r.mensagem,
+      validade_ate: r.validade_ate,
+      enviada_em: r.enviada_em,
+      respondida_em: r.respondida_em,
+      created_at: r.created_at,
+      lead_id: r.lead_id,
+      corretora_id: r.corretora_id,
+      corretora_nome: r.corretora_nome ?? "Corretora",
+      corretora_phone: r.corretora_phone ?? null,
+      coffee_type: r.coffee_type ?? null,
+    }),
+  );
 }
 
 /**
  * Produtor responde uma proposta enviada (aceita ou rejeita).
- * Marca `respondida_em = now()`. RLS rejeita transições inválidas
- * (ex.: tentar aceitar proposta de outro produtor).
+ *
+ * Usa a RPC v1 `v1_responder_proposta` (contrato estável) que faz
+ * compare-and-set server-side (só transiciona de 'enviada' e só em lead
+ * do próprio produtor). Cast localizado — RPC nova.
  */
 export async function responderProposta(
   propostaId: string,
   resposta: "aceita" | "rejeitada",
 ): Promise<{ error?: string }> {
-  const { error } = await supabase
-    .from("propostas")
-    .update({
-      status: resposta,
-      respondida_em: new Date().toISOString(),
-    })
-    .eq("id", propostaId);
+  const { data, error } = await (
+    supabase.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{
+      data: { success: boolean; error_msg: string | null }[] | null;
+      error: { message: string } | null;
+    }>
+  )("v1_responder_proposta", {
+    p_proposta_id: propostaId,
+    p_resposta: resposta,
+  });
 
   if (error) return { error: error.message };
+  const row = data?.[0];
+  if (!row?.success) {
+    return {
+      error:
+        row?.error_msg === "proposta_indisponivel"
+          ? "Proposta já respondida ou indisponível."
+          : (row?.error_msg ?? "Falha ao responder proposta."),
+    };
+  }
   return {};
 }
 
@@ -1043,37 +1048,45 @@ export type OfertaInput = {
   observacoes?: string | null;
 };
 
-const SPECIE_LABEL_PT: Record<"arabica" | "conillon", string> = {
-  arabica: "Arábica",
-  conillon: "Conillón",
-};
-
+/**
+ * Produtor cria uma oferta pra uma corretora.
+ *
+ * Usa a RPC v1 `v1_criar_oferta_produtor` (contrato estável) que monta o
+ * coffee_type humano server-side e checa auth.uid()/corretora. Desacopla
+ * o app do schema da tabela `leads` (enums origem/status, nome de coluna).
+ * Cast localizado — RPC nova.
+ */
 export async function criarOfertaProdutor(
   input: OfertaInput,
 ): Promise<{ leadId?: string; error?: string }> {
-  // Monta coffee_type humano pra a corretora ver no card de lead.
-  const coffeeType = input.processo
-    ? `${SPECIE_LABEL_PT[input.specie]} · ${input.processo}`
-    : SPECIE_LABEL_PT[input.specie];
+  // produtorId mantido na assinatura por compat; a RPC usa auth.uid().
+  void input.produtorId;
 
-  const { data, error } = await supabase
-    .from("leads")
-    .insert({
-      corretora_id: input.corretoraId,
-      produtor_id: input.produtorId,
-      status: "novo",
-      origem: "vitrine",
-      coffee_type: coffeeType,
-      bag_count: input.bagCount,
-      proposed_price: input.precoAlvo ?? null,
-      notes: input.observacoes ?? null,
-    })
-    .select("id")
-    .single<{ id: string }>();
+  const { data, error } = await (
+    supabase.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{
+      data:
+        | { success: boolean; lead_id: string | null; error_msg: string | null }[]
+        | null;
+      error: { message: string } | null;
+    }>
+  )("v1_criar_oferta_produtor", {
+    p_corretora_id: input.corretoraId,
+    p_specie: input.specie,
+    p_processo: input.processo ?? null,
+    p_bag_count: input.bagCount,
+    p_preco_alvo: input.precoAlvo ?? null,
+    p_observacoes: input.observacoes ?? null,
+  });
 
   if (error) return { error: error.message };
-  if (!data) return { error: "Falha ao criar oferta" };
-  return { leadId: data.id };
+  const row = data?.[0];
+  if (!row?.success || !row.lead_id) {
+    return { error: row?.error_msg ?? "Falha ao criar oferta" };
+  }
+  return { leadId: row.lead_id };
 }
 
 /**

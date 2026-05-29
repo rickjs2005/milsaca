@@ -3,7 +3,21 @@
  * Seed do Supabase remoto com dados de exemplo.
  *
  * Uso (a partir da raiz do monorepo):
- *   pnpm --filter @milsaca/web seed <email_do_produtor>
+ *   pnpm --filter @milsaca/web seed [email_do_produtor]
+ *
+ * Sem argumento, usa a CONTA DEMO FIXA documentada abaixo (auditoria 4.10).
+ *
+ * ┌─────────────────────────────────────────────────────────────────┐
+ * │ CONTA DEMO FIXA (piloto / demonstração)                          │
+ * │   email:  demo@milsaca.app   (placeholder — troque pelo real)    │
+ * │   senha:  definida fora deste script (Supabase Auth / 1Password) │
+ * │   papéis: produtor + corretora (vinculado à Cooxupé demo)        │
+ * │                                                                   │
+ * │ NUNCA commitar a senha real aqui. O usuário auth precisa existir  │
+ * │ antes (login 1x em /entrar OU criado via dashboard/Admin API).    │
+ * │ Este script garante os DADOS demo (corretoras, leads, contratos,  │
+ * │ lote+classificação) vinculados a esse email — não cria a senha.   │
+ * └─────────────────────────────────────────────────────────────────┘
  *
  * Lê NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SECRET_KEY de apps/web/.env.local.
  * Idempotente: pode rodar de novo sem duplicar dados.
@@ -47,11 +61,16 @@ function todayMinus(days) {
   return d.toISOString().slice(0, 10);
 }
 
+// Conta demo fixa (placeholder). Pode ser sobrescrita por argv ou pela
+// env DEMO_EMAIL. NUNCA coloque a senha real aqui.
+const DEMO_EMAIL = process.env.DEMO_EMAIL ?? "demo@milsaca.app";
+
 async function main() {
-  const email = process.argv[2];
-  if (!email) {
-    console.error("Uso: node scripts/seed-remote.mjs <email_do_produtor>");
-    process.exit(1);
+  const email = process.argv[2] ?? DEMO_EMAIL;
+  if (process.argv[2]) {
+    console.log(`> Usando email do argv: ${email}`);
+  } else {
+    console.log(`> Nenhum email no argv — usando conta demo fixa: ${email}`);
   }
 
   const env = await loadEnv();
