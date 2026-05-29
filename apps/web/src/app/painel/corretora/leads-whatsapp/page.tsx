@@ -119,7 +119,7 @@ export default async function LeadsWhatsAppCorretoraPage({
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
           Leads WhatsApp
         </h1>
         <p className="text-sm text-milsaca-verde-claro">
@@ -285,7 +285,7 @@ function Stat({ label, value }: { label: string; value: number }) {
       <p className="text-[11px] font-medium uppercase tracking-wide text-milsaca-verde-claro">
         {label}
       </p>
-      <p className="mt-2 text-3xl font-bold text-milsaca-verde">{value}</p>
+      <p className="mt-2 text-2xl sm:text-3xl font-bold text-milsaca-verde">{value}</p>
     </div>
   );
 }

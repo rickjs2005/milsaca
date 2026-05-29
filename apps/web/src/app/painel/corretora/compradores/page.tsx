@@ -31,7 +31,7 @@ export default async function CompradoresPage({
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-3xl font-semibold tracking-tight text-milsaca-verde">
+          <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
             <Building2 className="h-7 w-7" />
             Compradores
           </h1>

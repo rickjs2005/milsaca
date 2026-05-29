@@ -42,7 +42,7 @@ export default async function NovaEntregaPage({
         >
           ← Entregas
         </Link>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <h1 className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
           Nova entrega
         </h1>
         <p className="text-sm text-milsaca-verde-claro">

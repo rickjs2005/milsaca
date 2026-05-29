@@ -60,7 +60,7 @@ export default async function MinhasEntregasPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="flex items-center gap-2 text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
           <Truck className="h-7 w-7" />
           Minhas entregas
         </h1>

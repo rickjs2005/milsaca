@@ -58,7 +58,7 @@ export default async function EditCotacaoCorretoraPage({
       </div>
 
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
           Editar cotação
         </h1>
         <p className="text-sm text-milsaca-verde-claro">

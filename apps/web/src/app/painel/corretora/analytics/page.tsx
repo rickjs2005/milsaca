@@ -90,7 +90,7 @@ export default async function AnalyticsPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="flex items-center gap-2 text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
           <BarChart3 className="h-7 w-7" />
           Analytics
         </h1>

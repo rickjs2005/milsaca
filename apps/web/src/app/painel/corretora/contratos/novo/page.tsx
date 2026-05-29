@@ -75,7 +75,7 @@ export default async function NovoContratoPage({
       </div>
 
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
           Novo contrato
         </h1>
         <p className="text-sm text-milsaca-verde-claro">

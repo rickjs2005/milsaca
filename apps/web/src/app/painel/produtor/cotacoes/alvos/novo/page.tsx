@@ -59,7 +59,7 @@ export default async function NovoAlvoPage({
       </div>
 
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
           Novo alvo de preço
         </h1>
         <p className="text-sm text-milsaca-verde-claro">

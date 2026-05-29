@@ -83,7 +83,7 @@ export default async function InicioCorretoraPage() {
     <div className="space-y-10">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
             Central comercial
           </h1>
           <p className="mt-1 text-sm text-milsaca-verde-claro">
@@ -419,7 +419,7 @@ function CotacaoCardView({ cotacao }: { cotacao: CotacaoDashboard }) {
         )}
       </CardHeader>
       <CardContent>
-        <p className="text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <p className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
           {BRL.format(cotacao.price)}
         </p>
         <p className="mt-1 text-xs text-milsaca-verde-claro">
@@ -506,8 +506,8 @@ function EntregasMiniCard({
         <p
           className={
             isWarn && count > 0
-              ? "text-3xl font-semibold tracking-tight text-rose-700"
-              : "text-3xl font-semibold tracking-tight text-milsaca-verde"
+              ? "text-2xl sm:text-3xl font-semibold tracking-tight text-rose-700"
+              : "text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde"
           }
         >
           {count}

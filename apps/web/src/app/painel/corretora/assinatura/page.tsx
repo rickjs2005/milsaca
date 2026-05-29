@@ -85,7 +85,7 @@ export default async function AssinaturaPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="flex items-center gap-2 text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
           <Sparkles className="h-7 w-7 text-milsaca-dourado" />
           Assinatura
         </h1>

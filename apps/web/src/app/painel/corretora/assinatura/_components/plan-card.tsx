@@ -59,7 +59,7 @@ export function PlanCard({
       <div className="border-y border-milsaca-cream-escuro py-5">
         <p
           className={cn(
-            "text-3xl font-semibold tracking-tight",
+            "text-2xl sm:text-3xl font-semibold tracking-tight",
             isEnterprise ? "text-milsaca-cafezal" : "text-milsaca-verde",
           )}
         >

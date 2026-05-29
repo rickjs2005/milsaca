@@ -115,7 +115,7 @@ export default async function CotacoesProdutorPage({
       <DemoModeBadge />
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
             Cotações
           </h1>
           <p className="text-sm text-milsaca-verde-claro">

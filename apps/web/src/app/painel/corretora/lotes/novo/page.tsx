@@ -52,7 +52,7 @@ export default async function NovoLotePage({
       </div>
 
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
           Novo lote
         </h1>
         <p className="text-sm text-milsaca-verde-claro">

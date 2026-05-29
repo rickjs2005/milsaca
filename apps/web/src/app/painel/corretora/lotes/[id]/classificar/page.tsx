@@ -44,7 +44,7 @@ export default async function ClassificarPage({
       </div>
 
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
           Classificar {lote.codigo}
         </h1>
         <p className="text-sm text-milsaca-verde-claro">

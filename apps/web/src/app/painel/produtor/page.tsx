@@ -130,7 +130,7 @@ export default async function InicioProdutorPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
           {primeiroNome ? `Oi, ${primeiroNome}` : "Bem-vindo"}
         </h1>
         <p className="text-sm text-milsaca-verde-claro">
@@ -266,7 +266,7 @@ function CotacaoCardView({ cotacao }: { cotacao: CotacaoCard }) {
         )}
       </CardHeader>
       <CardContent>
-        <p className="text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <p className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
           {BRL.format(cotacao.price)}
         </p>
         <p className="mt-1 text-xs text-milsaca-verde-claro">

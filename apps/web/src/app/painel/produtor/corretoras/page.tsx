@@ -67,7 +67,7 @@ export default async function CorretorasProdutorPage({
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
           Corretoras
         </h1>
         <p className="text-sm text-milsaca-verde-claro">
