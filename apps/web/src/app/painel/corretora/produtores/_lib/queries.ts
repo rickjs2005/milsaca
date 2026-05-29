@@ -211,7 +211,7 @@ export async function getContato(corretoraId: string, contatoId: string) {
   const { data } = await supabase
     .from("produtor_contatos")
     .select(
-      "id, full_name, email, phone, fazenda_nome, city, state, notes, claimed_profile_id",
+      "id, full_name, email, phone, fazenda_nome, city, state, cpf_cnpj, car, caepf, notes, claimed_profile_id",
     )
     .eq("corretora_id", corretoraId)
     .eq("id", contatoId)

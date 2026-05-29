@@ -180,6 +180,40 @@ export default async function ContatoDetalhePage({
             </div>
 
             <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="cpf_cnpj">CPF / CNPJ</Label>
+              <MaskedInput
+                id="cpf_cnpj"
+                type="cpf-cnpj"
+                name="cpf_cnpj"
+                defaultValue={contato.cpf_cnpj ?? ""}
+                validateOnBlur
+              />
+              <p className="text-xs text-milsaca-verde-claro">
+                Usado nos contratos. Só você vê — não fica público.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="car">CAR</Label>
+              <Input
+                id="car"
+                name="car"
+                defaultValue={contato.car ?? ""}
+                placeholder="Cadastro Ambiental Rural"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="caepf">CAEPF</Label>
+              <Input
+                id="caepf"
+                name="caepf"
+                defaultValue={contato.caepf ?? ""}
+                placeholder="Cadastro de Atividade Econômica PF"
+              />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="notes">Observações</Label>
               <textarea
                 id="notes"

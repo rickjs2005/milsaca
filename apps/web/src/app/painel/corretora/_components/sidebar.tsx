@@ -127,6 +127,7 @@ const NAV_GROUPS: NavGroup[] = [
         label: "Assinatura",
         icon: Sparkles,
       },
+      { href: "/painel/corretora/equipe", label: "Equipe", icon: Users },
       { href: "/painel/corretora/perfil", label: "Perfil", icon: User },
     ],
   },

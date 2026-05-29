@@ -1093,9 +1093,12 @@ export type Database = {
       }
       produtor_contatos: {
         Row: {
+          caepf: string | null
+          car: string | null
           city: string | null
           claimed_profile_id: string | null
           corretora_id: string
+          cpf_cnpj: string | null
           created_at: string
           deleted_at: string | null
           email: string | null
@@ -1108,9 +1111,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          caepf?: string | null
+          car?: string | null
           city?: string | null
           claimed_profile_id?: string | null
           corretora_id: string
+          cpf_cnpj?: string | null
           created_at?: string
           deleted_at?: string | null
           email?: string | null
@@ -1123,9 +1129,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          caepf?: string | null
+          car?: string | null
           city?: string | null
           claimed_profile_id?: string | null
           corretora_id?: string
+          cpf_cnpj?: string | null
           created_at?: string
           deleted_at?: string | null
           email?: string | null
@@ -1655,6 +1664,37 @@ export type Database = {
       mark_subscription_paid: { Args: { p_id: string }; Returns: string }
       contrapropor_lead: {
         Args: { p_lead_id: string; p_mensagem?: string; p_preco_saca: number }
+        Returns: { error_msg: string; success: boolean }[]
+      }
+      list_corretora_operadores: {
+        Args: never
+        Returns: {
+          full_name: string
+          id: string
+          is_self: boolean
+          phone: string
+          status: Database["public"]["Enums"]["profile_status"]
+        }[]
+      }
+      list_convites_corretora_self: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          expires_at: string
+          token: string
+        }[]
+      }
+      gerar_convite_corretora_self: {
+        Args: { p_email?: string }
+        Returns: { error_msg: string; token: string }[]
+      }
+      revogar_convite_corretora_self: {
+        Args: { p_token: string }
+        Returns: undefined
+      }
+      remover_operador_corretora: {
+        Args: { p_target: string }
         Returns: { error_msg: string; success: boolean }[]
       }
       get_contrato_publico: { Args: { p_id: string }; Returns: Json }

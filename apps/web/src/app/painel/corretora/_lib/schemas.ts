@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   cityOptionalSchema,
   cnpjOptionalSchema,
+  cpfOrCnpjOptionalSchema,
   phoneBROptionalSchema,
   ufOptionalSchema,
 } from "@/lib/brasil-schemas";
@@ -235,6 +236,10 @@ export const createProdutorContatoSchema = z.object({
   fazenda_nome: optionalText(200),
   city: cityOptionalSchema,
   state: ufOptionalSchema,
+  // Documentos do produtor (LGPD: só a corretora dona vê; espelham produtores).
+  cpf_cnpj: cpfOrCnpjOptionalSchema,
+  car: optionalText(60),
+  caepf: optionalText(60),
   notes: optionalText(1000),
 });
 
