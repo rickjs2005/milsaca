@@ -81,13 +81,9 @@ export async function markSubscriptionPaid(formData: FormData) {
   // Renovação atômica no banco (migration 20260624000000): o novo período
   // é calculado dentro do UPDATE a partir de greatest(period_end, now()),
   // eliminando o read-modify-write não-atômico (achado 2.6).
-  // Cast localizado: a RPC ainda não está nos tipos gerados.
-  const { data, error } = await (
-    supabase.rpc as unknown as (
-      n: string,
-      a?: Record<string, unknown>,
-    ) => Promise<{ data: unknown; error: { message: string; code?: string } | null }>
-  )("mark_subscription_paid", { p_id: id });
+  const { data, error } = await supabase.rpc("mark_subscription_paid", {
+    p_id: id,
+  });
 
   if (error) {
     redirect(

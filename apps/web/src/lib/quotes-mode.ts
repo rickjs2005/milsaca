@@ -44,13 +44,8 @@ export function quotesMode(): QuotesMode {
 export async function quotesModeAsync(): Promise<QuotesMode> {
   try {
     const supabase = await createClient();
-    // RPC pública (platform_settings tem RLS admin-only). Cast localizado
-    // porque a RPC é nova e os tipos gerados ainda não a conhecem.
-    const { data, error } = await (
-      supabase.rpc as unknown as (
-        fn: string,
-      ) => Promise<{ data: string | null; error: unknown }>
-    )("get_quotes_mode");
+    // RPC pública (platform_settings tem RLS admin-only).
+    const { data, error } = await supabase.rpc("get_quotes_mode");
     if (!error && data) {
       return normalize(String(data));
     }

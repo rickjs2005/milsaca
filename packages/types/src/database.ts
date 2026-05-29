@@ -324,6 +324,7 @@ export type Database = {
           code: string
           coffee_type: string | null
           comissao_pct: number | null
+          content_hash: string | null
           comissao_total: number | null
           comprador_id: string | null
           corretora_id: string
@@ -342,6 +343,7 @@ export type Database = {
           coffee_type?: string | null
           comissao_pct?: number | null
           comissao_total?: number | null
+          content_hash?: string | null
           comprador_id?: string | null
           corretora_id: string
           created_at?: string
@@ -359,6 +361,7 @@ export type Database = {
           coffee_type?: string | null
           comissao_pct?: number | null
           comissao_total?: number | null
+          content_hash?: string | null
           comprador_id?: string | null
           corretora_id?: string
           created_at?: string
@@ -1629,6 +1632,56 @@ export type Database = {
       }
       founder_program_status: { Args: never; Returns: Json }
       get_laudo_publico: { Args: { p_id: string }; Returns: Json }
+      approve_corretora: {
+        Args: {
+          p_city: string
+          p_cnpj: string
+          p_name: string
+          p_profile_id: string
+          p_slug: string
+          p_state: string
+        }
+        Returns: { corretora_id: string; error_msg: string; success: boolean }[]
+      }
+      mark_subscription_paid: { Args: { p_id: string }; Returns: string }
+      get_contrato_publico: { Args: { p_id: string }; Returns: Json }
+      anonimizar_titular: { Args: { p_user_id: string }; Returns: undefined }
+      get_quotes_mode: { Args: never; Returns: string }
+      check_queue_failures: { Args: never; Returns: number }
+      v1_listar_propostas_produtor: {
+        Args: { p_only_pending?: boolean }
+        Returns: {
+          bag_count: number
+          coffee_type: string
+          corretora_id: string
+          corretora_nome: string
+          corretora_phone: string
+          created_at: string
+          enviada_em: string
+          id: string
+          lead_id: string
+          mensagem: string
+          preco_saca: number
+          respondida_em: string
+          status: "rascunho" | "enviada" | "aceita" | "rejeitada" | "expirada"
+          validade_ate: string
+        }[]
+      }
+      v1_responder_proposta: {
+        Args: { p_proposta_id: string; p_resposta: string }
+        Returns: { error_msg: string; success: boolean }[]
+      }
+      v1_criar_oferta_produtor: {
+        Args: {
+          p_bag_count?: number
+          p_corretora_id: string
+          p_observacoes?: string
+          p_preco_alvo?: number
+          p_processo?: string
+          p_specie: string
+        }
+        Returns: { error_msg: string; lead_id: string; success: boolean }[]
+      }
       is_admin: { Args: never; Returns: boolean }
       is_app_admin: { Args: never; Returns: boolean }
       is_corretora: { Args: never; Returns: boolean }

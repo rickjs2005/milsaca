@@ -249,24 +249,16 @@ export async function aprovarCorretora(formData: FormData) {
   // A RPC serializa o gate de vagas com advisory lock (anti-TOCTOU),
   // recheca o profile na mesma txn (anti-dupla aprovação) e faz todas
   // as escritas num bloco transacional (anti-estado parcial).
-  // Cast localizado: a RPC ainda não está nos tipos gerados.
-  const { data, error } = await (
-    supabase.rpc as unknown as (
-      n: string,
-      a?: Record<string, unknown>,
-    ) => Promise<{ data: unknown; error: { message?: string } | null }>
-  )("approve_corretora", {
+  const { data, error } = await supabase.rpc("approve_corretora", {
     p_profile_id: profileId,
     p_name: name,
     p_slug: slug,
-    p_cnpj: cnpj ?? null,
-    p_city: city ?? null,
-    p_state: state ?? null,
+    p_cnpj: cnpj,
+    p_city: city,
+    p_state: state ?? "",
   });
 
-  const row = (Array.isArray(data) ? data[0] : data) as
-    | { success?: boolean; corretora_id?: string | null; error_msg?: string | null }
-    | undefined;
+  const row = Array.isArray(data) ? data[0] : data;
 
   if (error || !row?.success) {
     const code = error?.message ?? row?.error_msg ?? "";

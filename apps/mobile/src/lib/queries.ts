@@ -922,14 +922,28 @@ export interface PropostaParaProdutor {
  *
  * Usa a RPC v1 `v1_listar_propostas_produtor` (contrato estável — ver
  * migration 20260654000000) em vez de PostgREST direto: desacopla o app
- * publicado do schema (joins por FK, colunas hardcoded). Cast localizado
- * porque a RPC é nova e os tipos gerados ainda não a conhecem.
+ * publicado do schema (joins por FK, colunas hardcoded).
  */
 export async function listMinhasPropostas(
   produtorId: string,
   opts: { onlyPending?: boolean } = { onlyPending: true },
 ): Promise<PropostaParaProdutor[]> {
-  type V1Row = {
+  const { data, error } = await supabase.rpc("v1_listar_propostas_produtor", {
+    p_only_pending: opts.onlyPending ?? true,
+  });
+
+  if (error) {
+    console.warn("listMinhasPropostas:", error.message);
+    return [];
+  }
+
+  // produtorId mantido na assinatura por compat; a RPC já filtra por
+  // auth.uid() server-side (não confiamos no client pra isolamento).
+  void produtorId;
+
+  // O @supabase/supabase-js do mobile (postgrest-js mais antigo que o web)
+  // não infere o retorno tipado desta RPC, então tipamos a linha aqui.
+  type V1PropostaRow = {
     id: string;
     status: PropostaStatusProdutor;
     preco_saca: number | string;
@@ -946,26 +960,8 @@ export async function listMinhasPropostas(
     coffee_type: string | null;
   };
 
-  const { data, error } = await (
-    supabase.rpc as unknown as (
-      fn: string,
-      args: Record<string, unknown>,
-    ) => Promise<{ data: V1Row[] | null; error: { message: string } | null }>
-  )("v1_listar_propostas_produtor", {
-    p_only_pending: opts.onlyPending ?? true,
-  });
-
-  if (error) {
-    console.warn("listMinhasPropostas:", error.message);
-    return [];
-  }
-
-  // produtorId mantido na assinatura por compat; a RPC já filtra por
-  // auth.uid() server-side (não confiamos no client pra isolamento).
-  void produtorId;
-
   return (data ?? []).map(
-    (r): PropostaParaProdutor => ({
+    (r: V1PropostaRow): PropostaParaProdutor => ({
       id: r.id,
       status: r.status,
       preco_saca: Number(r.preco_saca),
@@ -989,21 +985,13 @@ export async function listMinhasPropostas(
  *
  * Usa a RPC v1 `v1_responder_proposta` (contrato estável) que faz
  * compare-and-set server-side (só transiciona de 'enviada' e só em lead
- * do próprio produtor). Cast localizado — RPC nova.
+ * do próprio produtor).
  */
 export async function responderProposta(
   propostaId: string,
   resposta: "aceita" | "rejeitada",
 ): Promise<{ error?: string }> {
-  const { data, error } = await (
-    supabase.rpc as unknown as (
-      fn: string,
-      args: Record<string, unknown>,
-    ) => Promise<{
-      data: { success: boolean; error_msg: string | null }[] | null;
-      error: { message: string } | null;
-    }>
-  )("v1_responder_proposta", {
+  const { data, error } = await supabase.rpc("v1_responder_proposta", {
     p_proposta_id: propostaId,
     p_resposta: resposta,
   });
@@ -1054,7 +1042,6 @@ export type OfertaInput = {
  * Usa a RPC v1 `v1_criar_oferta_produtor` (contrato estável) que monta o
  * coffee_type humano server-side e checa auth.uid()/corretora. Desacopla
  * o app do schema da tabela `leads` (enums origem/status, nome de coluna).
- * Cast localizado — RPC nova.
  */
 export async function criarOfertaProdutor(
   input: OfertaInput,
@@ -1062,23 +1049,13 @@ export async function criarOfertaProdutor(
   // produtorId mantido na assinatura por compat; a RPC usa auth.uid().
   void input.produtorId;
 
-  const { data, error } = await (
-    supabase.rpc as unknown as (
-      fn: string,
-      args: Record<string, unknown>,
-    ) => Promise<{
-      data:
-        | { success: boolean; lead_id: string | null; error_msg: string | null }[]
-        | null;
-      error: { message: string } | null;
-    }>
-  )("v1_criar_oferta_produtor", {
+  const { data, error } = await supabase.rpc("v1_criar_oferta_produtor", {
     p_corretora_id: input.corretoraId,
     p_specie: input.specie,
-    p_processo: input.processo ?? null,
+    p_processo: input.processo ?? undefined,
     p_bag_count: input.bagCount,
-    p_preco_alvo: input.precoAlvo ?? null,
-    p_observacoes: input.observacoes ?? null,
+    p_preco_alvo: input.precoAlvo ?? undefined,
+    p_observacoes: input.observacoes ?? undefined,
   });
 
   if (error) return { error: error.message };
