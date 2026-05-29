@@ -10,10 +10,21 @@ const supabaseConfigured = Boolean(
 );
 
 export async function middleware(request: NextRequest) {
+  // Correlação de logs: reaproveita o x-request-id recebido (ex.: de um proxy)
+  // ou gera um novo. Propaga no request (pra server code ler via headers()) e
+  // na response (pra cliente/observabilidade correlacionarem).
+  const reqId = request.headers.get("x-request-id") ?? crypto.randomUUID();
+  request.headers.set("x-request-id", reqId);
+
   // Sem Supabase configurado, deixa passar (modo "vitrine" / dev sem auth).
-  if (!supabaseConfigured) return NextResponse.next({ request });
+  if (!supabaseConfigured) {
+    const passthrough = NextResponse.next({ request });
+    passthrough.headers.set("x-request-id", reqId);
+    return passthrough;
+  }
 
   const { response, user } = await updateSession(request);
+  response.headers.set("x-request-id", reqId);
   const { pathname } = request.nextUrl;
 
   // /admin/login é pública (é a própria porta de entrada) — evita loop.
@@ -30,7 +41,9 @@ export async function middleware(request: NextRequest) {
       url.pathname = "/entrar";
       url.searchParams.set("redirectTo", pathname);
     }
-    return NextResponse.redirect(url);
+    const redirect = NextResponse.redirect(url);
+    redirect.headers.set("x-request-id", reqId);
+    return redirect;
   }
 
   return response;

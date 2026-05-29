@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 /**
  * Content Security Policy do Milsaca.
@@ -49,6 +50,10 @@ function buildCspHeader(isDev: boolean): string {
       supabaseWss,
       "https://servicodados.ibge.gov.br",
       "https://api.ibge.gov.br",
+      // Sentry (ingest de erros/traces). *.ingest.sentry.io cobre o endpoint
+      // regional do DSN; *.sentry.io cobre tunneling/CDN auxiliar.
+      "https://*.sentry.io",
+      "https://*.ingest.sentry.io",
     ].filter(Boolean),
     "frame-src": ["'self'"],
     "object-src": ["'none'"],
@@ -98,4 +103,17 @@ const config: NextConfig = {
   },
 };
 
-export default config;
+// withSentryConfig envolve o config preservando headers()/CSP acima.
+// org/project ficam configuráveis por env pra não acoplar ao slug da conta;
+// SENTRY_AUTH_TOKEN (build-time) habilita upload de sourcemaps no CI/Vercel.
+export default withSentryConfig(config, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT ?? "milsaca-web",
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: !process.env.CI,
+  // Sourcemaps: oculta os sources do bundle cliente após upload (privacidade).
+  sourcemaps: { deleteSourcemapsAfterUpload: true },
+  // Evita custo/efeitos colaterais quando não há token (dev/local).
+  disableLogger: true,
+  telemetry: false,
+});

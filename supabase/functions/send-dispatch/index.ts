@@ -21,10 +21,22 @@
 
 // @ts-expect-error — Deno runtime
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// @ts-expect-error — Deno runtime
+import * as Sentry from "https://esm.sh/@sentry/deno@8.45.1";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const SEND_DISPATCH_SECRET = Deno.env.get("SEND_DISPATCH_SECRET") ?? "";
+
+// Observabilidade: só inicializa se o secret SENTRY_DSN existir. No-op sem DSN.
+const SENTRY_DSN = Deno.env.get("SENTRY_DSN");
+if (SENTRY_DSN) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    tracesSampleRate: 0.1,
+    sendDefaultPii: false,
+  });
+}
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -167,6 +179,11 @@ Deno.serve(async (req: Request) => {
     );
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
+    // Não polui o Sentry com os placeholders "_not_implemented" esperados
+    // enquanto não há provider contratado; só erros reais de envio.
+    if (SENTRY_DSN && !msg.endsWith("_not_implemented")) {
+      Sentry.captureException(e, { tags: { dispatch_id: dispatchId } });
+    }
     await supabase
       .from("message_dispatches")
       .update({ status: "failed", error: msg })

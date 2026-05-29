@@ -14,6 +14,7 @@
 //   3. Devolve resumo { collected: [...], failed: [...] } pro caller logar
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import * as Sentry from "https://esm.sh/@sentry/deno@8.45.1";
 import {
   fetchBcbPtax,
   fetchCepeaArabica,
@@ -29,6 +30,17 @@ import {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? null;
+
+// Observabilidade: inicializa Sentry só se o secret SENTRY_DSN estiver setado
+// (supabase secrets set SENTRY_DSN=...). Sem DSN é no-op total.
+const SENTRY_DSN = Deno.env.get("SENTRY_DSN");
+if (SENTRY_DSN) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    tracesSampleRate: 0.1,
+    sendDefaultPii: false,
+  });
+}
 
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -119,6 +131,7 @@ Deno.serve(async (req) => {
       headers: { "content-type": "application/json" },
     });
   } catch (err) {
+    if (SENTRY_DSN) Sentry.captureException(err);
     return new Response(
       JSON.stringify({
         ok: false,
