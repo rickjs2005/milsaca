@@ -7,6 +7,7 @@ import {
   Eye,
   FileSearch,
   Plus,
+  Store,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,11 @@ import type { Lote } from "@milsaca/types";
 import { getProfile } from "@/lib/auth";
 import { listPropostasDoLote } from "../../propostas/_lib/queries";
 import { PropostasBlock } from "../../propostas/_components/propostas-block";
+import {
+  listOfertasDoLote,
+  OFERTA_STATUS_LABEL,
+  OFERTA_STATUS_COLOR,
+} from "../../ofertas/_lib/queries";
 
 export const metadata = { title: "Detalhe do lote — Milsaca" };
 
@@ -107,9 +113,10 @@ export default async function LoteDetalhePage({
   const lote = await loadLote(id);
   if (!lote) notFound();
 
-  const [classificacoes, propostas] = await Promise.all([
+  const [classificacoes, propostas, ofertas] = await Promise.all([
     loadClassificacoes(id),
     listPropostasDoLote(profile.corretora_id, id),
+    listOfertasDoLote(id),
   ]);
   const vigente = classificacoes.find((c) => !c.anulada);
 
@@ -347,6 +354,63 @@ export default async function LoteDetalhePage({
           lote.peso_sacas != null ? Number(lote.peso_sacas) : null
         }
       />
+
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
+            <Store className="h-4 w-4" />
+            Ofertas a compradores
+          </h2>
+          <Button
+            asChild
+            size="sm"
+            className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+          >
+            <Link href={`/painel/corretora/ofertas/novo?lote_id=${id}`}>
+              <Plus className="mr-1 h-3.5 w-3.5" />
+              Ofertar a um comprador
+            </Link>
+          </Button>
+        </div>
+        {ofertas.length === 0 ? (
+          <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
+            <CardContent className="py-6 text-center text-sm text-milsaca-verde-claro">
+              Nenhuma oferta registrada para este lote.
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-milsaca-cream-escuro">
+            <CardContent className="divide-y divide-milsaca-cream-escuro p-0">
+              {ofertas.map((o) => (
+                <div
+                  key={o.id}
+                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-3"
+                >
+                  <div>
+                    <p className="font-medium text-milsaca-verde">
+                      {o.comprador_nome}
+                    </p>
+                    <p className="text-xs text-milsaca-verde-claro">
+                      {o.preco_saca.toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                        minimumFractionDigits: 2,
+                      })}
+                      /saca
+                      {o.bag_count != null ? ` · ${o.bag_count} sacas` : ""}
+                    </p>
+                  </div>
+                  <Badge
+                    className={`${OFERTA_STATUS_COLOR[o.status]} hover:${OFERTA_STATUS_COLOR[o.status]}`}
+                  >
+                    {OFERTA_STATUS_LABEL[o.status]}
+                  </Badge>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+      </section>
     </div>
   );
 }

@@ -66,6 +66,24 @@ function pickOne<T>(v: T | T[] | null | undefined): T | null {
   return Array.isArray(v) ? (v[0] ?? null) : v;
 }
 
+/**
+ * Produtor de um lote do tenant — usado pra pré-preencher o contrato a
+ * partir do atalho "gerar contrato" de uma oferta aceita ao comprador.
+ */
+export async function getProdutorIdDoLote(
+  corretoraId: string,
+  loteId: string,
+): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("lotes")
+    .select("produtor_id")
+    .eq("id", loteId)
+    .eq("corretora_id", corretoraId)
+    .maybeSingle<{ produtor_id: string }>();
+  return data?.produtor_id ?? null;
+}
+
 export async function listContratos(
   corretoraId: string,
   filter: { status?: ContratoStatus } = {},

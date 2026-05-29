@@ -15,6 +15,7 @@ import {
   Package,
   Truck,
   Wallet,
+  Store,
   Building2,
   BarChart3,
   MessageCircle,
@@ -63,6 +64,11 @@ const NAV_GROUPS: NavGroup[] = [
         icon: Package,
         badgeKey: "lotesParados",
         badgeTone: "warn",
+      },
+      {
+        href: "/painel/corretora/ofertas",
+        label: "Ofertas a compradores",
+        icon: Store,
       },
       {
         href: "/painel/corretora/contratos",

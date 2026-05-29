@@ -16,6 +16,7 @@ import { getProfile } from "@/lib/auth";
 import {
   listProdutoresReais,
   getLeadForContrato,
+  getProdutorIdDoLote,
   nextContratoCode,
 } from "../_lib/queries";
 import { createContrato } from "../_actions";
@@ -24,7 +25,15 @@ import { blockIfNoActiveSubscription } from "../../_lib/subscription-gate";
 
 export const metadata = { title: "Novo contrato — Milsaca" };
 
-type SearchParams = Promise<{ error?: string; lead?: string }>;
+type SearchParams = Promise<{
+  error?: string;
+  lead?: string;
+  // Atalho "gerar contrato" vindo de uma oferta aceita ao comprador.
+  comprador_id?: string;
+  lote_id?: string;
+  preco?: string;
+  bag_count?: string;
+}>;
 
 export default async function NovoContratoPage({
   searchParams,
@@ -57,6 +66,24 @@ export default async function NovoContratoPage({
   const totalEstimado =
     lead?.proposed_price != null && lead?.bag_count != null
       ? (lead.proposed_price * lead.bag_count).toLocaleString("pt-BR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      : "";
+
+  // Pré-preenchimento vindo do atalho de uma oferta aceita ao comprador.
+  const ofertaProdutorId =
+    !lead && sp.lote_id
+      ? await getProdutorIdDoLote(profile.corretora_id, sp.lote_id)
+      : null;
+  const prefComprador = sp.comprador_id ?? "";
+  const prefBag = sp.bag_count ?? "";
+  const prefPreco = sp.preco ? Number(sp.preco) : null;
+  const prefTotal =
+    prefPreco != null &&
+    sp.bag_count &&
+    Number.isFinite(Number(sp.bag_count))
+      ? (prefPreco * Number(sp.bag_count)).toLocaleString("pt-BR", {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         })
@@ -164,7 +191,7 @@ export default async function NovoContratoPage({
                   id="produtor_id"
                   name="produtor_id"
                   required
-                  defaultValue={lead?.produtor_id ?? ""}
+                  defaultValue={lead?.produtor_id ?? ofertaProdutorId ?? ""}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <option value="">Selecione...</option>
@@ -212,7 +239,7 @@ export default async function NovoContratoPage({
                   type="number"
                   step="1"
                   min="0"
-                  defaultValue={lead?.bag_count ?? ""}
+                  defaultValue={lead?.bag_count ?? prefBag}
                 />
               </div>
 
@@ -224,7 +251,7 @@ export default async function NovoContratoPage({
                   type="text"
                   inputMode="decimal"
                   placeholder="185.000,00"
-                  defaultValue={totalEstimado}
+                  defaultValue={totalEstimado || prefTotal}
                 />
                 {lead?.proposed_price != null && lead?.bag_count != null && (
                   <p className="text-xs text-milsaca-verde-claro">
@@ -254,7 +281,7 @@ export default async function NovoContratoPage({
                   <select
                     id="comprador_id"
                     name="comprador_id"
-                    defaultValue=""
+                    defaultValue={prefComprador}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <option value="">— sem comprador definido —</option>
