@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import type { PostgrestError } from "@supabase/supabase-js";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
@@ -42,6 +43,57 @@ async function ensureCorretora() {
   return profile as typeof profile & { corretora_id: string };
 }
 
+// Detecta violação da unique (contrato_id, sequencia) — Postgres 23505.
+function isUniqueViolation(error: PostgrestError | null): boolean {
+  if (!error) return false;
+  return (
+    error.code === "23505" ||
+    /duplicate key|unique constraint/i.test(error.message ?? "")
+  );
+}
+
+/**
+ * Insere uma entrega calculando a próxima sequência do contrato, com
+ * retry-on-conflict (achado 2.7). O cálculo do max + insert não é atômico,
+ * então duas entregas simultâneas podiam tentar a mesma sequencia e bater
+ * na unique (contrato_id, sequencia). Em vez de read-lock, recomputamos o
+ * próximo número e tentamos de novo (até 3x).
+ *
+ * Retorna { id } no sucesso, ou { error } no insucesso (não-conflito ou
+ * esgotou as tentativas) — o chamador trata o redirect.
+ */
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+async function insertEntregaWithSequence(
+  supabase: SupabaseClient,
+  base: Record<string, unknown>,
+  contratoId: string,
+): Promise<{ id: string; sequencia: number } | { error: PostgrestError | null }> {
+  let lastError: PostgrestError | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data: existing } = await supabase
+      .from("entregas")
+      .select("sequencia")
+      .eq("contrato_id", contratoId)
+      .order("sequencia", { ascending: false })
+      .limit(1);
+    const nextSeq = ((existing?.[0]?.sequencia as number | undefined) ?? 0) + 1;
+
+    const { data: novo, error } = await supabase
+      .from("entregas")
+      .insert({ ...base, contrato_id: contratoId, sequencia: nextSeq })
+      .select("id")
+      .single();
+
+    if (!error && novo) {
+      return { id: (novo as { id: string }).id, sequencia: nextSeq };
+    }
+    lastError = error;
+    if (!isUniqueViolation(error)) break; // erro real — não adianta retry
+    // Conflito de sequencia: outra entrega chegou primeiro. Recomputa e tenta.
+  }
+  return { error: lastError };
+}
+
 export async function createEntrega(formData: FormData) {
   const profile = await ensureCorretora();
   await requireActiveSubscription(
@@ -67,24 +119,15 @@ export async function createEntrega(formData: FormData) {
     redirect("/painel/corretora/entregas/nova?error=Contrato%20n%C3%A3o%20encontrado");
   }
 
-  const { data: existing } = await supabase
-    .from("entregas")
-    .select("sequencia")
-    .eq("contrato_id", contratoId)
-    .order("sequencia", { ascending: false })
-    .limit(1);
-  const nextSeq = ((existing?.[0]?.sequencia as number | undefined) ?? 0) + 1;
-
   const bag_count = parseInt0(formData.get("bag_count"));
   const data_prevista = parseDate(formData.get("data_prevista"));
 
-  const { data: novo, error } = await supabase
-    .from("entregas")
-    .insert({
+  // Sequência atômica com retry-on-conflict (achado 2.7).
+  const result = await insertEntregaWithSequence(
+    supabase,
+    {
       corretora_id: profile.corretora_id,
-      contrato_id: contratoId,
       produtor_id: contrato.produtor_id,
-      sequencia: nextSeq,
       bag_count,
       data_prevista,
       local_retirada:
@@ -92,13 +135,13 @@ export async function createEntrega(formData: FormData) {
       transportadora_nome:
         String(formData.get("transportadora_nome") ?? "").trim() || null,
       observacoes: String(formData.get("observacoes") ?? "").trim() || null,
-    })
-    .select("id")
-    .single();
+    },
+    contratoId,
+  );
 
-  if (error || !novo) {
+  if ("error" in result) {
     redirect(
-      `/painel/corretora/entregas/nova?contrato=${contratoId}&error=${encodeURIComponent(friendlyPostgresError(error, "Erro ao criar entrega"))}`,
+      `/painel/corretora/entregas/nova?contrato=${contratoId}&error=${encodeURIComponent(friendlyPostgresError(result.error, "Erro ao criar entrega"))}`,
     );
   }
 
@@ -114,10 +157,10 @@ export async function createEntrega(formData: FormData) {
         .filter(Boolean)
         .join(" — ") || null,
     data: {
-      entrega_id: novo.id,
+      entrega_id: result.id,
       contrato_id: contratoId,
       corretora_id: profile.corretora_id,
-      sequencia: nextSeq,
+      sequencia: result.sequencia,
       href: `/painel/produtor/entregas`,
     },
   });
@@ -146,29 +189,20 @@ export async function gerarEntregaDoContrato(formData: FormData) {
     .maybeSingle();
   if (!contrato) return;
 
-  const { data: existing } = await supabase
-    .from("entregas")
-    .select("sequencia")
-    .eq("contrato_id", contratoId)
-    .order("sequencia", { ascending: false })
-    .limit(1);
-  const nextSeq = ((existing?.[0]?.sequencia as number | undefined) ?? 0) + 1;
-
-  const { data: novo, error } = await supabase
-    .from("entregas")
-    .insert({
+  // Sequência atômica com retry-on-conflict (achado 2.7).
+  const result = await insertEntregaWithSequence(
+    supabase,
+    {
       corretora_id: profile.corretora_id,
-      contrato_id: contratoId,
       produtor_id: contrato.produtor_id,
-      sequencia: nextSeq,
       bag_count: contrato.bag_count ?? null,
-    })
-    .select("id")
-    .single();
+    },
+    contratoId,
+  );
 
-  if (error || !novo) {
+  if ("error" in result) {
     redirect(
-      `/painel/corretora/contratos/${contratoId}?error=${encodeURIComponent(friendlyPostgresError(error, "Erro ao gerar entrega"))}`,
+      `/painel/corretora/contratos/${contratoId}?error=${encodeURIComponent(friendlyPostgresError(result.error, "Erro ao gerar entrega"))}`,
     );
   }
 
@@ -178,17 +212,17 @@ export async function gerarEntregaDoContrato(formData: FormData) {
     title: "Entrega programada",
     body: contrato.bag_count != null ? `${contrato.bag_count} sacas` : null,
     data: {
-      entrega_id: novo.id,
+      entrega_id: result.id,
       contrato_id: contratoId,
       corretora_id: profile.corretora_id,
-      sequencia: nextSeq,
+      sequencia: result.sequencia,
       href: `/painel/produtor/entregas`,
     },
   });
 
   revalidatePath(`/painel/corretora/contratos/${contratoId}`);
   revalidatePath("/painel/corretora/entregas");
-  redirect(`/painel/corretora/entregas/${novo.id}?saved=1`);
+  redirect(`/painel/corretora/entregas/${result.id}?saved=1`);
 }
 
 export async function updateEntregaStatus(formData: FormData) {

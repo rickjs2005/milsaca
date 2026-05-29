@@ -225,7 +225,8 @@ export async function toggleCorretoraVerified(formData: FormData) {
 }
 
 export async function aprovarCorretora(formData: FormData) {
-  const actor = await requireAppAdmin();
+  // Gate de auth no app; a RPC approve_corretora recheca is_app_admin().
+  await requireAppAdmin();
 
   const parsed = aprovarCorretoraSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) {
@@ -244,106 +245,44 @@ export async function aprovarCorretora(formData: FormData) {
 
   const supabase = await createClient();
 
-  // Programa de fundadoras: cap de vagas. Aprovar além do limite exige
-  // aumentar founder_slots_total em /admin/configuracoes.
-  const { data: fp } = await supabase.rpc("founder_program_status");
-  const founder = (fp ?? {}) as { total?: number; used?: number };
-  const founderTotal = typeof founder.total === "number" ? founder.total : 5;
-  const founderUsed = typeof founder.used === "number" ? founder.used : 0;
-  if (founderUsed >= founderTotal) {
-    redirect(
-      `/admin/aprovacoes?error=${encodeURIComponent(
-        `Limite de ${founderTotal} fundadoras atingido. Aumente as vagas em Configurações pra aprovar mais.`,
-      )}`,
-    );
-  }
-
-  const { data: created, error: createErr } = await supabase
-    .from("corretoras")
-    .insert({
-      name,
-      slug,
-      cnpj,
-      city,
-      state,
-      verified: true,
-    })
-    .select("id")
-    .single();
-
-  if (createErr || !created) {
-    redirect(
-      `/admin/aprovacoes?error=${encodeURIComponent(friendlyPostgresError(createErr))}`,
-    );
-  }
-
-  const { error: linkErr } = await supabase
-    .from("profiles")
-    .update({ corretora_id: created.id, status: "ativo" })
-    .eq("id", profileId);
-
-  if (linkErr) {
-    redirect(
-      `/admin/aprovacoes?error=${encodeURIComponent(friendlyPostgresError(linkErr))}`,
-    );
-  }
-
-  // Concede o plano Fundadora: grátis vitalício (ativo, +100 anos).
-  // Self-heal: garante o plano por slug (a migration já cria, mas defende
-  // ambientes onde ela não rodou ainda). Falha silenciosa loga em audit.
-  const { data: existingFounderPlan } = await supabase
-    .from("plans")
-    .select("id")
-    .eq("slug", "corretora-fundador")
-    .maybeSingle<{ id: string }>();
-
-  let founderPlanId = existingFounderPlan?.id;
-  if (!founderPlanId) {
-    const { data: createdPlan } = await supabase
-      .from("plans")
-      .insert({
-        slug: "corretora-fundador",
-        name: "Fundadora",
-        description: "Programa fundador — acesso completo, grátis vitalício.",
-        price_cents: 0,
-        billing_period: "monthly",
-        features: [],
-        active: true,
-      })
-      .select("id")
-      .single<{ id: string }>();
-    founderPlanId = createdPlan?.id;
-  }
-
-  const now = new Date();
-  const lifetimeEnd = new Date(now);
-  lifetimeEnd.setFullYear(lifetimeEnd.getFullYear() + 100);
-  const { error: subErr } = await supabase.from("subscriptions").insert({
-    corretora_id: created.id,
-    plan_id: founderPlanId ?? null,
-    status: "active",
-    started_at: now.toISOString(),
-    current_period_start: now.toISOString(),
-    current_period_end: lifetimeEnd.toISOString(),
-    trial_ends_at: null,
+  // Aprovação atômica + idempotente via RPC (migration 20260621000000).
+  // A RPC serializa o gate de vagas com advisory lock (anti-TOCTOU),
+  // recheca o profile na mesma txn (anti-dupla aprovação) e faz todas
+  // as escritas num bloco transacional (anti-estado parcial).
+  // Cast localizado: a RPC ainda não está nos tipos gerados.
+  const { data, error } = await (
+    supabase.rpc as unknown as (
+      n: string,
+      a?: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: { message?: string } | null }>
+  )("approve_corretora", {
+    p_profile_id: profileId,
+    p_name: name,
+    p_slug: slug,
+    p_cnpj: cnpj ?? null,
+    p_city: city ?? null,
+    p_state: state ?? null,
   });
 
-  await supabase.from("audit_log").insert({
-    actor_id: actor.id,
-    corretora_id: created.id,
-    action: "aprovar_corretora",
-    entity: "profile",
-    entity_id: profileId,
-    payload: {
-      name,
-      cnpj,
-      city,
-      state,
-      plano: "fundador",
-      vitalicio_ate: lifetimeEnd.toISOString(),
-      subscription_error: subErr?.message ?? null,
-    },
-  });
+  const row = (Array.isArray(data) ? data[0] : data) as
+    | { success?: boolean; corretora_id?: string | null; error_msg?: string | null }
+    | undefined;
+
+  if (error || !row?.success) {
+    const code = error?.message ?? row?.error_msg ?? "";
+    // Mapeia o error_msg da RPC pra mensagem pt-BR amigável.
+    const friendly =
+      code === "forbidden"
+        ? "Você não tem permissão para aprovar corretoras."
+        : code === "ja_aprovada"
+          ? "Essa solicitação já foi aprovada."
+          : code === "profile_invalido"
+            ? "Solicitação inválida ou não está mais pendente."
+            : code === "limite_fundadoras"
+              ? "Limite de fundadoras atingido. Aumente as vagas em Configurações pra aprovar mais."
+              : `Não foi possível aprovar: ${code || "erro desconhecido"}`;
+    redirect(`/admin/aprovacoes?error=${encodeURIComponent(friendly)}`);
+  }
 
   revalidatePath("/admin");
   revalidatePath("/admin/aprovacoes");
@@ -471,18 +410,13 @@ export async function grantCorretoraTier(formData: FormData) {
 
   const planMeta = TIER_PLANS[tier as "pro" | "premium"];
 
-  // Self-heal: garante que o plano existe (upsert por slug)
-  const { data: existingPlan } = await supabase
+  // Self-heal idempotente: insere o plano só se o slug ainda não existir
+  // (ignoreDuplicates → ON CONFLICT (slug) DO NOTHING), depois resolve o id.
+  // Evita a race do read-modify-write (dois grants simultâneos do mesmo tier).
+  await supabase
     .from("plans")
-    .select("id")
-    .eq("slug", planMeta.slug)
-    .maybeSingle<{ id: string }>();
-
-  let planId = existingPlan?.id;
-  if (!planId) {
-    const { data: created, error: planErr } = await supabase
-      .from("plans")
-      .insert({
+    .upsert(
+      {
         slug: planMeta.slug,
         name: planMeta.name,
         description: planMeta.description,
@@ -490,16 +424,21 @@ export async function grantCorretoraTier(formData: FormData) {
         billing_period: "monthly",
         features: [],
         active: true,
-      })
-      .select("id")
-      .single<{ id: string }>();
-    if (planErr || !created) {
-      redirect(
-        `/admin/corretoras/${corretoraId}?error=${encodeURIComponent(friendlyPostgresError(planErr ?? null))}`,
-      );
-    }
-    planId = created.id;
+      },
+      { onConflict: "slug", ignoreDuplicates: true },
+    );
+
+  const { data: plan, error: planErr } = await supabase
+    .from("plans")
+    .select("id")
+    .eq("slug", planMeta.slug)
+    .maybeSingle<{ id: string }>();
+  if (planErr || !plan) {
+    redirect(
+      `/admin/corretoras/${corretoraId}?error=${encodeURIComponent(friendlyPostgresError(planErr ?? null))}`,
+    );
   }
+  const planId = plan.id;
 
   // Period end: Premium = 100 anos (parceiro vitalício), Pro = 1 ano
   const now = new Date();

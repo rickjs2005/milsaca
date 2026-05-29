@@ -187,11 +187,16 @@ export async function updatePropostaStatus(formData: FormData) {
     update.enviada_em = new Date().toISOString();
   }
 
-  const { error } = await supabase
+  // Compare-and-set (achado 2.4): a transição só aplica se o status no
+  // banco ainda é o que lemos (c.status). Se outra ação já respondeu a
+  // proposta nesse meio-tempo, 0 linhas voltam e avisamos sem erro feio.
+  const { data: updated, error } = await supabase
     .from("propostas")
     .update(update)
     .eq("id", id)
-    .eq("corretora_id", profile.corretora_id);
+    .eq("corretora_id", profile.corretora_id)
+    .eq("status", c.status)
+    .select("id");
 
   const backHref = c.lead_id
     ? `/painel/corretora/leads/${c.lead_id}`
@@ -202,6 +207,12 @@ export async function updatePropostaStatus(formData: FormData) {
   if (error) {
     const params = new URLSearchParams({ error: friendlyPostgresError(error) });
     redirect(`${backHref}?${params.toString()}`);
+  }
+
+  if (!updated || updated.length === 0) {
+    redirect(
+      `${backHref}?error=${encodeURIComponent("Essa proposta já foi respondida por outra ação. Atualize a página.")}`,
+    );
   }
 
   revalidateProposta({ leadId: c.lead_id, loteId: c.lote_id });

@@ -77,41 +77,17 @@ export async function markSubscriptionPaid(formData: FormData) {
   const { id } = parsed.data;
 
   const supabase = await createClient();
-  const { data: sub } = await supabase
-    .from("subscriptions")
-    .select("id, plan_id, current_period_end, plans(billing_period)")
-    .eq("id", id)
-    .single();
-  if (!sub) return;
 
-  type SubRow = {
-    id: string;
-    plan_id: string | null;
-    current_period_end: string | null;
-    plans: { billing_period: "monthly" | "yearly" } | null;
-  };
-  const row = sub as unknown as SubRow;
-
-  const period = row.plans?.billing_period ?? "monthly";
-  const base = row.current_period_end && new Date(row.current_period_end) > new Date()
-    ? new Date(row.current_period_end)
-    : new Date();
-  const newEnd = new Date(base);
-  if (period === "yearly") {
-    newEnd.setFullYear(newEnd.getFullYear() + 1);
-  } else {
-    newEnd.setMonth(newEnd.getMonth() + 1);
-  }
-
-  const { error } = await supabase
-    .from("subscriptions")
-    .update({
-      status: "active",
-      current_period_start: new Date().toISOString(),
-      current_period_end: newEnd.toISOString(),
-      canceled_at: null,
-    })
-    .eq("id", id);
+  // Renovação atômica no banco (migration 20260624000000): o novo período
+  // é calculado dentro do UPDATE a partir de greatest(period_end, now()),
+  // eliminando o read-modify-write não-atômico (achado 2.6).
+  // Cast localizado: a RPC ainda não está nos tipos gerados.
+  const { data, error } = await (
+    supabase.rpc as unknown as (
+      n: string,
+      a?: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: { message: string; code?: string } | null }>
+  )("mark_subscription_paid", { p_id: id });
 
   if (error) {
     redirect(
@@ -119,12 +95,14 @@ export async function markSubscriptionPaid(formData: FormData) {
     );
   }
 
+  const newEnd = typeof data === "string" ? data : null;
+
   await supabase.from("audit_log").insert({
     actor_id: actor.id,
     action: "subscription_paid",
     entity: "subscription",
     entity_id: id,
-    payload: { new_period_end: newEnd.toISOString(), period },
+    payload: { new_period_end: newEnd },
   });
 
   revalidatePath("/admin/assinaturas");
