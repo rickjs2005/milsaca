@@ -1632,6 +1632,15 @@ export type Database = {
       }
       founder_program_status: { Args: never; Returns: Json }
       get_laudo_publico: { Args: { p_id: string }; Returns: Json }
+      log_audit: {
+        Args: {
+          p_action: string
+          p_entity: string
+          p_entity_id: string
+          p_payload?: Json
+        }
+        Returns: undefined
+      }
       approve_corretora: {
         Args: {
           p_city: string

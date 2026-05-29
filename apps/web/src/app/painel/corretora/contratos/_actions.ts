@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
+import type { Json } from "@milsaca/types/database";
 import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { notify } from "@/lib/notify";
@@ -14,15 +15,9 @@ import {
   nextContratoCode,
 } from "./_lib/queries";
 
-// Cast localizado: a RPC log_audit (criada na Fase 1) carimba
-// actor_id=auth.uid() e insere em audit_log; ainda não está nos tipos
-// gerados, então acessamos via cast. Best-effort: auditoria nunca tomba
-// a mutação principal.
-type RpcCaller = (
-  name: string,
-  args?: Record<string, unknown>,
-) => Promise<{ data: unknown; error: { message?: string } | null }>;
-
+// Auditoria best-effort: a RPC log_audit (SECURITY DEFINER) carimba
+// actor_id=auth.uid() e corretora_id server-side. Nunca derruba a mutação
+// principal — falha de auditoria é engolida de propósito.
 async function logAudit(
   supabase: Awaited<ReturnType<typeof createClient>>,
   action: string,
@@ -30,11 +25,11 @@ async function logAudit(
   payload: Record<string, unknown>,
 ): Promise<void> {
   try {
-    await (supabase.rpc as unknown as RpcCaller)("log_audit", {
+    await supabase.rpc("log_audit", {
       p_action: action,
       p_entity: "contrato",
       p_entity_id: entityId,
-      p_payload: payload,
+      p_payload: payload as Json,
     });
   } catch {
     // auditoria é best-effort; nunca derruba a operação de negócio.
