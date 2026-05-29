@@ -4,16 +4,18 @@ Workflow: `.github/workflows/cd.yml`. Dispara **só depois que o CI passa verde
 num push no `main`** (`workflow_run`), e também sob demanda
 (Actions → CD → **Run workflow**).
 
-Três jobs independentes:
+Dois jobs independentes:
 
 | Job | O que faz | Freio |
 |---|---|---|
 | `deploy-functions` | `supabase functions deploy sync-cotacoes` | — (idempotente) |
-| `deploy-migrations` | `supabase db push` (dry-run antes) | **aprovação manual** (Environment) |
 | `deploy-web` | `vercel pull/build/deploy --prebuilt --prod` em `apps/web` | — |
 
 > `send-dispatch` **não** é deployado: providers (WhatsApp/Resend) ainda não
 > implementados — ver `supabase/functions/send-dispatch/README.md`.
+>
+> **Migrations NÃO entram no CD** (decisão 2026-05-29) — `supabase db push` é
+> inseguro neste repo. Aplicação manual via MCP; ver **seção 2**.
 
 ---
 
@@ -26,7 +28,6 @@ Settings → Secrets and variables → **Actions** → New repository secret (ou
 |---|---|
 | `SUPABASE_ACCESS_TOKEN` | PAT `sbp_…` — https://supabase.com/dashboard/account/tokens |
 | `SUPABASE_PROJECT_REF` | ref do projeto (está no `apps/web/.env.local`, na URL `https://<ref>.supabase.co`) |
-| `SUPABASE_DB_PASSWORD` | senha do Postgres — Dashboard → Project Settings → Database |
 | `VERCEL_TOKEN` | Vercel → Account Settings → Tokens |
 | `VERCEL_ORG_ID` | `apps/web/.vercel/project.json` após `vercel link` (campo `orgId`) |
 | `VERCEL_PROJECT_ID` | idem (`projectId`) |
@@ -36,7 +37,6 @@ Exemplo via CLI (rode na raiz do repo, com `gh` logado):
 ```powershell
 gh secret set SUPABASE_ACCESS_TOKEN
 gh secret set SUPABASE_PROJECT_REF
-gh secret set SUPABASE_DB_PASSWORD
 gh secret set VERCEL_TOKEN
 gh secret set VERCEL_ORG_ID
 gh secret set VERCEL_PROJECT_ID
@@ -54,16 +54,29 @@ Get-Content .vercel\project.json   # copie orgId e projectId
 
 ---
 
-## 2. Environment `production-db` (o freio das migrations)
+## 2. Migrations — aplicação manual via MCP (FORA do CD)
 
-Settings → **Environments** → New environment → `production-db`.
+`supabase db push` **não é usado** neste repo. Motivo:
 
-- Marque **Required reviewers** e adicione você mesmo (`rickjs2005`).
-- O job `deploy-migrations` vai **pausar** pedindo aprovação no GitHub antes de
-  rodar `db push`. Aprove em Actions → run do CD → **Review deployments**.
-- Confira o log do passo **Dry-run** antes de aprovar: se as 46 migrations já
-  estão aplicadas no remoto, o `db push` deve dizer "no changes" (ou listar só
-  as pendentes). Se acusar drift de histórico, resolva localmente antes.
+- O `supabase_migrations.schema_migrations` do remoto está **dessincronizado**
+  do schema real: migrations `20260603`→`20260620` foram aplicadas via SQL cru
+  (não rastreadas) e as 12 da auditoria entraram via MCP sob versão própria.
+  `db push` tentaria reaplicá-las → erro "already exists".
+- Há **5 pares de filename com timestamp duplicado** (`20260528/29/30/31`,
+  `20260601`) que o `db push` nem escaneia direito.
+
+**Como aplicar uma migration nova no remoto:**
+
+1. Escreva a migration **idempotente** (`create or replace`, `if not exists`;
+   pra remover coluna de view use `drop view if exists` + `create view`, não
+   `create or replace view`).
+2. Aplique pelo **Supabase MCP** (`apply_migration`), **uma a uma**, conferindo
+   o resultado de cada (ou via Supabase Studio → SQL Editor).
+3. Regenere os tipos quando possível (ver `convencao-migrations.md`).
+
+> O Environment `production-db` (criado pra um job `deploy-migrations` que foi
+> **removido**) ficou órfão — pode apagar em Settings → Environments. O secret
+> `SUPABASE_DB_PASSWORD` não é mais necessário.
 
 ---
 
@@ -108,7 +121,6 @@ Rotação do secret: `apps/web/scripts/rotate-cron-secret.mjs` +
   entra sozinha no próximo disparo (`0 21 * * 1-5` UTC) — ou force agora com
   `node apps/web/scripts/seed-conilon-now.mjs`. Cheque o Conilon:
   `select * from market_quotes where source = 'cepea_conilon' order by created_at desc limit 5;`
-- **Migrations:** log do `db push` no run do Actions.
 - **Web:** abrir a URL de produção e confirmar o build novo.
 - **Smokes:** `smoke-aprovacao`, `smoke-public-leak`, `smoke-rbac`,
   `smoke-fundadora` em `apps/web/scripts/`.
