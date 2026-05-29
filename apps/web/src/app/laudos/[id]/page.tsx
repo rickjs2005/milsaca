@@ -125,7 +125,7 @@ export default async function LaudoPublicoPage({
               </Badge>
             )}
           </div>
-          <div className="text-right">
+          <div className="text-left sm:text-right">
             <p className="text-xs uppercase tracking-wider text-milsaca-verde-claro">
               Laudo COB
             </p>
@@ -147,7 +147,7 @@ export default async function LaudoPublicoPage({
           }
         >
           <CardContent className="space-y-3 py-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs uppercase tracking-wider text-milsaca-verde-claro">
                   Resultado
@@ -155,14 +155,14 @@ export default async function LaudoPublicoPage({
                 {laudo.fora_de_tipo ? (
                   <div className="mt-1 flex items-center gap-2">
                     <AlertTriangle className="h-6 w-6 text-rose-700" />
-                    <span className="text-3xl font-semibold text-rose-700">
+                    <span className="text-2xl sm:text-3xl font-semibold text-rose-700">
                       Fora de tipo
                     </span>
                   </div>
                 ) : (
                   <div className="mt-1 flex items-center gap-2">
                     <CheckCircle2 className="h-6 w-6 text-milsaca-verde" />
-                    <span className="text-3xl font-semibold text-milsaca-verde">
+                    <span className="text-2xl sm:text-3xl font-semibold text-milsaca-verde">
                       {laudo.bica_corrida
                         ? "Bica corrida"
                         : `Tipo ${laudo.tipo ?? "—"}`}

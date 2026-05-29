@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { enforceProfileStatus, getProfile, requireUser } from "@/lib/auth";
 import { ToastFromSearchParams } from "@/components/toast-from-search-params";
+import { PanelShell } from "@/components/panel-shell";
 import { ProdutorSidebar } from "./_components/sidebar";
 import { getProdutorByProfileId, needsOnboarding } from "./_lib/produtor";
 
@@ -26,17 +27,23 @@ export default async function PainelProdutorLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-milsaca-cream">
-      <ProdutorSidebar
-        producerName={profile?.full_name ?? user.email ?? "produtor"}
-        producerEmail={user.email ?? ""}
-        fazendaNome={fazendaNome}
-        showSwitcher={showSwitcher}
-      />
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-6xl px-8 py-10">{children}</div>
-      </div>
+    <>
+      <PanelShell
+        brandLabel="Produtor"
+        sidebar={
+          <ProdutorSidebar
+            producerName={profile?.full_name ?? user.email ?? "produtor"}
+            producerEmail={user.email ?? ""}
+            fazendaNome={fazendaNome}
+            showSwitcher={showSwitcher}
+          />
+        }
+      >
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
+          {children}
+        </div>
+      </PanelShell>
       <ToastFromSearchParams />
-    </div>
+    </>
   );
 }

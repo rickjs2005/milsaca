@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { requireUser, getProfile, enforceProfileStatus } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { ToastFromSearchParams } from "@/components/toast-from-search-params";
+import { PanelShell } from "@/components/panel-shell";
 import { CorretoraSidebar } from "./_components/sidebar";
 import { SubscriptionBanner } from "./_components/subscription-banner";
 import {
@@ -59,21 +60,25 @@ export default async function PainelCorretoraLayout({
     : null;
 
   return (
-    <div className="flex min-h-screen bg-milsaca-cream">
-      <CorretoraSidebar
-        operatorName={profile?.full_name ?? user.email ?? "operador"}
-        operatorEmail={user.email ?? ""}
-        corretoraLabel={corretoraLabel}
-        showSwitcher={showSwitcher}
-        badges={badges}
-      />
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-6xl space-y-6 px-8 py-10">
+    <>
+      <PanelShell
+        brandLabel="Corretora"
+        sidebar={
+          <CorretoraSidebar
+            operatorName={profile?.full_name ?? user.email ?? "operador"}
+            operatorEmail={user.email ?? ""}
+            corretoraLabel={corretoraLabel}
+            showSwitcher={showSwitcher}
+            badges={badges}
+          />
+        }
+      >
+        <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
           {subscription ? <SubscriptionBanner info={subscription} /> : null}
           {children}
         </div>
-      </div>
+      </PanelShell>
       <ToastFromSearchParams />
-    </div>
+    </>
   );
 }

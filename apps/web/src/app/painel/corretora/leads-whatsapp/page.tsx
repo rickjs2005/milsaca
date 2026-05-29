@@ -179,7 +179,7 @@ export default async function LeadsWhatsAppCorretoraPage({
         })}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-milsaca-verde/10 bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-2xl border border-milsaca-verde/10 bg-white shadow-sm">
         {rows.length === 0 ? (
           <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
             <MessageCircle className="h-10 w-10 text-milsaca-verde-claro/40" />

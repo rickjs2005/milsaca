@@ -74,7 +74,7 @@ export default async function CompradoresPage({
           .
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-milsaca-cream-escuro bg-white shadow-sm">
+        <div className="overflow-x-auto rounded-2xl border border-milsaca-cream-escuro bg-white shadow-sm">
           <table className="w-full text-sm">
             <thead className="bg-milsaca-cream-escuro/30 text-left text-xs uppercase tracking-wide text-milsaca-verde-claro">
               <tr>

@@ -301,7 +301,7 @@ export default async function AnalyticsPage() {
               </Card>
             ) : (
               <Card className="border-milsaca-cream-escuro">
-                <CardContent className="p-0">
+                <CardContent className="overflow-x-auto p-0">
                   <table className="w-full text-sm">
                     <thead className="bg-milsaca-cream-escuro/30 text-left text-xs uppercase tracking-wider text-milsaca-verde-claro">
                       <tr>
