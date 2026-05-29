@@ -79,6 +79,8 @@ function eventLabel(e: LeadEvent) {
       return "Dados atualizados";
     case "comment":
       return "Comentário";
+    case "contraproposta":
+      return "Contraproposta do produtor";
     default:
       return e.kind;
   }
@@ -421,6 +423,20 @@ export default async function LeadDetalhePage({
                       {e.kind === "comment" && typeof e.payload.text === "string" && (
                         <p className="text-milsaca-verde">
                           {e.payload.text as string}
+                        </p>
+                      )}
+                      {e.kind === "contraproposta" && (
+                        <p className="text-milsaca-verde">
+                          R${" "}
+                          {Number(e.payload.preco_saca ?? 0).toLocaleString(
+                            "pt-BR",
+                            { minimumFractionDigits: 2 },
+                          )}
+                          /saca
+                          {typeof e.payload.mensagem === "string" &&
+                          e.payload.mensagem
+                            ? ` — “${e.payload.mensagem}”`
+                            : ""}
                         </p>
                       )}
                       {e.kind === "status_changed" &&

@@ -16,7 +16,11 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { SubmitButton } from "@/components/submit-button";
 import { requireUser } from "@/lib/auth";
+import { contraproporNegociacao } from "../_actions";
 import {
   getMinhaNegociacao,
   LEAD_STATUS_LABEL,
@@ -64,6 +68,8 @@ function eventLabel(e: NegociacaoEvent) {
       return "Proposta atualizada";
     case "comment":
       return "Comentário da corretora";
+    case "contraproposta":
+      return "Sua contraproposta";
     default:
       return e.kind;
   }
@@ -243,6 +249,21 @@ export default async function NegociacaoDetalhePage({
                             {e.payload.text as string}
                           </p>
                         )}
+                      {e.kind === "contraproposta" && (
+                        <p className="text-milsaca-verde">
+                          R${" "}
+                          {Number(
+                            e.payload.preco_saca ?? 0,
+                          ).toLocaleString("pt-BR", {
+                            minimumFractionDigits: 2,
+                          })}
+                          /saca
+                          {typeof e.payload.mensagem === "string" &&
+                          e.payload.mensagem
+                            ? ` — “${e.payload.mensagem}”`
+                            : ""}
+                        </p>
+                      )}
                       {e.kind === "status_changed" &&
                         typeof e.payload.comment === "string" &&
                         e.payload.comment && (
@@ -261,6 +282,57 @@ export default async function NegociacaoDetalhePage({
           </CardContent>
         </Card>
       </div>
+
+      {(lead.status === "novo" || lead.status === "em_negociacao") && (
+        <Card className="border-milsaca-cream-escuro">
+          <CardHeader>
+            <CardTitle className="text-base">Fazer uma contraproposta</CardTitle>
+            <CardDescription>
+              Mande seu valor por saca — a corretora é avisada na hora e
+              responde por aqui ou pelo WhatsApp.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              action={contraproporNegociacao}
+              className="grid gap-4 sm:grid-cols-[12rem_1fr] sm:items-end"
+            >
+              <input type="hidden" name="lead_id" value={lead.id} />
+              <div className="space-y-1.5">
+                <Label htmlFor="preco_saca">Seu valor (R$/saca)</Label>
+                <Input
+                  id="preco_saca"
+                  name="preco_saca"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  inputMode="decimal"
+                  placeholder="Ex.: 1450.00"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="mensagem">Mensagem (opcional)</Label>
+                <Input
+                  id="mensagem"
+                  name="mensagem"
+                  type="text"
+                  maxLength={500}
+                  placeholder="Ex.: fecho nesse valor à vista"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <SubmitButton
+                  pendingLabel="Enviando..."
+                  className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+                >
+                  Enviar contraproposta
+                </SubmitButton>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

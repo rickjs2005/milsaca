@@ -1653,6 +1653,10 @@ export type Database = {
         Returns: { corretora_id: string; error_msg: string; success: boolean }[]
       }
       mark_subscription_paid: { Args: { p_id: string }; Returns: string }
+      contrapropor_lead: {
+        Args: { p_lead_id: string; p_mensagem?: string; p_preco_saca: number }
+        Returns: { error_msg: string; success: boolean }[]
+      }
       get_contrato_publico: { Args: { p_id: string }; Returns: Json }
       anonimizar_titular: { Args: { p_user_id: string }; Returns: undefined }
       get_quotes_mode: { Args: never; Returns: string }
