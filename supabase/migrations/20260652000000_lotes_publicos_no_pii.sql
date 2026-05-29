@@ -17,12 +17,18 @@
 -- com rate-limit (rota /api/leads/whatsapp). A página /lote/[id] usa
 -- corretora_slug pra linkar o perfil público da corretora.
 --
--- `create or replace` mantém grants existentes; reforçamos os grants no
--- fim por idempotência. security_invoker = off preservado (a view
--- projeta só campos seguros — agora sem PII).
+-- Reforçamos os grants no fim por idempotência. security_invoker = off
+-- preservado (a view projeta só campos seguros — agora sem PII).
+--
+-- NOTA: usamos drop + create (não `create or replace view`) porque o
+-- Postgres não permite REMOVER colunas via create-or-replace
+-- ("cannot drop columns from view") e esta migration tira 4 colunas.
+-- Sem dependentes (verificado), o drop é seguro.
 -- =================================================================
 
-create or replace view public.lotes_publicos
+drop view if exists public.lotes_publicos;
+
+create view public.lotes_publicos
 with (security_invoker = off) as
 select
   l.id,
