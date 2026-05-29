@@ -3,6 +3,7 @@ import { Plus, TrendingDown, TrendingUp, LineChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmSubmit } from "@/components/confirm-submit";
+import { IndicadoresLive } from "@/components/indicadores-live";
 import { listCotacoes } from "./_lib/queries";
 import { deleteCotacao } from "./_actions";
 import type { CoffeeProcesso, CoffeeSpecie } from "@milsaca/types";
@@ -79,8 +80,9 @@ export default async function CotacoesCorretoraPage({
             Cotações
           </h1>
           <p className="text-sm text-milsaca-verde-claro">
-            Histórico de preços que alimenta o painel do produtor. Cadastre as
-            referências da praça enquanto a integração CEPEA/B3 não chega.
+            Indicadores de mercado ao vivo (CEPEA, NY, dólar) pra precificar;
+            abaixo, suas cotações manuais por praça — que alimentam o painel do
+            produtor.
           </p>
         </div>
         <Button
@@ -93,6 +95,13 @@ export default async function CotacoesCorretoraPage({
           </Link>
         </Button>
       </header>
+
+      <IndicadoresLive />
+
+      <h2 className="flex items-center gap-2 pt-2 text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
+        <LineChart className="h-4 w-4" />
+        Suas cotações manuais
+      </h2>
 
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="text-milsaca-verde-claro">Filtrar:</span>
