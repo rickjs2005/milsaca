@@ -1,10 +1,13 @@
 import { notFound, redirect } from "next/navigation";
+import QRCode from "qrcode";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import { getContrato, CONTRATO_STATUS_LABEL } from "../../_lib/queries";
 import { PrintButton } from "./_print-button";
 
 export const metadata = { title: "Espelho de contrato — Milsaca" };
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 type Params = Promise<{ id: string }>;
 
@@ -92,6 +95,26 @@ export default async function EspelhoContratoPage({
       bairro: string | null;
       cep: string | null;
     }>();
+
+  // content_hash não faz parte de ContratoDetail (queries compartilhada),
+  // então buscamos só essa coluna aqui. Já filtrado por corretora_id na RLS.
+  const { data: hashRow } = await supabase
+    .from("contratos")
+    .select("content_hash")
+    .eq("id", contrato.id)
+    .eq("corretora_id", profile.corretora_id)
+    .maybeSingle<{ content_hash: string | null }>();
+  const contentHash = hashRow?.content_hash ?? null;
+
+  // QR e link reais de verificação pública (substituem a falsa "chave de
+  // acesso"/"protocolo" que sugeriam validação inexistente — achado 3.1).
+  const verifyUrl = `${SITE_URL}/contratos/${contrato.id}/verificar`;
+  const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
+    errorCorrectionLevel: "M",
+    margin: 1,
+    width: 220,
+    color: { dark: "#2D3A2E", light: "#FAF7F0" },
+  });
 
   const valorPorSaca =
     contrato.total_value != null && contrato.bag_count
@@ -217,14 +240,30 @@ export default async function EspelhoContratoPage({
             </div>
 
             <div className="danfe-cell flex flex-col">
-              <p className="danfe-label">Chave de acesso (referência)</p>
-              <p className="danfe-mono mt-1 break-all text-[8px]">
-                {contrato.id.replace(/-/g, "")}
-              </p>
-              <p className="danfe-label mt-2">Protocolo de autorização</p>
-              <p className="danfe-mono text-[9px]">
-                Milsaca · {formatDate(contrato.created_at)}
-              </p>
+              <div className="flex items-start gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="danfe-label">Hash SHA-256 do documento</p>
+                  {contentHash ? (
+                    <p className="danfe-mono mt-1 break-all text-[7px] leading-tight">
+                      {contentHash}
+                    </p>
+                  ) : (
+                    <p className="danfe-mono mt-1 text-[8px]">
+                      — gerado na assinatura —
+                    </p>
+                  )}
+                  <p className="danfe-label mt-2">Verificação</p>
+                  <p className="danfe-mono break-all text-[7px] leading-tight">
+                    {verifyUrl}
+                  </p>
+                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element -- data URL, sem ganho com next/image */}
+                <img
+                  src={qrDataUrl}
+                  alt="QR de verificação"
+                  className="h-12 w-12 shrink-0"
+                />
+              </div>
               <p className="danfe-label mt-2">Status</p>
               <p className="danfe-value">
                 {CONTRATO_STATUS_LABEL[contrato.status]}

@@ -1,12 +1,11 @@
 import Link from "next/link";
+import { POLITICA_VERSAO } from "@/lib/legal";
 
 export const metadata = {
   title: "Política de Privacidade — Milsaca",
   description:
     "Como o Milsaca trata seus dados pessoais, conforme LGPD (Lei 13.709/2018).",
 };
-
-export const POLITICA_VERSAO = "2026-05-19";
 
 export default function PoliticaPrivacidadePage() {
   return (
@@ -125,9 +124,10 @@ export default function PoliticaPrivacidadePage() {
               >
                 contato@milsaca.app
               </a>
-              ). Marcamos sua conta como excluída em até 7 dias; histórico
-              comercial necessário pra cumprir obrigações legais (notas
-              fiscais, contratos firmados) é preservado anonimizado.
+              ). Marcamos sua conta como excluída em até 7 dias; seus
+              dados pessoais são removidos do acesso e retidos apenas no
+              mínimo exigido por obrigação legal (notas fiscais, contratos
+              firmados).
             </li>
             <li>Retirar consentimento de marketing (futuro)</li>
             <li>Saber pra quem seus dados foram compartilhados</li>
@@ -155,7 +155,8 @@ export default function PoliticaPrivacidadePage() {
           </p>
           <ul className="list-inside list-disc space-y-1">
             <li>
-              Dados pessoais: removidos ou anonimizados em até 30 dias
+              Dados pessoais: removidos do acesso em até 30 dias e retidos
+              apenas no mínimo exigido por obrigação legal
             </li>
             <li>
               Histórico comercial (contratos, laudos COB): preservado por 5

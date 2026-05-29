@@ -12,7 +12,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getLaudoPublico } from "../_lib/queries";
+import { getLaudoPublico, laudoContentHash } from "../_lib/queries";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -77,6 +77,7 @@ export default async function LaudoPublicoPage({
   if (!laudo) notFound();
 
   const publicUrl = `${SITE_URL}/laudos/${laudo.id}`;
+  const contentHash = laudoContentHash(laudo);
   const qrDataUrl = await QRCode.toDataURL(publicUrl, {
     errorCorrectionLevel: "M",
     margin: 1,
@@ -387,6 +388,12 @@ export default async function LaudoPublicoPage({
                 <p>Escaneie o QR ou compartilhe o link abaixo.</p>
                 <p className="mt-1 break-all font-mono text-[11px]">
                   {publicUrl}
+                </p>
+                <p className="mt-2 text-[10px] uppercase tracking-wider text-milsaca-verde-claro">
+                  Hash SHA-256
+                </p>
+                <p className="break-all font-mono text-[10px] text-milsaca-verde">
+                  {contentHash}
                 </p>
               </div>
             </div>

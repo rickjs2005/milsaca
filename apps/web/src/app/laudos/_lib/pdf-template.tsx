@@ -181,9 +181,15 @@ export type LaudoPdfProps = {
   laudo: LaudoPublico;
   qrDataUrl: string;
   publicUrl: string;
+  contentHash?: string;
 };
 
-export function LaudoPdf({ laudo, qrDataUrl, publicUrl }: LaudoPdfProps) {
+export function LaudoPdf({
+  laudo,
+  qrDataUrl,
+  publicUrl,
+  contentHash,
+}: LaudoPdfProps) {
   const fora = laudo.fora_de_tipo;
   const defeitos = laudo.defeitos_crus
     ? Object.entries(laudo.defeitos_crus)
@@ -435,6 +441,11 @@ export function LaudoPdf({ laudo, qrDataUrl, publicUrl }: LaudoPdfProps) {
             <Text style={styles.footerMetaLine}>
               Link público: {publicUrl}
             </Text>
+            {contentHash ? (
+              <Text style={[styles.footerMetaLine, { maxWidth: 260 }]}>
+                SHA-256: {contentHash}
+              </Text>
+            ) : null}
             <Text style={styles.footerMetaLine}>
               Schema IN 8/2003 · v{laudo.schema_version}
             </Text>

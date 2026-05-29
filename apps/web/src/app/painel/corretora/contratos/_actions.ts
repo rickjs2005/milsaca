@@ -1,5 +1,6 @@
 "use server";
 
+import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
@@ -12,6 +13,63 @@ import {
   type ContratoStatus,
   nextContratoCode,
 } from "./_lib/queries";
+
+// Cast localizado: a RPC log_audit (criada na Fase 1) carimba
+// actor_id=auth.uid() e insere em audit_log; ainda não está nos tipos
+// gerados, então acessamos via cast. Best-effort: auditoria nunca tomba
+// a mutação principal.
+type RpcCaller = (
+  name: string,
+  args?: Record<string, unknown>,
+) => Promise<{ data: unknown; error: { message?: string } | null }>;
+
+async function logAudit(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  action: string,
+  entityId: string,
+  payload: Record<string, unknown>,
+): Promise<void> {
+  try {
+    await (supabase.rpc as unknown as RpcCaller)("log_audit", {
+      p_action: action,
+      p_entity: "contrato",
+      p_entity_id: entityId,
+      p_payload: payload,
+    });
+  } catch {
+    // auditoria é best-effort; nunca derruba a operação de negócio.
+  }
+}
+
+/**
+ * SHA-256 (hex) do payload canônico do contrato. Campos ordenados de
+ * forma estável (JSON com chaves fixas em ordem) pra que o mesmo
+ * contrato produza sempre o mesmo hash — base da verificação pública.
+ */
+function contratoContentHash(input: {
+  code: string | null;
+  produtor_id: string | null;
+  comprador_id: string | null;
+  coffee_type: string | null;
+  bag_count: number | null;
+  total_value: number | null;
+  comissao_pct: number | null;
+  comissao_total: number | null;
+  signed_at: string | null;
+}): string {
+  const canonical = JSON.stringify([
+    ["code", input.code],
+    ["produtor_id", input.produtor_id],
+    ["comprador_id", input.comprador_id],
+    ["coffee_type", input.coffee_type],
+    ["bag_count", input.bag_count],
+    ["total_value", input.total_value],
+    ["comissao_pct", input.comissao_pct],
+    ["comissao_total", input.comissao_total],
+    ["signed_at", input.signed_at],
+  ]);
+  return createHash("sha256").update(canonical).digest("hex");
+}
 
 const CONTRATO_STATUS_LABEL: Record<ContratoStatus, string> = {
   rascunho: "em rascunho",
@@ -130,6 +188,17 @@ export async function createContrato(formData: FormData) {
     redirect(`/painel/corretora/contratos/novo?${params.toString()}`);
   }
 
+  await logAudit(supabase, "contrato_create", data.id, {
+    code,
+    produtor_id,
+    comprador_id,
+    coffee_type,
+    bag_count,
+    total_value,
+    comissao_pct,
+    comissao_total,
+  });
+
   await notify({
     userId: produtor_id as string,
     kind: "contrato",
@@ -189,6 +258,16 @@ export async function updateContratoFields(formData: FormData) {
     redirect(`/painel/corretora/contratos/${id}?${params.toString()}`);
   }
 
+  await logAudit(supabase, "contrato_update_fields", id, {
+    code,
+    comprador_id,
+    coffee_type,
+    bag_count,
+    total_value,
+    comissao_pct,
+    comissao_total,
+  });
+
   revalidateContrato(id);
   redirect(`/painel/corretora/contratos/${id}?saved=1`);
 }
@@ -210,22 +289,60 @@ export async function updateContratoStatus(formData: FormData) {
   const supabase = await createClient();
   const { data: current } = await supabase
     .from("contratos")
-    .select("status, produtor_id, code")
+    .select(
+      `status, produtor_id, code, comprador_id, coffee_type, bag_count,
+       total_value, comissao_pct, comissao_total`,
+    )
     .eq("id", id)
     .eq("corretora_id", profile.corretora_id)
-    .maybeSingle();
+    .maybeSingle<{
+      status: ContratoStatus;
+      produtor_id: string;
+      code: string | null;
+      comprador_id: string | null;
+      coffee_type: string | null;
+      bag_count: number | null;
+      total_value: number | string | null;
+      comissao_pct: number | string | null;
+      comissao_total: number | string | null;
+    }>();
 
   if (!current) redirect("/painel/corretora/contratos");
 
-  const payload: { status: ContratoStatus; signed_at?: string | null } = {
+  const payload: {
+    status: ContratoStatus;
+    signed_at?: string | null;
+    content_hash?: string | null;
+  } = {
     status: next,
   };
-  // Quando vira ativo, registra signed_at (se ainda não houver)
+  // Quando vira ativo (assinado), registra signed_at e congela o
+  // content_hash: SHA-256 do payload canônico no momento da assinatura.
   if (next === "ativo") {
-    payload.signed_at = new Date().toISOString();
+    const signedAt = new Date().toISOString();
+    payload.signed_at = signedAt;
+    payload.content_hash = contratoContentHash({
+      code: current.code,
+      produtor_id: current.produtor_id,
+      comprador_id: current.comprador_id,
+      coffee_type: current.coffee_type,
+      bag_count: current.bag_count,
+      total_value:
+        current.total_value != null ? Number(current.total_value) : null,
+      comissao_pct:
+        current.comissao_pct != null ? Number(current.comissao_pct) : null,
+      comissao_total:
+        current.comissao_total != null
+          ? Number(current.comissao_total)
+          : null,
+      signed_at: signedAt,
+    });
   }
+  // Voltar a estados não-assinados limpa signed_at e o hash (deixa de
+  // ser um documento congelado).
   if (next === "rascunho" || next === "em_analise" || next === "cancelado") {
     payload.signed_at = null;
+    payload.content_hash = null;
   }
 
   const { error } = await supabase
@@ -238,6 +355,13 @@ export async function updateContratoStatus(formData: FormData) {
     const params = new URLSearchParams({ error: friendlyPostgresError(error) });
     redirect(`/painel/corretora/contratos/${id}?${params.toString()}`);
   }
+
+  await logAudit(supabase, "contrato_update_status", id, {
+    from: current.status,
+    to: next,
+    signed_at: payload.signed_at ?? null,
+    content_hash: payload.content_hash ?? null,
+  });
 
   if (current.status !== next) {
     await notify({

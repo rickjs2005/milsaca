@@ -12,6 +12,7 @@ import {
   whatsappOptionalSchema,
 } from "@/lib/brasil-schemas";
 import { getFounderProgramStatus } from "@/lib/founder-program";
+import { POLITICA_VERSAO, TERMOS_VERSAO } from "@/lib/legal";
 import { createHash } from "node:crypto";
 import type { Profile } from "@milsaca/types";
 
@@ -196,7 +197,7 @@ export async function signUp(formData: FormData) {
   // Registra consentimento LGPD (best-effort; falha não tomba signup).
   // profile_id pode ser null se confirmação por email exigir clique
   // antes da sessão existir — gravamos com email pra reconciliar depois.
-  const POLITICA_VERSAO = "2026-05-19";
+  // Versões vêm de @/lib/legal (fonte única — achado 3.7).
   await supabase.from("lgpd_consents").insert([
     {
       profile_id: data.user?.id ?? null,
@@ -212,7 +213,7 @@ export async function signUp(formData: FormData) {
       profile_id: data.user?.id ?? null,
       email,
       kind: "termos_uso",
-      version: POLITICA_VERSAO,
+      version: TERMOS_VERSAO,
       granted: true,
       ip_hash: ipKey,
       user_agent: h.get("user-agent")?.slice(0, 500) ?? null,

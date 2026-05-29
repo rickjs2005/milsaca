@@ -123,11 +123,17 @@ export async function deleteContato(formData: FormData) {
     );
   }
 
+  // Soft-delete coerente com a LGPD (migrations 20260602/20260605):
+  // produtor_contatos tem deleted_at e as policies de SELECT já escondem
+  // linhas não-null de não-admin. Marcar o timestamp preserva a trilha
+  // pra auditoria/compliance em vez de apagar o registro de vez (o
+  // hard-delete anterior era inconsistente com o soft-delete do resto).
   await supabase
     .from("produtor_contatos")
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq("id", id)
-    .eq("corretora_id", profile.corretora_id);
+    .eq("corretora_id", profile.corretora_id)
+    .is("deleted_at", null);
 
   revalidatePath("/painel/corretora/produtores");
   redirect("/painel/corretora/produtores");
