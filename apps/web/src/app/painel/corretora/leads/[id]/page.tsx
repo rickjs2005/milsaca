@@ -4,10 +4,14 @@ import {
   ArrowLeft,
   CheckCircle2,
   MessageCircle,
-  Clock,
   ArrowRight,
   Phone,
   FileText,
+  Plus,
+  RefreshCw,
+  MessageSquare,
+  HandCoins,
+  CircleDot,
 } from "lucide-react";
 import {
   Card,
@@ -16,15 +20,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { StatusBadge, type StatusTone } from "@/components/status-badge";
+import { cn } from "@/lib/utils";
 import { getProfile } from "@/lib/auth";
 import {
   getLead,
   LEAD_STATUS_LABEL,
-  LEAD_STATUS_COLOR,
   type LeadStatus,
   type LeadEvent,
 } from "../_lib/queries";
@@ -64,6 +69,17 @@ function formatDateTime(iso: string) {
   });
 }
 
+// status do lead → tonalidade semântica (tokens de fundação).
+// em_negociacao=info, convertido=success, perdido=danger, arquivado=neutral,
+// novo=premium (mantém a identidade dourada do estado inicial).
+const LEAD_STATUS_TONE: Record<LeadStatus, StatusTone> = {
+  novo: "premium",
+  em_negociacao: "info",
+  convertido: "success",
+  perdido: "danger",
+  arquivado: "neutral",
+};
+
 function eventLabel(e: LeadEvent) {
   switch (e.kind) {
     case "created":
@@ -86,27 +102,43 @@ function eventLabel(e: LeadEvent) {
   }
 }
 
-const STATUS_BUTTONS: { value: LeadStatus; label: string; tone: string }[] = [
-  {
-    value: "em_negociacao",
-    label: "Em negociação",
-    tone: "bg-sky-600 text-white hover:bg-sky-700",
-  },
-  {
-    value: "convertido",
-    label: "Convertido",
-    tone: "bg-emerald-600 text-white hover:bg-emerald-700",
-  },
-  {
-    value: "perdido",
-    label: "Perdido",
-    tone: "bg-rose-600 text-white hover:bg-rose-700",
-  },
-  {
-    value: "arquivado",
-    label: "Arquivar",
-    tone: "bg-slate-500 text-white hover:bg-slate-600",
-  },
+// Affordance da timeline: ícone + tonalidade do dot por tipo de evento.
+function eventVisual(kind: string): { tone: StatusTone; Icon: typeof CircleDot } {
+  switch (kind) {
+    case "created":
+      return { tone: "premium", Icon: Plus };
+    case "status_changed":
+      return { tone: "info", Icon: RefreshCw };
+    case "comment":
+      return { tone: "neutral", Icon: MessageSquare };
+    case "contraproposta":
+      return { tone: "warning", Icon: HandCoins };
+    case "updated":
+      return { tone: "neutral", Icon: CircleDot };
+    default:
+      return { tone: "neutral", Icon: CircleDot };
+  }
+}
+
+const DOT_TONE_CLASS: Record<StatusTone, string> = {
+  success: "bg-success-50 text-success-600 ring-success-100",
+  info: "bg-info-50 text-info-600 ring-info-100",
+  warning: "bg-warning-50 text-warning-700 ring-warning-100",
+  danger: "bg-danger-50 text-danger-600 ring-danger-100",
+  neutral: "bg-neutral-100 text-neutral-600 ring-neutral-200",
+  premium: "bg-milsaca-dourado/15 text-milsaca-cafezal ring-milsaca-dourado/30",
+};
+
+// Botões de mudança de status → variant do Button (cores semânticas, não cruas).
+const STATUS_BUTTONS: {
+  value: LeadStatus;
+  label: string;
+  variant: "primary" | "success" | "danger" | "secondary";
+}[] = [
+  { value: "em_negociacao", label: "Em negociação", variant: "primary" },
+  { value: "convertido", label: "Convertido", variant: "success" },
+  { value: "perdido", label: "Perdido", variant: "danger" },
+  { value: "arquivado", label: "Arquivar", variant: "secondary" },
 ];
 
 export default async function LeadDetalhePage({
@@ -138,7 +170,7 @@ export default async function LeadDetalhePage({
       <div>
         <Link
           href="/painel/corretora/leads"
-          className="inline-flex items-center gap-1 text-sm text-milsaca-verde-claro hover:text-milsaca-verde"
+          className="inline-flex items-center gap-1 text-body-sm text-neutral-600 transition-colors hover:text-milsaca-cafezal"
         >
           <ArrowLeft className="h-4 w-4" />
           Voltar para Leads
@@ -147,22 +179,18 @@ export default async function LeadDetalhePage({
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
+          <h1 className="text-h1 text-milsaca-cafezal">
             {lead.produtor_nome}
           </h1>
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <Badge
-              className={`${LEAD_STATUS_COLOR[lead.status]} hover:${LEAD_STATUS_COLOR[lead.status]}`}
-            >
+          <div className="flex flex-wrap items-center gap-2 text-body-sm">
+            <StatusBadge tone={LEAD_STATUS_TONE[lead.status]} withDot>
               {LEAD_STATUS_LABEL[lead.status]}
-            </Badge>
+            </StatusBadge>
             {lead.produtor_kind === "contato" && (
-              <Badge className="bg-milsaca-dourado/20 text-milsaca-verde hover:bg-milsaca-dourado/20">
-                Contato pendente
-              </Badge>
+              <StatusBadge tone="warning">Contato pendente</StatusBadge>
             )}
             {lead.produtor_phone && (
-              <span className="inline-flex items-center gap-1 text-milsaca-verde-claro">
+              <span className="inline-flex items-center gap-1 text-neutral-600">
                 <Phone className="h-3.5 w-3.5" />
                 {lead.produtor_phone}
               </span>
@@ -170,40 +198,33 @@ export default async function LeadDetalhePage({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {lead.produtor_kind === "produtor" && (
-            <Button
-              asChild
-              variant="outline"
-              className="border-milsaca-verde text-milsaca-verde hover:bg-milsaca-cream-escuro/40"
-            >
-              <Link href={`/painel/corretora/contratos/novo?lead=${lead.id}`}>
-                <FileText className="mr-2 h-4 w-4" />
-                Criar contrato
-              </Link>
-            </Button>
-          )}
           {waUrl && (
-            <Button
-              asChild
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
-            >
+            <Button asChild variant="gold">
               <a href={waUrl} target="_blank" rel="noopener noreferrer">
                 <MessageCircle className="mr-2 h-4 w-4" />
                 WhatsApp
               </a>
             </Button>
           )}
+          {lead.produtor_kind === "produtor" && (
+            <Button asChild variant="primary">
+              <Link href={`/painel/corretora/contratos/novo?lead=${lead.id}`}>
+                <FileText className="mr-2 h-4 w-4" />
+                Criar contrato
+              </Link>
+            </Button>
+          )}
         </div>
       </header>
 
       {sp.saved && (
-        <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-800">
+        <div className="flex items-center gap-2 rounded-md border border-success-100 bg-success-50 px-4 py-2 text-body-sm text-success-700">
           <CheckCircle2 className="h-4 w-4" />
           Atualizado.
         </div>
       )}
       {sp.error && (
-        <div className="rounded-md border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">
+        <div className="rounded-md border border-danger-100 bg-danger-50 px-4 py-2 text-body-sm text-danger-700">
           {sp.error}
         </div>
       )}
@@ -211,9 +232,9 @@ export default async function LeadDetalhePage({
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Coluna 1+2: Dados do lead + ações de status */}
         <div className="space-y-6 lg:col-span-2">
-          <Card className="border-milsaca-cream-escuro">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-base">Dados do lead</CardTitle>
+              <CardTitle>Dados do lead</CardTitle>
               <CardDescription>
                 Edite o que precisar. Toda alteração entra na timeline.
               </CardDescription>
@@ -225,21 +246,20 @@ export default async function LeadDetalhePage({
               >
                 <input type="hidden" name="id" value={lead.id} />
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label htmlFor="coffee_type">Café</Label>
-                  <select
+                  <Select
                     id="coffee_type"
                     name="coffee_type"
                     defaultValue={lead.coffee_type ?? ""}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <option value="">—</option>
                     <option value="Arábica">Arábica</option>
                     <option value="Conillón">Conillón</option>
-                  </select>
+                  </Select>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label htmlFor="bag_count">Sacas (60kg)</Label>
                   <Input
                     id="bag_count"
@@ -251,7 +271,7 @@ export default async function LeadDetalhePage({
                   />
                 </div>
 
-                <div className="space-y-2 sm:col-span-2">
+                <div className="space-y-1.5 sm:col-span-2">
                   <Label htmlFor="proposed_price">
                     Valor proposto por saca (R$)
                   </Label>
@@ -272,20 +292,20 @@ export default async function LeadDetalhePage({
                   />
                 </div>
 
-                <div className="space-y-2 sm:col-span-2">
+                <div className="space-y-1.5 sm:col-span-2">
                   <Label htmlFor="notes">Observações</Label>
                   <textarea
                     id="notes"
                     name="notes"
                     rows={3}
                     defaultValue={lead.notes ?? ""}
-                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex w-full rounded-md border border-neutral-200 bg-background px-3 py-2 text-body-sm text-neutral-900 ring-offset-background placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
                 </div>
 
-                <div className="sm:col-span-2 grid gap-3 rounded-md bg-milsaca-cream-escuro/30 p-3 text-xs text-milsaca-verde-claro sm:grid-cols-2">
+                <div className="grid gap-3 rounded-md border border-neutral-200 bg-milsaca-cream/60 p-4 text-body-sm text-neutral-600 sm:col-span-2 sm:grid-cols-2">
                   <div>
-                    <span className="font-medium text-milsaca-verde">
+                    <span className="font-medium text-milsaca-cafezal">
                       Valor total
                     </span>
                     :{" "}
@@ -294,7 +314,7 @@ export default async function LeadDetalhePage({
                       : "—"}
                   </div>
                   <div>
-                    <span className="font-medium text-milsaca-verde">
+                    <span className="font-medium text-milsaca-cafezal">
                       Criado em
                     </span>
                     : {formatDateTime(lead.created_at)}
@@ -302,10 +322,7 @@ export default async function LeadDetalhePage({
                 </div>
 
                 <div className="flex justify-end sm:col-span-2">
-                  <Button
-                    type="submit"
-                    className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
-                  >
+                  <Button type="submit" variant="primary">
                     Salvar alterações
                   </Button>
                 </div>
@@ -319,9 +336,9 @@ export default async function LeadDetalhePage({
             defaultBagCount={lead.bag_count}
           />
 
-          <Card className="border-milsaca-cream-escuro">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-base">Mover o lead</CardTitle>
+              <CardTitle>Mover o lead</CardTitle>
               <CardDescription>
                 Atualize o status. Comentário opcional vai junto na timeline.
               </CardDescription>
@@ -330,41 +347,43 @@ export default async function LeadDetalhePage({
               <form action={updateLeadStatus} className="space-y-4">
                 <input type="hidden" name="id" value={lead.id} />
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label htmlFor="comment">Comentário (opcional)</Label>
                   <textarea
                     id="comment"
                     name="comment"
                     rows={2}
                     placeholder="Ex.: produtor confirmou preço por WhatsApp."
-                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex w-full rounded-md border border-neutral-200 bg-background px-3 py-2 text-body-sm text-neutral-900 ring-offset-background placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
                 </div>
 
                 <div className="flex flex-wrap gap-2">
                   {STATUS_BUTTONS.filter((b) => b.value !== lead.status).map(
                     (b) => (
-                      <button
+                      <Button
                         key={b.value}
                         type="submit"
                         name="status"
                         value={b.value}
-                        className={`inline-flex items-center gap-1 rounded-md px-3 py-2 text-xs font-medium ${b.tone}`}
+                        variant={b.variant}
+                        size="sm"
                       >
-                        <ArrowRight className="h-3.5 w-3.5" />
+                        <ArrowRight className="mr-1 h-3.5 w-3.5" />
                         {b.label}
-                      </button>
+                      </Button>
                     ),
                   )}
                   {lead.status !== "novo" && (
-                    <button
+                    <Button
                       type="submit"
                       name="status"
                       value="novo"
-                      className="inline-flex items-center gap-1 rounded-md border border-milsaca-cream-escuro px-3 py-2 text-xs font-medium text-milsaca-verde hover:bg-milsaca-cream-escuro/40"
+                      variant="outline"
+                      size="sm"
                     >
                       Voltar para Novo
-                    </button>
+                    </Button>
                   )}
                 </div>
               </form>
@@ -373,86 +392,90 @@ export default async function LeadDetalhePage({
         </div>
 
         {/* Coluna 3: Timeline */}
-        <Card className="border-milsaca-cream-escuro lg:col-span-1">
+        <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle className="text-base">Timeline</CardTitle>
-            <CardDescription>
-              Histórico completo deste lead.
-            </CardDescription>
+            <CardTitle>Timeline</CardTitle>
+            <CardDescription>Histórico completo deste lead.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <form action={addLeadComment} className="space-y-2">
+            <form action={addLeadComment} className="space-y-1.5">
               <input type="hidden" name="id" value={lead.id} />
-              <Label htmlFor="text" className="text-xs uppercase tracking-wider text-milsaca-verde-claro">
-                Adicionar comentário
-              </Label>
+              <Label htmlFor="text">Adicionar comentário</Label>
               <textarea
                 id="text"
                 name="text"
                 rows={2}
                 required
                 placeholder="Escreva uma nota..."
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex w-full rounded-md border border-neutral-200 bg-background px-3 py-2 text-body-sm text-neutral-900 ring-offset-background placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               />
               <div className="flex justify-end">
-                <Button
-                  type="submit"
-                  size="sm"
-                  className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
-                >
+                <Button type="submit" size="sm" variant="primary">
                   Comentar
                 </Button>
               </div>
             </form>
 
-            <div className="space-y-3 border-t border-milsaca-cream-escuro pt-4">
+            <div className="border-t border-neutral-200 pt-4">
               {lead.events.length === 0 ? (
-                <p className="text-xs text-milsaca-verde-claro">
+                <p className="text-body-sm text-neutral-500">
                   Sem eventos ainda.
                 </p>
               ) : (
-                lead.events.map((e) => (
-                  <div key={e.id} className="flex gap-3 text-sm">
-                    <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-milsaca-cream-escuro/60 text-milsaca-verde">
-                      <Clock className="h-3 w-3" />
-                    </div>
-                    <div className="flex-1 space-y-0.5">
-                      <p className="font-medium text-milsaca-verde">
-                        {eventLabel(e)}
-                      </p>
-                      {e.kind === "comment" && typeof e.payload.text === "string" && (
-                        <p className="text-milsaca-verde">
-                          {e.payload.text as string}
-                        </p>
-                      )}
-                      {e.kind === "contraproposta" && (
-                        <p className="text-milsaca-verde">
-                          R${" "}
-                          {Number(e.payload.preco_saca ?? 0).toLocaleString(
-                            "pt-BR",
-                            { minimumFractionDigits: 2 },
+                <ol className="relative space-y-5 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-px before:bg-neutral-200">
+                  {lead.events.map((e) => {
+                    const { tone, Icon } = eventVisual(e.kind);
+                    return (
+                      <li key={e.id} className="relative flex gap-3">
+                        <span
+                          className={cn(
+                            "relative z-10 mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-1 ring-inset",
+                            DOT_TONE_CLASS[tone],
                           )}
-                          /saca
-                          {typeof e.payload.mensagem === "string" &&
-                          e.payload.mensagem
-                            ? ` — “${e.payload.mensagem}”`
-                            : ""}
-                        </p>
-                      )}
-                      {e.kind === "status_changed" &&
-                        typeof e.payload.comment === "string" &&
-                        e.payload.comment && (
-                          <p className="text-milsaca-verde-claro italic">
-                            “{e.payload.comment as string}”
+                        >
+                          <Icon className="h-4 w-4" />
+                        </span>
+                        <div className="flex-1 space-y-0.5 pb-1">
+                          <p className="text-body-sm font-medium text-milsaca-cafezal">
+                            {eventLabel(e)}
                           </p>
-                        )}
-                      <p className="text-[11px] text-milsaca-verde-claro">
-                        {formatDateTime(e.created_at)}
-                        {e.actor_name && <> · {e.actor_name}</>}
-                      </p>
-                    </div>
-                  </div>
-                ))
+                          {e.kind === "comment" &&
+                            typeof e.payload.text === "string" && (
+                              <p className="text-body-sm text-neutral-700">
+                                {e.payload.text as string}
+                              </p>
+                            )}
+                          {e.kind === "contraproposta" && (
+                            <p className="text-body-sm text-neutral-700">
+                              R${" "}
+                              {Number(
+                                e.payload.preco_saca ?? 0,
+                              ).toLocaleString("pt-BR", {
+                                minimumFractionDigits: 2,
+                              })}
+                              /saca
+                              {typeof e.payload.mensagem === "string" &&
+                              e.payload.mensagem
+                                ? ` — “${e.payload.mensagem}”`
+                                : ""}
+                            </p>
+                          )}
+                          {e.kind === "status_changed" &&
+                            typeof e.payload.comment === "string" &&
+                            e.payload.comment && (
+                              <p className="text-body-sm italic text-neutral-600">
+                                “{e.payload.comment as string}”
+                              </p>
+                            )}
+                          <p className="text-caption text-neutral-500">
+                            {formatDateTime(e.created_at)}
+                            {e.actor_name && <> · {e.actor_name}</>}
+                          </p>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
               )}
             </div>
           </CardContent>
