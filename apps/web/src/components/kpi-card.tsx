@@ -5,13 +5,13 @@ import { cn } from "@/lib/utils";
 type Tone = "default" | "premium" | "info" | "warning" | "danger" | "success";
 
 const ICON_TONE: Record<Tone, string> = {
-  default: "bg-slate-100 text-slate-600 ring-slate-200",
+  default: "bg-neutral-100 text-neutral-600 ring-neutral-200",
   premium:
     "bg-milsaca-dourado/15 text-milsaca-cafezal ring-milsaca-dourado/40",
-  info: "bg-sky-50 text-sky-700 ring-sky-200",
-  warning: "bg-amber-50 text-amber-800 ring-amber-200",
-  danger: "bg-rose-50 text-rose-700 ring-rose-200",
-  success: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  info: "bg-info-50 text-info-700 ring-info-100",
+  warning: "bg-warning-50 text-warning-700 ring-warning-100",
+  danger: "bg-danger-50 text-danger-700 ring-danger-100",
+  success: "bg-success-50 text-success-700 ring-success-100",
 };
 
 type Delta = {
@@ -52,41 +52,53 @@ export function KpiCard({
   hint,
   className,
 }: Props) {
+  // KPI primário (premium) ganha realce dourado + número maior; os
+  // secundários ficam visualmente mais leves pra criar hierarquia real.
+  const isPremium = tone === "premium";
   return (
     <div
       className={cn(
-        "group flex flex-col gap-3 rounded-card border border-slate-200 bg-white p-5 shadow-card transition-shadow hover:shadow-card-hover",
+        "group flex flex-col rounded-card border bg-white transition-shadow hover:shadow-card-hover",
+        isPremium
+          ? "gap-3 border-milsaca-dourado/30 p-card shadow-card ring-1 ring-inset ring-milsaca-dourado/15"
+          : "gap-2 border-neutral-200 p-4 shadow-card",
         className,
       )}
     >
       <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
+        <p className="text-caption font-medium uppercase tracking-wider text-neutral-500">
           {label}
         </p>
         {Icon ? (
           <span
             aria-hidden
             className={cn(
-              "flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-1 ring-inset",
+              "flex shrink-0 items-center justify-center rounded-full ring-1 ring-inset",
+              isPremium ? "h-9 w-9" : "h-8 w-8",
               ICON_TONE[tone],
             )}
           >
-            <Icon className="h-4 w-4" />
+            <Icon className={isPremium ? "h-[18px] w-[18px]" : "h-4 w-4"} />
           </span>
         ) : null}
       </div>
 
       <div className="flex items-baseline gap-2">
-        <p className="text-2xl font-semibold tracking-tight text-milsaca-preto">
+        <p
+          className={cn(
+            "font-semibold tracking-tight text-milsaca-preto",
+            isPremium ? "text-h2" : "text-h3",
+          )}
+        >
           {value}
         </p>
         {delta ? (
           <span
             className={cn(
-              "inline-flex items-center gap-0.5 text-xs font-medium",
-              delta.direction === "up" && "text-emerald-600",
-              delta.direction === "down" && "text-rose-600",
-              delta.direction === "flat" && "text-slate-500",
+              "inline-flex items-center gap-0.5 text-caption font-medium",
+              delta.direction === "up" && "text-success-600",
+              delta.direction === "down" && "text-danger-600",
+              delta.direction === "flat" && "text-neutral-500",
             )}
           >
             {delta.direction === "up" ? (
@@ -100,7 +112,7 @@ export function KpiCard({
       </div>
 
       {hint || delta?.hint ? (
-        <p className="text-xs text-slate-500">{hint ?? delta?.hint}</p>
+        <p className="text-caption text-neutral-500">{hint ?? delta?.hint}</p>
       ) : null}
     </div>
   );

@@ -22,7 +22,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/status-badge";
 import { KpiCard } from "@/components/kpi-card";
 import { IndicadoresLive } from "@/components/indicadores-live";
 import type { LeadStatus } from "@milsaca/types";
@@ -80,29 +80,29 @@ export default async function InicioCorretoraPage() {
   const isPro = isProOrAbove(subscription);
 
   return (
-    <div className="space-y-10">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+    <div className="space-y-section">
+      <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
+          <h1 className="text-h1 tracking-tight text-milsaca-cafezal">
             Central comercial
           </h1>
-          <p className="mt-1 text-sm text-milsaca-verde-claro">
+          <p className="mt-1 text-body-sm text-neutral-600">
             Resumo da sua operação, oportunidades em aberto e mercado.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Link
             href="/painel/corretora/lotes/novo"
-            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-milsaca-dourado/40 bg-milsaca-dourado/15 px-3 text-xs font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-dourado/25"
+            className="inline-flex h-11 items-center gap-1.5 rounded-md border border-milsaca-dourado/40 bg-milsaca-dourado/15 px-4 text-label font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-dourado/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
-            <Package className="h-3.5 w-3.5" />
+            <Package className="h-4 w-4" />
             Cadastrar lote
           </Link>
           <Link
             href="/painel/corretora/leads/novo"
-            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-milsaca-cafezal px-3 text-xs font-semibold text-milsaca-cream transition-colors hover:bg-milsaca-folha"
+            className="inline-flex h-11 items-center gap-1.5 rounded-md bg-milsaca-cafezal px-4 text-label font-semibold text-milsaca-cream transition-colors hover:bg-milsaca-folha focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
-            <Handshake className="h-3.5 w-3.5" />
+            <Handshake className="h-4 w-4" />
             Novo lead
           </Link>
         </div>
@@ -202,13 +202,13 @@ export default async function InicioCorretoraPage() {
       {/* ---------------------------------------------------------------- */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
-            <Truck className="h-4 w-4" />
+          <h2 className="flex items-center gap-2 text-label font-semibold uppercase tracking-wider text-neutral-600">
+            <Truck className="h-4 w-4 text-milsaca-cafezal" />
             Entregas pra acompanhar
           </h2>
           <Link
             href="/painel/corretora/entregas"
-            className="text-xs font-medium text-milsaca-cafezal hover:underline"
+            className="rounded-sm text-caption font-medium text-milsaca-cafezal hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             Ver todas →
           </Link>
@@ -234,12 +234,12 @@ export default async function InicioCorretoraPage() {
       {/* ---------------------------------------------------------------- */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
+          <h2 className="text-label font-semibold uppercase tracking-wider text-neutral-600">
             Leads recentes
           </h2>
           <Link
             href="/painel/corretora/leads"
-            className="text-xs font-medium text-milsaca-cafezal hover:underline"
+            className="rounded-sm text-caption font-medium text-milsaca-cafezal hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             Ver central de leads →
           </Link>
@@ -251,19 +251,19 @@ export default async function InicioCorretoraPage() {
             cta={{ href: "/painel/corretora/perfil", label: "Ver perfil público" }}
           />
         ) : (
-          <Card className="border-milsaca-cream-escuro">
-            <CardContent className="divide-y divide-milsaca-cream-escuro p-0">
+          <Card>
+            <CardContent className="divide-y divide-neutral-200 p-0">
               {leads.map((l) => (
                 <Link
                   key={l.id}
                   href={`/painel/corretora/leads/${l.id}`}
-                  className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-milsaca-cream/40"
+                  className="flex items-center justify-between gap-4 px-card py-4 transition-colors hover:bg-milsaca-cream first:rounded-t-card last:rounded-b-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                 >
                   <div>
-                    <p className="font-medium text-milsaca-verde">
+                    <p className="text-body-sm font-medium text-milsaca-preto">
                       {l.produtor}
                     </p>
-                    <p className="text-xs text-milsaca-verde-claro">
+                    <p className="text-caption text-neutral-500">
                       {l.bag_count ? `${l.bag_count} sacas` : "—"} ·{" "}
                       {l.coffee_type
                         ? (COFFEE_LABEL[l.coffee_type] ?? l.coffee_type)
@@ -271,7 +271,7 @@ export default async function InicioCorretoraPage() {
                       · {l.data}
                     </p>
                   </div>
-                  <StatusBadge status={l.status} />
+                  <LeadStatusBadge status={l.status} />
                 </Link>
               ))}
             </CardContent>
@@ -286,12 +286,12 @@ export default async function InicioCorretoraPage() {
       {/* ---------------------------------------------------------------- */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
+          <h2 className="text-label font-semibold uppercase tracking-wider text-neutral-600">
             Cotações manuais da praça
           </h2>
           <Link
             href="/painel/corretora/cotacoes"
-            className="text-xs font-medium text-milsaca-cafezal hover:underline"
+            className="rounded-sm text-caption font-medium text-milsaca-cafezal hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             Gerenciar →
           </Link>
@@ -323,22 +323,22 @@ export default async function InicioCorretoraPage() {
 
 function FirstStepsCard() {
   return (
-    <section className="rounded-card border border-milsaca-dourado/30 bg-gradient-to-br from-milsaca-cream-claro/40 via-white to-white p-6 shadow-card sm:p-8">
+    <section className="rounded-card border border-milsaca-dourado/30 bg-gradient-to-br from-milsaca-cream-claro/40 via-white to-white p-6 shadow-card ring-1 ring-inset ring-milsaca-dourado/10 sm:p-8">
       <div className="flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-milsaca-dourado/20 text-milsaca-cafezal ring-1 ring-inset ring-milsaca-dourado/40">
           <Coins className="h-5 w-5" />
         </span>
         <div className="space-y-1">
-          <h2 className="text-base font-semibold text-milsaca-verde">
+          <h2 className="text-h3 text-milsaca-cafezal">
             Sua corretora está pronta. Hora de começar a operar.
           </h2>
-          <p className="text-sm text-milsaca-verde-claro">
+          <p className="text-body-sm text-neutral-600">
             Configure o básico abaixo pra começar a receber produtores e
             organizar suas negociações.
           </p>
         </div>
       </div>
-      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+      <div className="mt-6 grid gap-3 sm:grid-cols-3">
         <FirstStep
           href="/painel/corretora/produtores/novo"
           icon={Users}
@@ -376,14 +376,16 @@ function FirstStep({
   return (
     <Link
       href={href}
-      className="group flex flex-col gap-2 rounded-lg border border-milsaca-cream-escuro bg-white p-4 transition-all hover:border-milsaca-dourado/50 hover:shadow-card-hover"
+      className="group flex flex-col gap-2 rounded-card border border-neutral-200 bg-white p-4 transition-all hover:border-milsaca-dourado/50 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
-      <Icon className="h-4 w-4 text-milsaca-cafezal" />
-      <p className="text-sm font-semibold text-milsaca-verde">{title}</p>
-      <p className="text-xs leading-relaxed text-milsaca-verde-claro">
+      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-milsaca-dourado/15 text-milsaca-cafezal ring-1 ring-inset ring-milsaca-dourado/30">
+        <Icon className="h-4 w-4" />
+      </span>
+      <p className="text-body-sm font-semibold text-milsaca-preto">{title}</p>
+      <p className="text-caption leading-relaxed text-neutral-600">
         {description}
       </p>
-      <span className="mt-auto inline-flex items-center gap-1 text-xs font-semibold text-milsaca-cafezal group-hover:gap-2 transition-all">
+      <span className="mt-auto inline-flex items-center gap-1 text-caption font-semibold text-milsaca-cafezal transition-all group-hover:gap-2">
         Começar
         <ArrowRight className="h-3.5 w-3.5" />
       </span>
@@ -396,20 +398,20 @@ function CotacaoCardView({ cotacao }: { cotacao: CotacaoDashboard }) {
   const Arrow = up ? ArrowUpRight : ArrowDownRight;
   const label = COFFEE_LABEL[cotacao.coffee_type] ?? cotacao.coffee_type;
   return (
-    <Card className="border-milsaca-cream-escuro">
+    <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-milsaca-dourado/15 text-milsaca-cafezal ring-1 ring-inset ring-milsaca-dourado/40">
             <Coffee className="h-4 w-4" />
           </span>
-          <CardTitle className="text-base">{label}</CardTitle>
+          <CardTitle>{label}</CardTitle>
         </div>
         {cotacao.variacao !== null && (
           <span
             className={
               up
-                ? "flex items-center gap-0.5 text-sm font-medium text-emerald-700"
-                : "flex items-center gap-0.5 text-sm font-medium text-rose-700"
+                ? "flex items-center gap-0.5 text-body-sm font-medium text-success-700"
+                : "flex items-center gap-0.5 text-body-sm font-medium text-danger-700"
             }
           >
             <Arrow className="h-4 w-4" />
@@ -419,10 +421,10 @@ function CotacaoCardView({ cotacao }: { cotacao: CotacaoDashboard }) {
         )}
       </CardHeader>
       <CardContent>
-        <p className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <p className="text-h2 tracking-tight text-milsaca-preto">
           {BRL.format(cotacao.price)}
         </p>
-        <p className="mt-1 text-xs text-milsaca-verde-claro">
+        <p className="mt-1 text-caption text-neutral-500">
           saca 60kg · {cotacao.source ?? "—"}
         </p>
       </CardContent>
@@ -440,15 +442,15 @@ function EmptyCard({
   cta?: { href: string; label: string };
 }) {
   return (
-    <div className="rounded-card border border-dashed border-milsaca-cream-escuro bg-white/40 px-6 py-8 text-center">
-      <p className="text-sm font-medium text-milsaca-verde">{title}</p>
-      <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-milsaca-verde-claro">
+    <div className="rounded-card border border-dashed border-neutral-300 bg-milsaca-cream/40 px-6 py-10 text-center">
+      <p className="text-body-sm font-medium text-milsaca-preto">{title}</p>
+      <p className="mx-auto mt-1 max-w-md text-caption leading-relaxed text-neutral-600">
         {description}
       </p>
       {cta ? (
         <Link
           href={cta.href}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-milsaca-dourado/40 bg-milsaca-dourado/15 px-3 py-1.5 text-xs font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-dourado/25"
+          className="mt-4 inline-flex h-11 items-center gap-1.5 rounded-md border border-milsaca-dourado/40 bg-milsaca-dourado/15 px-4 text-label font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-dourado/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           {cta.label}
           <ArrowRight className="h-3.5 w-3.5" />
@@ -476,23 +478,18 @@ function EntregasMiniCard({
   }[];
 }) {
   const isWarn = tone === "warn";
+  const alert = isWarn && count > 0;
   return (
-    <Card
-      className={
-        isWarn && count > 0
-          ? "border-rose-200 bg-rose-50/40"
-          : "border-milsaca-cream-escuro"
-      }
-    >
+    <Card className={alert ? "border-danger-100 bg-danger-50/50" : undefined}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardDescription className="text-xs uppercase tracking-wider">
+        <CardDescription className="text-caption uppercase tracking-wider text-neutral-600">
           {label}
         </CardDescription>
         <span
           className={
-            isWarn && count > 0
-              ? "flex h-7 w-7 items-center justify-center rounded-full bg-rose-100 text-rose-700"
-              : "flex h-7 w-7 items-center justify-center rounded-full bg-milsaca-verde/10 text-milsaca-verde"
+            alert
+              ? "flex h-7 w-7 items-center justify-center rounded-full bg-danger-100 text-danger-700"
+              : "flex h-7 w-7 items-center justify-center rounded-full bg-info-50 text-info-700"
           }
         >
           {isWarn ? (
@@ -505,24 +502,24 @@ function EntregasMiniCard({
       <CardContent>
         <p
           className={
-            isWarn && count > 0
-              ? "text-2xl sm:text-3xl font-semibold tracking-tight text-rose-700"
-              : "text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde"
+            alert
+              ? "text-h2 tracking-tight text-danger-700"
+              : "text-h2 tracking-tight text-milsaca-preto"
           }
         >
           {count}
         </p>
         {items.length === 0 ? (
-          <p className="mt-1 text-xs text-milsaca-verde-claro">
+          <p className="mt-1 text-caption text-neutral-500">
             {isWarn ? "Nada em atraso. Bom." : "Nenhuma entrega hoje."}
           </p>
         ) : (
-          <ul className="mt-3 space-y-1 text-xs text-milsaca-verde-claro">
+          <ul className="mt-3 space-y-1 text-caption text-neutral-600">
             {items.slice(0, 3).map((it) => (
               <li key={it.id}>
                 <Link
                   href={`/painel/corretora/entregas/${it.id}`}
-                  className="hover:text-milsaca-verde hover:underline"
+                  className="rounded-sm hover:text-milsaca-cafezal hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <span className="font-mono">{it.contrato_code}</span> ·{" "}
                   {it.produtor_nome}
@@ -531,7 +528,7 @@ function EntregasMiniCard({
               </li>
             ))}
             {items.length > 3 ? (
-              <li className="text-[10px] text-milsaca-verde-claro/70">
+              <li className="text-caption text-neutral-400">
                 +{items.length - 3} ...
               </li>
             ) : null}
@@ -542,38 +539,18 @@ function EntregasMiniCard({
   );
 }
 
-function StatusBadge({ status }: { status: LeadStatus }) {
+function LeadStatusBadge({ status }: { status: LeadStatus }) {
   if (status === "convertido") {
-    return (
-      <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
-        Convertido
-      </Badge>
-    );
+    return <StatusBadge tone="success">Convertido</StatusBadge>;
   }
   if (status === "perdido") {
-    return (
-      <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-100">
-        Perdido
-      </Badge>
-    );
+    return <StatusBadge tone="danger">Perdido</StatusBadge>;
   }
   if (status === "arquivado") {
-    return (
-      <Badge className="bg-slate-200 text-slate-700 hover:bg-slate-200">
-        Arquivado
-      </Badge>
-    );
+    return <StatusBadge tone="neutral">Arquivado</StatusBadge>;
   }
   if (status === "em_negociacao") {
-    return (
-      <Badge className="bg-milsaca-dourado/25 text-milsaca-cafezal hover:bg-milsaca-dourado/25">
-        Em negociação
-      </Badge>
-    );
+    return <StatusBadge tone="premium">Em negociação</StatusBadge>;
   }
-  return (
-    <Badge className="bg-milsaca-cream-escuro text-milsaca-verde hover:bg-milsaca-cream-escuro">
-      Novo
-    </Badge>
-  );
+  return <StatusBadge tone="info">Novo</StatusBadge>;
 }
