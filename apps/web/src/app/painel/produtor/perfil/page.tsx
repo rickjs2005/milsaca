@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Download, ShieldCheck } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -329,6 +329,29 @@ export default async function PerfilProdutorPage({
           </SubmitButton>
         </div>
       </form>
+
+      <Card className="border-milsaca-cream-escuro">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ShieldCheck className="h-4 w-4 text-milsaca-verde" />
+            Privacidade (LGPD)
+          </CardTitle>
+          <CardDescription>
+            Você pode baixar uma cópia de todos os dados que guardamos sobre
+            você (perfil, fazenda, preferências) em formato JSON.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <a
+            href="/api/lgpd/exportar"
+            download
+            className="inline-flex h-10 items-center gap-2 rounded-md border border-milsaca-verde px-4 text-sm font-medium text-milsaca-verde transition-colors hover:bg-milsaca-verde hover:text-milsaca-cream"
+          >
+            <Download className="h-4 w-4" />
+            Exportar meus dados
+          </a>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import {
   BadgeCheck,
   CheckCircle2,
+  Download,
   ExternalLink,
   Eye,
   Info,
@@ -10,6 +11,7 @@ import {
   Lock,
   Mail,
   MessageCircle,
+  ShieldCheck,
   Sparkles,
   UserCircle,
 } from "lucide-react";
@@ -407,6 +409,32 @@ export default async function PerfilCorretoraPage({
               Sem assinatura vinculada. Fale com o suporte.
             </p>
           )}
+        </CardContent>
+      </Card>
+
+      {/* ============================================================ */}
+      {/* Bloco 6 — Privacidade (LGPD)                                  */}
+      {/* ============================================================ */}
+      <Card className="border-milsaca-cream-escuro shadow-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ShieldCheck className="h-4 w-4 text-milsaca-cafezal" />
+            Privacidade (LGPD)
+          </CardTitle>
+          <CardDescription>
+            Baixe uma cópia dos dados que guardamos sobre você e a corretora em
+            formato JSON.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <a
+            href="/api/lgpd/exportar"
+            download
+            className="inline-flex h-10 items-center gap-2 rounded-md border border-milsaca-cafezal px-4 text-sm font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-cafezal hover:text-milsaca-cream"
+          >
+            <Download className="h-4 w-4" />
+            Exportar meus dados
+          </a>
         </CardContent>
       </Card>
     </div>

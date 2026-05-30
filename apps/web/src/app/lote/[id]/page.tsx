@@ -48,13 +48,9 @@ type LotePublic = {
   corretora_slug: string;
   corretora_city: string | null;
   corretora_state: string | null;
-  corretora_phone: string | null;
-  corretora_email: string | null;
   corretora_descricao: string | null;
   corretora_logo_url: string | null;
   corretora_verified: boolean;
-  produtor_nome: string | null;
-  fazenda_nome: string | null;
   produtor_city: string | null;
   produtor_state: string | null;
   altitude_m: number | string | null;
@@ -97,14 +93,6 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 const NUM = new Intl.NumberFormat("pt-BR");
-
-function sanitizePhone(phone: string | null): string | null {
-  if (!phone) return null;
-  const digits = phone.replace(/\D/g, "");
-  if (!digits) return null;
-  if (digits.length === 10 || digits.length === 11) return `55${digits}`;
-  return digits;
-}
 
 export async function generateMetadata({ params }: Props) {
   const { id } = await params;
@@ -152,13 +140,13 @@ export default async function LotePublicoPage({ params }: Props) {
       ? Number(l.classificacao_pontuacao)
       : null;
 
-  const phoneDigits = sanitizePhone(l.corretora_phone);
   const waText = encodeURIComponent(
     `Olá! Vi o lote ${l.codigo} (${SPECIE_LABEL[l.specie]}${sacas ? `, ${sacas} sacas` : ""}) da ${l.corretora_name} no Milsaca. Quero conversar.`,
   );
-  const waHref = phoneDigits
-    ? `https://wa.me/${phoneDigits}?text=${waText}`
-    : `https://wa.me/?text=${waText}`;
+  // O contato direto da corretora (telefone/email) saiu da view pública por
+  // LGPD. Mandamos pro WhatsApp com a mensagem pronta e o link da página
+  // pública da corretora abaixo permite chegar até ela.
+  const waHref = `https://wa.me/?text=${waText}`;
 
   return (
     <main className="min-h-screen bg-milsaca-cream">
@@ -283,12 +271,6 @@ export default async function LotePublicoPage({ params }: Props) {
             </h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            {l.produtor_nome ? (
-              <KvField label="Produtor" value={l.produtor_nome} />
-            ) : null}
-            {l.fazenda_nome ? (
-              <KvField label="Fazenda" value={l.fazenda_nome} />
-            ) : null}
             {local ? (
               <KvField
                 label="Região"

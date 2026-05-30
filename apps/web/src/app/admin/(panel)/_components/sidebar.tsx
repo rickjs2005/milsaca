@@ -30,6 +30,7 @@ import {
   MapPin,
   Database,
   Hourglass,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -114,6 +115,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/configuracoes", label: "Configurações", icon: Settings },
       { href: "/admin/seguranca", label: "Segurança", icon: Lock },
+      { href: "/admin/lgpd", label: "LGPD", icon: ShieldCheck },
     ],
   },
 ];
