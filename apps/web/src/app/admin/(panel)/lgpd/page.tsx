@@ -1,4 +1,4 @@
-import { CheckCircle2, ShieldAlert, Info } from "lucide-react";
+import { CheckCircle2, ShieldAlert, Info, AlertTriangle } from "lucide-react";
 import { requireAppAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { AnonimizarForm } from "./_components/anonimizar-form";
@@ -6,7 +6,7 @@ import { AnonimizarForm } from "./_components/anonimizar-form";
 export const metadata = { title: "LGPD · Admin Milsaca" };
 
 interface PageProps {
-  searchParams: Promise<{ ok?: string; error?: string }>;
+  searchParams: Promise<{ ok?: string; error?: string; warn?: string }>;
 }
 
 export default async function AdminLgpdPage({ searchParams }: PageProps) {
@@ -26,6 +26,12 @@ export default async function AdminLgpdPage({ searchParams }: PageProps) {
         <div className="mb-6 flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           {sp.ok}
+        </div>
+      ) : null}
+      {sp.warn ? (
+        <div className="mb-6 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          {sp.warn}
         </div>
       ) : null}
       {sp.error ? (
@@ -67,13 +73,22 @@ export default async function AdminLgpdPage({ searchParams }: PageProps) {
                 Faz soft-delete do perfil (define <code>deleted_at</code>).
               </span>
             </li>
+            <li className="flex items-start gap-2">
+              <span aria-hidden className="mt-0.5">•</span>
+              <span>
+                Neutraliza o e-mail de login em <code>auth.users</code> (troca
+                por um placeholder não-roteável) e bane a conta, impedindo
+                re-login.
+              </span>
+            </li>
           </ul>
           <p className="flex items-start gap-2 border-t border-amber-200 pt-3 text-xs">
             <Info className="mt-0.5 h-4 w-4 shrink-0" />
             <span>
-              <strong>Ressalva conhecida:</strong> esta ação NÃO apaga o e-mail
-              em <code>auth.users</code>. A remoção do registro de auth é um
-              follow-up manual/pendente.
+              A neutralização do e-mail em <code>auth.users</code> depende da{" "}
+              <code>SUPABASE_SECRET_KEY</code> estar configurada no ambiente. Se
+              não estiver, o mascaramento dos demais dados ocorre normalmente e
+              você verá um aviso para concluir essa etapa.
             </span>
           </p>
         </div>
