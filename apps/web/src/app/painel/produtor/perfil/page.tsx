@@ -8,7 +8,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { buttonVariants } from "@/components/ui/button";
 import { MaskedInput } from "@/components/forms/masked-input";
 import { UfSelect } from "@/components/forms/uf-select";
 import { SubmitButton } from "@/components/submit-button";
@@ -37,30 +39,28 @@ export default async function PerfilProdutorPage({
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
-          Perfil
-        </h1>
-        <p className="text-sm text-milsaca-verde-claro">
+        <h1 className="text-h1 text-milsaca-cafezal">Perfil</h1>
+        <p className="mt-1 text-body-sm text-neutral-600">
           Mantenha seus dados atualizados pra a corretora chegar até você.
         </p>
       </header>
 
       {sp.saved && (
-        <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-800">
-          <CheckCircle2 className="h-4 w-4" />
+        <div className="flex items-center gap-2 rounded-md border border-success-100 bg-success-50 px-4 py-2 text-body-sm text-success-700">
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
           Perfil atualizado.
         </div>
       )}
       {sp.error && (
-        <div className="rounded-md border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">
+        <div className="rounded-md border border-danger-100 bg-danger-50 px-4 py-2 text-body-sm text-danger-700">
           {sp.error}
         </div>
       )}
 
       <form action={updatePerfilProdutor} className="space-y-6">
-        <Card className="border-milsaca-cream-escuro">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-base">Dados pessoais</CardTitle>
+            <CardTitle>Dados pessoais</CardTitle>
             <CardDescription>
               O email é o usado pra login e não pode ser alterado por aqui.
             </CardDescription>
@@ -126,9 +126,9 @@ export default async function PerfilProdutorPage({
           </CardContent>
         </Card>
 
-        <Card className="border-milsaca-cream-escuro">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-base">Fazenda</CardTitle>
+            <CardTitle>Fazenda</CardTitle>
             <CardDescription>
               Esses dados ajudam a corretora a calibrar propostas (talhão,
               altitude, volume).
@@ -198,19 +198,14 @@ export default async function PerfilProdutorPage({
 
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="specie">Espécie que produz</Label>
-              <select
-                id="specie"
-                name="specie"
-                defaultValue={ext?.specie ?? ""}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
+              <Select id="specie" name="specie" defaultValue={ext?.specie ?? ""}>
                 <option value="">—</option>
                 {Object.entries(SPECIE_LABEL).map(([v, label]) => (
                   <option key={v} value={v}>
                     {label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -261,9 +256,9 @@ export default async function PerfilProdutorPage({
           </CardContent>
         </Card>
 
-        <Card className="border-milsaca-cream-escuro">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-base">Preferências</CardTitle>
+            <CardTitle>Preferências</CardTitle>
             <CardDescription>
               Como você quer que a corretora entre em contato e que tipo de
               alerta receber.
@@ -287,18 +282,17 @@ export default async function PerfilProdutorPage({
                     : ""
                 }
               />
-              <p className="text-xs text-milsaca-verde-claro">
+              <p className="text-caption text-neutral-600">
                 Avisamos quando a cotação atingir esse valor.
               </p>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="canal_preferido">Canal preferido</Label>
-              <select
+              <Select
                 id="canal_preferido"
                 name="canal_preferido"
                 defaultValue={ext?.canal_preferido ?? ""}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <option value="">—</option>
                 {Object.entries(CANAL_LABEL).map(([v, label]) => (
@@ -306,14 +300,15 @@ export default async function PerfilProdutorPage({
                     {label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
-            <label className="flex items-center gap-2 text-sm text-milsaca-verde-claro sm:col-span-2">
+            <label className="flex items-center gap-2 text-body-sm text-neutral-700 sm:col-span-2">
               <input
                 type="checkbox"
                 name="receber_cotacao_diaria"
                 defaultChecked={ext?.receber_cotacao_diaria ?? true}
+                className="h-4 w-4 rounded border-neutral-300 text-milsaca-cafezal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               />
               Receber cotação do dia
             </label>
@@ -321,19 +316,16 @@ export default async function PerfilProdutorPage({
         </Card>
 
         <div className="flex justify-end">
-          <SubmitButton
-            pendingLabel="Salvando..."
-            className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
-          >
+          <SubmitButton pendingLabel="Salvando..." variant="primary">
             Salvar perfil
           </SubmitButton>
         </div>
       </form>
 
-      <Card className="border-milsaca-cream-escuro">
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <ShieldCheck className="h-4 w-4 text-milsaca-verde" />
+          <CardTitle className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-milsaca-cafezal" />
             Privacidade (LGPD)
           </CardTitle>
           <CardDescription>
@@ -345,7 +337,7 @@ export default async function PerfilProdutorPage({
           <a
             href="/api/lgpd/exportar"
             download
-            className="inline-flex h-10 items-center gap-2 rounded-md border border-milsaca-verde px-4 text-sm font-medium text-milsaca-verde transition-colors hover:bg-milsaca-verde hover:text-milsaca-cream"
+            className={buttonVariants({ variant: "outline" })}
           >
             <Download className="h-4 w-4" />
             Exportar meus dados

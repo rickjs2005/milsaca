@@ -65,7 +65,7 @@ export function PanelShell({ sidebar, brandLabel, children }: Props) {
             type="button"
             onClick={() => setOpen(false)}
             aria-label="Fechar menu"
-            className="absolute right-3 top-3 rounded-md p-1 text-milsaca-verde-claro hover:bg-milsaca-cream-escuro hover:text-milsaca-verde"
+            className="absolute right-3 top-3 rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-milsaca-cream-escuro hover:text-milsaca-cafezal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <X className="h-5 w-5" />
           </button>
@@ -80,7 +80,7 @@ export function PanelShell({ sidebar, brandLabel, children }: Props) {
             type="button"
             onClick={() => setOpen(true)}
             aria-label="Abrir menu"
-            className="rounded-md p-1 text-milsaca-verde hover:bg-milsaca-cream-escuro"
+            className="rounded-md p-1.5 text-milsaca-cafezal transition-colors hover:bg-milsaca-cream-escuro focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -91,9 +91,9 @@ export function PanelShell({ sidebar, brandLabel, children }: Props) {
             >
               <Coffee className="h-3.5 w-3.5 text-milsaca-cafezal" strokeWidth={2.5} />
             </span>
-            <span className="text-sm font-semibold text-milsaca-verde">
+            <span className="text-body-sm font-semibold text-milsaca-cafezal">
               Milsaca{" "}
-              <span className="font-normal text-milsaca-verde-claro/70">
+              <span className="font-normal text-neutral-500">
                 · {brandLabel}
               </span>
             </span>
@@ -102,7 +102,7 @@ export function PanelShell({ sidebar, brandLabel, children }: Props) {
             <button
               type="submit"
               aria-label="Sair da sessão"
-              className="flex h-7 w-7 items-center justify-center rounded-md text-milsaca-verde-claro transition-colors hover:bg-milsaca-cream-escuro hover:text-milsaca-verde"
+              className="flex h-9 w-9 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-milsaca-cream-escuro hover:text-milsaca-cafezal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <LogOut className="h-4 w-4" />
             </button>

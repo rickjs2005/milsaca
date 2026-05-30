@@ -6,8 +6,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile, requireUser } from "@/lib/auth";
 import type { LeadStatus } from "@milsaca/types";
@@ -130,30 +130,30 @@ export default async function InicioProdutorPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <h1 className="text-h1 text-milsaca-cafezal">
           {primeiroNome ? `Oi, ${primeiroNome}` : "Bem-vindo"}
         </h1>
-        <p className="text-sm text-milsaca-verde-claro">
+        <p className="mt-1 text-body-sm text-neutral-600">
           Veja preços do dia e as propostas que chegaram pra você.
         </p>
       </header>
 
       <Link
         href="/painel/produtor/corretoras"
-        className="group flex items-center justify-between gap-4 rounded-2xl bg-emerald-600 px-5 py-4 text-white shadow-sm transition hover:bg-emerald-700"
+        className="group flex items-center justify-between gap-4 rounded-card bg-success-600 px-5 py-4 text-milsaca-cream shadow-card transition-colors hover:bg-success-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
             <MessageCircle className="h-5 w-5" />
           </span>
           <div>
-            <p className="text-sm font-semibold">Falar com uma corretora</p>
-            <p className="text-xs text-emerald-50/90">
+            <p className="text-body-sm font-semibold">Falar com uma corretora</p>
+            <p className="text-caption text-milsaca-cream/90">
               Vê quem atende sua região e chama no WhatsApp em 1 toque.
             </p>
           </div>
         </div>
-        <span className="text-sm font-medium opacity-90 group-hover:opacity-100">
+        <span className="text-body-sm font-medium opacity-90 group-hover:opacity-100">
           Ver corretoras →
         </span>
       </Link>
@@ -161,7 +161,7 @@ export default async function InicioProdutorPage() {
       <IndicadoresLive />
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
+        <h2 className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
           Cotações do café
         </h2>
         {cotacoes.length === 0 ? (
@@ -177,49 +177,45 @@ export default async function InicioProdutorPage() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
+          <h2 className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
             Últimas propostas
           </h2>
           {propostas.length > 0 ? (
             <Link
               href="/painel/produtor/negociacoes"
-              className="text-xs text-milsaca-dourado hover:underline"
+              className="rounded-md text-caption font-medium text-dourado-texto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               Ver todas →
             </Link>
           ) : null}
         </div>
         {propostas.length === 0 ? (
-          <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
-            <CardContent className="space-y-3 py-6 text-center">
-              <p className="text-sm text-milsaca-verde-claro">
+          <Card tone="muted" className="border-dashed">
+            <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
+              <p className="text-body-sm text-neutral-600">
                 Nenhuma proposta ainda. Comece chamando uma corretora.
               </p>
-              <Button
-                asChild
-                size="sm"
-                className="bg-emerald-600 text-white hover:bg-emerald-700"
-              >
+              <Button asChild variant="success" size="sm">
                 <Link href="/painel/produtor/corretoras">
-                  <MessageCircle className="mr-1 h-3.5 w-3.5" />
+                  <MessageCircle className="h-4 w-4" />
                   Ver corretoras
                 </Link>
               </Button>
             </CardContent>
           </Card>
         ) : (
-          <Card className="border-milsaca-cream-escuro">
-            <CardContent className="divide-y divide-milsaca-cream-escuro p-0">
+          <Card>
+            <CardContent className="divide-y divide-neutral-200 p-0">
               {propostas.map((p) => (
                 <div
                   key={p.id}
                   className="flex items-center justify-between gap-4 px-5 py-4"
                 >
-                  <div>
-                    <p className="font-medium text-milsaca-verde">
+                  <div className="min-w-0">
+                    <p className="truncate text-body-sm font-medium text-milsaca-cafezal">
                       {p.corretora}
                     </p>
-                    <p className="text-xs text-milsaca-verde-claro">
+                    <p className="mt-0.5 text-caption text-neutral-600">
                       {p.bag_count ? `${p.bag_count} sacas` : "—"} ·{" "}
                       {p.coffee_type
                         ? (COFFEE_LABEL[p.coffee_type] ?? p.coffee_type)
@@ -227,7 +223,7 @@ export default async function InicioProdutorPage() {
                       · {p.data}
                     </p>
                   </div>
-                  <StatusBadge status={p.status} />
+                  <PropostaStatusBadge status={p.status} />
                 </div>
               ))}
             </CardContent>
@@ -243,20 +239,20 @@ function CotacaoCardView({ cotacao }: { cotacao: CotacaoCard }) {
   const Arrow = up ? ArrowUpRight : ArrowDownRight;
   const label = COFFEE_LABEL[cotacao.coffee_type] ?? cotacao.coffee_type;
   return (
-    <Card className="border-milsaca-cream-escuro">
+    <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-milsaca-verde/10 text-milsaca-verde">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-milsaca-cafezal/10 text-milsaca-cafezal">
             <Coffee className="h-4 w-4" />
           </span>
-          <CardTitle className="text-base">{label}</CardTitle>
+          <CardTitle className="text-h3">{label}</CardTitle>
         </div>
         {cotacao.variacao !== null && (
           <span
             className={
               up
-                ? "flex items-center gap-0.5 text-sm font-medium text-emerald-700"
-                : "flex items-center gap-0.5 text-sm font-medium text-rose-700"
+                ? "flex items-center gap-0.5 text-body-sm font-medium text-success-700"
+                : "flex items-center gap-0.5 text-body-sm font-medium text-danger-700"
             }
           >
             <Arrow className="h-4 w-4" />
@@ -266,10 +262,10 @@ function CotacaoCardView({ cotacao }: { cotacao: CotacaoCard }) {
         )}
       </CardHeader>
       <CardContent>
-        <p className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <p className="text-h1 text-milsaca-cafezal">
           {BRL.format(cotacao.price)}
         </p>
-        <p className="mt-1 text-xs text-milsaca-verde-claro">
+        <p className="mt-1 text-caption text-neutral-600">
           saca 60kg · {cotacao.source ?? "—"}
         </p>
       </CardContent>
@@ -279,47 +275,23 @@ function CotacaoCardView({ cotacao }: { cotacao: CotacaoCard }) {
 
 function EmptyCard({ message }: { message: string }) {
   return (
-    <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
-      <CardContent className="py-6 text-center text-sm text-milsaca-verde-claro">
+    <Card tone="muted" className="border-dashed">
+      <CardContent className="py-8 text-center text-body-sm text-neutral-600">
         {message}
       </CardContent>
     </Card>
   );
 }
 
-function StatusBadge({ status }: { status: LeadStatus }) {
-  if (status === "convertido") {
-    return (
-      <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
-        Aceita
-      </Badge>
-    );
-  }
-  if (status === "perdido") {
-    return (
-      <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-100">
-        Recusada
-      </Badge>
-    );
-  }
-  if (status === "arquivado") {
-    return (
-      <Badge className="bg-slate-200 text-slate-700 hover:bg-slate-200">
-        Arquivada
-      </Badge>
-    );
-  }
-  if (status === "em_negociacao") {
-    return (
-      <Badge className="bg-milsaca-dourado/20 text-milsaca-verde hover:bg-milsaca-dourado/20">
-        Em negociação
-      </Badge>
-    );
-  }
-  // novo
-  return (
-    <Badge className="bg-milsaca-cream-escuro text-milsaca-verde hover:bg-milsaca-cream-escuro">
-      Nova
-    </Badge>
-  );
+const LEAD_STATUS_BADGE: Record<LeadStatus, { tone: StatusTone; label: string }> = {
+  convertido: { tone: "success", label: "Aceita" },
+  perdido: { tone: "danger", label: "Recusada" },
+  arquivado: { tone: "neutral", label: "Arquivada" },
+  em_negociacao: { tone: "premium", label: "Em negociação" },
+  novo: { tone: "neutral", label: "Nova" },
+};
+
+function PropostaStatusBadge({ status }: { status: LeadStatus }) {
+  const meta = LEAD_STATUS_BADGE[status] ?? LEAD_STATUS_BADGE.novo;
+  return <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>;
 }

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { Bell } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
@@ -16,13 +16,14 @@ const KIND_LABEL: Record<string, string> = {
   sistema: "Sistema",
 };
 
-const KIND_COLOR: Record<string, string> = {
-  lead: "bg-sky-100 text-sky-800",
-  contrato: "bg-emerald-100 text-emerald-800",
-  entrega: "bg-amber-100 text-amber-800",
-  pagamento: "bg-violet-100 text-violet-800",
-  cotacao: "bg-milsaca-dourado/20 text-milsaca-verde",
-  sistema: "bg-slate-200 text-slate-700",
+// Cada tipo de notificação mapeia pra um tone semântico da marca.
+const KIND_TONE: Record<string, StatusTone> = {
+  lead: "info",
+  contrato: "success",
+  entrega: "warning",
+  pagamento: "premium",
+  cotacao: "premium",
+  sistema: "neutral",
 };
 
 function fmtDateTime(iso: string): string {
@@ -60,56 +61,57 @@ export default async function NotificacoesPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <h1 className="flex items-center gap-2 text-h1 text-milsaca-cafezal">
           <Bell className="h-7 w-7" />
           Notificações
         </h1>
-        <p className="text-sm text-milsaca-verde-claro">
+        <p className="mt-1 text-body-sm text-neutral-600">
           Avisos sobre cotações, propostas, contratos, entregas e pagamentos.
         </p>
       </header>
 
       {rows.length === 0 ? (
-        <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
-          <CardContent className="py-10 text-center text-sm text-milsaca-verde-claro">
+        <Card tone="muted" className="border-dashed">
+          <CardContent className="py-10 text-center text-body-sm text-neutral-600">
             Sem notificações por enquanto. Quando aparecer movimentação na sua
             conta, mostramos aqui.
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-milsaca-cream-escuro">
-          <CardContent className="divide-y divide-milsaca-cream-escuro p-0">
+        <Card>
+          <CardContent className="divide-y divide-neutral-200 p-0">
             {rows.map((n) => (
               <div
                 key={n.id}
                 className={
                   n.read_at
                     ? "flex items-start justify-between gap-4 px-5 py-4"
-                    : "flex items-start justify-between gap-4 bg-milsaca-cream-escuro/30 px-5 py-4"
+                    : "flex items-start justify-between gap-4 bg-milsaca-cream-escuro/40 px-5 py-4"
                 }
               >
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      className={`${KIND_COLOR[n.kind] ?? "bg-slate-100"} hover:${KIND_COLOR[n.kind] ?? "bg-slate-100"}`}
-                    >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusBadge tone={KIND_TONE[n.kind] ?? "neutral"}>
                       {KIND_LABEL[n.kind] ?? n.kind}
-                    </Badge>
-                    <p className="text-sm font-semibold text-milsaca-verde">
+                    </StatusBadge>
+                    <p className="text-body-sm font-semibold text-milsaca-cafezal">
                       {n.title}
                     </p>
                   </div>
                   {n.body ? (
-                    <p className="mt-1 text-sm text-milsaca-verde-claro">
+                    <p className="mt-1 text-body-sm text-neutral-600">
                       {n.body}
                     </p>
                   ) : null}
-                  <p className="mt-2 text-xs text-milsaca-verde-claro/70">
+                  <p className="mt-2 text-caption text-neutral-500">
                     {fmtDateTime(n.created_at)}
                   </p>
                 </div>
                 {!n.read_at ? (
-                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-milsaca-dourado" />
+                  <span
+                    aria-label="Não lida"
+                    className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-milsaca-dourado"
+                  />
                 ) : null}
               </div>
             ))}
