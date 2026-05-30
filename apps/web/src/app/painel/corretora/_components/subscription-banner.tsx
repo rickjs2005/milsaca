@@ -85,9 +85,9 @@ function UpgradeCard() {
           </h3>
           <p className="max-w-2xl text-sm leading-relaxed text-milsaca-cream/75">
             Você está usando recursos limitados da Milsaca. Ative o plano{" "}
-            <strong className="text-milsaca-dourado">Corretora Pro</strong> e
-            libere gestão completa de lotes, leads, propostas, contratos e
-            analytics. Sem limite por operador.
+            <strong className="text-milsaca-dourado">Premium</strong> (R$100/mês,
+            1º mês grátis) e libere gestão completa de lotes, leads, propostas,
+            contratos e analytics. Sem limite por operador.
           </p>
         </div>
 

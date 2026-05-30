@@ -43,7 +43,7 @@ export function PlanCard({
       ) : isRecommended ? (
         <span className="absolute -top-3 left-6 inline-flex items-center gap-1 rounded-full bg-milsaca-dourado px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-milsaca-preto shadow-[0_4px_18px_-6px_rgba(201,169,97,0.5)]">
           <Sparkles className="h-3 w-3" />
-          Mais escolhido
+          Recomendado
         </span>
       ) : null}
 

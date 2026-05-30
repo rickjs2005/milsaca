@@ -15,7 +15,7 @@
 
 import { createClient } from "@milsaca/db/web/server";
 
-export type PlanTier = "gratuito" | "pro" | "premium";
+export type PlanTier = "gratuito" | "premium";
 
 export type PlanFeature = {
   /** Texto curto da funcionalidade. */
@@ -87,39 +87,14 @@ export const PLANS: PlanCatalogItem[] = [
     ],
   },
   {
-    tier: "pro",
-    slug: "corretora-pro",
-    name: "Corretora Pro",
-    tagline: "Operação comercial completa",
-    priceLabel: "R$ 299",
-    pricePeriod: "por mês",
-    highlight: "recommended",
-    ctaLabel: "Quero o Pro",
-    features: [
-      { label: FEATURES.perfilPublico, included: true },
-      { label: FEATURES.cob, included: true },
-      { label: FEATURES.whatsappLink, included: true },
-      { label: FEATURES.cotacoes, included: true },
-      { label: FEATURES.leadsIlimitados, included: true },
-      { label: FEATURES.lotesIlimitados, included: true },
-      { label: FEATURES.contratos, included: true },
-      { label: FEATURES.analytics, included: true },
-      { label: FEATURES.automacao, included: true },
-      { label: FEATURES.multiOperador, included: false },
-      { label: FEATURES.relatoriosAvancados, included: false },
-      { label: FEATURES.prioridadeSuporte, included: false },
-      { label: FEATURES.apiPublica, included: false },
-    ],
-  },
-  {
     tier: "premium",
     slug: "corretora-premium",
-    name: "Corretora Premium",
-    tagline: "Multi-operador + relatórios + API",
-    priceLabel: "Sob consulta",
-    pricePeriod: "fale conosco",
-    highlight: "enterprise",
-    ctaLabel: "Conversar com a Milsaca",
+    name: "Premium",
+    tagline: "Painel completo · 1º mês grátis",
+    priceLabel: "R$ 100",
+    pricePeriod: "por mês",
+    highlight: "recommended",
+    ctaLabel: "Quero o Premium",
     features: [
       { label: FEATURES.perfilPublico, included: true },
       { label: FEATURES.cob, included: true },
@@ -144,8 +119,13 @@ export const PLANS: PlanCatalogItem[] = [
  * substring case-insensitive — tolera variações de capitalização do admin.
  *
  * Retorna `gratuito` quando não há subscription ou plano não bate com
- * nenhum tier conhecido. Considera trial como "Pro" pra incentivar
+ * nenhum tier pago. Considera trial/active como "premium" pra incentivar
  * o usuário a manter os benefícios depois do trial.
+ *
+ * Como agora só existe UM plano pago ("Premium"), qualquer plano que não
+ * seja o gratuito é tratado como "premium". Isso inclui o programa de
+ * fundadoras (plano "Fundadora", grátis vitalício), que tem acesso
+ * completo e portanto deve ser detectado como pago/premium.
  */
 export function detectCurrentTier(
   planName: string | null,
@@ -153,24 +133,26 @@ export function detectCurrentTier(
 ): PlanTier {
   if (effectiveStatus === "none") return "gratuito";
   if (!planName) {
-    // Tem subscription (trial/active) mas sem plano nomeado — assume Pro
+    // Tem subscription (trial/active) mas sem plano nomeado — assume pago
     return effectiveStatus === "trial" || effectiveStatus === "active"
-      ? "pro"
+      ? "premium"
       : "gratuito";
   }
   const lower = planName.toLowerCase();
-  if (lower.includes("premium")) return "premium";
-  if (lower.includes("pro")) return "pro";
-  return "gratuito";
+  // "Gratuito" é o único plano não-pago. Premium, Pro (legado), Fundadora
+  // e qualquer outro plano nomeado liberam o painel completo → "premium".
+  if (lower.includes("gratuito") || lower.includes("grátis")) return "gratuito";
+  return "premium";
 }
 
 /**
  * Carrega planos do banco e mescla com o catálogo hardcoded.
  *
- * Match por `slug`: se admin criar um `plans` com slug "corretora-pro",
+ * Match por `slug`: se admin criar um `plans` com slug "corretora-premium",
  * o nome / preço / descrição vêm do banco e as features (que dependem do
  * que o app entrega) ficam do hardcoded. Planos no banco com slug
- * desconhecido entram como tier="pro" (assume meio do catálogo).
+ * desconhecido (ex: "corretora-fundador") não aparecem no grid — só os
+ * slugs do catálogo hardcoded são renderizados.
  *
  * Se o select falha ou volta vazio, devolve o catálogo hardcoded — UI
  * nunca fica vazia. RLS já gateia (`plans_select` permite authenticated
@@ -246,8 +228,7 @@ export function whatsappLinkForUpgrade(
 ): string {
   const planos: Record<PlanTier, string> = {
     gratuito: "manter no plano Gratuito",
-    pro: "ativar o plano Corretora Pro",
-    premium: "ativar o plano Corretora Premium",
+    premium: "ativar o plano Premium (R$100/mês, 1º mês grátis)",
   };
   const corretora = corretoraName ? ` (${corretoraName})` : "";
   const text = `Olá! Quero ${planos[tier]} no Milsaca${corretora}. Me passa os próximos passos?`;

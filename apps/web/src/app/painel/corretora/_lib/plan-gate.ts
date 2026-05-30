@@ -23,15 +23,24 @@ export function getCorretoraTier(
   );
 }
 
-/** Pro/Premium liberam features comerciais avançadas. */
+/**
+ * Tem o plano pago (Premium) OU é fundadora → libera tudo.
+ *
+ * Como agora só existe UM plano pago, "pro ou acima" e "premium" significam
+ * a mesma coisa: qualquer tier que não seja o gratuito. O nome é mantido
+ * pra não quebrar os call-sites (analytics, contratos, entregas, dashboard).
+ */
 export function isProOrAbove(
   subscription: SubscriptionInfo | null,
 ): boolean {
-  const tier = getCorretoraTier(subscription);
-  return tier === "pro" || tier === "premium";
+  return getCorretoraTier(subscription) === "premium";
 }
 
-/** Premium libera features de equipe / API. */
+/**
+ * Plano pago (Premium) ou fundadora libera features de equipe / API.
+ * Idêntico a `isProOrAbove` agora que só há um plano pago — mantido pra
+ * compat de imports e clareza semântica nos call-sites.
+ */
 export function isPremium(
   subscription: SubscriptionInfo | null,
 ): boolean {
@@ -39,9 +48,9 @@ export function isPremium(
 }
 
 /**
- * Features Pro-only marcadas pra UI. Esse mapa é a fonte de verdade
- * que documenta QUAL feature está em qual plano — mantém consistência
- * com o catálogo da Fase 8.
+ * Features do plano pago marcadas pra UI. Esse mapa é a fonte de verdade
+ * que documenta QUAIS features ficam atrás do gate de assinatura —
+ * mantém consistência com o catálogo de planos.
  */
 export const PRO_FEATURES = {
   analytics: "Analytics comercial",

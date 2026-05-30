@@ -130,7 +130,7 @@ export default async function AssinaturaPage() {
           </div>
         </div>
 
-        <div className="grid gap-5 pt-3 lg:grid-cols-3">
+        <div className="grid gap-5 pt-3 sm:grid-cols-2">
           {plans.map((plan) => (
             <PlanCard
               key={plan.tier}
@@ -163,8 +163,8 @@ export default async function AssinaturaPage() {
             answer="Você continua vendo os dados existentes em modo leitura. Criar novos contratos, lotes e entregas fica bloqueado até regularizar. Nada se perde."
           />
           <FaqCard
-            question="Tem desconto pra anual?"
-            answer="Tem. Fechando 12 meses na frente o desconto é negociável — fale com a gente."
+            question="Como funciona o 1º mês grátis?"
+            answer="Você ativa o Premium e usa o painel completo por 30 dias sem pagar nada. Só a partir do 2º mês entra a mensalidade de R$100. Se não fizer sentido, é só cancelar antes — sem cobrança."
           />
         </div>
       </section>
@@ -188,14 +188,14 @@ function StatusCard({
   statusLabel: string;
   statusTone: string;
   planName: string | null;
-  currentTier: "gratuito" | "pro" | "premium";
+  currentTier: "gratuito" | "premium";
   expiry: string | null;
   daysUntilExpiry: number | null;
   corretoraName: string | null;
 }) {
   const planDisplay = planName ?? PLANS.find((p) => p.tier === currentTier)?.name ?? "Gratuito";
   const isOnFreePlan = currentTier === "gratuito";
-  const upgradeHref = whatsappLinkForUpgrade("pro", corretoraName);
+  const upgradeHref = whatsappLinkForUpgrade("premium", corretoraName);
 
   return (
     <Card className="overflow-hidden border-milsaca-cream-escuro shadow-card">
@@ -255,9 +255,10 @@ function StatusCard({
         <div className="flex items-start gap-2 border-t border-milsaca-cream-escuro bg-milsaca-cream/40 px-6 py-3 text-xs text-milsaca-verde">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-milsaca-dourado" />
           <span>
-            No <strong>Pro</strong> você libera contratos completos, analytics
-            comercial, automação de follow-up e leads ilimitados. A maioria das
-            corretoras que migra paga o plano em menos de 2 contratos fechados.
+            No <strong>Premium</strong> (R$100/mês, 1º mês grátis) você libera
+            contratos completos, analytics comercial, automação de follow-up,
+            leads ilimitados e múltiplos operadores. A maioria das corretoras
+            que migra paga o plano em menos de 2 contratos fechados.
           </span>
         </div>
       ) : null}
