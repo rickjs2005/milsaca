@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AlertTriangle, Plus, Truck } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/empty-state";
 import { getProfile } from "@/lib/auth";
 import { getCorretoraSubscriptionInfo } from "../_lib/corretora";
 import { isProOrAbove } from "../_lib/plan-gate";
 import { LockedHint } from "../_components/locked-hint";
 import { Pagination } from "@/components/pagination";
 import {
-  ENTREGA_STATUS_COLOR,
+  ENTREGA_STATUS_TONE,
   ENTREGA_STATUS_LABEL,
   ENTREGA_STATUS_ORDER,
   ENTREGAS_PAGE_SIZE,
@@ -72,18 +74,15 @@ export default async function EntregasPage({
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
+          <h1 className="flex items-center gap-2 text-h1 text-milsaca-verde">
             <Truck className="h-7 w-7" />
             Entregas
           </h1>
-          <p className="text-sm text-milsaca-verde-claro">
+          <p className="mt-1 text-body-sm text-neutral-600">
             Programação, romaneio e ciclo de recebimento dos contratos.
           </p>
         </div>
-        <Button
-          asChild
-          className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
-        >
+        <Button asChild variant="primary">
           <Link href="/painel/corretora/entregas/nova">
             <Plus className="mr-2 h-4 w-4" />
             Nova entrega
@@ -92,12 +91,12 @@ export default async function EntregasPage({
       </header>
 
       {ok ? (
-        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-800">
+        <p className="rounded-md border border-success-100 bg-success-50 px-4 py-2 text-body-sm text-success-700">
           {ok}
         </p>
       ) : null}
       {error ? (
-        <p className="rounded-md border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">
+        <p className="rounded-md border border-danger-100 bg-danger-50 px-4 py-2 text-body-sm text-danger-700">
           {error}
         </p>
       ) : null}
@@ -110,7 +109,7 @@ export default async function EntregasPage({
       ) : null}
 
       {atrasadasCt > 0 && !filter ? (
-        <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <div className="flex items-center gap-2 rounded-card border border-danger-100 bg-danger-50 px-4 py-3 text-body-sm text-danger-700">
           <AlertTriangle className="h-4 w-4" />
           {atrasadasCt} entrega{atrasadasCt > 1 ? "s" : ""} em atraso. Resolva
           essas primeiro.
@@ -118,7 +117,10 @@ export default async function EntregasPage({
       ) : null}
 
       {/* Filtros pill */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
+          Status
+        </span>
         <FilterPill href="/painel/corretora/entregas" active={!filter}>
           Todas
         </FilterPill>
@@ -134,90 +136,101 @@ export default async function EntregasPage({
       </div>
 
       {entregas.length === 0 ? (
-        <div className="rounded-2xl border border-milsaca-cream-escuro bg-white p-8 text-center text-sm text-milsaca-verde-claro">
-          Nenhuma entrega {filter ? `com status "${ENTREGA_STATUS_LABEL[filter]}"` : "cadastrada"}.{" "}
-          <Link
-            href="/painel/corretora/entregas/nova"
-            className="text-milsaca-dourado hover:underline"
-          >
-            Criar a primeira
-          </Link>
-          .
-        </div>
+        <Card tone="muted" className="border-dashed">
+          <CardContent className="p-card">
+            <EmptyState
+              icon={Truck}
+              title={
+                filter
+                  ? `Nenhuma entrega "${ENTREGA_STATUS_LABEL[filter]}"`
+                  : "Nenhuma entrega cadastrada"
+              }
+              description="Programe a primeira entrega de um contrato para acompanhar o ciclo de recebimento aqui."
+              cta={{
+                label: "Nova entrega",
+                href: "/painel/corretora/entregas/nova",
+              }}
+            />
+          </CardContent>
+        </Card>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-milsaca-cream-escuro bg-white shadow-sm">
-          <table className="w-full text-sm">
-            <thead className="bg-milsaca-cream-escuro/30 text-left text-xs uppercase tracking-wide text-milsaca-verde-claro">
-              <tr>
-                <th className="px-4 py-3">Contrato</th>
-                <th className="px-4 py-3">Produtor</th>
-                <th className="px-4 py-3">Sacas</th>
-                <th className="px-4 py-3">Prevista</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entregas.map((e) => (
-                <tr
-                  key={e.id}
-                  className={
-                    e.is_atrasada
-                      ? "border-t border-rose-200/40 bg-rose-50/40"
-                      : "border-t border-milsaca-verde/5"
-                  }
-                >
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/painel/corretora/contratos/${e.contrato_id}`}
-                      className="font-mono text-xs text-milsaca-verde hover:underline"
-                    >
-                      {e.contrato_code}
-                    </Link>
-                    <p className="text-[10px] text-milsaca-verde-claro">
-                      #{e.sequencia}
-                    </p>
-                  </td>
-                  <td className="px-4 py-3 text-milsaca-verde">
-                    {e.produtor_nome}
-                  </td>
-                  <td className="px-4 py-3 text-milsaca-verde-claro">
-                    {e.bag_count ?? "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={
-                        e.is_atrasada
-                          ? "font-medium text-rose-700"
-                          : "text-milsaca-verde-claro"
-                      }
-                    >
-                      {fmtDate(e.data_prevista)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge
-                      className={`${ENTREGA_STATUS_COLOR[e.status]} hover:${ENTREGA_STATUS_COLOR[e.status]}`}
-                    >
-                      {ENTREGA_STATUS_LABEL[e.status]}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/painel/corretora/entregas/${e.id}`}
-                      className="text-xs text-milsaca-dourado hover:underline"
-                    >
-                      Abrir →
-                    </Link>
-                  </td>
+        <Card>
+          <CardContent className="overflow-x-auto p-0">
+            <table className="w-full text-body-sm">
+              <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-caption font-medium uppercase tracking-wider text-neutral-600">
+                <tr>
+                  <th className="px-5 py-3 font-medium">Contrato</th>
+                  <th className="px-5 py-3 font-medium">Produtor</th>
+                  <th className="px-5 py-3 text-right font-medium">Sacas</th>
+                  <th className="px-5 py-3 font-medium">Prevista</th>
+                  <th className="px-5 py-3 font-medium">Status</th>
+                  <th className="px-5 py-3 text-right font-medium">Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-neutral-200">
+                {entregas.map((e) => (
+                  <tr
+                    key={e.id}
+                    className={
+                      e.is_atrasada
+                        ? "bg-danger-50/60 transition-colors hover:bg-danger-50"
+                        : "transition-colors hover:bg-neutral-50"
+                    }
+                  >
+                    <td className="px-5 py-3">
+                      <Link
+                        href={`/painel/corretora/contratos/${e.contrato_id}`}
+                        className="font-mono text-caption font-medium text-milsaca-cafezal hover:underline"
+                      >
+                        {e.contrato_code}
+                      </Link>
+                      <p className="text-caption text-neutral-500">
+                        #{e.sequencia}
+                      </p>
+                    </td>
+                    <td className="px-5 py-3 text-neutral-700">
+                      {e.produtor_nome}
+                    </td>
+                    <td className="px-5 py-3 text-right tabular-nums text-neutral-700">
+                      {e.bag_count ?? "—"}
+                    </td>
+                    <td className="px-5 py-3">
+                      <span
+                        className={
+                          e.is_atrasada
+                            ? "font-medium text-danger-700"
+                            : "text-neutral-700"
+                        }
+                      >
+                        {fmtDate(e.data_prevista)}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3">
+                      <StatusBadge tone={ENTREGA_STATUS_TONE[e.status]}>
+                        {ENTREGA_STATUS_LABEL[e.status]}
+                      </StatusBadge>
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      <Link
+                        href={`/painel/corretora/entregas/${e.id}`}
+                        className="text-caption font-medium text-milsaca-cafezal hover:underline"
+                      >
+                        Abrir →
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
       )}
 
-      <Pagination page={page} totalPages={totalPages} hrefFor={hrefFor} />
+      {totalPages > 1 ? (
+        <div className="border-t border-neutral-200 pt-4">
+          <Pagination page={page} totalPages={totalPages} hrefFor={hrefFor} />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -236,8 +249,8 @@ function FilterPill({
       href={href}
       className={
         active
-          ? "rounded-full bg-milsaca-verde px-4 py-1.5 text-xs font-medium text-milsaca-cream"
-          : "rounded-full border border-milsaca-verde/20 px-4 py-1.5 text-xs font-medium text-milsaca-verde-claro hover:border-milsaca-verde hover:text-milsaca-verde"
+          ? "rounded-pill bg-milsaca-cafezal px-3 py-1 text-caption font-medium text-milsaca-cream"
+          : "rounded-pill border border-neutral-200 px-3 py-1 text-caption font-medium text-neutral-600 transition-colors hover:border-milsaca-dourado/50 hover:text-milsaca-cafezal"
       }
     >
       {children}

@@ -3,7 +3,8 @@ import { Plus, Wallet, CheckCircle2, FileText } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/empty-state";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { SubmitButton } from "@/components/submit-button";
 import { getProfile } from "@/lib/auth";
@@ -14,7 +15,7 @@ import {
   signedComprovanteUrl,
   PAGAMENTOS_PAGE_SIZE,
   PAGAMENTO_STATUS_LABEL,
-  PAGAMENTO_STATUS_COLOR,
+  PAGAMENTO_STATUS_TONE,
   PAGAMENTO_STATUS_ORDER,
   type PagamentoStatus,
 } from "./_lib/queries";
@@ -91,19 +92,14 @@ export default async function PagamentosPage({
     <div className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-milsaca-verde sm:text-3xl">
-            Pagamentos ao produtor
-          </h1>
-          <p className="text-sm text-milsaca-verde-claro">
+          <h1 className="text-h1 text-milsaca-verde">Pagamentos ao produtor</h1>
+          <p className="mt-1 max-w-2xl text-body-sm text-neutral-600">
             Controle do repasse — registre o que deve e marque como pago. O
             pagamento em si é feito direto com o produtor (a Milsaca não
             movimenta dinheiro). O produtor vê o status no Financeiro dele.
           </p>
         </div>
-        <Button
-          asChild
-          className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
-        >
+        <Button asChild variant="primary">
           <Link href="/painel/corretora/pagamentos/novo">
             <Plus className="mr-2 h-4 w-4" />
             Registrar pagamento
@@ -112,30 +108,32 @@ export default async function PagamentosPage({
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Card className="border-milsaca-cream-escuro">
-          <CardContent className="p-4">
-            <p className="text-[11px] uppercase tracking-wider text-milsaca-verde-claro">
+        <Card>
+          <CardContent className="p-card">
+            <p className="text-caption font-medium uppercase tracking-wider text-neutral-500">
               A pagar (líquido)
             </p>
-            <p className="text-2xl font-semibold text-milsaca-verde sm:text-3xl">
+            <p className="mt-1 text-h2 tabular-nums text-milsaca-verde">
               {formatBRL(aPagar)}
             </p>
           </CardContent>
         </Card>
-        <Card className="border-milsaca-cream-escuro">
-          <CardContent className="p-4">
-            <p className="text-[11px] uppercase tracking-wider text-milsaca-verde-claro">
+        <Card>
+          <CardContent className="p-card">
+            <p className="text-caption font-medium uppercase tracking-wider text-neutral-500">
               Já pago (líquido)
             </p>
-            <p className="text-2xl font-semibold text-milsaca-verde sm:text-3xl">
+            <p className="mt-1 text-h2 tabular-nums text-milsaca-verde">
               {formatBRL(pago)}
             </p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-milsaca-verde-claro">Filtrar:</span>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
+          Status
+        </span>
         {FILTERS.map((f) => {
           const params = new URLSearchParams();
           if (f.value) params.set("status", f.value);
@@ -149,8 +147,8 @@ export default async function PagamentosPage({
               href={href}
               className={
                 active
-                  ? "rounded-full bg-milsaca-verde px-3 py-1 text-xs font-medium text-milsaca-cream"
-                  : "rounded-full border border-milsaca-cream-escuro px-3 py-1 text-xs text-milsaca-verde-claro hover:text-milsaca-verde"
+                  ? "rounded-pill bg-milsaca-cafezal px-3 py-1 text-caption font-medium text-milsaca-cream"
+                  : "rounded-pill border border-neutral-200 px-3 py-1 text-caption font-medium text-neutral-600 transition-colors hover:border-milsaca-dourado/50 hover:text-milsaca-cafezal"
               }
             >
               {f.label}
@@ -160,74 +158,66 @@ export default async function PagamentosPage({
       </div>
 
       {itens.length === 0 ? (
-        <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
-          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-milsaca-verde/10 text-milsaca-verde">
-              <Wallet className="h-6 w-6" />
-            </span>
-            <p className="text-sm text-milsaca-verde">
-              Nenhum pagamento{status ? " com esse status" : ""}.
-            </p>
-            <p className="text-xs text-milsaca-verde-claro">
-              Registre o repasse de um contrato para acompanhar aqui.
-            </p>
-            <Button
-              asChild
-              size="sm"
-              className="mt-2 bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
-            >
-              <Link href="/painel/corretora/pagamentos/novo">
-                Registrar pagamento
-              </Link>
-            </Button>
+        <Card tone="muted" className="border-dashed">
+          <CardContent className="p-card">
+            <EmptyState
+              icon={Wallet}
+              title={`Nenhum pagamento${status ? " com esse status" : ""}`}
+              description="Registre o repasse de um contrato para acompanhar aqui."
+              cta={{
+                label: "Registrar pagamento",
+                href: "/painel/corretora/pagamentos/novo",
+              }}
+            />
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-milsaca-cream-escuro">
+        <Card>
           <CardContent className="overflow-x-auto p-0">
-            <table className="w-full text-sm">
-              <thead className="bg-milsaca-cream-escuro/40 text-xs uppercase tracking-wider text-milsaca-verde-claro">
+            <table className="w-full text-body-sm">
+              <thead className="border-b border-neutral-200 bg-neutral-50 text-caption font-medium uppercase tracking-wider text-neutral-600">
                 <tr>
-                  <th className="px-5 py-3 text-left">Produtor</th>
-                  <th className="px-5 py-3 text-left">Contrato</th>
-                  <th className="px-5 py-3 text-right">Bruto</th>
-                  <th className="px-5 py-3 text-right">Líquido</th>
-                  <th className="px-5 py-3 text-left">Previsto</th>
-                  <th className="px-5 py-3 text-left">Pago em</th>
-                  <th className="px-5 py-3 text-left">Status</th>
+                  <th className="px-5 py-3 text-left font-medium">Produtor</th>
+                  <th className="px-5 py-3 text-left font-medium">Contrato</th>
+                  <th className="px-5 py-3 text-right font-medium">Bruto</th>
+                  <th className="px-5 py-3 text-right font-medium">Líquido</th>
+                  <th className="px-5 py-3 text-left font-medium">Previsto</th>
+                  <th className="px-5 py-3 text-left font-medium">Pago em</th>
+                  <th className="px-5 py-3 text-left font-medium">Status</th>
                   <th className="px-5 py-3"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-milsaca-cream-escuro">
+              <tbody className="divide-y divide-neutral-200">
                 {itens.map((p) => {
                   const aberto =
                     p.status === "pendente" || p.status === "vencido";
                   return (
-                    <tr key={p.id} className="hover:bg-milsaca-cream-escuro/30">
+                    <tr
+                      key={p.id}
+                      className="transition-colors hover:bg-neutral-50"
+                    >
                       <td className="px-5 py-3 font-medium text-milsaca-verde">
                         {p.produtor_nome}
                       </td>
-                      <td className="px-5 py-3 text-milsaca-verde-claro">
+                      <td className="px-5 py-3 text-neutral-600">
                         {p.contrato_code ?? "—"}
                       </td>
-                      <td className="px-5 py-3 text-right text-milsaca-verde">
+                      <td className="px-5 py-3 text-right tabular-nums text-neutral-700">
                         {formatBRL(p.valor_bruto)}
                       </td>
-                      <td className="px-5 py-3 text-right font-medium text-milsaca-verde">
+                      <td className="px-5 py-3 text-right font-medium tabular-nums text-milsaca-verde">
                         {formatBRL(p.valor_liquido)}
                       </td>
-                      <td className="px-5 py-3 text-milsaca-verde">
+                      <td className="px-5 py-3 text-neutral-700">
                         {formatDate(p.data_prevista)}
                       </td>
-                      <td className="px-5 py-3 text-milsaca-verde">
+                      <td className="px-5 py-3 text-neutral-700">
                         {formatDate(p.data_paga)}
                       </td>
                       <td className="px-5 py-3">
-                        <Badge
-                          className={`${PAGAMENTO_STATUS_COLOR[p.status]} hover:${PAGAMENTO_STATUS_COLOR[p.status]}`}
-                        >
+                        <StatusBadge tone={PAGAMENTO_STATUS_TONE[p.status]}>
                           {PAGAMENTO_STATUS_LABEL[p.status]}
-                        </Badge>
+                        </StatusBadge>
                       </td>
                       <td className="px-5 py-3">
                         {aberto ? (
@@ -243,12 +233,13 @@ export default async function PagamentosPage({
                                 name="comprovante"
                                 accept="image/*,application/pdf"
                                 title="Anexar comprovante (foto ou PDF do PIX) — opcional"
-                                className="max-w-[10rem] text-xs text-milsaca-verde-claro file:mr-2 file:rounded-md file:border-0 file:bg-milsaca-cream-escuro file:px-2 file:py-1 file:text-xs file:text-milsaca-verde hover:file:bg-milsaca-cream-claro"
+                                className="max-w-[10rem] text-caption text-neutral-600 file:mr-2 file:rounded-md file:border-0 file:bg-neutral-100 file:px-2 file:py-1 file:text-caption file:text-neutral-700 hover:file:bg-neutral-200"
                               />
                               <SubmitButton
+                                variant="success"
                                 size="sm"
                                 pendingLabel="..."
-                                className="h-auto gap-1 bg-emerald-600 px-2 py-1 text-xs text-white hover:bg-emerald-700"
+                                className="h-auto gap-1 px-2 py-1 text-caption"
                               >
                                 <CheckCircle2 className="h-3.5 w-3.5" />
                                 Marcar pago
@@ -259,7 +250,7 @@ export default async function PagamentosPage({
                               <ConfirmSubmit
                                 variant="ghost"
                                 size="sm"
-                                className="h-auto p-0 text-xs text-rose-700 hover:bg-transparent hover:underline"
+                                className="h-auto p-0 text-caption text-danger-700 hover:bg-transparent hover:underline"
                                 confirmTitle="Cancelar pagamento?"
                                 confirmMessage={
                                   <p>
@@ -281,7 +272,7 @@ export default async function PagamentosPage({
                               href={comprovanteUrls.get(p.id)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs text-milsaca-verde hover:underline"
+                              className="inline-flex items-center gap-1 text-caption font-medium text-milsaca-cafezal hover:underline"
                             >
                               <FileText className="h-3.5 w-3.5" />
                               Ver comprovante
@@ -298,7 +289,11 @@ export default async function PagamentosPage({
         </Card>
       )}
 
-      <Pagination page={page} totalPages={totalPages} hrefFor={hrefFor} />
+      {totalPages > 1 ? (
+        <div className="border-t border-neutral-200 pt-4">
+          <Pagination page={page} totalPages={totalPages} hrefFor={hrefFor} />
+        </div>
+      ) : null}
     </div>
   );
 }

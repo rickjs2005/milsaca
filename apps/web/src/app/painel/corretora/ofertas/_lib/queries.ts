@@ -1,4 +1,5 @@
 import { createClient } from "@milsaca/db/web/server";
+import type { StatusTone } from "@/components/status-badge";
 
 export type OfertaStatus =
   | "rascunho"
@@ -29,6 +30,15 @@ export const OFERTA_STATUS_COLOR: Record<OfertaStatus, string> = {
   aceita: "bg-emerald-100 text-emerald-800",
   recusada: "bg-rose-100 text-rose-800",
   expirada: "bg-slate-200 text-slate-700",
+};
+
+// Tone semântico (fundação D1) — usado pelo <StatusBadge> nas listagens.
+export const OFERTA_STATUS_TONE: Record<OfertaStatus, StatusTone> = {
+  rascunho: "neutral",
+  enviada: "warning",
+  aceita: "success",
+  recusada: "danger",
+  expirada: "neutral",
 };
 
 export type OfertaItem = {

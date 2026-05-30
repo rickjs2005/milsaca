@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { Inbox, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Pagination } from "@/components/pagination";
+import { EmptyState as SharedEmptyState } from "@/components/empty-state";
 import {
   LEAD_STATUS_LABEL,
   LEAD_STATUS_ORDER,
@@ -118,16 +119,16 @@ export function LeadsGrid({
       <div className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="relative flex-1 sm:max-w-sm">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-milsaca-verde-claro/60" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
             <input
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar por nome, café, cidade..."
-              className="h-9 w-full rounded-md border border-milsaca-cream-escuro bg-white pl-9 pr-3 text-sm text-milsaca-verde placeholder:text-milsaca-verde-claro/50 outline-none transition-colors focus:border-milsaca-dourado/60 focus:ring-2 focus:ring-milsaca-dourado/20"
+              className="h-10 w-full rounded-md border border-neutral-200 bg-white pl-9 pr-3 text-body-sm text-milsaca-preto placeholder:text-neutral-400 outline-none transition-colors focus-visible:border-milsaca-dourado focus-visible:ring-2 focus-visible:ring-ring/40"
             />
           </div>
-          <div className="flex items-center gap-3 text-xs text-milsaca-verde-claro">
+          <div className="flex items-center gap-3 text-caption text-neutral-500">
             <span>
               <strong className="text-milsaca-verde">{filtered.length}</strong>{" "}
               {filtered.length === 1 ? "lead" : "leads"}
@@ -138,7 +139,7 @@ export function LeadsGrid({
                   <button
                     type="button"
                     onClick={() => setQuery("")}
-                    className="inline-flex items-center gap-1 text-milsaca-cafezal hover:underline"
+                    className="inline-flex items-center gap-1 font-medium text-milsaca-cafezal hover:underline"
                   >
                     <X className="h-3 w-3" />
                     limpar busca
@@ -148,7 +149,7 @@ export function LeadsGrid({
                   <Link
                     href={pathname}
                     onClick={() => setQuery("")}
-                    className="inline-flex items-center gap-1 text-milsaca-cafezal hover:underline"
+                    className="inline-flex items-center gap-1 font-medium text-milsaca-cafezal hover:underline"
                   >
                     <X className="h-3 w-3" />
                     limpar filtros
@@ -160,7 +161,7 @@ export function LeadsGrid({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-milsaca-verde-claro/70">
+          <span className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
             Status
           </span>
           {STATUS_FILTERS.map((f) => {
@@ -170,10 +171,10 @@ export function LeadsGrid({
                 key={`status-${f.value || "all"}`}
                 href={buildHref("status", f.value)}
                 className={cn(
-                  "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                  "rounded-pill px-3 py-1 text-caption font-medium transition-colors",
                   active
-                    ? "bg-milsaca-verde text-milsaca-cream"
-                    : "border border-milsaca-cream-escuro text-milsaca-verde-claro hover:text-milsaca-verde",
+                    ? "bg-milsaca-cafezal text-milsaca-cream"
+                    : "border border-neutral-200 text-neutral-600 hover:border-milsaca-dourado/50 hover:text-milsaca-cafezal",
                 )}
               >
                 {f.label}
@@ -183,7 +184,7 @@ export function LeadsGrid({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-milsaca-verde-claro/70">
+          <span className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
             Urgência
           </span>
           {URGENCIA_FILTERS.map((f) => {
@@ -193,10 +194,10 @@ export function LeadsGrid({
                 key={`urgencia-${f.value || "all"}`}
                 href={buildHref("urgencia", f.value)}
                 className={cn(
-                  "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                  "rounded-pill px-3 py-1 text-caption font-medium transition-colors",
                   active
                     ? "bg-milsaca-cafezal text-milsaca-cream"
-                    : "border border-milsaca-cream-escuro text-milsaca-verde-claro hover:text-milsaca-verde",
+                    : "border border-neutral-200 text-neutral-600 hover:border-milsaca-dourado/50 hover:text-milsaca-cafezal",
                 )}
               >
                 {f.label}
@@ -223,43 +224,37 @@ export function LeadsGrid({
 
       {/* Paginação server-side. A busca e a urgência filtram apenas a
           página atual; pra varrer tudo, navegue pelas páginas. */}
-      <Pagination page={page} totalPages={totalPages} hrefFor={pageHref} />
+      {totalPages > 1 ? (
+        <div className="border-t border-neutral-200 pt-4">
+          <Pagination page={page} totalPages={totalPages} hrefFor={pageHref} />
+        </div>
+      ) : null}
     </div>
   );
 }
 
 function EmptyState({ hasFilter }: { hasFilter: boolean }) {
   return (
-    <div className="rounded-card border border-dashed border-milsaca-cream-escuro bg-white/40 px-6 py-12 text-center">
-      <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-milsaca-verde/10 text-milsaca-verde">
-        <Inbox className="h-5 w-5" />
-      </span>
-      <p className="mt-3 text-sm font-semibold text-milsaca-verde">
-        {hasFilter
-          ? "Nenhum lead com esse filtro."
-          : "Sua central de leads está vazia."}
-      </p>
-      <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-milsaca-verde-claro">
-        {hasFilter
-          ? "Tente afrouxar os filtros ou criar um novo lead manualmente."
-          : "Compartilhe seu perfil público da corretora pra começar a receber contatos."}
-      </p>
-      <div className="mt-4 flex items-center justify-center gap-2">
-        <Link
-          href="/painel/corretora/leads/novo"
-          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-milsaca-cafezal px-3 text-xs font-semibold text-milsaca-cream transition-colors hover:bg-milsaca-folha"
-        >
-          Cadastrar lead
-        </Link>
-        {!hasFilter ? (
-          <Link
-            href="/painel/corretora/perfil"
-            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-milsaca-cream-escuro px-3 text-xs font-semibold text-milsaca-verde-claro transition-colors hover:text-milsaca-verde"
-          >
-            Ver perfil público
-          </Link>
-        ) : null}
-      </div>
+    <div className="rounded-card border border-dashed border-neutral-200 bg-milsaca-cream/40">
+      <SharedEmptyState
+        icon={Inbox}
+        title={
+          hasFilter
+            ? "Nenhum lead com esse filtro"
+            : "Sua central de leads está vazia"
+        }
+        description={
+          hasFilter
+            ? "Tente afrouxar os filtros ou criar um novo lead manualmente."
+            : "Compartilhe seu perfil público da corretora pra começar a receber contatos."
+        }
+        cta={{ label: "Cadastrar lead", href: "/painel/corretora/leads/novo" }}
+        secondaryCta={
+          hasFilter
+            ? undefined
+            : { label: "Ver perfil público", href: "/painel/corretora/perfil" }
+        }
+      />
     </div>
   );
 }

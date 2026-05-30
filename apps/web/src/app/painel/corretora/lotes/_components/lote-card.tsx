@@ -12,11 +12,12 @@ import {
   Share2,
   User2,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/card";
+import { StatusBadge } from "@/components/status-badge";
 import { updateLoteStatus } from "../_actions";
 import {
   LOTE_STATUS_LABEL,
-  LOTE_STATUS_COLOR,
+  LOTE_STATUS_TONE,
   PROCESSO_LABEL,
   SPECIE_LABEL,
   type LoteRow,
@@ -63,42 +64,33 @@ export function LoteCard({
   const local = [lote.city, lote.state].filter(Boolean).join("/");
 
   return (
-    <article className="group rounded-card border border-milsaca-cream-escuro bg-white p-5 shadow-card transition-all hover:border-milsaca-dourado/40 hover:shadow-card-hover sm:p-6">
+    <Card tone="default" interactive className="group p-card sm:p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         {/* Identidade do lote */}
         <div className="flex-1 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Link
               href={`/painel/corretora/lotes/${lote.id}`}
-              className="font-mono text-base font-semibold text-milsaca-verde hover:underline"
+              className="font-mono text-h3 text-milsaca-verde hover:underline"
             >
               {lote.codigo}
             </Link>
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-[10px] font-medium",
-                LOTE_STATUS_COLOR[lote.status],
-              )}
-            >
+            <StatusBadge tone={LOTE_STATUS_TONE[lote.status]} withDot={false}>
               {LOTE_STATUS_LABEL[lote.status]}
-            </span>
+            </StatusBadge>
             {lote.ultimo_tipo ? (
-              <span
-                className={cn(
-                  "rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset",
-                  lote.ultimo_fora_de_tipo
-                    ? "bg-rose-50 text-rose-700 ring-rose-200"
-                    : "bg-milsaca-dourado/15 text-milsaca-cafezal ring-milsaca-dourado/40",
-                )}
+              <StatusBadge
+                tone={lote.ultimo_fora_de_tipo ? "danger" : "premium"}
+                withDot={false}
               >
                 {lote.ultimo_fora_de_tipo
                   ? "Fora de tipo"
                   : `Tipo ${lote.ultimo_tipo}`}
-              </span>
+              </StatusBadge>
             ) : null}
           </div>
 
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-milsaca-verde-claro sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-body-sm text-neutral-600 sm:grid-cols-3">
             <span className="inline-flex items-center gap-1">
               <Coffee className="h-3 w-3" />
               {SPECIE_LABEL[lote.specie]}
@@ -127,7 +119,7 @@ export function LoteCard({
               </span>
             ) : null}
             {lote.fazenda ? (
-              <span className="inline-flex items-center gap-1 text-milsaca-verde-claro/80">
+              <span className="inline-flex items-center gap-1 text-neutral-500">
                 {lote.fazenda}
               </span>
             ) : null}
@@ -136,19 +128,19 @@ export function LoteCard({
           {/* Cotação de referência */}
           {cotacaoRef != null ? (
             <div className="inline-flex items-baseline gap-2 rounded-md bg-milsaca-cream/60 px-3 py-1.5">
-              <span className="text-[10px] uppercase tracking-wider text-milsaca-verde-claro">
+              <span className="text-caption uppercase tracking-wider text-neutral-500">
                 Cotação ref.
               </span>
-              <span className="text-sm font-semibold text-milsaca-verde">
+              <span className="text-body-sm font-semibold tabular-nums text-milsaca-verde">
                 {BRL.format(cotacaoRef)}
-                <span className="ml-0.5 text-[10px] font-medium text-milsaca-verde-claro">
+                <span className="ml-0.5 text-caption font-medium text-neutral-500">
                   /sc
                 </span>
               </span>
             </div>
           ) : null}
 
-          <p className="text-[11px] text-milsaca-verde-claro/70">
+          <p className="text-caption text-neutral-400">
             Cadastrado em {formatDateShort(lote.created_at)} · atualizado{" "}
             {formatDateShort(lote.updated_at)}
           </p>
@@ -161,7 +153,7 @@ export function LoteCard({
             target="_blank"
             rel="noopener noreferrer"
             title={share.preview}
-            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[#25D366] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#1ebe5d]"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[#25D366] px-3 text-caption font-semibold text-white transition-colors hover:bg-[#1ebe5d]"
           >
             <Share2 className="h-3.5 w-3.5" />
             Compartilhar no WhatsApp
@@ -169,7 +161,7 @@ export function LoteCard({
 
           <Link
             href={`/painel/corretora/lotes/${lote.id}#nova-proposta`}
-            className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-md border border-milsaca-cafezal/40 bg-milsaca-cafezal/5 px-3 text-xs font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-cafezal/15 lg:w-auto"
+            className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-md border border-milsaca-cafezal/40 bg-milsaca-cafezal/5 px-3 text-caption font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-cafezal/15 lg:w-auto"
           >
             <HandCoins className="h-3.5 w-3.5" />
             Criar proposta
@@ -181,7 +173,7 @@ export function LoteCard({
               <input type="hidden" name="status" value={advanceTo} />
               <button
                 type="submit"
-                className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-md border border-milsaca-dourado/40 bg-milsaca-dourado/10 px-3 text-xs font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-dourado/20 lg:w-auto"
+                className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-md border border-milsaca-dourado/50 bg-milsaca-dourado/10 px-3 text-caption font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-dourado/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lg:w-auto"
               >
                 {NEXT_STATUS_LABEL[lote.status]}
                 <ArrowRight className="h-3.5 w-3.5" />
@@ -191,13 +183,13 @@ export function LoteCard({
 
           <Link
             href={`/painel/corretora/lotes/${lote.id}`}
-            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-milsaca-cream-escuro px-3 text-xs font-semibold text-milsaca-verde-claro transition-colors hover:text-milsaca-verde"
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-neutral-200 px-3 text-caption font-semibold text-neutral-600 transition-colors hover:border-milsaca-dourado/50 hover:text-milsaca-cafezal"
           >
             <MoreHorizontal className="h-3.5 w-3.5" />
             Ver detalhes
           </Link>
         </div>
       </div>
-    </article>
+    </Card>
   );
 }

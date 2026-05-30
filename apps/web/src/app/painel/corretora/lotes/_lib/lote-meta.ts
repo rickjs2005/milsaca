@@ -5,6 +5,7 @@
  */
 
 import type { Lote } from "@milsaca/types";
+import type { StatusTone } from "@/components/status-badge";
 
 export type LoteStatus = Lote["status"];
 
@@ -36,6 +37,17 @@ export const LOTE_STATUS_COLOR: Record<LoteStatus, string> = {
   rebeneficiar: "bg-amber-100 text-amber-800",
   vendido: "bg-milsaca-verde text-milsaca-cream",
   arquivado: "bg-slate-200 text-slate-700",
+};
+
+// Tone semântico (fundação D1) — usado pelo <StatusBadge> nos cards.
+export const LOTE_STATUS_TONE: Record<LoteStatus, StatusTone> = {
+  rascunho: "neutral",
+  aguardando_classificacao: "warning",
+  classificado: "success",
+  fora_de_tipo: "danger",
+  rebeneficiar: "warning",
+  vendido: "premium",
+  arquivado: "neutral",
 };
 
 /** Status que indicam "lote pode ser negociado". */

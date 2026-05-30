@@ -1,5 +1,6 @@
 import { createClient } from "@milsaca/db/web/server";
 import type { Database } from "@milsaca/types/database";
+import type { StatusTone } from "@/components/status-badge";
 
 export type EntregaStatus = Database["public"]["Enums"]["entrega_status"];
 
@@ -25,6 +26,15 @@ export const ENTREGA_STATUS_COLOR: Record<EntregaStatus, string> = {
   recebida: "bg-emerald-100 text-emerald-800",
   conferida: "bg-milsaca-verde text-milsaca-cream",
   cancelada: "bg-slate-200 text-slate-700",
+};
+
+// Tone semântico (fundação D1) — usado pelo <StatusBadge> nas listagens.
+export const ENTREGA_STATUS_TONE: Record<EntregaStatus, StatusTone> = {
+  programada: "warning",
+  em_transito: "info",
+  recebida: "success",
+  conferida: "premium",
+  cancelada: "neutral",
 };
 
 // "Pendente" = ainda não recebeu/conferiu/cancelou

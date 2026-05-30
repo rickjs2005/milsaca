@@ -80,6 +80,8 @@ type Props = {
   children?: React.ReactNode;
   /** Bolinha indicadora à esquerda. Padrão true pra status, false pra tone-only. */
   withDot?: boolean;
+  /** Tooltip nativo (atributo title do <span>). */
+  title?: string;
   className?: string;
 };
 
@@ -88,6 +90,7 @@ export function StatusBadge({
   tone,
   children,
   withDot,
+  title,
   className,
 }: Props) {
   const resolved = status ? KEY_TO_TONE[status] : null;
@@ -97,6 +100,7 @@ export function StatusBadge({
 
   return (
     <span
+      title={title}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-pill px-2.5 py-0.5 text-caption font-medium ring-1 ring-inset",
         TONE_CLASSES[finalTone],

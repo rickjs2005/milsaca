@@ -100,7 +100,7 @@ export function FilterBar({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-card border border-slate-200 bg-white p-4 shadow-card",
+        "flex flex-col gap-3 rounded-card border border-neutral-200 bg-white p-card shadow-card",
         className,
       )}
     >
@@ -108,21 +108,21 @@ export function FilterBar({
         <div className="relative">
           <Search
             aria-hidden
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
           />
           <input
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={searchPlaceholder}
-            className="w-full rounded-md border border-slate-200 bg-white pl-9 pr-9 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-milsaca-dourado focus:outline-none focus:ring-2 focus:ring-milsaca-dourado/30"
+            className="w-full rounded-md border border-neutral-200 bg-white py-2 pl-9 pr-9 text-body-sm text-milsaca-preto placeholder:text-neutral-400 outline-none transition-colors focus-visible:border-milsaca-dourado focus-visible:ring-2 focus-visible:ring-ring/40"
           />
           {search ? (
             <button
               type="button"
               aria-label="Limpar busca"
               onClick={() => setSearch("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -136,7 +136,7 @@ export function FilterBar({
             const current = sp.get(f.param) ?? "";
             return (
               <div key={f.param} className="flex flex-wrap items-center gap-1.5">
-                <span className="mr-1 text-xs font-medium uppercase tracking-wide text-slate-500">
+                <span className="mr-1 text-caption font-semibold uppercase tracking-wider text-neutral-500">
                   {f.label}
                 </span>
                 {f.options.map((o) => {
@@ -147,10 +147,10 @@ export function FilterBar({
                       type="button"
                       onClick={() => setFilter(f.param, o.value)}
                       className={cn(
-                        "inline-flex items-center gap-1 rounded-pill px-3 py-1 text-xs font-medium transition-colors",
+                        "inline-flex items-center gap-1 rounded-pill px-3 py-1 text-caption font-medium transition-colors",
                         active
                           ? "bg-milsaca-cafezal text-milsaca-cream"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+                          : "border border-neutral-200 text-neutral-600 hover:border-milsaca-dourado/50 hover:text-milsaca-cafezal",
                       )}
                     >
                       {o.label}
@@ -160,7 +160,7 @@ export function FilterBar({
                             "ml-0.5 rounded-pill px-1.5 text-[10px]",
                             active
                               ? "bg-milsaca-cream/20 text-milsaca-cream"
-                              : "bg-white text-slate-500",
+                              : "bg-neutral-100 text-neutral-500",
                           )}
                         >
                           {o.count}
@@ -176,13 +176,13 @@ export function FilterBar({
       ) : null}
 
       {resultsLabel || hasAnyFilter ? (
-        <div className="flex items-center justify-between text-xs text-slate-500">
+        <div className="flex items-center justify-between text-caption text-neutral-500">
           <span>{resultsLabel}</span>
           {hasAnyFilter ? (
             <button
               type="button"
               onClick={clearAll}
-              className="font-medium text-milsaca-cafezal hover:underline underline-offset-4"
+              className="font-medium text-milsaca-cafezal underline-offset-4 hover:underline"
             >
               Limpar filtros
             </button>

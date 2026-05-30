@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { Plus, FileText } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/empty-state";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/auth";
 import { getCorretoraSubscriptionInfo } from "../_lib/corretora";
@@ -13,7 +14,7 @@ import {
   listContratos,
   CONTRATOS_PAGE_SIZE,
   CONTRATO_STATUS_LABEL,
-  CONTRATO_STATUS_COLOR,
+  CONTRATO_STATUS_TONE,
   CONTRATO_STATUS_ORDER,
   type ContratoStatus,
 } from "./_lib/queries";
@@ -81,17 +82,12 @@ export default async function ContratosCorretoraPage({
     <div className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
-            Contratos
-          </h1>
-          <p className="text-sm text-milsaca-verde-claro">
+          <h1 className="text-h1 text-milsaca-verde">Contratos</h1>
+          <p className="mt-1 text-body-sm text-neutral-600">
             Operações fechadas. Crie a partir de um lead convertido ou direto.
           </p>
         </div>
-        <Button
-          asChild
-          className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
-        >
+        <Button asChild variant="primary">
           <Link href="/painel/corretora/contratos/novo">
             <Plus className="mr-2 h-4 w-4" />
             Novo contrato
@@ -106,8 +102,10 @@ export default async function ContratosCorretoraPage({
         />
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-milsaca-verde-claro">Status:</span>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
+          Status
+        </span>
         {FILTERS.map((f) => {
           const params = new URLSearchParams();
           if (f.value) params.set("status", f.value);
@@ -121,8 +119,8 @@ export default async function ContratosCorretoraPage({
               href={href}
               className={
                 active
-                  ? "rounded-full bg-milsaca-verde px-3 py-1 text-xs font-medium text-milsaca-cream"
-                  : "rounded-full border border-milsaca-cream-escuro px-3 py-1 text-xs text-milsaca-verde-claro hover:text-milsaca-verde"
+                  ? "rounded-pill bg-milsaca-cafezal px-3 py-1 text-caption font-medium text-milsaca-cream"
+                  : "rounded-pill border border-neutral-200 px-3 py-1 text-caption font-medium text-neutral-600 transition-colors hover:border-milsaca-dourado/50 hover:text-milsaca-cafezal"
               }
             >
               {f.label}
@@ -132,77 +130,68 @@ export default async function ContratosCorretoraPage({
       </div>
 
       {contratos.length === 0 ? (
-        <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
-          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-milsaca-verde/10 text-milsaca-verde">
-              <FileText className="h-6 w-6" />
-            </span>
-            <p className="text-sm text-milsaca-verde">
-              Nenhum contrato{status ? " com esse status" : ""}.
-            </p>
-            <p className="text-xs text-milsaca-verde-claro">
-              Crie o primeiro a partir de um lead convertido.
-            </p>
-            <Button
-              asChild
-              size="sm"
-              className="mt-2 bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
-            >
-              <Link href="/painel/corretora/contratos/novo">Novo contrato</Link>
-            </Button>
+        <Card tone="muted" className="border-dashed">
+          <CardContent className="p-card">
+            <EmptyState
+              icon={FileText}
+              title={`Nenhum contrato${status ? " com esse status" : ""}`}
+              description="Crie o primeiro a partir de um lead convertido."
+              cta={{
+                label: "Novo contrato",
+                href: "/painel/corretora/contratos/novo",
+              }}
+            />
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-milsaca-cream-escuro">
+        <Card>
           <CardContent className="overflow-x-auto p-0">
-            <table className="w-full text-sm">
-              <thead className="bg-milsaca-cream-escuro/40 text-xs uppercase tracking-wider text-milsaca-verde-claro">
+            <table className="w-full text-body-sm">
+              <thead className="border-b border-neutral-200 bg-neutral-50 text-caption font-medium uppercase tracking-wider text-neutral-600">
                 <tr>
-                  <th className="px-5 py-3 text-left">Código</th>
-                  <th className="px-5 py-3 text-left">Produtor</th>
-                  <th className="px-5 py-3 text-left">Café</th>
-                  <th className="px-5 py-3 text-right">Sacas</th>
-                  <th className="px-5 py-3 text-right">Valor total</th>
-                  <th className="px-5 py-3 text-left">Status</th>
-                  <th className="px-5 py-3 text-left">Assinado em</th>
+                  <th className="px-5 py-3 text-left font-medium">Código</th>
+                  <th className="px-5 py-3 text-left font-medium">Produtor</th>
+                  <th className="px-5 py-3 text-left font-medium">Café</th>
+                  <th className="px-5 py-3 text-right font-medium">Sacas</th>
+                  <th className="px-5 py-3 text-right font-medium">Valor total</th>
+                  <th className="px-5 py-3 text-left font-medium">Status</th>
+                  <th className="px-5 py-3 text-left font-medium">Assinado em</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-milsaca-cream-escuro">
+              <tbody className="divide-y divide-neutral-200">
                 {contratos.map((c) => (
                   <tr
                     key={c.id}
-                    className="hover:bg-milsaca-cream-escuro/30"
+                    className="transition-colors hover:bg-neutral-50"
                   >
                     <td className="px-5 py-3">
                       <Link
                         href={`/painel/corretora/contratos/${c.id}`}
-                        className="font-medium text-milsaca-verde hover:underline"
+                        className="font-medium text-milsaca-cafezal hover:underline"
                       >
                         {c.code}
                       </Link>
                     </td>
-                    <td className="px-5 py-3 text-milsaca-verde">
+                    <td className="px-5 py-3 text-neutral-700">
                       {c.produtor_nome}
                     </td>
-                    <td className="px-5 py-3 text-milsaca-verde">
+                    <td className="px-5 py-3 text-neutral-700">
                       {c.coffee_type ?? "—"}
                     </td>
-                    <td className="px-5 py-3 text-right text-milsaca-verde">
+                    <td className="px-5 py-3 text-right tabular-nums text-neutral-700">
                       {c.bag_count != null
                         ? c.bag_count.toLocaleString("pt-BR")
                         : "—"}
                     </td>
-                    <td className="px-5 py-3 text-right font-medium text-milsaca-verde">
+                    <td className="px-5 py-3 text-right font-medium tabular-nums text-milsaca-verde">
                       {c.total_value != null ? formatBRL(c.total_value) : "—"}
                     </td>
                     <td className="px-5 py-3">
-                      <Badge
-                        className={`${CONTRATO_STATUS_COLOR[c.status]} hover:${CONTRATO_STATUS_COLOR[c.status]}`}
-                      >
+                      <StatusBadge tone={CONTRATO_STATUS_TONE[c.status]}>
                         {CONTRATO_STATUS_LABEL[c.status]}
-                      </Badge>
+                      </StatusBadge>
                     </td>
-                    <td className="px-5 py-3 text-xs text-milsaca-verde-claro">
+                    <td className="px-5 py-3 text-caption text-neutral-500">
                       {c.signed_at ? formatDate(c.signed_at) : "—"}
                     </td>
                   </tr>
@@ -213,7 +202,11 @@ export default async function ContratosCorretoraPage({
         </Card>
       )}
 
-      <Pagination page={page} totalPages={totalPages} hrefFor={hrefFor} />
+      {totalPages > 1 ? (
+        <div className="border-t border-neutral-200 pt-4">
+          <Pagination page={page} totalPages={totalPages} hrefFor={hrefFor} />
+        </div>
+      ) : null}
     </div>
   );
 }

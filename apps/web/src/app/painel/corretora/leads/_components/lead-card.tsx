@@ -13,13 +13,15 @@ import {
   User2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/card";
+import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { updateLeadStatus } from "../_actions";
 import {
   LEAD_STATUS_LABEL,
-  LEAD_STATUS_COLOR,
+  LEAD_STATUS_TONE,
   LEAD_STATUS_ORDER,
   LEAD_ORIGEM_LABEL,
-  LEAD_ORIGEM_COLOR,
+  LEAD_ORIGEM_TONE,
   type LeadListItem,
   type LeadStatus,
 } from "../_lib/lead-meta";
@@ -42,12 +44,11 @@ const BRL = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 0,
 });
 
-const URGENCIA_STYLE: Record<Urgencia, string> = {
-  quente:
-    "bg-rose-50 text-rose-700 ring-rose-200",
-  morno:
-    "bg-amber-50 text-amber-700 ring-amber-200",
-  frio: "bg-slate-100 text-slate-600 ring-slate-200",
+// Urgência derivada → tone semântico do <StatusBadge> (fundação D1).
+const URGENCIA_TONE: Record<Urgencia, StatusTone> = {
+  quente: "danger",
+  morno: "warning",
+  frio: "neutral",
 };
 
 /**
@@ -78,67 +79,50 @@ export function LeadCard({
   const local = [lead.city, lead.state].filter(Boolean).join("/");
 
   return (
-    <article className="group rounded-card border border-milsaca-cream-escuro bg-white p-5 shadow-card transition-all hover:border-milsaca-dourado/40 hover:shadow-card-hover sm:p-6">
+    <Card
+      tone="default"
+      interactive
+      className="group p-card sm:p-6"
+    >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         {/* Identidade do lead */}
-        <div className="flex-1 space-y-2">
+        <div className="flex-1 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Link
               href={`/painel/corretora/leads/${lead.id}`}
-              className="text-base font-semibold text-milsaca-verde hover:underline"
+              className="text-h3 text-milsaca-verde hover:underline"
             >
               {lead.produtor_nome}
             </Link>
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider",
-                lead.produtor_kind === "produtor"
-                  ? "bg-emerald-100 text-emerald-800"
-                  : "bg-milsaca-dourado/15 text-milsaca-cafezal",
-              )}
+            <StatusBadge
+              tone={lead.produtor_kind === "produtor" ? "success" : "premium"}
+              withDot={false}
+              className="uppercase tracking-wider"
             >
               <User2 className="h-2.5 w-2.5" />
               {lead.produtor_kind}
-            </span>
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-[10px] font-medium",
-                LEAD_STATUS_COLOR[lead.status],
-              )}
-            >
+            </StatusBadge>
+            <StatusBadge tone={LEAD_STATUS_TONE[lead.status]} withDot={false}>
               {LEAD_STATUS_LABEL[lead.status]}
-            </span>
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset",
-                URGENCIA_STYLE[next.urgencia],
-              )}
+            </StatusBadge>
+            <StatusBadge
+              tone={URGENCIA_TONE[next.urgencia]}
               title={`Urgência: ${URGENCIA_LABEL[next.urgencia]}`}
             >
-              <span
-                className={cn(
-                  "h-1.5 w-1.5 rounded-full",
-                  next.urgencia === "quente" && "bg-rose-500",
-                  next.urgencia === "morno" && "bg-amber-500",
-                  next.urgencia === "frio" && "bg-slate-400",
-                )}
-              />
               {URGENCIA_LABEL[next.urgencia]}
-            </span>
+            </StatusBadge>
             {lead.origem ? (
-              <span
-                className={cn(
-                  "rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset",
-                  LEAD_ORIGEM_COLOR[lead.origem],
-                )}
+              <StatusBadge
+                tone={LEAD_ORIGEM_TONE[lead.origem]}
+                withDot={false}
                 title={`Origem: ${LEAD_ORIGEM_LABEL[lead.origem]}`}
               >
                 {LEAD_ORIGEM_LABEL[lead.origem]}
-              </span>
+              </StatusBadge>
             ) : null}
           </div>
 
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-milsaca-verde-claro">
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-body-sm text-neutral-600">
             {local ? (
               <span className="inline-flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
@@ -168,20 +152,20 @@ export function LeadCard({
           {/* Valor proposto + próxima ação */}
           <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 pt-1">
             {lead.proposed_price != null ? (
-              <p className="text-lg font-semibold tracking-tight text-milsaca-verde">
+              <p className="text-h3 tabular-nums text-milsaca-verde">
                 {BRL.format(lead.proposed_price)}
-                <span className="ml-1 text-[10px] font-medium text-milsaca-verde-claro">
+                <span className="ml-1 text-caption font-medium text-neutral-500">
                   /sc
                 </span>
               </p>
             ) : (
-              <p className="text-xs italic text-milsaca-verde-claro/70">
+              <p className="text-caption italic text-neutral-400">
                 Sem valor proposto
               </p>
             )}
           </div>
 
-          <p className="text-xs leading-relaxed text-milsaca-verde-claro">
+          <p className="text-body-sm leading-relaxed text-neutral-600">
             <span className="font-semibold text-milsaca-cafezal">
               Próxima ação:
             </span>{" "}
@@ -197,10 +181,10 @@ export function LeadCard({
             rel="noopener noreferrer"
             title={wa.preview}
             className={cn(
-              "inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-xs font-semibold transition-colors",
+              "inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-caption font-semibold transition-colors",
               wa.hasPhone
                 ? "bg-[#25D366] text-white hover:bg-[#1ebe5d]"
-                : "bg-milsaca-cream-escuro text-milsaca-verde-claro hover:bg-milsaca-cream-escuro/80",
+                : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200",
             )}
           >
             <MessageCircle className="h-3.5 w-3.5" />
@@ -209,7 +193,7 @@ export function LeadCard({
 
           <Link
             href={`/painel/corretora/leads/${lead.id}#nova-proposta`}
-            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-milsaca-cafezal/40 bg-milsaca-cafezal/5 px-3 text-xs font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-cafezal/15"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-milsaca-cafezal/40 bg-milsaca-cafezal/5 px-3 text-caption font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-cafezal/15"
           >
             <HandCoins className="h-3.5 w-3.5" />
             Criar proposta
@@ -221,7 +205,7 @@ export function LeadCard({
               <input type="hidden" name="status" value={advanceTo} />
               <button
                 type="submit"
-                className="inline-flex h-9 items-center gap-1.5 rounded-md border border-milsaca-dourado/40 bg-milsaca-dourado/10 px-3 text-xs font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-dourado/20"
+                className="inline-flex h-9 items-center gap-1.5 rounded-md border border-milsaca-dourado/50 bg-milsaca-dourado/10 px-3 text-caption font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-dourado/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 {advanceTo === "em_negociacao"
                   ? "Marcar em negociação"
@@ -233,7 +217,7 @@ export function LeadCard({
 
           <Link
             href={`/painel/corretora/leads/${lead.id}`}
-            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-milsaca-cream-escuro px-3 text-xs font-semibold text-milsaca-verde-claro transition-colors hover:text-milsaca-verde"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-neutral-200 px-3 text-caption font-semibold text-neutral-600 transition-colors hover:border-milsaca-dourado/50 hover:text-milsaca-cafezal"
           >
             <MoreHorizontal className="h-3.5 w-3.5" />
             Ver detalhes
@@ -242,11 +226,11 @@ export function LeadCard({
       </div>
 
       {lead.notes ? (
-        <p className="mt-4 line-clamp-2 rounded-md border border-milsaca-cream-escuro/60 bg-milsaca-cream/50 px-3 py-2 text-xs italic text-milsaca-verde-claro">
+        <p className="mt-4 line-clamp-2 rounded-md border border-neutral-200 bg-milsaca-cream/60 px-3 py-2 text-caption italic text-neutral-600">
           “{lead.notes}”
         </p>
       ) : null}
-    </article>
+    </Card>
   );
 }
 

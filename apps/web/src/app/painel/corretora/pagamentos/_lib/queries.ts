@@ -1,5 +1,6 @@
 import { createClient } from "@milsaca/db/web/server";
 import type { Database } from "@milsaca/types/database";
+import type { StatusTone } from "@/components/status-badge";
 
 export type PagamentoStatus = Database["public"]["Enums"]["pagamento_status"];
 
@@ -22,6 +23,14 @@ export const PAGAMENTO_STATUS_COLOR: Record<PagamentoStatus, string> = {
   pago: "bg-emerald-100 text-emerald-800",
   vencido: "bg-rose-100 text-rose-800",
   cancelado: "bg-slate-200 text-slate-700",
+};
+
+// Tone semântico (fundação D1) — usado pelo <StatusBadge> nas listagens.
+export const PAGAMENTO_STATUS_TONE: Record<PagamentoStatus, StatusTone> = {
+  pendente: "warning",
+  pago: "success",
+  vencido: "danger",
+  cancelado: "neutral",
 };
 
 export type PagamentoItem = {

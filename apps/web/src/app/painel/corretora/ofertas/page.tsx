@@ -3,7 +3,8 @@ import { Plus, Store, FileText } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/empty-state";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { SubmitButton } from "@/components/submit-button";
 import { getProfile } from "@/lib/auth";
@@ -12,7 +13,7 @@ import {
   listOfertas,
   OFERTAS_PAGE_SIZE,
   OFERTA_STATUS_LABEL,
-  OFERTA_STATUS_COLOR,
+  OFERTA_STATUS_TONE,
   OFERTA_STATUS_ORDER,
   type OfertaStatus,
 } from "./_lib/queries";
@@ -91,19 +92,14 @@ export default async function OfertasPage({
     <div className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-milsaca-verde sm:text-3xl">
-            Ofertas a compradores
-          </h1>
-          <p className="text-sm text-milsaca-verde-claro">
+          <h1 className="text-h1 text-milsaca-verde">Ofertas a compradores</h1>
+          <p className="mt-1 max-w-2xl text-body-sm text-neutral-600">
             Registre o que você ofertou a cada cafeeira/comprador e acompanhe o
             status. A conversa acontece no WhatsApp; aqui fica o controle. Ao
             aceitar, gere o contrato em um clique.
           </p>
         </div>
-        <Button
-          asChild
-          className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
-        >
+        <Button asChild variant="primary">
           <Link href="/painel/corretora/ofertas/novo">
             <Plus className="mr-2 h-4 w-4" />
             Nova oferta
@@ -111,8 +107,10 @@ export default async function OfertasPage({
         </Button>
       </header>
 
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-milsaca-verde-claro">Filtrar:</span>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
+          Status
+        </span>
         {FILTERS.map((f) => {
           const params = new URLSearchParams();
           if (f.value) params.set("status", f.value);
@@ -126,8 +124,8 @@ export default async function OfertasPage({
               href={href}
               className={
                 active
-                  ? "rounded-full bg-milsaca-verde px-3 py-1 text-xs font-medium text-milsaca-cream"
-                  : "rounded-full border border-milsaca-cream-escuro px-3 py-1 text-xs text-milsaca-verde-claro hover:text-milsaca-verde"
+                  ? "rounded-pill bg-milsaca-cafezal px-3 py-1 text-caption font-medium text-milsaca-cream"
+                  : "rounded-pill border border-neutral-200 px-3 py-1 text-caption font-medium text-neutral-600 transition-colors hover:border-milsaca-dourado/50 hover:text-milsaca-cafezal"
               }
             >
               {f.label}
@@ -137,69 +135,63 @@ export default async function OfertasPage({
       </div>
 
       {itens.length === 0 ? (
-        <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
-          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-milsaca-verde/10 text-milsaca-verde">
-              <Store className="h-6 w-6" />
-            </span>
-            <p className="text-sm text-milsaca-verde">
-              Nenhuma oferta{status ? " com esse status" : ""}.
-            </p>
-            <p className="text-xs text-milsaca-verde-claro">
-              Ofereça um lote a um comprador para acompanhar aqui.
-            </p>
-            <Button
-              asChild
-              size="sm"
-              className="mt-2 bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
-            >
-              <Link href="/painel/corretora/ofertas/novo">Nova oferta</Link>
-            </Button>
+        <Card tone="muted" className="border-dashed">
+          <CardContent className="p-card">
+            <EmptyState
+              icon={Store}
+              title={`Nenhuma oferta${status ? " com esse status" : ""}`}
+              description="Ofereça um lote a um comprador para acompanhar aqui."
+              cta={{
+                label: "Nova oferta",
+                href: "/painel/corretora/ofertas/novo",
+              }}
+            />
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-milsaca-cream-escuro">
+        <Card>
           <CardContent className="overflow-x-auto p-0">
-            <table className="w-full text-sm">
-              <thead className="bg-milsaca-cream-escuro/40 text-xs uppercase tracking-wider text-milsaca-verde-claro">
+            <table className="w-full text-body-sm">
+              <thead className="border-b border-neutral-200 bg-neutral-50 text-caption font-medium uppercase tracking-wider text-neutral-600">
                 <tr>
-                  <th className="px-5 py-3 text-left">Comprador</th>
-                  <th className="px-5 py-3 text-left">Lote</th>
-                  <th className="px-5 py-3 text-right">Preço/saca</th>
-                  <th className="px-5 py-3 text-right">Sacas</th>
-                  <th className="px-5 py-3 text-left">Validade</th>
-                  <th className="px-5 py-3 text-left">Status</th>
+                  <th className="px-5 py-3 text-left font-medium">Comprador</th>
+                  <th className="px-5 py-3 text-left font-medium">Lote</th>
+                  <th className="px-5 py-3 text-right font-medium">Preço/saca</th>
+                  <th className="px-5 py-3 text-right font-medium">Sacas</th>
+                  <th className="px-5 py-3 text-left font-medium">Validade</th>
+                  <th className="px-5 py-3 text-left font-medium">Status</th>
                   <th className="px-5 py-3"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-milsaca-cream-escuro">
+              <tbody className="divide-y divide-neutral-200">
                 {itens.map((o) => {
                   const aberta = o.status === "enviada" || o.status === "rascunho";
                   return (
-                    <tr key={o.id} className="hover:bg-milsaca-cream-escuro/30">
+                    <tr
+                      key={o.id}
+                      className="transition-colors hover:bg-neutral-50"
+                    >
                       <td className="px-5 py-3 font-medium text-milsaca-verde">
                         {o.comprador_nome}
                       </td>
-                      <td className="px-5 py-3 text-milsaca-verde-claro">
+                      <td className="px-5 py-3 text-neutral-600">
                         {o.lote_codigo ?? "—"}
                       </td>
-                      <td className="px-5 py-3 text-right font-medium text-milsaca-verde">
+                      <td className="px-5 py-3 text-right font-medium tabular-nums text-milsaca-verde">
                         {formatBRL(o.preco_saca)}
                       </td>
-                      <td className="px-5 py-3 text-right text-milsaca-verde">
+                      <td className="px-5 py-3 text-right tabular-nums text-neutral-700">
                         {o.bag_count != null
                           ? o.bag_count.toLocaleString("pt-BR")
                           : "—"}
                       </td>
-                      <td className="px-5 py-3 text-milsaca-verde">
+                      <td className="px-5 py-3 text-neutral-700">
                         {formatDate(o.validade_ate)}
                       </td>
                       <td className="px-5 py-3">
-                        <Badge
-                          className={`${OFERTA_STATUS_COLOR[o.status]} hover:${OFERTA_STATUS_COLOR[o.status]}`}
-                        >
+                        <StatusBadge tone={OFERTA_STATUS_TONE[o.status]}>
                           {OFERTA_STATUS_LABEL[o.status]}
-                        </Badge>
+                        </StatusBadge>
                       </td>
                       <td className="px-5 py-3">
                         <div className="flex items-center justify-end gap-3 whitespace-nowrap">
@@ -209,9 +201,10 @@ export default async function OfertasPage({
                                 <input type="hidden" name="id" value={o.id} />
                                 <input type="hidden" name="status" value="aceita" />
                                 <SubmitButton
+                                  variant="success"
                                   size="sm"
                                   pendingLabel="..."
-                                  className="h-auto bg-emerald-600 px-2 py-1 text-xs text-white hover:bg-emerald-700"
+                                  className="h-auto px-2 py-1 text-caption"
                                 >
                                   Aceita
                                 </SubmitButton>
@@ -223,7 +216,7 @@ export default async function OfertasPage({
                                   size="sm"
                                   variant="ghost"
                                   pendingLabel="..."
-                                  className="h-auto p-0 text-xs text-rose-700 hover:bg-transparent hover:underline"
+                                  className="h-auto p-0 text-caption text-danger-700 hover:bg-transparent hover:underline"
                                 >
                                   Recusada
                                 </SubmitButton>
@@ -233,8 +226,9 @@ export default async function OfertasPage({
                           {o.status === "aceita" ? (
                             <Button
                               asChild
+                              variant="primary"
                               size="sm"
-                              className="h-auto gap-1 bg-milsaca-verde px-2 py-1 text-xs text-milsaca-cream hover:bg-milsaca-verde-claro"
+                              className="h-auto gap-1 px-2 py-1 text-caption"
                             >
                               <Link href={gerarContratoHref(o)}>
                                 <FileText className="h-3.5 w-3.5" />
@@ -247,7 +241,7 @@ export default async function OfertasPage({
                             <ConfirmSubmit
                               variant="ghost"
                               size="sm"
-                              className="h-auto p-0 text-xs text-milsaca-verde-claro hover:bg-transparent hover:underline"
+                              className="h-auto p-0 text-caption text-neutral-500 hover:bg-transparent hover:underline"
                               confirmTitle="Remover oferta?"
                               confirmMessage={<p>A oferta sai do histórico.</p>}
                               confirmButtonLabel="Remover"
@@ -267,7 +261,11 @@ export default async function OfertasPage({
         </Card>
       )}
 
-      <Pagination page={page} totalPages={totalPages} hrefFor={hrefFor} />
+      {totalPages > 1 ? (
+        <div className="border-t border-neutral-200 pt-4">
+          <Pagination page={page} totalPages={totalPages} hrefFor={hrefFor} />
+        </div>
+      ) : null}
     </div>
   );
 }

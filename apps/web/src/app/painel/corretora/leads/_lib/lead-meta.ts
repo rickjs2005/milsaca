@@ -8,6 +8,7 @@
  */
 
 import type { Database } from "@milsaca/types/database";
+import type { StatusTone } from "@/components/status-badge";
 
 export type LeadStatus = Database["public"]["Enums"]["lead_status"];
 
@@ -33,6 +34,24 @@ export const LEAD_STATUS_COLOR: Record<LeadStatus, string> = {
   convertido: "bg-emerald-100 text-emerald-800",
   perdido: "bg-rose-100 text-rose-800",
   arquivado: "bg-slate-200 text-slate-700",
+};
+
+// Tone semântico (fundação D1) — usado pelo <StatusBadge> nos cards.
+export const LEAD_STATUS_TONE: Record<LeadStatus, StatusTone> = {
+  novo: "premium",
+  em_negociacao: "info",
+  convertido: "success",
+  perdido: "danger",
+  arquivado: "neutral",
+};
+
+// Origem do lead → tone do <StatusBadge>. WhatsApp mantém o verde da marca
+// via tone success (folha); demais seguem a paleta semântica.
+export const LEAD_ORIGEM_TONE: Record<LeadOrigem, StatusTone> = {
+  whatsapp: "success",
+  formulario: "info",
+  vitrine: "premium",
+  manual: "neutral",
 };
 
 /**
