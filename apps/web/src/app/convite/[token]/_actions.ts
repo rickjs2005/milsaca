@@ -4,9 +4,8 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { validarSenha } from "@/lib/password";
 import { createHash } from "node:crypto";
-
-const MIN_PASSWORD = 8;
 
 /**
  * Aceita convite de corretora: cria conta + senha + vincula à corretora.
@@ -46,8 +45,8 @@ export async function aceitarConvite(formData: FormData) {
 
   if (!email.includes("@")) err("Informe um email válido.");
   if (!fullName) err("Informe seu nome completo.");
-  if (password.length < MIN_PASSWORD)
-    err(`Senha precisa ter pelo menos ${MIN_PASSWORD} caracteres.`);
+  const fraca = validarSenha(password);
+  if (fraca) err(fraca);
   if (password !== confirm) err("Senhas não conferem.");
 
   const supabase = await createClient();

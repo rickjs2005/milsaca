@@ -13,10 +13,9 @@ import {
 } from "@/lib/brasil-schemas";
 import { getFounderProgramStatus } from "@/lib/founder-program";
 import { POLITICA_VERSAO, TERMOS_VERSAO } from "@/lib/legal";
+import { validarSenha } from "@/lib/password";
 import { createHash } from "node:crypto";
 import type { Profile } from "@milsaca/types";
-
-const MIN_PASSWORD = 8;
 
 type RoleChoice = "produtor" | "corretora";
 
@@ -86,8 +85,9 @@ export async function signUp(formData: FormData) {
     params.set("error", "Preencha: " + missing.join(", "));
     redirect(`/cadastrar?${params.toString()}`);
   }
-  if (password.length < MIN_PASSWORD) {
-    params.set("error", `Senha precisa ter pelo menos ${MIN_PASSWORD} caracteres`);
+  const fraca = validarSenha(password);
+  if (fraca) {
+    params.set("error", fraca);
     redirect(`/cadastrar?${params.toString()}`);
   }
   if (password !== confirm) {

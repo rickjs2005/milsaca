@@ -2,17 +2,15 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
-
-const MIN_PASSWORD = 8;
+import { validarSenha } from "@/lib/password";
 
 export async function resetPassword(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm") ?? "");
 
-  if (!password || password.length < MIN_PASSWORD) {
-    redirect(
-      `/redefinir-senha?error=${encodeURIComponent(`Senha precisa ter pelo menos ${MIN_PASSWORD} caracteres`)}`,
-    );
+  const fraca = validarSenha(password);
+  if (fraca) {
+    redirect(`/redefinir-senha?error=${encodeURIComponent(fraca)}`);
   }
   if (password !== confirm) {
     redirect("/redefinir-senha?error=Senhas%20n%C3%A3o%20conferem");
