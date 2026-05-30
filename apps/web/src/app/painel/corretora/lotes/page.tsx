@@ -14,6 +14,7 @@ import {
   listLotes,
   loadCotacoesRef,
   loadLotesKpis,
+  LOTES_PAGE_SIZE,
   LOTE_STATUS_ORDER,
 } from "./_lib/queries";
 import type { LoteStatus } from "./_lib/lote-meta";
@@ -25,6 +26,7 @@ type SearchParams = Promise<{
   status?: string;
   specie?: string;
   safra?: string;
+  page?: string;
 }>;
 
 function isLoteStatus(v: string | undefined): v is LoteStatus {
@@ -61,13 +63,16 @@ export default async function LotesPage({
   const status = isLoteStatus(sp.status) ? sp.status : undefined;
   const specie = isSpecie(sp.specie) ? sp.specie : undefined;
   const safra = typeof sp.safra === "string" && sp.safra ? sp.safra : undefined;
+  const page = Math.max(1, Number(sp.page) || 1);
 
-  const [lotes, cotacoes, kpis, corretoraName] = await Promise.all([
-    listLotes(profile.corretora_id, { status, specie }),
-    loadCotacoesRef(),
-    loadLotesKpis(profile.corretora_id),
-    loadCorretoraName(profile.corretora_id),
-  ]);
+  const [{ rows: lotes, count }, cotacoes, kpis, corretoraName] =
+    await Promise.all([
+      listLotes(profile.corretora_id, { status, specie }, page),
+      loadCotacoesRef(),
+      loadLotesKpis(profile.corretora_id),
+      loadCorretoraName(profile.corretora_id),
+    ]);
+  const totalPages = Math.max(1, Math.ceil(count / LOTES_PAGE_SIZE));
 
   const cotacoesBySpecie = {
     arabica: cotacoes.find((c) => c.specie === "arabica")?.price ?? null,
@@ -134,6 +139,8 @@ export default async function LotesPage({
         corretoraName={corretoraName}
         cotacoesBySpecie={cotacoesBySpecie}
         current={{ status, specie, safra }}
+        page={page}
+        totalPages={totalPages}
       />
     </div>
   );

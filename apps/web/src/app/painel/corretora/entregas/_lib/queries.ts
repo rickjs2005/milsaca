@@ -100,11 +100,16 @@ function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+export const ENTREGAS_PAGE_SIZE = 20;
+
 export async function listEntregas(
   corretoraId: string,
   filter: { status?: EntregaStatus } = {},
-): Promise<EntregaListItem[]> {
+  page = 1,
+): Promise<{ rows: EntregaListItem[]; count: number }> {
   const supabase = await createClient();
+  const from = (page - 1) * ENTREGAS_PAGE_SIZE;
+  const to = from + ENTREGAS_PAGE_SIZE - 1;
   let q = supabase
     .from("entregas")
     .select(
@@ -112,17 +117,39 @@ export async function listEntregas(
        contrato_id, produtor_id, created_at, updated_at,
        contrato:contratos!entregas_contrato_id_fkey(code),
        produtor:profiles!entregas_produtor_id_fkey(full_name)`,
+      { count: "exact" },
     )
     .eq("corretora_id", corretoraId)
     .order("data_prevista", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: false })
-    .limit(500);
+    .range(from, to);
 
   if (filter.status) q = q.eq("status", filter.status);
 
-  const { data } = await q;
+  const { data, count } = await q;
   const today = todayISO();
-  return ((data ?? []) as Row[]).map((r) => toListItem(r, today));
+  return {
+    rows: ((data ?? []) as Row[]).map((r) => toListItem(r, today)),
+    count: count ?? 0,
+  };
+}
+
+/**
+ * Conta entregas em atraso (pendentes com data_prevista passada) —
+ * global, independente de filtro/paginação. Pro alerta do topo da lista.
+ */
+export async function countEntregasAtrasadas(
+  corretoraId: string,
+): Promise<number> {
+  const supabase = await createClient();
+  const today = todayISO();
+  const { count } = await supabase
+    .from("entregas")
+    .select("*", { count: "exact", head: true })
+    .eq("corretora_id", corretoraId)
+    .in("status", PENDENTE_STATUS)
+    .lt("data_prevista", today);
+  return count ?? 0;
 }
 
 export type EntregaDetail = EntregaListItem & {

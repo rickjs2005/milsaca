@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Inbox, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Pagination } from "@/components/pagination";
 import {
   LEAD_STATUS_LABEL,
   LEAD_STATUS_ORDER,
@@ -54,10 +55,14 @@ export function LeadsGrid({
   leads,
   corretoraName,
   current,
+  page,
+  totalPages,
 }: {
   leads: LeadListItem[];
   corretoraName: string;
   current: ToolbarState;
+  page: number;
+  totalPages: number;
 }) {
   const pathname = usePathname();
   const params = useSearchParams();
@@ -88,6 +93,16 @@ export function LeadsGrid({
     const next = new URLSearchParams(params.toString());
     if (value) next.set(key, value);
     else next.delete(key);
+    // Trocar de filtro reseta a paginação.
+    next.delete("page");
+    const qs = next.toString();
+    return qs ? `${pathname}?${qs}` : pathname;
+  }
+
+  function pageHref(p: number): string {
+    const next = new URLSearchParams(params.toString());
+    if (p > 1) next.set("page", String(p));
+    else next.delete("page");
     const qs = next.toString();
     return qs ? `${pathname}?${qs}` : pathname;
   }
@@ -205,6 +220,10 @@ export function LeadsGrid({
           ))}
         </div>
       )}
+
+      {/* Paginação server-side. A busca e a urgência filtram apenas a
+          página atual; pra varrer tudo, navegue pelas páginas. */}
+      <Pagination page={page} totalPages={totalPages} hrefFor={pageHref} />
     </div>
   );
 }

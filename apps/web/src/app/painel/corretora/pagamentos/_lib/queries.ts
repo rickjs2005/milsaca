@@ -57,11 +57,16 @@ type Row = {
   contrato: { code: string } | { code: string }[] | null;
 };
 
+export const PAGAMENTOS_PAGE_SIZE = 20;
+
 export async function listPagamentos(
   corretoraId: string,
   filter: { status?: PagamentoStatus } = {},
-): Promise<PagamentoItem[]> {
+  page = 1,
+): Promise<{ rows: PagamentoItem[]; count: number }> {
   const supabase = await createClient();
+  const from = (page - 1) * PAGAMENTOS_PAGE_SIZE;
+  const to = from + PAGAMENTOS_PAGE_SIZE - 1;
   let q = supabase
     .from("produtor_pagamentos")
     .select(
@@ -69,33 +74,61 @@ export async function listPagamentos(
        comprovante_url, observacoes, created_at,
        produtor:profiles!produtor_pagamentos_produtor_id_fkey(full_name),
        contrato:contratos!produtor_pagamentos_contrato_id_fkey(code)`,
+      { count: "exact" },
     )
     .eq("corretora_id", corretoraId)
     .order("created_at", { ascending: false })
-    .limit(500);
+    .range(from, to);
 
   if (filter.status) q = q.eq("status", filter.status);
 
-  const { data } = await q;
+  const { data, count } = await q;
   const rows = (data ?? []) as unknown as Row[];
 
-  return rows.map((r): PagamentoItem => {
-    const prod = pickOne(r.produtor);
-    const cont = pickOne(r.contrato);
-    return {
-      id: r.id,
-      valor_bruto: Number(r.valor_bruto),
-      valor_liquido: Number(r.valor_liquido),
-      status: r.status,
-      data_prevista: r.data_prevista,
-      data_paga: r.data_paga,
-      comprovante_url: r.comprovante_url,
-      observacoes: r.observacoes,
-      created_at: r.created_at,
-      contrato_code: cont?.code ?? null,
-      produtor_nome: prod?.full_name ?? "—",
-    };
-  });
+  return {
+    rows: rows.map((r): PagamentoItem => {
+      const prod = pickOne(r.produtor);
+      const cont = pickOne(r.contrato);
+      return {
+        id: r.id,
+        valor_bruto: Number(r.valor_bruto),
+        valor_liquido: Number(r.valor_liquido),
+        status: r.status,
+        data_prevista: r.data_prevista,
+        data_paga: r.data_paga,
+        comprovante_url: r.comprovante_url,
+        observacoes: r.observacoes,
+        created_at: r.created_at,
+        contrato_code: cont?.code ?? null,
+        produtor_nome: prod?.full_name ?? "—",
+      };
+    }),
+    count: count ?? 0,
+  };
+}
+
+/**
+ * Totais (líquido) de "a pagar" (pendente + vencido) e "já pago" —
+ * globais, independentes de filtro/paginação. Pros cards do topo.
+ */
+export async function sumPagamentosLiquido(
+  corretoraId: string,
+): Promise<{ aPagar: number; pago: number }> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("produtor_pagamentos")
+    .select("valor_liquido, status")
+    .eq("corretora_id", corretoraId);
+
+  const rows = (data ?? []) as { valor_liquido: number | string; status: PagamentoStatus }[];
+  let aPagar = 0;
+  let pago = 0;
+  for (const r of rows) {
+    const v = Number(r.valor_liquido);
+    if (r.status === "pendente" || r.status === "vencido") aPagar += v;
+    else if (r.status === "pago") pago += v;
+  }
+  return { aPagar, pago };
 }
 
 /**

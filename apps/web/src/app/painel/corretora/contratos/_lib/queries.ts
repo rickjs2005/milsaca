@@ -84,28 +84,34 @@ export async function getProdutorIdDoLote(
   return data?.produtor_id ?? null;
 }
 
+export const CONTRATOS_PAGE_SIZE = 20;
+
 export async function listContratos(
   corretoraId: string,
   filter: { status?: ContratoStatus } = {},
-): Promise<ContratoListItem[]> {
+  page = 1,
+): Promise<{ rows: ContratoListItem[]; count: number }> {
   const supabase = await createClient();
+  const from = (page - 1) * CONTRATOS_PAGE_SIZE;
+  const to = from + CONTRATOS_PAGE_SIZE - 1;
   let q = supabase
     .from("contratos")
     .select(
       `id, code, status, coffee_type, bag_count, total_value, signed_at,
        created_at, updated_at, produtor_id, lead_id,
        produtor:profiles!contratos_produtor_id_fkey(id, full_name, phone)`,
+      { count: "exact" },
     )
     .eq("corretora_id", corretoraId)
     .order("updated_at", { ascending: false })
-    .limit(500);
+    .range(from, to);
 
   if (filter.status) q = q.eq("status", filter.status);
 
-  const { data } = await q;
+  const { data, count } = await q;
   const rows = (data ?? []) as ContratoRow[];
 
-  return rows.map((r): ContratoListItem => {
+  const mapped = rows.map((r): ContratoListItem => {
     const p = pickOne(r.produtor);
     return {
       id: r.id,
@@ -123,6 +129,8 @@ export async function listContratos(
       lead_id: r.lead_id,
     };
   });
+
+  return { rows: mapped, count: count ?? 0 };
 }
 
 export type ContratoDetail = ContratoListItem & {

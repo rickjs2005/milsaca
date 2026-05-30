@@ -7,17 +7,25 @@ import { getProfile } from "@/lib/auth";
 import { getCorretoraSubscriptionInfo } from "../_lib/corretora";
 import { isProOrAbove } from "../_lib/plan-gate";
 import { LockedHint } from "../_components/locked-hint";
+import { Pagination } from "@/components/pagination";
 import {
   ENTREGA_STATUS_COLOR,
   ENTREGA_STATUS_LABEL,
   ENTREGA_STATUS_ORDER,
+  ENTREGAS_PAGE_SIZE,
+  countEntregasAtrasadas,
   listEntregas,
   type EntregaStatus,
 } from "./_lib/queries";
 
 export const metadata = { title: "Entregas — Milsaca" };
 
-type SearchParams = Promise<{ status?: string; ok?: string; error?: string }>;
+type SearchParams = Promise<{
+  status?: string;
+  page?: string;
+  ok?: string;
+  error?: string;
+}>;
 
 function fmtDate(iso: string | null) {
   if (!iso) return "—";
@@ -35,17 +43,30 @@ export default async function EntregasPage({
   if (!profile?.corretora_id) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
   }
-  const { status, ok, error } = await searchParams;
+  const { status, page: pageParam, ok, error } = await searchParams;
   const filter = ENTREGA_STATUS_ORDER.includes(status as EntregaStatus)
     ? (status as EntregaStatus)
     : undefined;
+  const page = Math.max(1, Number(pageParam) || 1);
 
-  const [entregas, subscription] = await Promise.all([
-    listEntregas(profile.corretora_id, { status: filter }),
-    getCorretoraSubscriptionInfo(profile.corretora_id),
-  ]);
-  const atrasadasCt = entregas.filter((e) => e.is_atrasada).length;
+  const [{ rows: entregas, count }, atrasadasCt, subscription] =
+    await Promise.all([
+      listEntregas(profile.corretora_id, { status: filter }, page),
+      countEntregasAtrasadas(profile.corretora_id),
+      getCorretoraSubscriptionInfo(profile.corretora_id),
+    ]);
   const isPro = isProOrAbove(subscription);
+  const totalPages = Math.max(1, Math.ceil(count / ENTREGAS_PAGE_SIZE));
+
+  function hrefFor(p: number): string {
+    const params = new URLSearchParams();
+    if (filter) params.set("status", filter);
+    if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return qs
+      ? `/painel/corretora/entregas?${qs}`
+      : "/painel/corretora/entregas";
+  }
 
   return (
     <div className="space-y-6">
@@ -195,6 +216,8 @@ export default async function EntregasPage({
           </table>
         </div>
       )}
+
+      <Pagination page={page} totalPages={totalPages} hrefFor={hrefFor} />
     </div>
   );
 }

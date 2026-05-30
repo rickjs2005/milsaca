@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Package, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Pagination } from "@/components/pagination";
 import {
   LOTE_STATUS_LABEL,
   LOTE_STATUS_ORDER,
@@ -35,11 +36,15 @@ export function LotesGrid({
   corretoraName,
   cotacoesBySpecie,
   current,
+  page,
+  totalPages,
 }: {
   lotes: LoteRow[];
   corretoraName: string;
   cotacoesBySpecie: Record<Specie, number | null>;
   current: { status?: LoteStatus; specie?: Specie; safra?: string };
+  page: number;
+  totalPages: number;
 }) {
   const pathname = usePathname();
   const params = useSearchParams();
@@ -79,6 +84,16 @@ export function LotesGrid({
     const next = new URLSearchParams(params.toString());
     if (value) next.set(key, value);
     else next.delete(key);
+    // Trocar de filtro reseta a paginação.
+    next.delete("page");
+    const qs = next.toString();
+    return qs ? `${pathname}?${qs}` : pathname;
+  }
+
+  function pageHref(p: number): string {
+    const next = new URLSearchParams(params.toString());
+    if (p > 1) next.set("page", String(p));
+    else next.delete("page");
     const qs = next.toString();
     return qs ? `${pathname}?${qs}` : pathname;
   }
@@ -226,6 +241,9 @@ export function LotesGrid({
           ))}
         </div>
       )}
+
+      {/* Paginação server-side. Busca e safra filtram só a página atual. */}
+      <Pagination page={page} totalPages={totalPages} hrefFor={pageHref} />
     </div>
   );
 }

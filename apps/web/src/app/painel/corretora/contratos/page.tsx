@@ -8,8 +8,10 @@ import { getProfile } from "@/lib/auth";
 import { getCorretoraSubscriptionInfo } from "../_lib/corretora";
 import { isProOrAbove } from "../_lib/plan-gate";
 import { LockedHint } from "../_components/locked-hint";
+import { Pagination } from "@/components/pagination";
 import {
   listContratos,
+  CONTRATOS_PAGE_SIZE,
   CONTRATO_STATUS_LABEL,
   CONTRATO_STATUS_COLOR,
   CONTRATO_STATUS_ORDER,
@@ -18,7 +20,7 @@ import {
 
 export const metadata = { title: "Contratos — Painel da corretora" };
 
-type SearchParams = Promise<{ status?: string }>;
+type SearchParams = Promise<{ status?: string; page?: string }>;
 
 const FILTERS: { value: "" | ContratoStatus; label: string }[] = [
   { value: "", label: "Todos" },
@@ -56,12 +58,24 @@ export default async function ContratosCorretoraPage({
   }
   const sp = await searchParams;
   const status = isContratoStatus(sp.status) ? sp.status : undefined;
+  const page = Math.max(1, Number(sp.page) || 1);
 
-  const [contratos, subscription] = await Promise.all([
-    listContratos(profile.corretora_id, { status }),
+  const [{ rows: contratos, count }, subscription] = await Promise.all([
+    listContratos(profile.corretora_id, { status }, page),
     getCorretoraSubscriptionInfo(profile.corretora_id),
   ]);
   const isPro = isProOrAbove(subscription);
+  const totalPages = Math.max(1, Math.ceil(count / CONTRATOS_PAGE_SIZE));
+
+  function hrefFor(p: number): string {
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
+    if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return qs
+      ? `/painel/corretora/contratos?${qs}`
+      : "/painel/corretora/contratos";
+  }
 
   return (
     <div className="space-y-6">
@@ -198,6 +212,8 @@ export default async function ContratosCorretoraPage({
           </CardContent>
         </Card>
       )}
+
+      <Pagination page={page} totalPages={totalPages} hrefFor={hrefFor} />
     </div>
   );
 }

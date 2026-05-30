@@ -7,9 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { SubmitButton } from "@/components/submit-button";
 import { getProfile } from "@/lib/auth";
+import { Pagination } from "@/components/pagination";
 import {
   listPagamentos,
+  sumPagamentosLiquido,
   signedComprovanteUrl,
+  PAGAMENTOS_PAGE_SIZE,
   PAGAMENTO_STATUS_LABEL,
   PAGAMENTO_STATUS_COLOR,
   PAGAMENTO_STATUS_ORDER,
@@ -19,7 +22,7 @@ import { marcarPago, cancelarPagamento } from "./_actions";
 
 export const metadata = { title: "Pagamentos — Painel da corretora" };
 
-type SearchParams = Promise<{ status?: string }>;
+type SearchParams = Promise<{ status?: string; page?: string }>;
 
 const FILTERS: { value: "" | PagamentoStatus; label: string }[] = [
   { value: "", label: "Todos" },
@@ -55,7 +58,23 @@ export default async function PagamentosPage({
   }
   const sp = await searchParams;
   const status = isStatus(sp.status) ? sp.status : undefined;
-  const itens = await listPagamentos(profile.corretora_id, { status });
+  const page = Math.max(1, Number(sp.page) || 1);
+
+  const [{ rows: itens, count }, { aPagar, pago }] = await Promise.all([
+    listPagamentos(profile.corretora_id, { status }, page),
+    sumPagamentosLiquido(profile.corretora_id),
+  ]);
+  const totalPages = Math.max(1, Math.ceil(count / PAGAMENTOS_PAGE_SIZE));
+
+  function hrefFor(p: number): string {
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
+    if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return qs
+      ? `/painel/corretora/pagamentos?${qs}`
+      : "/painel/corretora/pagamentos";
+  }
 
   // Signed URLs (5 min) para comprovantes dos pagamentos já pagos.
   const comprovanteUrls = new Map<string, string>();
@@ -67,15 +86,6 @@ export default async function PagamentosPage({
         if (url) comprovanteUrls.set(p.id, url);
       }),
   );
-
-  // Stats sobre TODOS (independente do filtro) — busca rápida sem filtro.
-  const all = status ? await listPagamentos(profile.corretora_id) : itens;
-  const aPagar = all
-    .filter((p) => p.status === "pendente" || p.status === "vencido")
-    .reduce((s, p) => s + p.valor_liquido, 0);
-  const pago = all
-    .filter((p) => p.status === "pago")
-    .reduce((s, p) => s + p.valor_liquido, 0);
 
   return (
     <div className="space-y-6">
@@ -287,6 +297,8 @@ export default async function PagamentosPage({
           </CardContent>
         </Card>
       )}
+
+      <Pagination page={page} totalPages={totalPages} hrefFor={hrefFor} />
     </div>
   );
 }

@@ -7,8 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { SubmitButton } from "@/components/submit-button";
 import { getProfile } from "@/lib/auth";
+import { Pagination } from "@/components/pagination";
 import {
   listOfertas,
+  OFERTAS_PAGE_SIZE,
   OFERTA_STATUS_LABEL,
   OFERTA_STATUS_COLOR,
   OFERTA_STATUS_ORDER,
@@ -18,7 +20,7 @@ import { atualizarStatusOferta, deleteOferta } from "./_actions";
 
 export const metadata = { title: "Ofertas a compradores — Painel da corretora" };
 
-type SearchParams = Promise<{ status?: string }>;
+type SearchParams = Promise<{ status?: string; page?: string }>;
 
 const FILTERS: { value: "" | OfertaStatus; label: string }[] = [
   { value: "", label: "Todas" },
@@ -67,7 +69,23 @@ export default async function OfertasPage({
   }
   const sp = await searchParams;
   const status = isStatus(sp.status) ? sp.status : undefined;
-  const itens = await listOfertas(profile.corretora_id, { status });
+  const page = Math.max(1, Number(sp.page) || 1);
+  const { rows: itens, count } = await listOfertas(
+    profile.corretora_id,
+    { status },
+    page,
+  );
+  const totalPages = Math.max(1, Math.ceil(count / OFERTAS_PAGE_SIZE));
+
+  function hrefFor(p: number): string {
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
+    if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return qs
+      ? `/painel/corretora/ofertas?${qs}`
+      : "/painel/corretora/ofertas";
+  }
 
   return (
     <div className="space-y-6">
@@ -248,6 +266,8 @@ export default async function OfertasPage({
           </CardContent>
         </Card>
       )}
+
+      <Pagination page={page} totalPages={totalPages} hrefFor={hrefFor} />
     </div>
   );
 }

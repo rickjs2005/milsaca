@@ -19,12 +19,17 @@ export type LoteListFilter = {
   specie?: "arabica" | "conillon";
 };
 
+export const LOTES_PAGE_SIZE = 24;
+
 export async function listLotes(
   corretoraId: string,
   filter: LoteListFilter = {},
-): Promise<LoteRow[]> {
-  if (!corretoraId) return [];
+  page = 1,
+): Promise<{ rows: LoteRow[]; count: number }> {
+  if (!corretoraId) return { rows: [], count: 0 };
   const supabase = await createClient();
+  const from = (page - 1) * LOTES_PAGE_SIZE;
+  const to = from + LOTES_PAGE_SIZE - 1;
 
   let q = supabase
     .from("lotes")
@@ -32,18 +37,19 @@ export async function listLotes(
       `id, codigo, specie, processo, safra, peso_sacas, status, created_at, updated_at,
        produtor:profiles!lotes_produtor_id_fkey(id, full_name, phone, produtores(city, state, fazenda_nome)),
        classificacoes_cob(tipo, fora_de_tipo, created_at, anulada)`,
+      { count: "exact" },
     )
     .eq("corretora_id", corretoraId)
     .order("updated_at", { ascending: false })
-    .limit(500);
+    .range(from, to);
 
   if (filter.status) q = q.eq("status", filter.status);
   if (filter.specie) q = q.eq("specie", filter.specie);
 
-  const { data, error } = await q;
+  const { data, count, error } = await q;
   if (error) {
     console.error("listLotes:", error.message);
-    return [];
+    return { rows: [], count: 0 };
   }
 
   type ProdExt = {
@@ -89,7 +95,7 @@ export async function listLotes(
   }
 
   const rows = (data ?? []) as Raw[];
-  return rows.map((r): LoteRow => {
+  const mapped = rows.map((r): LoteRow => {
     const prod = pickOne(r.produtor);
     const prodExt = prod ? pickOne(prod.produtores) : null;
     const vigente = (r.classificacoes_cob ?? [])
@@ -115,6 +121,8 @@ export async function listLotes(
       ultimo_fora_de_tipo: vigente?.fora_de_tipo ?? false,
     };
   });
+
+  return { rows: mapped, count: count ?? 0 };
 }
 
 export async function listProdutores(): Promise<ProdutorOption[]> {

@@ -12,6 +12,7 @@ import { getProfile } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import {
   listLeads,
+  LEADS_PAGE_SIZE,
   LEAD_STATUS_ORDER,
   type LeadStatus,
 } from "./_lib/queries";
@@ -23,7 +24,11 @@ import { LeadsGrid } from "./_components/leads-grid";
 
 export const metadata = { title: "Central de Leads — Painel da corretora" };
 
-type SearchParams = Promise<{ status?: string; urgencia?: string }>;
+type SearchParams = Promise<{
+  status?: string;
+  urgencia?: string;
+  page?: string;
+}>;
 
 function isLeadStatus(v: string | undefined): v is LeadStatus {
   return !!v && (LEAD_STATUS_ORDER as readonly string[]).includes(v);
@@ -98,12 +103,14 @@ export default async function LeadsPage({
   const sp = await searchParams;
   const status = isLeadStatus(sp.status) ? sp.status : undefined;
   const urgencia = isUrgencia(sp.urgencia) ? sp.urgencia : undefined;
+  const page = Math.max(1, Number(sp.page) || 1);
 
-  const [leads, kpis, corretoraName] = await Promise.all([
-    listLeads(profile.corretora_id, { status }),
+  const [{ rows: leads, count }, kpis, corretoraName] = await Promise.all([
+    listLeads(profile.corretora_id, { status }, page),
     loadLeadsKpis(profile.corretora_id),
     loadCorretoraName(profile.corretora_id),
   ]);
+  const totalPages = Math.max(1, Math.ceil(count / LEADS_PAGE_SIZE));
 
   return (
     <div className="space-y-8">
@@ -164,6 +171,8 @@ export default async function LeadsPage({
         leads={leads}
         corretoraName={corretoraName}
         current={{ status, urgencia }}
+        page={page}
+        totalPages={totalPages}
       />
     </div>
   );

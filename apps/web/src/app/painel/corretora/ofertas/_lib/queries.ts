@@ -87,20 +87,28 @@ function mapRow(r: Row): OfertaItem {
   };
 }
 
+export const OFERTAS_PAGE_SIZE = 20;
+
 export async function listOfertas(
   corretoraId: string,
   filter: { status?: OfertaStatus } = {},
-): Promise<OfertaItem[]> {
+  page = 1,
+): Promise<{ rows: OfertaItem[]; count: number }> {
   const supabase = await createClient();
+  const from = (page - 1) * OFERTAS_PAGE_SIZE;
+  const to = from + OFERTAS_PAGE_SIZE - 1;
   let q = supabase
     .from("ofertas_comprador")
-    .select(SELECT)
+    .select(SELECT, { count: "exact" })
     .eq("corretora_id", corretoraId)
     .order("created_at", { ascending: false })
-    .limit(500);
+    .range(from, to);
   if (filter.status) q = q.eq("status", filter.status);
-  const { data } = await q;
-  return ((data ?? []) as unknown as Row[]).map(mapRow);
+  const { data, count } = await q;
+  return {
+    rows: ((data ?? []) as unknown as Row[]).map(mapRow),
+    count: count ?? 0,
+  };
 }
 
 /** Ofertas de um lote específico (pro bloco no detalhe do lote). */

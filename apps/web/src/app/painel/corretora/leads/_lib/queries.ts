@@ -82,11 +82,16 @@ function pickOne<T>(v: T | T[] | null | undefined): T | null {
   return Array.isArray(v) ? (v[0] ?? null) : v;
 }
 
+export const LEADS_PAGE_SIZE = 24;
+
 export async function listLeads(
   corretoraId: string,
   filter: LeadListFilter = {},
-): Promise<LeadListItem[]> {
+  page = 1,
+): Promise<{ rows: LeadListItem[]; count: number }> {
   const supabase = await createClient();
+  const from = (page - 1) * LEADS_PAGE_SIZE;
+  const to = from + LEADS_PAGE_SIZE - 1;
   let q = supabase
     .from("leads")
     .select(
@@ -94,17 +99,18 @@ export async function listLeads(
        produtor_id, contato_id,
        produtor:profiles!leads_produtor_id_fkey(id, full_name, phone, produtores(city, state)),
        contato:produtor_contatos!leads_contato_id_fkey(id, full_name, phone, city, state)`,
+      { count: "exact" },
     )
     .eq("corretora_id", corretoraId)
     .order("updated_at", { ascending: false })
-    .limit(500);
+    .range(from, to);
 
   if (filter.status) q = q.eq("status", filter.status);
 
-  const { data } = await q;
+  const { data, count } = await q;
   const rows = (data ?? []) as LeadRow[];
 
-  return rows.map((r): LeadListItem => {
+  const mapped = rows.map((r): LeadListItem => {
     const prod = pickOne(r.produtor);
     const cont = pickOne(r.contato);
     const kind: "produtor" | "contato" = prod ? "produtor" : "contato";
@@ -128,6 +134,8 @@ export async function listLeads(
       state: prodExt?.state ?? cont?.state ?? null,
     };
   });
+
+  return { rows: mapped, count: count ?? 0 };
 }
 
 export async function getLead(
