@@ -39,21 +39,21 @@ export default async function ConfirmarEmailPage({
   const isCorretora = sp.corretora === "1";
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-milsaca-cream px-6 py-10">
+    <main className="flex min-h-screen items-center justify-center bg-milsaca-cream px-5 py-10 sm:px-6">
       <div className="w-full max-w-md">
         <div className="mb-6 flex items-center justify-center">
           <MilsacaLogo size={140} priority />
         </div>
 
-        <Card className="border-milsaca-cream-escuro">
+        <Card className="shadow-elevated">
           <CardHeader>
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-milsaca-dourado/15 text-milsaca-dourado">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-milsaca-cafezal/10 text-milsaca-cafezal">
               <Mail className="h-6 w-6" />
             </div>
-            <CardTitle className="text-2xl">Confirme seu email</CardTitle>
+            <CardTitle className="text-h2">Confirme seu email</CardTitle>
             <CardDescription>
               Enviamos um código de 6 dígitos pra{" "}
-              <strong className="text-milsaca-verde">{email}</strong>.
+              <strong className="text-milsaca-preto">{email}</strong>.
               Digite abaixo pra ativar a conta.
             </CardDescription>
           </CardHeader>
@@ -76,9 +76,9 @@ export default async function ConfirmarEmailPage({
                   required
                   placeholder="000000"
                   autoComplete="one-time-code"
-                  className="text-center text-2xl tracking-widest font-mono"
+                  className="text-center text-2xl tracking-[0.4em] font-mono"
                 />
-                <p className="text-[11px] text-milsaca-verde-claro/80">
+                <p className="text-caption text-neutral-500">
                   O código expira em 1 hora. Cheque também o spam.
                 </p>
               </div>
@@ -86,20 +86,25 @@ export default async function ConfirmarEmailPage({
               {sp.error ? (
                 <p
                   role="alert"
-                  className="text-sm font-medium text-destructive"
+                  className="rounded-md border border-danger-100 bg-danger-50 px-3 py-2 text-body-sm font-medium text-danger-700"
                 >
                   {sp.error}
                 </p>
               ) : null}
               {sp.ok ? (
-                <p className="text-sm font-medium text-emerald-700">
+                <p
+                  role="status"
+                  className="rounded-md border border-success-100 bg-success-50 px-3 py-2 text-body-sm font-medium text-success-700"
+                >
                   {sp.ok}
                 </p>
               ) : null}
 
               <SubmitButton
                 pendingLabel="Confirmando..."
-                className="w-full bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+                variant="primary"
+                size="lg"
+                className="w-full"
               >
                 Confirmar
               </SubmitButton>
@@ -113,17 +118,18 @@ export default async function ConfirmarEmailPage({
               <SubmitButton
                 pendingLabel="Reenviando..."
                 variant="outline"
+                size="lg"
                 className="w-full"
               >
                 Reenviar código
               </SubmitButton>
             </form>
 
-            <p className="mt-6 text-center text-xs text-milsaca-verde-claro">
+            <p className="mt-6 text-center text-caption text-neutral-600">
               Email errado?{" "}
               <Link
                 href="/cadastrar"
-                className="font-medium text-milsaca-verde hover:underline"
+                className="font-semibold text-milsaca-cafezal hover:underline"
               >
                 Voltar pro cadastro
               </Link>

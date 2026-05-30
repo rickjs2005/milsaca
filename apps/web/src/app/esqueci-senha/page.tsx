@@ -24,21 +24,21 @@ export default async function EsqueciSenhaPage({
   const sp = await searchParams;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-milsaca-cream px-6 py-10">
+    <main className="flex min-h-screen items-center justify-center bg-milsaca-cream px-5 py-10 sm:px-6">
       <div className="w-full max-w-md">
         <div className="mb-6 flex items-center justify-center">
           <MilsacaLogo size={160} priority />
         </div>
 
-        <Card className="border-milsaca-cream-escuro">
+        <Card className="shadow-elevated">
           <CardHeader>
-            <CardTitle className="text-2xl">Esqueci minha senha</CardTitle>
+            <CardTitle className="text-h2">Esqueci minha senha</CardTitle>
             <CardDescription>
               Informe seu email. Mandamos um link pra você criar uma nova senha.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={requestPasswordReset} className="space-y-4">
+            <form action={requestPasswordReset} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -53,26 +53,36 @@ export default async function EsqueciSenhaPage({
               </div>
 
               {sp.ok ? (
-                <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                <p
+                  role="status"
+                  className="rounded-md border border-success-100 bg-success-50 px-3 py-2 text-body-sm text-success-700"
+                >
                   {sp.ok}
                 </p>
               ) : null}
               {sp.error ? (
-                <p className="text-sm text-destructive">{sp.error}</p>
+                <p
+                  role="alert"
+                  className="rounded-md border border-danger-100 bg-danger-50 px-3 py-2 text-body-sm font-medium text-danger-700"
+                >
+                  {sp.error}
+                </p>
               ) : null}
 
               <SubmitButton
                 pendingLabel="Enviando..."
-                className="w-full bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+                variant="primary"
+                size="lg"
+                className="w-full"
               >
                 Enviar link
               </SubmitButton>
             </form>
 
-            <p className="mt-6 text-center text-sm text-milsaca-verde-claro">
+            <p className="mt-6 text-center text-body-sm text-neutral-600">
               <Link
                 href="/entrar"
-                className="font-medium text-milsaca-verde hover:underline"
+                className="font-semibold text-milsaca-cafezal hover:underline"
               >
                 ← Voltar pro login
               </Link>

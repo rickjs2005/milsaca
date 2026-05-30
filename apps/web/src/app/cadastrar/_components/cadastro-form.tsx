@@ -8,6 +8,7 @@ import { MaskedInput } from "@/components/forms/masked-input";
 import { UfSelect } from "@/components/forms/uf-select";
 import { MunicipioAutocomplete } from "@/components/municipio-autocomplete";
 import { SubmitButton } from "@/components/submit-button";
+import { Button } from "@/components/ui/button";
 
 type Role = "produtor" | "corretora";
 
@@ -46,7 +47,7 @@ export function CadastroForm({
   return (
     <form action={action} className="space-y-5">
       <fieldset className="space-y-2">
-        <legend className="text-xs font-medium uppercase tracking-wide text-milsaca-verde-claro">
+        <legend className="text-caption font-medium uppercase tracking-wide text-neutral-600">
           Você é
         </legend>
         <div className="grid grid-cols-2 gap-2">
@@ -128,12 +129,12 @@ export function CadastroForm({
       </div>
 
       {role === "corretora" ? (
-        <div className="space-y-4 rounded-lg border border-milsaca-dourado/30 bg-milsaca-dourado/5 p-4">
-          <div className="rounded-md bg-milsaca-verde px-3 py-2 text-xs font-medium text-milsaca-cream">
+        <div className="space-y-4 rounded-lg border border-milsaca-dourado/30 bg-milsaca-dourado/10 p-4">
+          <div className="rounded-md bg-milsaca-cafezal px-3 py-2 text-caption font-medium text-milsaca-cream">
             Programa Fundadoras · {founder.used} de {founder.total} vagas ·
             grátis vitalício
           </div>
-          <p className="text-xs text-milsaca-verde">
+          <p className="text-caption text-neutral-700">
             Dados da corretora — admin valida antes de liberar acesso.
           </p>
 
@@ -203,14 +204,14 @@ export function CadastroForm({
         </div>
       ) : null}
 
-      <div className="rounded-lg border border-milsaca-cream-escuro bg-milsaca-cream/60 p-4">
-        <label className="flex items-start gap-3 text-sm text-milsaca-verde">
+      <div className="rounded-lg border border-neutral-200 bg-milsaca-cream/60 p-4">
+        <label className="flex items-start gap-3 text-body-sm text-neutral-700">
           <input
             type="checkbox"
             name="lgpd_consent"
             value="on"
             required
-            className="mt-0.5 h-5 w-5 cursor-pointer accent-milsaca-verde"
+            className="mt-0.5 h-5 w-5 cursor-pointer accent-milsaca-cafezal"
           />
           <span className="leading-relaxed">
             Concordo com a{" "}
@@ -218,27 +219,32 @@ export function CadastroForm({
               href="/politica-privacidade"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium underline-offset-2 hover:underline"
+              className="font-medium text-milsaca-cafezal underline-offset-2 hover:underline"
             >
               Política de Privacidade
             </a>{" "}
             e autorizo o Milsaca a usar meus dados pra conectar com{" "}
             {role === "corretora" ? "produtores" : "corretoras"} de café.
             Posso revogar a qualquer momento em{" "}
-            <code className="text-xs">contato@milsaca.app</code>.
+            <code className="text-caption">contato@milsaca.app</code>.
           </span>
         </label>
       </div>
 
       {error ? (
-        <p role="alert" className="text-sm font-medium text-destructive">
+        <p
+          role="alert"
+          className="rounded-md border border-danger-100 bg-danger-50 px-3 py-2 text-body-sm font-medium text-danger-700"
+        >
           {error}
         </p>
       ) : null}
 
       <SubmitButton
         pendingLabel="Enviando..."
-        className="w-full bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+        variant="primary"
+        size="lg"
+        className="w-full"
       >
         {role === "corretora" ? "Enviar pra aprovação" : "Criar conta"}
       </SubmitButton>
@@ -250,21 +256,18 @@ export function CadastroForm({
 
 function CorretoraClosedPanel({ total }: { total: number }) {
   return (
-    <div className="space-y-3 rounded-lg border border-milsaca-dourado/40 bg-milsaca-dourado/5 p-5 text-center">
-      <p className="text-sm font-semibold text-milsaca-verde">
+    <div className="space-y-3 rounded-lg border border-milsaca-dourado/40 bg-milsaca-dourado/10 p-5 text-center">
+      <p className="text-body-sm font-semibold text-milsaca-cafezal">
         Vagas de fundadora encerradas no momento
       </p>
-      <p className="text-xs leading-relaxed text-milsaca-verde-claro">
+      <p className="text-caption leading-relaxed text-neutral-600">
         As {total} vagas do programa de fundadoras (grátis vitalício) não estão
         abertas agora. Entre na lista de espera que a gente te chama assim que
         liberar novas vagas.
       </p>
-      <Link
-        href="/corretoras/espera"
-        className="inline-flex w-full items-center justify-center rounded-md bg-milsaca-verde px-4 py-2.5 text-sm font-medium text-milsaca-cream transition-colors hover:bg-milsaca-verde-claro"
-      >
-        Entrar na lista de espera
-      </Link>
+      <Button asChild variant="primary" size="lg" className="w-full">
+        <Link href="/corretoras/espera">Entrar na lista de espera</Link>
+      </Button>
     </div>
   );
 }
@@ -290,12 +293,12 @@ function RoleOption({
       aria-pressed={selected}
       className={
         selected
-          ? "rounded-xl border-2 border-milsaca-verde bg-milsaca-verde/5 px-3 py-3 text-left transition-colors"
-          : "rounded-xl border border-milsaca-cream-escuro bg-white px-3 py-3 text-left transition-colors hover:border-milsaca-dourado"
+          ? "rounded-xl border-2 border-milsaca-cafezal bg-milsaca-cafezal/5 px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          : "rounded-xl border border-neutral-200 bg-white px-3 py-3 text-left transition-colors hover:border-milsaca-dourado focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       }
     >
-      <p className="text-sm font-semibold text-milsaca-verde">{title}</p>
-      <p className="mt-0.5 text-xs text-milsaca-verde-claro">{desc}</p>
+      <p className="text-body-sm font-semibold text-milsaca-cafezal">{title}</p>
+      <p className="mt-0.5 text-caption text-neutral-600">{desc}</p>
     </button>
   );
 }

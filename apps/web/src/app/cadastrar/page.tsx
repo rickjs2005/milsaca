@@ -28,15 +28,15 @@ export default async function CadastrarPage({
   const founder = await getFounderProgramStatus();
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-milsaca-cream px-6 py-10">
+    <main className="flex min-h-screen items-center justify-center bg-milsaca-cream px-5 py-10 sm:px-6">
       <div className="w-full max-w-2xl">
         <div className="mb-6 flex items-center justify-center">
           <MilsacaLogo size={160} priority />
         </div>
 
-        <Card className="border-milsaca-cream-escuro shadow-sm">
+        <Card className="shadow-elevated">
           <CardHeader className="space-y-1.5 pb-2">
-            <CardTitle className="text-2xl">Criar conta</CardTitle>
+            <CardTitle className="text-h2">Criar conta</CardTitle>
             <CardDescription>
               Você é produtor ou está abrindo uma corretora?
             </CardDescription>
@@ -62,29 +62,29 @@ export default async function CadastrarPage({
               error={sp.error ?? null}
             />
 
-            <p className="mt-4 text-center text-xs text-milsaca-verde-claro/80">
+            <p className="mt-4 text-center text-caption text-neutral-600">
               Ao criar conta, você concorda com os{" "}
               <Link
                 href="/termos"
-                className="font-medium text-milsaca-verde hover:underline"
+                className="font-medium text-milsaca-cafezal hover:underline"
               >
                 Termos de Uso
               </Link>{" "}
               e a{" "}
               <Link
                 href="/politica-privacidade"
-                className="font-medium text-milsaca-verde hover:underline"
+                className="font-medium text-milsaca-cafezal hover:underline"
               >
                 Política de Privacidade
               </Link>
               .
             </p>
 
-            <p className="mt-6 text-center text-sm text-milsaca-verde-claro">
+            <p className="mt-6 text-center text-body-sm text-neutral-600">
               Já tem conta?{" "}
               <Link
                 href="/entrar"
-                className="font-medium text-milsaca-verde hover:underline"
+                className="font-semibold text-milsaca-cafezal hover:underline"
               >
                 Entrar
               </Link>

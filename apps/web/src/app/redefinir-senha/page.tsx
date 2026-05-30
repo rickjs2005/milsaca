@@ -36,25 +36,25 @@ export default async function RedefinirSenhaPage({
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-milsaca-cream px-6 py-10">
+    <main className="flex min-h-screen items-center justify-center bg-milsaca-cream px-5 py-10 sm:px-6">
       <div className="w-full max-w-md">
         <div className="mb-6 flex items-center justify-center">
           <MilsacaLogo size={160} priority />
         </div>
 
-        <Card className="border-milsaca-cream-escuro">
+        <Card className="shadow-elevated">
           <CardHeader>
-            <CardTitle className="text-2xl">Redefinir senha</CardTitle>
+            <CardTitle className="text-h2">Redefinir senha</CardTitle>
             <CardDescription>
               Logada como{" "}
-              <span className="font-medium text-milsaca-verde">
+              <span className="font-medium text-milsaca-preto">
                 {user.email}
               </span>
               . Escolha uma senha nova.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={resetPassword} className="space-y-4">
+            <form action={resetPassword} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="password">Nova senha</Label>
                 <Input
@@ -82,12 +82,19 @@ export default async function RedefinirSenhaPage({
               </div>
 
               {sp.error ? (
-                <p className="text-sm text-destructive">{sp.error}</p>
+                <p
+                  role="alert"
+                  className="rounded-md border border-danger-100 bg-danger-50 px-3 py-2 text-body-sm font-medium text-danger-700"
+                >
+                  {sp.error}
+                </p>
               ) : null}
 
               <SubmitButton
                 pendingLabel="Salvando..."
-                className="w-full bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+                variant="primary"
+                size="lg"
+                className="w-full"
               >
                 Salvar nova senha
               </SubmitButton>

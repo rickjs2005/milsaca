@@ -29,21 +29,21 @@ export default async function EntrarPage({
   const sp = await searchParams;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-milsaca-cream px-6 py-10">
+    <main className="flex min-h-screen items-center justify-center bg-milsaca-cream px-5 py-10 sm:px-6">
       <div className="w-full max-w-md">
         <div className="mb-6 flex items-center justify-center">
           <MilsacaLogo size={160} priority />
         </div>
 
-        <Card className="border-milsaca-cream-escuro">
+        <Card className="shadow-elevated">
           <CardHeader>
-            <CardTitle className="text-2xl">Entrar</CardTitle>
+            <CardTitle className="text-h2">Entrar</CardTitle>
             <CardDescription>
               Acesse com email e senha. Primeira vez? Crie sua conta.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={signIn} className="space-y-4">
+            <form action={signIn} className="space-y-5">
               {sp.redirectTo && (
                 <input
                   type="hidden"
@@ -66,11 +66,11 @@ export default async function EntrarPage({
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-baseline justify-between">
+                <div className="flex items-baseline justify-between gap-2">
                   <Label htmlFor="password">Senha</Label>
                   <Link
                     href="/esqueci-senha"
-                    className="text-xs text-milsaca-dourado hover:underline"
+                    className="text-caption font-medium text-milsaca-dourado-texto hover:underline"
                   >
                     Esqueci minha senha
                   </Link>
@@ -86,27 +86,37 @@ export default async function EntrarPage({
               </div>
 
               {sp.ok ? (
-                <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                <p
+                  role="status"
+                  className="rounded-md border border-success-100 bg-success-50 px-3 py-2 text-body-sm text-success-700"
+                >
                   {sp.ok}
                 </p>
               ) : null}
               {sp.error ? (
-                <p className="text-sm text-destructive">{sp.error}</p>
+                <p
+                  role="alert"
+                  className="rounded-md border border-danger-100 bg-danger-50 px-3 py-2 text-body-sm font-medium text-danger-700"
+                >
+                  {sp.error}
+                </p>
               ) : null}
 
               <SubmitButton
                 pendingLabel="Entrando..."
-                className="w-full bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+                variant="primary"
+                size="lg"
+                className="w-full"
               >
                 Entrar
               </SubmitButton>
             </form>
 
-            <p className="mt-6 text-center text-sm text-milsaca-verde-claro">
+            <p className="mt-6 text-center text-body-sm text-neutral-600">
               Não tem conta?{" "}
               <Link
                 href="/cadastrar"
-                className="font-medium text-milsaca-verde hover:underline"
+                className="font-semibold text-milsaca-cafezal hover:underline"
               >
                 Criar conta
               </Link>
