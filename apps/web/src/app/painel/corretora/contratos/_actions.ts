@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import type { Json } from "@milsaca/types/database";
 import { getProfile } from "@/lib/auth";
+import { CONTRATO_VERSAO } from "@/lib/legal";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { notify } from "@/lib/notify";
 import { requireActiveSubscription } from "../_lib/corretora";
@@ -37,9 +38,16 @@ async function logAudit(
 }
 
 /**
- * SHA-256 (hex) do payload canônico do contrato. Campos ordenados de
- * forma estável (JSON com chaves fixas em ordem) pra que o mesmo
- * contrato produza sempre o mesmo hash — base da verificação pública.
+ * SHA-256 (hex) do payload canônico do contrato. O payload é serializado
+ * com as chaves ORDENADAS ALFABETICAMENTE de forma determinística (não
+ * depende da ordem em que os campos são listados no código) e inclui a
+ * CONTRATO_VERSAO. Assim o mesmo contrato produz sempre o mesmo hash —
+ * base da verificação pública (achado 7.1/7.2 da auditoria).
+ *
+ * ATENÇÃO: incluir CONTRATO_VERSAO e mudar a serialização altera o hash
+ * de contratos FUTUROS. Contratos JÁ ASSINADOS mantêm o content_hash
+ * gravado no banco — não há recálculo retroativo, e nem deve haver
+ * (o hash congela o documento no momento da assinatura).
  */
 function contratoContentHash(input: {
   code: string | null;
@@ -52,17 +60,26 @@ function contratoContentHash(input: {
   comissao_total: number | null;
   signed_at: string | null;
 }): string {
-  const canonical = JSON.stringify([
-    ["code", input.code],
-    ["produtor_id", input.produtor_id],
-    ["comprador_id", input.comprador_id],
-    ["coffee_type", input.coffee_type],
-    ["bag_count", input.bag_count],
-    ["total_value", input.total_value],
-    ["comissao_pct", input.comissao_pct],
-    ["comissao_total", input.comissao_total],
-    ["signed_at", input.signed_at],
-  ]);
+  // Payload completo, incluindo a versão do modelo de contrato.
+  const payload: Record<string, unknown> = {
+    contrato_versao: CONTRATO_VERSAO,
+    code: input.code,
+    produtor_id: input.produtor_id,
+    comprador_id: input.comprador_id,
+    coffee_type: input.coffee_type,
+    bag_count: input.bag_count,
+    total_value: input.total_value,
+    comissao_pct: input.comissao_pct,
+    comissao_total: input.comissao_total,
+    signed_at: input.signed_at,
+  };
+  // Serializa com as chaves em ordem alfabética estável — reproduzível
+  // independentemente da ordem em que os campos foram declarados acima.
+  const canonical = JSON.stringify(
+    Object.keys(payload)
+      .sort()
+      .map((key) => [key, payload[key]]),
+  );
   return createHash("sha256").update(canonical).digest("hex");
 }
 
