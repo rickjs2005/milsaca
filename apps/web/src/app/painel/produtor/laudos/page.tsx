@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FileCheck2, QrCode, Download } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/empty-state";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 
@@ -65,21 +67,23 @@ export default async function MeusLaudosPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <h1 className="flex items-center gap-2 text-h1 text-milsaca-verde">
           <FileCheck2 className="h-7 w-7" />
           Meus laudos
         </h1>
-        <p className="text-sm text-milsaca-verde-claro">
+        <p className="mt-1 text-body-sm text-neutral-600">
           Classificações COB (IN 8/2003) dos seus lotes pelas corretoras.
         </p>
       </header>
 
       {rows.length === 0 ? (
-        <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
-          <CardContent className="py-10 text-center text-sm text-milsaca-verde-claro">
-            Você ainda não tem laudos. Quando a corretora classificar um dos
-            seus lotes, aparece aqui — com PDF e QR público pra você
-            compartilhar.
+        <Card tone="muted" className="border-dashed">
+          <CardContent className="p-card">
+            <EmptyState
+              icon={FileCheck2}
+              title="Você ainda não tem laudos"
+              description="Quando a corretora classificar um dos seus lotes, ele aparece aqui — com PDF e QR público pra você compartilhar."
+            />
           </CardContent>
         </Card>
       ) : (
@@ -89,41 +93,39 @@ export default async function MeusLaudosPage() {
             const cor = pickOne(r.corretora);
             const pva = r.pva != null ? Number(r.pva) : null;
             return (
-              <Card key={r.id} className="border-milsaca-cream-escuro">
-                <CardContent className="space-y-3 p-5">
-                  <div className="flex items-center justify-between">
+              <Card key={r.id}>
+                <CardContent className="space-y-3 p-card">
+                  <div className="flex items-center justify-between gap-2">
                     <div>
-                      <p className="font-mono text-xs text-milsaca-dourado">
+                      <p className="font-mono text-caption text-milsaca-dourado-texto">
                         {lote?.codigo ?? "—"}
                       </p>
-                      <p className="text-sm font-medium text-milsaca-verde">
+                      <p className="text-body-sm font-medium text-milsaca-verde">
                         {lote?.specie === "arabica" ? "Arábica" : lote?.specie === "conillon" ? "Conilón" : "—"}
                         {lote?.processo ? ` · ${lote.processo}` : ""}
                         {lote?.safra ? ` · safra ${lote.safra}` : ""}
                       </p>
                     </div>
                     {r.fora_de_tipo ? (
-                      <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100">
-                        Fora de tipo
-                      </Badge>
+                      <StatusBadge tone="danger">Fora de tipo</StatusBadge>
                     ) : (
-                      <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+                      <StatusBadge tone="success">
                         Tipo {r.tipo ?? "—"}
-                      </Badge>
+                      </StatusBadge>
                     )}
                   </div>
 
-                  <dl className="grid grid-cols-2 gap-2 text-xs text-milsaca-verde-claro">
+                  <dl className="grid grid-cols-2 gap-2 text-caption text-neutral-600">
                     <div>
-                      <dt className="text-[10px] uppercase tracking-wide">
+                      <dt className="uppercase tracking-wide text-neutral-500">
                         Pontuação
                       </dt>
-                      <dd className="font-medium text-milsaca-verde">
+                      <dd className="font-medium tabular-nums text-milsaca-verde">
                         {r.pontuacao ?? "—"}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-[10px] uppercase tracking-wide">
+                      <dt className="uppercase tracking-wide text-neutral-500">
                         Peneira dom.
                       </dt>
                       <dd className="font-medium text-milsaca-verde">
@@ -131,7 +133,7 @@ export default async function MeusLaudosPage() {
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-[10px] uppercase tracking-wide">
+                      <dt className="uppercase tracking-wide text-neutral-500">
                         Bebida
                       </dt>
                       <dd className="font-medium text-milsaca-verde">
@@ -139,36 +141,42 @@ export default async function MeusLaudosPage() {
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-[10px] uppercase tracking-wide">
+                      <dt className="uppercase tracking-wide text-neutral-500">
                         PVA
                       </dt>
-                      <dd className="font-medium text-milsaca-verde">
+                      <dd className="font-medium tabular-nums text-milsaca-verde">
                         {pva != null ? `${pva.toFixed(1)}%` : "—"}
                       </dd>
                     </div>
                   </dl>
 
-                  <p className="text-xs text-milsaca-verde-claro/70">
+                  <p className="text-caption text-neutral-500">
                     Classificado por {cor?.name ?? "—"} em {fmtDate(r.created_at)}
                   </p>
 
                   <div className="flex gap-2 pt-1">
-                    <Link
-                      href={`/laudos/${r.id}`}
-                      target="_blank"
-                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-milsaca-verde px-3 py-2 text-xs font-medium text-milsaca-verde hover:bg-milsaca-verde hover:text-milsaca-cream"
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
                     >
-                      <QrCode className="h-3.5 w-3.5" />
-                      Link público
-                    </Link>
-                    <Link
-                      href={`/laudos/${r.id}/pdf`}
-                      target="_blank"
-                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-milsaca-verde px-3 py-2 text-xs font-medium text-milsaca-cream hover:bg-milsaca-verde-claro"
+                      <Link href={`/laudos/${r.id}`} target="_blank">
+                        <QrCode className="mr-1.5 h-3.5 w-3.5" />
+                        Link público
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      variant="primary"
+                      size="sm"
+                      className="flex-1"
                     >
-                      <Download className="h-3.5 w-3.5" />
-                      Baixar PDF
-                    </Link>
+                      <Link href={`/laudos/${r.id}/pdf`} target="_blank">
+                        <Download className="mr-1.5 h-3.5 w-3.5" />
+                        Baixar PDF
+                      </Link>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

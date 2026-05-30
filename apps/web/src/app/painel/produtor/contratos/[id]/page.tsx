@@ -14,13 +14,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth";
 import {
   getMeuContrato,
   CONTRATO_STATUS_LABEL,
-  CONTRATO_STATUS_COLOR,
+  CONTRATO_STATUS_TONE,
 } from "../_lib/queries";
 import { buildWhatsAppInviteUrl } from "../../../corretora/produtores/_lib/whatsapp";
 
@@ -77,7 +77,7 @@ export default async function ContratoProdutorDetalhePage({
       <div>
         <Link
           href="/painel/produtor/contratos"
-          className="inline-flex items-center gap-1 text-sm text-milsaca-verde-claro hover:text-milsaca-verde"
+          className="inline-flex items-center gap-1 text-body-sm text-neutral-600 hover:text-milsaca-verde"
         >
           <ArrowLeft className="h-4 w-4" />
           Voltar para Contratos
@@ -86,26 +86,22 @@ export default async function ContratoProdutorDetalhePage({
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
-            {contrato.code}
-          </h1>
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <Badge
-              className={`${CONTRATO_STATUS_COLOR[contrato.status]} hover:${CONTRATO_STATUS_COLOR[contrato.status]}`}
-            >
+          <h1 className="text-h1 text-milsaca-verde">{contrato.code}</h1>
+          <div className="flex flex-wrap items-center gap-2 text-body-sm">
+            <StatusBadge tone={CONTRATO_STATUS_TONE[contrato.status]}>
               {CONTRATO_STATUS_LABEL[contrato.status]}
-            </Badge>
-            <span className="text-milsaca-verde-claro">
+            </StatusBadge>
+            <span className="text-neutral-600">
               {contrato.corretora_nome}
             </span>
             {contrato.corretora_city && (
-              <span className="inline-flex items-center gap-1 text-milsaca-verde-claro">
+              <span className="inline-flex items-center gap-1 text-neutral-600">
                 <MapPin className="h-3.5 w-3.5" />
                 {contrato.corretora_city}
               </span>
             )}
             {contrato.corretora_phone && (
-              <span className="inline-flex items-center gap-1 text-milsaca-verde-claro">
+              <span className="inline-flex items-center gap-1 text-neutral-600">
                 <Phone className="h-3.5 w-3.5" />
                 {contrato.corretora_phone}
               </span>
@@ -113,10 +109,7 @@ export default async function ContratoProdutorDetalhePage({
           </div>
         </div>
         {waUrl && (
-          <Button
-            asChild
-            className="bg-emerald-600 text-white hover:bg-emerald-700"
-          >
+          <Button asChild variant="success">
             <a href={waUrl} target="_blank" rel="noopener noreferrer">
               <MessageCircle className="mr-2 h-4 w-4" />
               Falar no WhatsApp
@@ -126,17 +119,17 @@ export default async function ContratoProdutorDetalhePage({
       </header>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="border-milsaca-cream-escuro lg:col-span-2">
+        <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-base">Detalhes do contrato</CardTitle>
+            <CardTitle>Detalhes do contrato</CardTitle>
             <CardDescription>
               Operação registrada pela corretora. Mudanças passam por ela.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-3 text-sm">
+            <div className="grid grid-cols-3 gap-3 text-body-sm">
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-milsaca-verde-claro">
+                <p className="text-caption uppercase tracking-wider text-neutral-500">
                   Café
                 </p>
                 <p className="font-medium text-milsaca-verde">
@@ -144,37 +137,37 @@ export default async function ContratoProdutorDetalhePage({
                 </p>
               </div>
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-milsaca-verde-claro">
+                <p className="text-caption uppercase tracking-wider text-neutral-500">
                   Sacas (60kg)
                 </p>
-                <p className="font-medium text-milsaca-verde">
+                <p className="font-medium tabular-nums text-milsaca-verde">
                   {contrato.bag_count != null
                     ? contrato.bag_count.toLocaleString("pt-BR")
                     : "—"}
                 </p>
               </div>
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-milsaca-verde-claro">
+                <p className="text-caption uppercase tracking-wider text-neutral-500">
                   Por saca
                 </p>
-                <p className="font-medium text-milsaca-verde">
+                <p className="font-medium tabular-nums text-milsaca-verde">
                   {pricePerBag != null ? formatBRL(pricePerBag) : "—"}
                 </p>
               </div>
             </div>
 
             {contrato.total_value != null && (
-              <div className="rounded-md bg-milsaca-cream-escuro/30 p-3 text-sm">
-                <p className="text-[11px] uppercase tracking-wider text-milsaca-verde-claro">
+              <div className="rounded-md bg-milsaca-cream p-3">
+                <p className="text-caption uppercase tracking-wider text-neutral-500">
                   Valor total
                 </p>
-                <p className="text-2xl font-semibold text-milsaca-verde">
+                <p className="text-h2 tabular-nums text-milsaca-verde">
                   {formatBRL(contrato.total_value)}
                 </p>
               </div>
             )}
 
-            <div className="grid gap-2 text-xs text-milsaca-verde-claro sm:grid-cols-2">
+            <div className="grid gap-2 text-caption text-neutral-600 sm:grid-cols-2">
               <div>
                 <span className="font-medium text-milsaca-verde">
                   Aberto em
@@ -191,28 +184,28 @@ export default async function ContratoProdutorDetalhePage({
           </CardContent>
         </Card>
 
-        <Card className="border-milsaca-cream-escuro lg:col-span-1">
+        <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle className="text-base">Assinatura</CardTitle>
+            <CardTitle>Assinatura</CardTitle>
             <CardDescription>
               Quando o contrato fica ativo, esta data é registrada.
             </CardDescription>
           </CardHeader>
           <CardContent>
             {contrato.signed_at ? (
-              <div className="flex items-start gap-3 rounded-md border border-emerald-200 bg-emerald-50 p-3">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700" />
+              <div className="flex items-start gap-3 rounded-md border border-success-100 bg-success-50 p-3">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success-600" />
                 <div>
-                  <p className="text-sm font-medium text-emerald-900">
+                  <p className="text-body-sm font-medium text-success-700">
                     Contrato assinado
                   </p>
-                  <p className="text-xs text-emerald-800">
+                  <p className="text-caption tabular-nums text-success-700">
                     em {formatDate(contrato.signed_at)}
                   </p>
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-milsaca-verde-claro">
+              <p className="text-caption text-neutral-600">
                 Ainda não foi assinado. O status atual é{" "}
                 <span className="font-medium text-milsaca-verde">
                   {CONTRATO_STATUS_LABEL[contrato.status]}
@@ -220,7 +213,7 @@ export default async function ContratoProdutorDetalhePage({
                 .
               </p>
             )}
-            <p className="mt-4 text-[11px] text-milsaca-verde-claro">
+            <p className="mt-4 text-caption text-neutral-500">
               Em breve, download do PDF com QR público pra conferência.
             </p>
           </CardContent>

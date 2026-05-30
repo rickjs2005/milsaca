@@ -6,12 +6,13 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/empty-state";
 import { requireUser } from "@/lib/auth";
 import {
   listMeusContratos,
   CONTRATO_STATUS_LABEL,
-  CONTRATO_STATUS_COLOR,
+  CONTRATO_STATUS_TONE,
   CONTRATO_STATUS_ORDER,
   type ContratoStatus,
 } from "./_lib/queries";
@@ -60,16 +61,16 @@ export default async function ContratosProdutorPage({
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
-          Contratos
-        </h1>
-        <p className="text-sm text-milsaca-verde-claro">
+        <h1 className="text-h1 text-milsaca-verde">Contratos</h1>
+        <p className="mt-1 text-body-sm text-neutral-600">
           Operações fechadas com suas corretoras parceiras.
         </p>
       </header>
 
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-milsaca-verde-claro">Status:</span>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
+          Status
+        </span>
         {FILTERS.map((f) => {
           const params = new URLSearchParams();
           if (f.value) params.set("status", f.value);
@@ -83,8 +84,8 @@ export default async function ContratosProdutorPage({
               href={href}
               className={
                 active
-                  ? "rounded-full bg-milsaca-verde px-3 py-1 text-xs font-medium text-milsaca-cream"
-                  : "rounded-full border border-milsaca-cream-escuro px-3 py-1 text-xs text-milsaca-verde-claro hover:text-milsaca-verde"
+                  ? "rounded-pill bg-milsaca-cafezal px-3 py-1 text-caption font-medium text-milsaca-cream"
+                  : "rounded-pill border border-neutral-200 px-3 py-1 text-caption font-medium text-neutral-600 transition-colors hover:border-milsaca-dourado/50 hover:text-milsaca-cafezal"
               }
             >
               {f.label}
@@ -94,37 +95,34 @@ export default async function ContratosProdutorPage({
       </div>
 
       {contratos.length === 0 ? (
-        <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
-          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-milsaca-verde/10 text-milsaca-verde">
-              <FileText className="h-6 w-6" />
-            </span>
-            <p className="text-sm text-milsaca-verde">
-              Nenhum contrato{status ? " com esse status" : ""}.
-            </p>
-            <p className="text-xs text-milsaca-verde-claro">
-              Quando uma corretora abrir um contrato com você, ele aparece
-              aqui.
-            </p>
+        <Card tone="muted" className="border-dashed">
+          <CardContent className="p-card">
+            <EmptyState
+              icon={FileText}
+              title={`Nenhum contrato${status ? " com esse status" : ""}`}
+              description="Quando uma corretora abrir um contrato com você, ele aparece aqui."
+            />
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-milsaca-cream-escuro">
+        <Card>
           <CardContent className="overflow-x-auto p-0">
-            <table className="w-full text-sm">
-              <thead className="bg-milsaca-cream-escuro/40 text-xs uppercase tracking-wider text-milsaca-verde-claro">
+            <table className="w-full text-body-sm">
+              <thead className="border-b border-neutral-200 bg-neutral-50 text-caption font-medium uppercase tracking-wider text-neutral-600">
                 <tr>
-                  <th className="px-5 py-3 text-left">Código</th>
-                  <th className="px-5 py-3 text-left">Corretora</th>
-                  <th className="px-5 py-3 text-left">Café</th>
-                  <th className="px-5 py-3 text-right">Sacas</th>
-                  <th className="px-5 py-3 text-right">Valor total</th>
-                  <th className="px-5 py-3 text-left">Status</th>
-                  <th className="px-5 py-3 text-left">Assinado</th>
+                  <th className="px-5 py-3 text-left font-medium">Código</th>
+                  <th className="px-5 py-3 text-left font-medium">Corretora</th>
+                  <th className="px-5 py-3 text-left font-medium">Café</th>
+                  <th className="px-5 py-3 text-right font-medium">Sacas</th>
+                  <th className="px-5 py-3 text-right font-medium">
+                    Valor total
+                  </th>
+                  <th className="px-5 py-3 text-left font-medium">Status</th>
+                  <th className="px-5 py-3 text-left font-medium">Assinado</th>
                   <th className="px-5 py-3"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-milsaca-cream-escuro">
+              <tbody className="divide-y divide-neutral-200">
                 {contratos.map((c) => {
                   const waUrl = buildWhatsAppInviteUrl({
                     phone: c.corretora_phone,
@@ -133,7 +131,7 @@ export default async function ContratosProdutorPage({
                   return (
                     <tr
                       key={c.id}
-                      className="hover:bg-milsaca-cream-escuro/30"
+                      className="transition-colors hover:bg-neutral-50"
                     >
                       <td className="px-5 py-3">
                         <Link
@@ -146,36 +144,34 @@ export default async function ContratosProdutorPage({
                       <td className="px-5 py-3 text-milsaca-verde">
                         {c.corretora_nome}
                         {c.corretora_city && (
-                          <span className="ml-1.5 inline-flex items-center gap-0.5 text-[11px] text-milsaca-verde-claro">
+                          <span className="ml-1.5 inline-flex items-center gap-0.5 text-caption text-neutral-500">
                             <MapPin className="h-2.5 w-2.5" />
                             {c.corretora_city}
                           </span>
                         )}
                       </td>
-                      <td className="px-5 py-3 text-milsaca-verde">
+                      <td className="px-5 py-3 text-neutral-700">
                         {c.coffee_type ?? "—"}
                       </td>
-                      <td className="px-5 py-3 text-right text-milsaca-verde">
+                      <td className="px-5 py-3 text-right tabular-nums text-neutral-700">
                         {c.bag_count != null
                           ? c.bag_count.toLocaleString("pt-BR")
                           : "—"}
                       </td>
-                      <td className="px-5 py-3 text-right font-medium text-milsaca-verde">
+                      <td className="px-5 py-3 text-right font-medium tabular-nums text-milsaca-verde">
                         {c.total_value != null
                           ? formatBRL(c.total_value)
                           : "—"}
                       </td>
                       <td className="px-5 py-3">
-                        <Badge
-                          className={`${CONTRATO_STATUS_COLOR[c.status]} hover:${CONTRATO_STATUS_COLOR[c.status]}`}
-                        >
+                        <StatusBadge tone={CONTRATO_STATUS_TONE[c.status]}>
                           {CONTRATO_STATUS_LABEL[c.status]}
-                        </Badge>
+                        </StatusBadge>
                       </td>
-                      <td className="px-5 py-3 text-xs text-milsaca-verde-claro">
+                      <td className="px-5 py-3 text-caption text-neutral-600">
                         {c.signed_at ? (
-                          <span className="inline-flex items-center gap-1">
-                            <CheckCircle2 className="h-3 w-3 text-emerald-700" />
+                          <span className="inline-flex items-center gap-1 tabular-nums">
+                            <CheckCircle2 className="h-3 w-3 text-success-600" />
                             {formatDate(c.signed_at)}
                           </span>
                         ) : (
@@ -188,7 +184,7 @@ export default async function ContratosProdutorPage({
                             href={waUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:underline"
+                            className="inline-flex items-center gap-1 text-caption font-medium text-success-700 hover:underline"
                           >
                             <MessageCircle className="h-3.5 w-3.5" />
                             WhatsApp
@@ -205,7 +201,7 @@ export default async function ContratosProdutorPage({
       )}
 
       {contratos.length > 0 && (
-        <p className="text-xs text-milsaca-verde-claro">
+        <p className="text-caption text-neutral-500">
           O download do PDF com QR público vai chegar em breve — fica em uma
           das próximas atualizações.
         </p>

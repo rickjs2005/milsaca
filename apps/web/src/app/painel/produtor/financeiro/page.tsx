@@ -6,8 +6,9 @@ import {
   AlertTriangle,
   FileText,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { StatusBadge, type StatusTone } from "@/components/status-badge";
+import { EmptyState } from "@/components/empty-state";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import { signedComprovanteUrl } from "../../corretora/pagamentos/_lib/queries";
@@ -27,11 +28,11 @@ const STATUS_LABEL: Record<string, string> = {
   cancelado: "Cancelado",
 };
 
-const STATUS_COLOR: Record<string, string> = {
-  pendente: "bg-milsaca-dourado/20 text-milsaca-verde",
-  pago: "bg-emerald-100 text-emerald-700",
-  vencido: "bg-rose-100 text-rose-700",
-  cancelado: "bg-slate-200 text-slate-700",
+const STATUS_TONE: Record<string, StatusTone> = {
+  pendente: "warning",
+  pago: "success",
+  vencido: "danger",
+  cancelado: "neutral",
 };
 
 function fmtDate(iso: string | null): string {
@@ -120,11 +121,11 @@ export default async function FinanceiroPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <h1 className="flex items-center gap-2 text-h1 text-milsaca-verde">
           <Wallet className="h-7 w-7" />
           Financeiro
         </h1>
-        <p className="text-sm text-milsaca-verde-claro">
+        <p className="mt-1 text-body-sm text-neutral-600">
           Repasses das corretoras pelos seus contratos.
         </p>
       </header>
@@ -151,50 +152,51 @@ export default async function FinanceiroPage() {
       </section>
 
       {rows.length === 0 ? (
-        <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
-          <CardContent className="py-10 text-center text-sm text-milsaca-verde-claro">
-            Sem repasses por aqui ainda. Quando uma entrega for conferida e a
-            corretora lançar o pagamento, vai aparecer nesta página.
+        <Card tone="muted" className="border-dashed">
+          <CardContent className="p-card">
+            <EmptyState
+              icon={Wallet}
+              title="Sem repasses por aqui ainda"
+              description="Quando uma entrega for conferida e a corretora lançar o pagamento, ele aparece nesta página."
+            />
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-milsaca-cream-escuro">
-          <CardContent className="divide-y divide-milsaca-cream-escuro p-0">
+        <Card>
+          <CardContent className="divide-y divide-neutral-200 p-0">
             {rows.map((r) => {
               const cor = pickOne(r.corretora);
               const con = pickOne(r.contrato);
               const desc = fmtDesconto(r.descontos);
               return (
-                <div key={r.id} className="p-5">
+                <div key={r.id} className="p-card">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-mono text-xs text-milsaca-dourado">
+                        <p className="font-mono text-caption text-milsaca-dourado-texto">
                           {con?.code ?? "—"}
                         </p>
-                        <span className="text-xs text-milsaca-verde-claro">
+                        <span className="text-caption text-neutral-600">
                           · {cor?.name ?? "—"}
                         </span>
                       </div>
-                      <p className="mt-1 text-xs text-milsaca-verde-claro">
+                      <p className="mt-1 text-caption text-neutral-600">
                         Prevista {fmtDate(r.data_prevista)}
                         {r.data_paga ? ` · Paga ${fmtDate(r.data_paga)}` : ""}
                       </p>
                     </div>
-                    <Badge
-                      className={`${STATUS_COLOR[r.status] ?? "bg-slate-100"} hover:${STATUS_COLOR[r.status] ?? "bg-slate-100"}`}
-                    >
+                    <StatusBadge tone={STATUS_TONE[r.status] ?? "neutral"}>
                       {STATUS_LABEL[r.status] ?? r.status}
-                    </Badge>
+                    </StatusBadge>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
                     <Money label="Bruto" value={Number(r.valor_bruto)} />
                     {desc ? (
                       <div className="sm:col-span-1">
-                        <p className="text-[10px] uppercase tracking-wide text-milsaca-verde-claro">
+                        <p className="text-caption uppercase tracking-wide text-neutral-500">
                           Descontos
                         </p>
-                        <p className="text-xs text-milsaca-verde-claro/80">
+                        <p className="text-caption text-neutral-600">
                           {desc}
                         </p>
                       </div>
@@ -206,7 +208,7 @@ export default async function FinanceiroPage() {
                     />
                   </div>
                   {r.observacoes ? (
-                    <p className="mt-2 text-xs italic text-milsaca-verde-claro/70">
+                    <p className="mt-2 text-caption italic text-neutral-500">
                       “{r.observacoes}”
                     </p>
                   ) : null}
@@ -215,7 +217,7 @@ export default async function FinanceiroPage() {
                       href={comprovanteUrls.get(r.id)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-milsaca-verde hover:underline"
+                      className="mt-3 inline-flex items-center gap-1 text-caption font-medium text-milsaca-cafezal hover:underline"
                     >
                       <FileText className="h-3.5 w-3.5" />
                       Ver comprovante
@@ -244,26 +246,26 @@ function KpiCard({
 }) {
   const className =
     tone === "warn" && value > 0
-      ? "border-rose-200 bg-rose-50/40"
+      ? "border-danger-100 bg-danger-50/40"
       : tone === "success"
-        ? "border-emerald-200 bg-emerald-50/40"
-        : "border-milsaca-cream-escuro";
+        ? "border-success-100 bg-success-50/40"
+        : undefined;
   const valClass =
     tone === "warn" && value > 0
-      ? "text-rose-700"
+      ? "text-danger-700"
       : tone === "success" && value > 0
-        ? "text-emerald-700"
+        ? "text-success-700"
         : "text-milsaca-verde";
   return (
     <Card className={className}>
-      <CardContent className="space-y-2 p-5">
+      <CardContent className="space-y-2 p-card">
         <div className="flex items-center justify-between">
-          <p className="text-xs uppercase tracking-wider text-milsaca-verde-claro">
+          <p className="text-caption font-medium uppercase tracking-wider text-neutral-500">
             {label}
           </p>
-          <span className="text-milsaca-verde-claro">{icon}</span>
+          <span className="text-neutral-500">{icon}</span>
         </div>
-        <p className={`text-2xl font-semibold tracking-tight ${valClass}`}>
+        <p className={`text-h2 tabular-nums ${valClass}`}>
           {BRL.format(value)}
         </p>
       </CardContent>
@@ -282,14 +284,14 @@ function Money({
 }) {
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-wide text-milsaca-verde-claro">
+      <p className="text-caption uppercase tracking-wide text-neutral-500">
         {label}
       </p>
       <p
         className={
           strong
-            ? "text-sm font-semibold text-milsaca-verde"
-            : "text-sm text-milsaca-verde-claro"
+            ? "text-body-sm font-semibold tabular-nums text-milsaca-verde"
+            : "text-body-sm tabular-nums text-neutral-600"
         }
       >
         {BRL.format(value)}

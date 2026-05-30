@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Truck } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { StatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/empty-state";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import {
-  ENTREGA_STATUS_COLOR,
+  ENTREGA_STATUS_TONE,
   ENTREGA_STATUS_LABEL,
   type EntregaStatus,
 } from "../../corretora/entregas/_lib/queries";
@@ -60,24 +61,28 @@ export default async function MinhasEntregasPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <h1 className="flex items-center gap-2 text-h1 text-milsaca-verde">
           <Truck className="h-7 w-7" />
           Minhas entregas
         </h1>
-        <p className="text-sm text-milsaca-verde-claro">
+        <p className="mt-1 text-body-sm text-neutral-600">
           Acompanhe as entregas programadas e recebidas pelas corretoras.
         </p>
       </header>
 
       {rows.length === 0 ? (
-        <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
-          <CardContent className="py-10 text-center text-sm text-milsaca-verde-claro">
-            Nenhuma entrega ainda. Quando a corretora programar, aparece aqui.
+        <Card tone="muted" className="border-dashed">
+          <CardContent className="p-card">
+            <EmptyState
+              icon={Truck}
+              title="Nenhuma entrega ainda"
+              description="Quando a corretora programar uma entrega para você, ela aparece aqui."
+            />
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-milsaca-cream-escuro">
-          <CardContent className="divide-y divide-milsaca-cream-escuro p-0">
+        <Card>
+          <CardContent className="divide-y divide-neutral-200 p-0">
             {rows.map((r) => {
               const c = pickOne(r.contrato);
               const cor = c ? pickOne(c.corretora) : null;
@@ -91,28 +96,28 @@ export default async function MinhasEntregasPage() {
                   key={r.id}
                   className={
                     atrasada
-                      ? "flex items-center justify-between gap-4 bg-rose-50/40 px-5 py-4"
+                      ? "flex items-center justify-between gap-4 bg-danger-50/40 px-5 py-4"
                       : "flex items-center justify-between gap-4 px-5 py-4"
                   }
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-mono text-xs text-milsaca-verde">
+                      <p className="font-mono text-caption text-milsaca-verde">
                         {c?.code ?? "—"}
                       </p>
-                      <span className="text-[10px] text-milsaca-verde-claro">
+                      <span className="text-caption text-neutral-500">
                         · #{r.sequencia}
                       </span>
                     </div>
-                    <p className="mt-0.5 text-sm text-milsaca-verde-claro">
+                    <p className="mt-0.5 text-body-sm text-neutral-600">
                       {cor?.name ?? "—"}
                     </p>
-                    <p className="mt-1 text-xs text-milsaca-verde-claro/80">
+                    <p className="mt-1 text-caption text-neutral-500">
                       {r.bag_count ? `${r.bag_count} sacas · ` : ""}
                       Prevista{" "}
                       <span
                         className={
-                          atrasada ? "font-medium text-rose-700" : undefined
+                          atrasada ? "font-medium text-danger-700" : undefined
                         }
                       >
                         {fmtDate(r.data_prevista)}
@@ -124,15 +129,13 @@ export default async function MinhasEntregasPage() {
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <Badge
-                      className={`${ENTREGA_STATUS_COLOR[r.status]} hover:${ENTREGA_STATUS_COLOR[r.status]}`}
-                    >
+                    <StatusBadge tone={ENTREGA_STATUS_TONE[r.status]}>
                       {ENTREGA_STATUS_LABEL[r.status]}
-                    </Badge>
+                    </StatusBadge>
                     {atrasada ? (
-                      <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100">
+                      <StatusBadge tone="danger" withDot>
                         Em atraso
-                      </Badge>
+                      </StatusBadge>
                     ) : null}
                   </div>
                 </div>
@@ -142,11 +145,11 @@ export default async function MinhasEntregasPage() {
         </Card>
       )}
 
-      <p className="text-xs text-milsaca-verde-claro/70">
+      <p className="text-caption text-neutral-500">
         Quer reagendar ou tirar dúvida?{" "}
         <Link
           href="/painel/produtor/corretoras"
-          className="text-milsaca-dourado hover:underline"
+          className="font-medium text-milsaca-cafezal hover:underline"
         >
           Fale com a corretora
         </Link>

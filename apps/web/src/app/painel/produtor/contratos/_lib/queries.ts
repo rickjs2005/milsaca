@@ -1,5 +1,6 @@
 import { createClient } from "@milsaca/db/web/server";
 import type { Database } from "@milsaca/types/database";
+import type { StatusTone } from "@/components/status-badge";
 
 export type ContratoStatus = Database["public"]["Enums"]["contrato_status"];
 
@@ -25,6 +26,15 @@ export const CONTRATO_STATUS_COLOR: Record<ContratoStatus, string> = {
   ativo: "bg-emerald-100 text-emerald-800",
   finalizado: "bg-milsaca-verde text-milsaca-cream",
   cancelado: "bg-rose-100 text-rose-800",
+};
+
+// Tone semântico (fundação D1) — usado pelo <StatusBadge> nas listagens.
+export const CONTRATO_STATUS_TONE: Record<ContratoStatus, StatusTone> = {
+  rascunho: "neutral",
+  em_analise: "warning",
+  ativo: "success",
+  finalizado: "premium",
+  cancelado: "danger",
 };
 
 export type MeuContratoListItem = {
