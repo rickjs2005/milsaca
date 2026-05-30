@@ -14,6 +14,12 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
+        // Variantes semânticas da marca (tokens de fundação D1).
+        // Badge suave: bg-{token}-50 / text-{token}-700 / border-{token}-100.
+        success: "border-success-100 bg-success-50 text-success-700",
+        warning: "border-warning-100 bg-warning-50 text-warning-700",
+        danger: "border-danger-100 bg-danger-50 text-danger-700",
+        info: "border-info-100 bg-info-50 text-info-700",
       },
     },
     defaultVariants: {

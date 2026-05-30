@@ -3,6 +3,8 @@ import { cn } from "./cn";
 
 type Variant = "default" | "verde" | "dourado" | "outline";
 
+// As variantes já usam tokens de marca (milsaca-*), não cores cruas.
+// API/variantes preservadas por retrocompat. Mapa separado da lógica.
 const variantClasses: Record<Variant, string> = {
   default: "bg-milsaca-cream-escuro text-milsaca-verde",
   verde: "bg-milsaca-verde text-milsaca-cream",

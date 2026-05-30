@@ -33,13 +33,25 @@ export type StatusKey =
   | "past_due"
   | "inativo";
 
+// tone → cores semânticas da marca (tokens de fundação D1).
+// Badge suave: bg-{token}-50 / text-{token}-700 / ring-{token}-100.
 const TONE_CLASSES: Record<StatusTone, string> = {
-  success: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  info: "bg-sky-50 text-sky-700 ring-sky-200",
-  warning: "bg-amber-50 text-amber-800 ring-amber-200",
-  danger: "bg-rose-50 text-rose-700 ring-rose-200",
-  neutral: "bg-slate-100 text-slate-700 ring-slate-200",
+  success: "bg-success-50 text-success-700 ring-success-100",
+  info: "bg-info-50 text-info-700 ring-info-100",
+  warning: "bg-warning-50 text-warning-700 ring-warning-100",
+  danger: "bg-danger-50 text-danger-700 ring-danger-100",
+  neutral: "bg-neutral-100 text-neutral-700 ring-neutral-200",
   premium: "bg-milsaca-dourado/10 text-milsaca-cafezal ring-milsaca-dourado/40",
+};
+
+// Bolinha indicadora: cor cheia (token 500) por tone.
+const DOT_CLASSES: Record<StatusTone, string> = {
+  success: "bg-success-500",
+  info: "bg-info-500",
+  warning: "bg-warning-500",
+  danger: "bg-danger-500",
+  neutral: "bg-neutral-400",
+  premium: "bg-milsaca-dourado",
 };
 
 const KEY_TO_TONE: Record<StatusKey, { tone: StatusTone; label: string }> = {
@@ -86,7 +98,7 @@ export function StatusBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-pill px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset",
+        "inline-flex items-center gap-1.5 rounded-pill px-2.5 py-0.5 text-caption font-medium ring-1 ring-inset",
         TONE_CLASSES[finalTone],
         className,
       )}
@@ -94,15 +106,7 @@ export function StatusBadge({
       {showDot ? (
         <span
           aria-hidden
-          className={cn(
-            "h-1.5 w-1.5 rounded-full",
-            finalTone === "success" && "bg-emerald-500",
-            finalTone === "info" && "bg-sky-500",
-            finalTone === "warning" && "bg-amber-500",
-            finalTone === "danger" && "bg-rose-500",
-            finalTone === "neutral" && "bg-slate-400",
-            finalTone === "premium" && "bg-milsaca-dourado",
-          )}
+          className={cn("h-1.5 w-1.5 rounded-full", DOT_CLASSES[finalTone])}
         />
       ) : null}
       {finalLabel}

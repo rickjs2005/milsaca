@@ -2,7 +2,7 @@
 
 import { useId } from "react";
 import { UFS } from "@/lib/brasil";
-import { cn } from "@/lib/utils";
+import { Select } from "@/components/ui/select";
 
 type Props = {
   name: string;
@@ -34,7 +34,7 @@ export function UfSelect({
   const initial = (defaultValue ?? "").toUpperCase();
 
   return (
-    <select
+    <Select
       id={fieldId}
       name={name}
       required={required}
@@ -42,10 +42,7 @@ export function UfSelect({
       aria-invalid={ariaInvalid}
       aria-describedby={ariaDescribedBy}
       onChange={onChange ? (e) => onChange(e.target.value) : undefined}
-      className={cn(
-        "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        className,
-      )}
+      className={className}
     >
       <option value="">—</option>
       {UFS.map((uf) => (
@@ -53,6 +50,6 @@ export function UfSelect({
           {uf}
         </option>
       ))}
-    </select>
+    </Select>
   );
 }

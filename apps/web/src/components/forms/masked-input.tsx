@@ -20,7 +20,6 @@ import {
   normalizePhoneBR,
   onlyDigits,
 } from "@/lib/brasil";
-import { cn } from "@/lib/utils";
 
 export type MaskType = "cpf" | "cnpj" | "cpf-cnpj" | "phone" | "cep";
 
@@ -152,10 +151,7 @@ export function MaskedInput({
         onBlur={() => setTouched(true)}
         aria-invalid={ariaInvalidProp ?? (isInvalidNow || undefined)}
         aria-describedby={ariaDescribedBy}
-        className={cn(
-          isInvalidNow && "border-destructive focus-visible:ring-destructive",
-          className,
-        )}
+        className={className}
       />
       {/* Submete valor normalizado pro form. */}
       <input type="hidden" name={name} value={normalized} />
