@@ -13,7 +13,8 @@ import {
   Package,
   Sparkles,
 } from "lucide-react";
-import { createClient } from "@milsaca/db/web/server";
+import { unstable_cache } from "next/cache";
+import { createPublicClient } from "@milsaca/db/web/public";
 
 /**
  * Página pública de um lote (anon-friendly via view `lotes_publicos`).
@@ -94,19 +95,36 @@ const STATUS_TONE: Record<string, string> = {
 
 const NUM = new Intl.NumberFormat("pt-BR");
 
+/**
+ * Busca do lote público cacheada (Opção A). Dados 100% públicos via view
+ * `lotes_publicos` (sem PII do produtor), independem de usuário logado.
+ * `unstable_cache` com client SEM cookie tira o tráfego do Postgres mesmo
+ * a página sendo dinâmica por `cookies()`. TTL 180s: dentro de 120-300s
+ * sugerido — lote muda mais que perfil (status/classificação podem mudar),
+ * mas não a ponto de exigir tempo real. Tag `lote-<id>` p/ invalidação.
+ *
+ * `generateMetadata` e a página reusam o mesmo fetch cacheado.
+ */
+function getLotePublico(id: string) {
+  const fetchLote = unstable_cache(
+    async (loteId: string): Promise<LotePublic | null> => {
+      const supabase = createPublicClient();
+      const { data } = await supabase
+        .from("lotes_publicos")
+        .select("*")
+        .eq("id", loteId)
+        .maybeSingle<LotePublic>();
+      return data ?? null;
+    },
+    ["lote-publico"],
+    { revalidate: 180, tags: [`lote-${id}`] },
+  );
+  return fetchLote(id);
+}
+
 export async function generateMetadata({ params }: Props) {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("lotes_publicos")
-    .select("codigo, specie, peso_sacas, corretora_name")
-    .eq("id", id)
-    .maybeSingle<{
-      codigo: string;
-      specie: "arabica" | "conillon";
-      peso_sacas: number | string | null;
-      corretora_name: string;
-    }>();
+  const data = await getLotePublico(id);
   if (!data) {
     return { title: "Lote não encontrado — Milsaca" };
   }
@@ -119,12 +137,7 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function LotePublicoPage({ params }: Props) {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("lotes_publicos")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle<LotePublic>();
+  const data = await getLotePublico(id);
 
   if (!data) notFound();
   const l = data;

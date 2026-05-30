@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-import { createClient } from "@milsaca/db/web/server";
+import { unstable_cache } from "next/cache";
+import { createPublicClient } from "@milsaca/db/web/public";
 import type { CoffeeProcesso, CoffeeSpecie } from "@milsaca/types";
 import type { DefeitosCrus } from "@milsaca/cob";
 
@@ -46,13 +47,28 @@ export type LaudoPublico = {
   corretora: LaudoPublicoCorretora;
 };
 
+/**
+ * Cache do laudo público. Laudo é IMUTÁVEL após emitido (o conteúdo nunca
+ * muda — por isso exibimos hash SHA-256 estável), então TTL alto: 1h.
+ * Dados 100% públicos (RPC `get_laudo_publico` projeta só campos seguros),
+ * independem de usuário — daí `unstable_cache` com client sem cookie, o que
+ * tira o tráfego do Postgres mesmo a página sendo dinâmica.
+ * Tag `laudo-<id>` permite invalidação pontual (revalidateTag) se preciso.
+ */
 export async function getLaudoPublico(id: string): Promise<LaudoPublico | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("get_laudo_publico", {
-    p_id: id,
-  });
-  if (error || !data) return null;
-  return data as unknown as LaudoPublico;
+  const fetchLaudo = unstable_cache(
+    async (laudoId: string): Promise<LaudoPublico | null> => {
+      const supabase = createPublicClient();
+      const { data, error } = await supabase.rpc("get_laudo_publico", {
+        p_id: laudoId,
+      });
+      if (error || !data) return null;
+      return data as unknown as LaudoPublico;
+    },
+    ["laudo-publico"],
+    { revalidate: 3600, tags: [`laudo-${id}`] },
+  );
+  return fetchLaudo(id);
 }
 
 /**

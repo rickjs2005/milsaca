@@ -9,7 +9,8 @@ import {
   MapPin,
   MessageCircle,
 } from "lucide-react";
-import { createClient } from "@milsaca/db/web/server";
+import { unstable_cache } from "next/cache";
+import { createPublicClient } from "@milsaca/db/web/public";
 
 /**
  * Página pública da corretora — pra ser compartilhada com produtores e
@@ -44,19 +45,39 @@ type CorretoraPublic = {
   site_url: string | null;
 };
 
+/**
+ * Busca da corretora pública cacheada (Opção A). A página não personaliza
+ * nada por usuário logado — é a vitrine pública da corretora — então é
+ * 100% cacheável. Usamos `unstable_cache` com client SEM cookie (a RPC/view
+ * `corretoras_publicas` só expõe campos públicos), tirando o tráfego do
+ * Postgres mesmo a página sendo dinâmica por causa de `cookies()`.
+ * TTL 600s: perfil de corretora muda muito pouco. Tag `corretora-<slug>`.
+ *
+ * `generateMetadata` e a página reusam o mesmo fetch cacheado (mesma chave),
+ * então só há 1 ida ao banco por slug a cada janela de revalidação.
+ */
+function getCorretoraPublica(slug: string) {
+  const fetchCorretora = unstable_cache(
+    async (s: string): Promise<CorretoraPublic | null> => {
+      const supabase = createPublicClient();
+      const { data } = await supabase
+        .from("corretoras_publicas")
+        .select(
+          "id, name, slug, city, state, phone, email, verified, descricao, logo_url, site_url",
+        )
+        .eq("slug", s)
+        .maybeSingle<CorretoraPublic>();
+      return data ?? null;
+    },
+    ["corretora-publica"],
+    { revalidate: 600, tags: [`corretora-${slug}`] },
+  );
+  return fetchCorretora(slug);
+}
+
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("corretoras_publicas")
-    .select("name, city, state, descricao")
-    .eq("slug", slug)
-    .maybeSingle<{
-      name: string;
-      city: string | null;
-      state: string | null;
-      descricao: string | null;
-    }>();
+  const data = await getCorretoraPublica(slug);
   if (!data) {
     return { title: "Corretora não encontrada — Milsaca" };
   }
@@ -79,14 +100,7 @@ function sanitizePhone(phone: string | null): string | null {
 
 export default async function CorretoraPublicPage({ params }: Props) {
   const { slug } = await params;
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("corretoras_publicas")
-    .select(
-      "id, name, slug, city, state, phone, email, verified, descricao, logo_url, site_url",
-    )
-    .eq("slug", slug)
-    .maybeSingle<CorretoraPublic>();
+  const data = await getCorretoraPublica(slug);
 
   if (!data) {
     notFound();

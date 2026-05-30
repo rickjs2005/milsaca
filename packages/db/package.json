@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./web/client": "./src/web/client.ts",
+    "./web/public": "./src/web/public.ts",
     "./web/server": "./src/web/server.ts",
     "./web/middleware": "./src/web/middleware.ts",
     "./mobile": "./src/mobile.ts"
