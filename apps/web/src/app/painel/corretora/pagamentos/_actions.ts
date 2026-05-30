@@ -86,6 +86,13 @@ export async function createPagamento(formData: FormData) {
   });
 
   if (error) {
+    // 23505 = violação do índice unique parcial produtor_pagamentos_contrato_unico:
+    // já existe um pagamento não-cancelado para este contrato (achado 6.1).
+    if (error.code === "23505") {
+      redirect(
+        `${back}?error=${encodeURIComponent("Já existe um pagamento ativo para este contrato.")}`,
+      );
+    }
     redirect(`${back}?error=${encodeURIComponent(friendlyPostgresError(error))}`);
   }
 
@@ -107,10 +114,50 @@ export async function marcarPago(formData: FormData) {
 
   const idParsed = uuidSchema.safeParse(String(formData.get("id") ?? "").trim());
   if (!idParsed.success) redirect("/painel/corretora/pagamentos");
-  const comprovante =
-    String(formData.get("comprovante_url") ?? "").trim() || null;
+  const pagamentoId = idParsed.data;
 
   const supabase = await createClient();
+
+  // Comprovante: pode vir como ARQUIVO (campo "comprovante") ou, por
+  // retrocompatibilidade, como texto livre (campo "comprovante_url").
+  let comprovante: string | null =
+    String(formData.get("comprovante_url") ?? "").trim() || null;
+
+  const arquivo = formData.get("comprovante");
+  if (arquivo instanceof File && arquivo.size > 0) {
+    const tipoOk =
+      arquivo.type.startsWith("image/") || arquivo.type === "application/pdf";
+    if (!tipoOk) {
+      redirect(
+        `/painel/corretora/pagamentos?error=${encodeURIComponent("O comprovante precisa ser uma imagem ou PDF.")}`,
+      );
+    }
+    if (arquivo.size > 5 * 1024 * 1024) {
+      redirect(
+        `/painel/corretora/pagamentos?error=${encodeURIComponent("O comprovante deve ter no máximo 5MB.")}`,
+      );
+    }
+
+    const ext =
+      arquivo.type === "application/pdf"
+        ? "pdf"
+        : (arquivo.name.split(".").pop() || "").toLowerCase().replace(/[^a-z0-9]/g, "") ||
+          (arquivo.type.split("/")[1] ?? "bin");
+    // Path convention: {corretora_id}/{pagamento_id}.{ext}
+    const path = `${profile.corretora_id}/${pagamentoId}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("comprovantes")
+      .upload(path, arquivo, { upsert: true, contentType: arquivo.type });
+
+    if (uploadError) {
+      redirect(
+        `/painel/corretora/pagamentos?error=${encodeURIComponent("Não foi possível enviar o comprovante. Tente novamente.")}`,
+      );
+    }
+    comprovante = path;
+  }
+
   const { error } = await supabase
     .from("produtor_pagamentos")
     .update({
@@ -118,7 +165,7 @@ export async function marcarPago(formData: FormData) {
       data_paga: new Date().toISOString().slice(0, 10),
       comprovante_url: comprovante,
     })
-    .eq("id", idParsed.data)
+    .eq("id", pagamentoId)
     .eq("corretora_id", profile.corretora_id);
 
   if (error) {

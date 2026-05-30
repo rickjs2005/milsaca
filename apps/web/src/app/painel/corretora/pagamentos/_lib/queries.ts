@@ -98,6 +98,27 @@ export async function listPagamentos(
   });
 }
 
+/**
+ * Gera uma signed URL (5 min) para um comprovante do bucket privado
+ * "comprovantes". `path` é o valor gravado em `comprovante_url`
+ * (ex.: "{corretora_id}/{pagamento_id}.{ext}"). Retorna null se falhar
+ * ou se o path não for um caminho de Storage (compat com valores antigos
+ * que possam ser URL/texto livre).
+ */
+export async function signedComprovanteUrl(
+  path: string | null,
+): Promise<string | null> {
+  if (!path) return null;
+  // Valores legados podem ser uma URL completa — devolve como está.
+  if (/^https?:\/\//i.test(path)) return path;
+  const supabase = await createClient();
+  const { data, error } = await supabase.storage
+    .from("comprovantes")
+    .createSignedUrl(path, 60 * 5);
+  if (error || !data) return null;
+  return data.signedUrl;
+}
+
 export type ContratoPicker = {
   id: string;
   code: string;

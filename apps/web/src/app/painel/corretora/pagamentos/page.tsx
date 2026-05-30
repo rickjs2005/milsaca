@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Wallet, CheckCircle2 } from "lucide-react";
+import { Plus, Wallet, CheckCircle2, FileText } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { SubmitButton } from "@/components/submit-button";
 import { getProfile } from "@/lib/auth";
 import {
   listPagamentos,
+  signedComprovanteUrl,
   PAGAMENTO_STATUS_LABEL,
   PAGAMENTO_STATUS_COLOR,
   PAGAMENTO_STATUS_ORDER,
@@ -55,6 +56,17 @@ export default async function PagamentosPage({
   const sp = await searchParams;
   const status = isStatus(sp.status) ? sp.status : undefined;
   const itens = await listPagamentos(profile.corretora_id, { status });
+
+  // Signed URLs (5 min) para comprovantes dos pagamentos já pagos.
+  const comprovanteUrls = new Map<string, string>();
+  await Promise.all(
+    itens
+      .filter((p) => p.status === "pago" && p.comprovante_url)
+      .map(async (p) => {
+        const url = await signedComprovanteUrl(p.comprovante_url);
+        if (url) comprovanteUrls.set(p.id, url);
+      }),
+  );
 
   // Stats sobre TODOS (independente do filtro) — busca rápida sem filtro.
   const all = status ? await listPagamentos(profile.corretora_id) : itens;
@@ -210,8 +222,19 @@ export default async function PagamentosPage({
                       <td className="px-5 py-3">
                         {aberto ? (
                           <div className="flex items-center justify-end gap-3 whitespace-nowrap">
-                            <form action={marcarPago}>
+                            <form
+                              action={marcarPago}
+                              encType="multipart/form-data"
+                              className="flex items-center gap-2"
+                            >
                               <input type="hidden" name="id" value={p.id} />
+                              <input
+                                type="file"
+                                name="comprovante"
+                                accept="image/*,application/pdf"
+                                title="Anexar comprovante (foto ou PDF do PIX) — opcional"
+                                className="max-w-[10rem] text-xs text-milsaca-verde-claro file:mr-2 file:rounded-md file:border-0 file:bg-milsaca-cream-escuro file:px-2 file:py-1 file:text-xs file:text-milsaca-verde hover:file:bg-milsaca-cream-claro"
+                              />
                               <SubmitButton
                                 size="sm"
                                 pendingLabel="..."
@@ -240,6 +263,19 @@ export default async function PagamentosPage({
                                 Cancelar
                               </ConfirmSubmit>
                             </form>
+                          </div>
+                        ) : p.status === "pago" &&
+                          comprovanteUrls.has(p.id) ? (
+                          <div className="flex items-center justify-end whitespace-nowrap">
+                            <a
+                              href={comprovanteUrls.get(p.id)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-milsaca-verde hover:underline"
+                            >
+                              <FileText className="h-3.5 w-3.5" />
+                              Ver comprovante
+                            </a>
                           </div>
                         ) : null}
                       </td>

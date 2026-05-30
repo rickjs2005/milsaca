@@ -1,9 +1,16 @@
 import { redirect } from "next/navigation";
-import { Wallet, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
+import {
+  Wallet,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  FileText,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
+import { signedComprovanteUrl } from "../../corretora/pagamentos/_lib/queries";
 
 export const metadata = { title: "Financeiro — Milsaca" };
 
@@ -82,6 +89,17 @@ export default async function FinanceiroPage() {
     corretora: { name: string } | { name: string }[] | null;
   };
   const rows = (data ?? []) as Row[];
+
+  // Signed URLs (5 min) para comprovantes dos pagamentos já pagos.
+  const comprovanteUrls = new Map<string, string>();
+  await Promise.all(
+    rows
+      .filter((r) => r.status === "pago" && r.comprovante_url)
+      .map(async (r) => {
+        const url = await signedComprovanteUrl(r.comprovante_url);
+        if (url) comprovanteUrls.set(r.id, url);
+      }),
+  );
 
   function pickOne<T>(v: T | T[] | null | undefined): T | null {
     if (v == null) return null;
@@ -191,6 +209,17 @@ export default async function FinanceiroPage() {
                     <p className="mt-2 text-xs italic text-milsaca-verde-claro/70">
                       “{r.observacoes}”
                     </p>
+                  ) : null}
+                  {comprovanteUrls.has(r.id) ? (
+                    <a
+                      href={comprovanteUrls.get(r.id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-milsaca-verde hover:underline"
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      Ver comprovante
+                    </a>
                   ) : null}
                 </div>
               );
