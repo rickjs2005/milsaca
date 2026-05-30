@@ -1,0 +1,26 @@
+# Milsaca — robots.txt
+# Mitiga scraping bem-comportado das rotas de detalhe que expõem dados
+# (lotes, laudos, verificação de contratos). Não substitui rate-limit/auth:
+# crawlers maliciosos ignoram este arquivo — isto cobre só os obedientes.
+
+User-agent: *
+
+# Páginas de detalhe com dados sensíveis/granulares. Sem valor de SEO e
+# alvo típico de coleta automatizada — bloqueadas.
+Disallow: /lote/
+Disallow: /laudos/
+Disallow: /contratos/
+
+# Rotas autenticadas / de fluxo: nada a indexar.
+Disallow: /painel/
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /api/
+
+# /c/ (perfil público de corretora) é catálogo voltado a SEO — PERMITIDO
+# de propósito pra ser indexável. Não há Disallow pra ele.
+
+# Educa crawlers a não martelar o servidor.
+Crawl-delay: 10
+
+# Sem Sitemap: o projeto ainda não gera sitemap.xml (não há app/sitemap.ts).
