@@ -139,12 +139,10 @@ export default async function CorretoraPublicPage({ params }: Props) {
           )}
           <div className="flex-1 space-y-2">
             <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                {c.name}
-              </h1>
+              <h1 className="text-h1 tracking-tight">{c.name}</h1>
               {c.verified ? (
                 <span
-                  className="inline-flex items-center gap-1 rounded-full bg-milsaca-dourado/15 px-2.5 py-1 text-[11px] font-medium text-milsaca-dourado ring-1 ring-inset ring-milsaca-dourado/40"
+                  className="inline-flex items-center gap-1 rounded-pill bg-milsaca-dourado/15 px-2.5 py-1 text-caption font-medium text-milsaca-dourado ring-1 ring-inset ring-milsaca-dourado/40"
                   title="Corretora verificada pela Milsaca"
                 >
                   <BadgeCheck className="h-3 w-3" />
@@ -153,13 +151,13 @@ export default async function CorretoraPublicPage({ params }: Props) {
               ) : null}
             </div>
             {local ? (
-              <p className="inline-flex items-center justify-center gap-1.5 text-sm text-milsaca-cream/75 sm:justify-start">
+              <p className="inline-flex items-center justify-center gap-1.5 text-body-sm text-milsaca-cream/75 sm:justify-start">
                 <MapPin className="h-3.5 w-3.5" />
                 {local}
               </p>
             ) : null}
             {c.descricao ? (
-              <p className="text-sm leading-relaxed text-milsaca-cream/80 sm:text-base">
+              <p className="text-body-sm leading-relaxed text-milsaca-cream/80 sm:text-body">
                 {c.descricao}
               </p>
             ) : null}
@@ -168,7 +166,7 @@ export default async function CorretoraPublicPage({ params }: Props) {
       </header>
 
       <section className="mx-auto -mt-8 max-w-3xl px-6 pb-12 sm:px-0">
-        <div className="rounded-card border border-milsaca-cream-escuro bg-white p-6 shadow-card-hover sm:p-8">
+        <div className="rounded-card border border-neutral-200 bg-white p-6 shadow-card-hover sm:p-8">
           <div className="grid gap-3 sm:grid-cols-2">
             <a
               href={waHref}
@@ -191,12 +189,12 @@ export default async function CorretoraPublicPage({ params }: Props) {
           </div>
 
           {c.site_url ? (
-            <div className="mt-6 border-t border-milsaca-cream-escuro pt-5">
+            <div className="mt-6 border-t border-neutral-200 pt-5">
               <Link
                 href={c.site_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-medium text-milsaca-cafezal hover:underline"
+                className="inline-flex items-center gap-2 text-body-sm font-medium text-milsaca-cafezal hover:underline"
               >
                 <Globe className="h-3.5 w-3.5" />
                 {c.site_url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
@@ -206,7 +204,7 @@ export default async function CorretoraPublicPage({ params }: Props) {
           ) : null}
         </div>
 
-        <p className="mt-6 text-center text-xs text-milsaca-verde-claro/70">
+        <p className="mt-6 text-center text-caption text-neutral-500">
           Página oficial da {c.name} no Milsaca — sistema de corretagem de café.
         </p>
       </section>

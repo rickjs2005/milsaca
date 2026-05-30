@@ -86,11 +86,11 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_TONE: Record<string, string> = {
-  aguardando_classificacao: "bg-milsaca-dourado/20 text-milsaca-verde",
-  classificado: "bg-emerald-100 text-emerald-800",
-  fora_de_tipo: "bg-rose-100 text-rose-800",
-  rebeneficiar: "bg-amber-100 text-amber-800",
-  vendido: "bg-milsaca-verde text-milsaca-cream",
+  aguardando_classificacao: "bg-warning-50 text-warning-700 ring-1 ring-inset ring-warning-100",
+  classificado: "bg-success-50 text-success-700 ring-1 ring-inset ring-success-100",
+  fora_de_tipo: "bg-danger-50 text-danger-700 ring-1 ring-inset ring-danger-100",
+  rebeneficiar: "bg-warning-50 text-warning-700 ring-1 ring-inset ring-warning-100",
+  vendido: "bg-milsaca-cafezal text-milsaca-cream",
 };
 
 const NUM = new Intl.NumberFormat("pt-BR");
@@ -174,7 +174,7 @@ export default async function LotePublicoPage({ params }: Props) {
               {l.codigo}
             </span>
             <span
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${STATUS_TONE[l.status] ?? "bg-slate-100 text-slate-700"}`}
+              className={`inline-flex items-center gap-1 rounded-pill px-2.5 py-1 text-caption font-medium ${STATUS_TONE[l.status] ?? "bg-neutral-100 text-neutral-700"}`}
             >
               {STATUS_LABEL[l.status] ?? l.status}
             </span>
@@ -196,13 +196,13 @@ export default async function LotePublicoPage({ params }: Props) {
 
       {/* ============= CTA principal ============= */}
       <section className="mx-auto -mt-8 max-w-3xl px-6 sm:px-0">
-        <div className="rounded-card border border-milsaca-cream-escuro bg-white p-6 shadow-card-hover sm:p-8">
+        <div className="rounded-card border border-neutral-200 bg-white p-6 shadow-card-hover sm:p-8">
           <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
             <div>
-              <p className="text-xs uppercase tracking-wider text-milsaca-verde-claro">
+              <p className="text-xs uppercase tracking-wider text-neutral-600">
                 Ofertado pela
               </p>
-              <p className="mt-0.5 flex flex-wrap items-center gap-2 text-base font-semibold text-milsaca-verde">
+              <p className="mt-0.5 flex flex-wrap items-center gap-2 text-base font-semibold text-milsaca-cafezal">
                 {l.corretora_name}
                 {l.corretora_verified ? (
                   <span
@@ -215,7 +215,7 @@ export default async function LotePublicoPage({ params }: Props) {
                 ) : null}
               </p>
               {corretoraLocal ? (
-                <p className="text-xs text-milsaca-verde-claro">
+                <p className="text-xs text-neutral-600">
                   {corretoraLocal}
                 </p>
               ) : null}
@@ -237,10 +237,10 @@ export default async function LotePublicoPage({ params }: Props) {
       <section className="mx-auto mt-8 max-w-3xl space-y-4 px-6 pb-16 sm:px-0">
         {/* Classificação vigente */}
         {l.classificacao_tipo || l.classificacao_fora_de_tipo ? (
-          <article className="rounded-card border border-milsaca-cream-escuro bg-white p-6 shadow-card">
+          <article className="rounded-card border border-neutral-200 bg-white p-6 shadow-card">
             <div className="mb-4 flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-milsaca-dourado" />
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-600">
                 Classificação
               </h2>
             </div>
@@ -276,10 +276,10 @@ export default async function LotePublicoPage({ params }: Props) {
         ) : null}
 
         {/* Origem do café */}
-        <article className="rounded-card border border-milsaca-cream-escuro bg-white p-6 shadow-card">
+        <article className="rounded-card border border-neutral-200 bg-white p-6 shadow-card">
           <div className="mb-4 flex items-center gap-2">
             <Coffee className="h-4 w-4 text-milsaca-cafezal" />
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-600">
               Origem do café
             </h2>
           </div>
@@ -320,8 +320,8 @@ export default async function LotePublicoPage({ params }: Props) {
             ) : null}
           </div>
           {l.certificacoes && l.certificacoes.length > 0 ? (
-            <div className="mt-4 border-t border-milsaca-cream-escuro pt-4">
-              <p className="text-[10px] uppercase tracking-wider text-milsaca-verde-claro/70">
+            <div className="mt-4 border-t border-neutral-200 pt-4">
+              <p className="text-[10px] uppercase tracking-wider text-neutral-500">
                 Certificações
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -340,7 +340,7 @@ export default async function LotePublicoPage({ params }: Props) {
         </article>
 
         {/* Corretora — link pra página pública */}
-        <article className="rounded-card border border-milsaca-cream-escuro bg-white p-6 shadow-card">
+        <article className="rounded-card border border-neutral-200 bg-white p-6 shadow-card">
           <div className="flex flex-wrap items-start gap-4">
             {l.corretora_logo_url ? (
               <Image
@@ -349,7 +349,7 @@ export default async function LotePublicoPage({ params }: Props) {
                 width={56}
                 height={56}
                 unoptimized
-                className="h-14 w-14 shrink-0 rounded-lg border border-milsaca-cream-escuro bg-white object-contain p-1"
+                className="h-14 w-14 shrink-0 rounded-lg border border-neutral-200 bg-white object-contain p-1"
               />
             ) : (
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-milsaca-dourado/20 text-2xl font-bold text-milsaca-dourado">
@@ -357,16 +357,16 @@ export default async function LotePublicoPage({ params }: Props) {
               </div>
             )}
             <div className="min-w-0 flex-1 space-y-1">
-              <p className="text-base font-semibold text-milsaca-verde">
+              <p className="text-base font-semibold text-milsaca-cafezal">
                 {l.corretora_name}
               </p>
               {corretoraLocal ? (
-                <p className="text-xs text-milsaca-verde-claro">
+                <p className="text-xs text-neutral-600">
                   {corretoraLocal}
                 </p>
               ) : null}
               {l.corretora_descricao ? (
-                <p className="line-clamp-2 text-xs text-milsaca-verde-claro/85">
+                <p className="line-clamp-2 text-xs text-neutral-500">
                   {l.corretora_descricao}
                 </p>
               ) : null}
@@ -381,7 +381,7 @@ export default async function LotePublicoPage({ params }: Props) {
           </div>
         </article>
 
-        <p className="text-center text-[11px] text-milsaca-verde-claro/70">
+        <p className="text-center text-[11px] text-neutral-500">
           Lote ofertado via Milsaca · sistema de corretagem de café
         </p>
       </section>
@@ -402,16 +402,16 @@ function KvField({
 }) {
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-wider text-milsaca-verde-claro/70">
+      <p className="text-caption uppercase tracking-wider text-neutral-500">
         {label}
       </p>
       <p
-        className={`mt-0.5 inline-flex items-center gap-1.5 text-sm font-medium ${
+        className={`mt-0.5 inline-flex items-center gap-1.5 text-body-sm font-medium ${
           tone === "danger"
-            ? "text-rose-700"
+            ? "text-danger-700"
             : tone === "ok"
-              ? "text-emerald-700"
-              : "text-milsaca-verde"
+              ? "text-success-700"
+              : "text-milsaca-preto"
         }`}
       >
         {icon}

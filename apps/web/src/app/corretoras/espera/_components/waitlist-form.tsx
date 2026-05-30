@@ -1,6 +1,7 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
+import { Input, inputBaseClassName } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { FormField } from "@/components/forms/form-field";
 import { MaskedInput } from "@/components/forms/masked-input";
 import { UfSelect } from "@/components/forms/uf-select";
@@ -84,20 +85,25 @@ export function WaitlistForm({
           name="message"
           rows={3}
           maxLength={500}
-          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className={cn(inputBaseClassName, "h-auto resize-y py-2 sm:h-auto")}
           placeholder="Conta um pouco sobre a sua corretora (cidade, tempo de mercado...)"
         />
       </FormField>
 
       {error ? (
-        <p role="alert" className="text-sm font-medium text-destructive">
+        <p
+          role="alert"
+          className="rounded-md border border-danger-100 bg-danger-50 px-3 py-2 text-body-sm font-medium text-danger-700"
+        >
           {error}
         </p>
       ) : null}
 
       <SubmitButton
+        variant="primary"
+        size="lg"
         pendingLabel="Enviando..."
-        className="w-full bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+        className="w-full"
       >
         Entrar na lista de espera
       </SubmitButton>

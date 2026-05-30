@@ -10,24 +10,24 @@ export const TERMOS_VERSAO = "2026-05-28";
 
 export default function TermosPage() {
   return (
-    <main className="min-h-screen bg-milsaca-cream px-6 py-10">
-      <article className="mx-auto max-w-3xl space-y-6">
+    <main className="min-h-screen bg-milsaca-cream px-6 py-12">
+      <article className="mx-auto max-w-prose space-y-8">
         <header>
           <Link
             href="/"
-            className="text-xs text-milsaca-dourado hover:underline"
+            className="text-caption font-medium text-milsaca-cafezal hover:underline"
           >
             ← Voltar
           </Link>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-milsaca-verde">
+          <h1 className="mt-3 text-h1 tracking-tight text-milsaca-cafezal">
             Termos de Uso
           </h1>
-          <p className="mt-1 text-xs text-milsaca-verde-claro">
+          <p className="mt-1 text-caption text-neutral-500">
             Versão {TERMOS_VERSAO}
           </p>
         </header>
 
-        <section className="space-y-3 text-sm leading-relaxed text-milsaca-verde-claro">
+        <section className="space-y-3 text-body text-neutral-700">
           <p>
             Estes Termos de Uso regem o acesso e a utilização da plataforma{" "}
             <strong>Milsaca</strong>, que conecta produtores de café,
@@ -180,7 +180,7 @@ export default function TermosPage() {
             tratá-los na medida necessária para operar o serviço, conforme a{" "}
             <Link
               href="/politica-privacidade"
-              className="font-medium text-milsaca-verde underline-offset-2 hover:underline"
+              className="font-medium text-milsaca-cafezal underline-offset-2 hover:underline"
             >
               Política de Privacidade
             </Link>
@@ -215,7 +215,7 @@ export default function TermosPage() {
             tratamento dos seus dados após o encerramento segue a{" "}
             <Link
               href="/politica-privacidade"
-              className="font-medium text-milsaca-verde underline-offset-2 hover:underline"
+              className="font-medium text-milsaca-cafezal underline-offset-2 hover:underline"
             >
               Política de Privacidade
             </Link>
@@ -228,7 +228,7 @@ export default function TermosPage() {
             O tratamento de dados pessoais é descrito na nossa{" "}
             <Link
               href="/politica-privacidade"
-              className="font-medium text-milsaca-verde underline-offset-2 hover:underline"
+              className="font-medium text-milsaca-cafezal underline-offset-2 hover:underline"
             >
               Política de Privacidade
             </Link>
@@ -260,7 +260,7 @@ export default function TermosPage() {
             <br />
             <a
               href="mailto:contato@milsaca.app"
-              className="font-medium text-milsaca-verde underline-offset-2 hover:underline"
+              className="font-medium text-milsaca-cafezal underline-offset-2 hover:underline"
             >
               contato@milsaca.app
             </a>
@@ -280,10 +280,8 @@ function Section({
 }) {
   return (
     <section className="space-y-2">
-      <h2 className="text-lg font-semibold text-milsaca-verde">{title}</h2>
-      <div className="text-sm leading-relaxed text-milsaca-verde-claro">
-        {children}
-      </div>
+      <h2 className="text-h3 text-milsaca-cafezal">{title}</h2>
+      <div className="text-body text-neutral-700">{children}</div>
     </section>
   );
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CheckCircle2 } from "lucide-react";
 import { MilsacaLogo } from "@/components/milsaca-logo";
 import {
   Card,
@@ -37,19 +38,20 @@ export default async function EsperaCorretoraPage({
           <MilsacaLogo size={160} priority />
         </div>
 
-        <Card className="border-milsaca-cream-escuro shadow-sm">
+        <Card>
           {enviado ? (
             <CardContent className="space-y-4 py-10 text-center">
-              <h1 className="text-2xl font-bold text-milsaca-verde">
-                Tá na lista!
-              </h1>
-              <p className="text-sm leading-relaxed text-milsaca-verde-claro">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success-50 text-success-600 ring-1 ring-inset ring-success-100">
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+              <h1 className="text-h2 text-milsaca-cafezal">Tá na lista!</h1>
+              <p className="text-body-sm leading-relaxed text-neutral-600">
                 Anotamos seu interesse. Assim que abrirmos novas vagas de
                 corretora, a gente te chama no WhatsApp.
               </p>
               <Link
                 href="/"
-                className="inline-block text-sm font-medium text-milsaca-verde hover:underline"
+                className="inline-block text-body-sm font-medium text-milsaca-cafezal hover:underline"
               >
                 Voltar pro início
               </Link>
@@ -57,7 +59,7 @@ export default async function EsperaCorretoraPage({
           ) : (
             <>
               <CardHeader className="space-y-1.5 pb-2">
-                <CardTitle className="text-2xl">
+                <CardTitle className="text-h2 text-milsaca-cafezal">
                   Lista de espera de corretora
                 </CardTitle>
                 <CardDescription>
@@ -71,11 +73,11 @@ export default async function EsperaCorretoraPage({
                   defaults={{ name: sp.name ?? "" }}
                   error={sp.error ?? null}
                 />
-                <p className="mt-6 text-center text-sm text-milsaca-verde-claro">
+                <p className="mt-6 text-center text-body-sm text-neutral-600">
                   É produtor?{" "}
                   <Link
                     href="/cadastrar"
-                    className="font-medium text-milsaca-verde hover:underline"
+                    className="font-medium text-milsaca-cafezal hover:underline"
                   >
                     Criar conta de produtor
                   </Link>

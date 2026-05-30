@@ -51,15 +51,15 @@ function Parte({
 }) {
   return (
     <div>
-      <p className="text-[11px] uppercase tracking-wider text-milsaca-verde-claro">
+      <p className="text-[11px] uppercase tracking-wider text-neutral-600">
         {titulo}
       </p>
-      <p className="font-medium text-milsaca-verde">{nome}</p>
+      <p className="font-medium text-milsaca-cafezal">{nome}</p>
       {doc && (
-        <p className="font-mono text-xs text-milsaca-verde-claro">{doc}</p>
+        <p className="font-mono text-xs text-neutral-600">{doc}</p>
       )}
       {(city || state) && (
-        <p className="text-xs text-milsaca-verde-claro">
+        <p className="text-xs text-neutral-600">
           {[city, state].filter(Boolean).join(" / ")}
         </p>
       )}
@@ -88,52 +88,52 @@ export default async function VerificarContratoPage({
     <div className="min-h-screen bg-milsaca-cream py-8">
       <div className="mx-auto max-w-3xl space-y-6 px-4">
         {/* Header */}
-        <header className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-milsaca-verde pb-6">
+        <header className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-milsaca-cafezal pb-6">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
+            <h1 className="text-h1 tracking-tight text-milsaca-cafezal">
               {contrato.corretora.name}
             </h1>
-            <p className="mt-1 text-sm text-milsaca-verde-claro">
+            <p className="mt-1 text-body-sm text-neutral-600">
               {[contrato.corretora.city, contrato.corretora.state]
                 .filter(Boolean)
                 .join(" / ")}
             </p>
-            <Badge className="mt-2 bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
+            <Badge variant="success" className="mt-2">
               <ShieldCheck className="mr-1 h-3 w-3" />
               Documento emitido via Milsaca
             </Badge>
           </div>
           <div className="text-right">
-            <p className="text-xs uppercase tracking-wider text-milsaca-verde-claro">
+            <p className="text-caption uppercase tracking-wider text-neutral-500">
               Verificação de contrato
             </p>
-            <p className="text-sm font-medium text-milsaca-verde">
+            <p className="text-body-sm font-medium text-milsaca-cafezal">
               Nº {contrato.code}
             </p>
-            <p className="text-xs text-milsaca-verde-claro">
+            <p className="text-caption text-neutral-500">
               Assinado em {formatDate(contrato.signed_at)}
             </p>
           </div>
         </header>
 
         {/* Situação */}
-        <Card className="border-2 border-milsaca-verde bg-milsaca-cream-escuro/30">
+        <Card className="border-2 border-milsaca-cafezal bg-neutral-50">
           <CardContent className="space-y-2 py-6">
-            <p className="text-xs uppercase tracking-wider text-milsaca-verde-claro">
+            <p className="text-caption uppercase tracking-wider text-neutral-500">
               Situação
             </p>
             <div className="flex items-center gap-2">
               {contrato.status === "ativo" ||
               contrato.status === "finalizado" ? (
-                <CheckCircle2 className="h-6 w-6 text-milsaca-verde" />
+                <CheckCircle2 className="h-6 w-6 text-success-600" />
               ) : (
-                <FileCheck2 className="h-6 w-6 text-milsaca-verde-claro" />
+                <FileCheck2 className="h-6 w-6 text-neutral-500" />
               )}
-              <span className="text-2xl font-semibold text-milsaca-verde">
+              <span className="text-h2 text-milsaca-cafezal">
                 {STATUS_LABEL[contrato.status] ?? contrato.status}
               </span>
             </div>
-            <p className="text-xs text-milsaca-verde-claro">
+            <p className="text-caption text-neutral-500">
               Esta página confirma a existência e a integridade do documento
               gerado pela Milsaca. Por privacidade (LGPD), nomes e documentos
               aparecem parcialmente mascarados e valores não são exibidos.
@@ -142,7 +142,7 @@ export default async function VerificarContratoPage({
         </Card>
 
         {/* Partes */}
-        <Card className="border-milsaca-cream-escuro">
+        <Card className="border-neutral-200">
           <CardContent className="grid grid-cols-1 gap-4 py-5 sm:grid-cols-2">
             <Parte
               titulo="Produtor (vendedor)"
@@ -161,34 +161,34 @@ export default async function VerificarContratoPage({
               />
             ) : (
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-milsaca-verde-claro">
+                <p className="text-[11px] uppercase tracking-wider text-neutral-600">
                   Comprador
                 </p>
-                <p className="font-medium text-milsaca-verde">— a definir —</p>
+                <p className="font-medium text-milsaca-cafezal">— a definir —</p>
               </div>
             )}
           </CardContent>
         </Card>
 
         {/* Hash + QR */}
-        <Card className="border-milsaca-cream-escuro">
+        <Card className="border-neutral-200">
           <CardContent className="space-y-4 py-5">
             <div>
-              <p className="text-[11px] uppercase tracking-wider text-milsaca-verde-claro">
+              <p className="text-[11px] uppercase tracking-wider text-neutral-600">
                 Hash SHA-256 do documento
               </p>
               {contrato.content_hash ? (
-                <p className="mt-1 break-all font-mono text-xs text-milsaca-verde">
+                <p className="mt-1 break-all font-mono text-xs text-milsaca-cafezal">
                   {contrato.content_hash}
                 </p>
               ) : (
-                <p className="mt-1 text-xs text-milsaca-verde-claro">
+                <p className="mt-1 text-xs text-neutral-600">
                   Ainda não assinado — o hash é congelado quando o contrato é
                   assinado.
                 </p>
               )}
             </div>
-            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-milsaca-cream-escuro pt-4">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-neutral-200 pt-4">
               <div className="flex items-center gap-4">
                 {/* eslint-disable-next-line @next/next/no-img-element -- data URL, sem ganho com next/image */}
                 <img
@@ -196,8 +196,8 @@ export default async function VerificarContratoPage({
                   alt="QR code para verificação"
                   className="h-24 w-24"
                 />
-                <div className="text-xs text-milsaca-verde-claro">
-                  <p className="font-medium text-milsaca-verde">
+                <div className="text-xs text-neutral-600">
+                  <p className="font-medium text-milsaca-cafezal">
                     Verifique este contrato
                   </p>
                   <p>Escaneie o QR ou acesse o link abaixo.</p>
@@ -210,7 +210,7 @@ export default async function VerificarContratoPage({
           </CardContent>
         </Card>
 
-        <footer className="pt-4 text-center text-xs text-milsaca-verde-claro">
+        <footer className="pt-4 text-center text-xs text-neutral-600">
           <p className="inline-flex items-center gap-1">
             <MapPin className="h-3 w-3" />
             Documento emitido via Milsaca — milsaca.app

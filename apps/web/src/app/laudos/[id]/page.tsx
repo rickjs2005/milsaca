@@ -99,12 +99,12 @@ export default async function LaudoPublicoPage({
     <div className="min-h-screen bg-milsaca-cream py-8">
       <div className="mx-auto max-w-3xl space-y-6 px-4">
         {/* Header com identidade da corretora */}
-        <header className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-milsaca-verde pb-6">
+        <header className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-milsaca-cafezal pb-6">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-milsaca-verde">
+            <h1 className="text-h1 tracking-tight text-milsaca-cafezal">
               {laudo.corretora.name}
             </h1>
-            <p className="mt-1 text-sm text-milsaca-verde-claro">
+            <p className="mt-1 text-body-sm text-neutral-600">
               {[laudo.corretora.city, laudo.corretora.state]
                 .filter(Boolean)
                 .join(" / ")}
@@ -119,20 +119,20 @@ export default async function LaudoPublicoPage({
               )}
             </p>
             {laudo.corretora.verified && (
-              <Badge className="mt-2 bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
+              <Badge variant="success" className="mt-2">
                 <ShieldCheck className="mr-1 h-3 w-3" />
                 Verificada na Milsaca
               </Badge>
             )}
           </div>
           <div className="text-left sm:text-right">
-            <p className="text-xs uppercase tracking-wider text-milsaca-verde-claro">
+            <p className="text-caption uppercase tracking-wider text-neutral-500">
               Laudo COB
             </p>
-            <p className="text-sm font-medium text-milsaca-verde">
+            <p className="text-body-sm font-medium text-milsaca-cafezal">
               IN 8/2003 — MAPA
             </p>
-            <p className="text-xs text-milsaca-verde-claro">
+            <p className="text-caption text-neutral-500">
               Emitido em {formatDate(laudo.created_at)}
             </p>
           </div>
@@ -142,32 +142,32 @@ export default async function LaudoPublicoPage({
         <Card
           className={
             laudo.fora_de_tipo
-              ? "border-2 border-rose-300 bg-rose-50"
-              : "border-2 border-milsaca-verde bg-milsaca-cream-escuro/30"
+              ? "border-2 border-danger-100 bg-danger-50"
+              : "border-2 border-milsaca-cafezal bg-neutral-50"
           }
         >
           <CardContent className="space-y-3 py-6">
             <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-xs uppercase tracking-wider text-milsaca-verde-claro">
+                <p className="text-caption uppercase tracking-wider text-neutral-500">
                   Resultado
                 </p>
                 {laudo.fora_de_tipo ? (
                   <div className="mt-1 flex items-center gap-2">
-                    <AlertTriangle className="h-6 w-6 text-rose-700" />
-                    <span className="text-2xl sm:text-3xl font-semibold text-rose-700">
+                    <AlertTriangle className="h-6 w-6 text-danger-600" />
+                    <span className="text-h1 text-danger-700">
                       Fora de tipo
                     </span>
                   </div>
                 ) : (
                   <div className="mt-1 flex items-center gap-2">
-                    <CheckCircle2 className="h-6 w-6 text-milsaca-verde" />
-                    <span className="text-2xl sm:text-3xl font-semibold text-milsaca-verde">
+                    <CheckCircle2 className="h-6 w-6 text-success-600" />
+                    <span className="text-h1 text-milsaca-cafezal">
                       {laudo.bica_corrida
                         ? "Bica corrida"
                         : `Tipo ${laudo.tipo ?? "—"}`}
                       {laudo.classe && (
-                        <span className="ml-2 text-base font-normal text-milsaca-verde-claro">
+                        <span className="ml-2 text-body font-normal text-neutral-600">
                           · {laudo.classe}
                         </span>
                       )}
@@ -175,10 +175,7 @@ export default async function LaudoPublicoPage({
                   </div>
                 )}
               </div>
-              <Button
-                asChild
-                className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
-              >
+              <Button asChild variant="primary">
                 <Link href={`/laudos/${laudo.id}/pdf`} target="_blank">
                   <Download className="mr-2 h-4 w-4" />
                   Baixar PDF
@@ -188,7 +185,7 @@ export default async function LaudoPublicoPage({
             {laudo.fora_de_tipo &&
               laudo.fora_de_tipo_motivos &&
               laudo.fora_de_tipo_motivos.length > 0 && (
-                <p className="text-sm text-rose-800">
+                <p className="text-body-sm text-danger-700">
                   <span className="font-medium">Motivos:</span>{" "}
                   {laudo.fora_de_tipo_motivos.join(" · ")}
                 </p>
@@ -197,9 +194,9 @@ export default async function LaudoPublicoPage({
         </Card>
 
         {/* Dados do lote */}
-        <Card className="border-milsaca-cream-escuro">
+        <Card className="border-neutral-200">
           <CardContent className="py-5">
-            <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-milsaca-verde-claro">
+            <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-neutral-600">
               Lote
             </h2>
             <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
@@ -230,9 +227,9 @@ export default async function LaudoPublicoPage({
         </Card>
 
         {/* Indicadores */}
-        <Card className="border-milsaca-cream-escuro">
+        <Card className="border-neutral-200">
           <CardContent className="py-5">
-            <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-milsaca-verde-claro">
+            <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-neutral-600">
               Indicadores
             </h2>
             <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
@@ -283,29 +280,29 @@ export default async function LaudoPublicoPage({
 
         {/* Defeitos contados */}
         {defeitos.length > 0 && (
-          <Card className="border-milsaca-cream-escuro">
+          <Card className="border-neutral-200">
             <CardContent className="py-5">
-              <h2 className="mb-1 text-xs font-medium uppercase tracking-wider text-milsaca-verde-claro">
+              <h2 className="mb-1 text-xs font-medium uppercase tracking-wider text-neutral-600">
                 Defeitos contados
               </h2>
-              <p className="mb-3 text-xs text-milsaca-verde-claro">
+              <p className="mb-3 text-xs text-neutral-600">
                 {laudo.brocados_por_defeito} brocados por defeito
               </p>
-              <div className="overflow-hidden rounded-md border border-milsaca-cream-escuro">
+              <div className="overflow-hidden rounded-md border border-neutral-200">
                 <table className="w-full text-sm">
-                  <thead className="bg-milsaca-cream-escuro/40 text-xs uppercase tracking-wider text-milsaca-verde-claro">
+                  <thead className="bg-neutral-50 text-xs uppercase tracking-wider text-neutral-600">
                     <tr>
                       <th className="px-4 py-2 text-left">Defeito</th>
                       <th className="px-4 py-2 text-right">Grãos</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-milsaca-cream-escuro">
+                  <tbody className="divide-y divide-neutral-200">
                     {defeitos.map(([k, v]) => (
                       <tr key={k}>
-                        <td className="px-4 py-2 text-milsaca-verde">
+                        <td className="px-4 py-2 text-milsaca-cafezal">
                           {DEFEITO_LABEL[k] ?? k}
                         </td>
-                        <td className="px-4 py-2 text-right font-medium text-milsaca-verde">
+                        <td className="px-4 py-2 text-right font-medium text-milsaca-cafezal">
                           {String(v)}
                         </td>
                       </tr>
@@ -319,31 +316,31 @@ export default async function LaudoPublicoPage({
 
         {/* Peneiras */}
         {peneiras.length > 0 && (
-          <Card className="border-milsaca-cream-escuro">
+          <Card className="border-neutral-200">
             <CardContent className="py-5">
-              <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-milsaca-verde-claro">
+              <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-neutral-600">
                 Peneiras
                 {laudo.peneira_dominante && (
-                  <span className="ml-2 text-milsaca-verde">
+                  <span className="ml-2 text-milsaca-cafezal">
                     Dominante: {laudo.peneira_dominante}
                   </span>
                 )}
               </h2>
-              <div className="overflow-hidden rounded-md border border-milsaca-cream-escuro">
+              <div className="overflow-hidden rounded-md border border-neutral-200">
                 <table className="w-full text-sm">
-                  <thead className="bg-milsaca-cream-escuro/40 text-xs uppercase tracking-wider text-milsaca-verde-claro">
+                  <thead className="bg-neutral-50 text-xs uppercase tracking-wider text-neutral-600">
                     <tr>
                       <th className="px-4 py-2 text-left">Peneira</th>
                       <th className="px-4 py-2 text-right">%</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-milsaca-cream-escuro">
+                  <tbody className="divide-y divide-neutral-200">
                     {peneiras.map((p) => (
                       <tr key={p.peneira}>
-                        <td className="px-4 py-2 text-milsaca-verde">
+                        <td className="px-4 py-2 text-milsaca-cafezal">
                           {p.peneira}
                         </td>
-                        <td className="px-4 py-2 text-right font-medium text-milsaca-verde">
+                        <td className="px-4 py-2 text-right font-medium text-milsaca-cafezal">
                           {p.percentual.toLocaleString("pt-BR", {
                             minimumFractionDigits: 1,
                           })}
@@ -359,12 +356,12 @@ export default async function LaudoPublicoPage({
 
         {/* Observações */}
         {laudo.observacoes && (
-          <Card className="border-milsaca-cream-escuro">
+          <Card className="border-neutral-200">
             <CardContent className="py-5">
-              <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-milsaca-verde-claro">
+              <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-neutral-600">
                 Observações
               </h2>
-              <p className="text-sm leading-relaxed text-milsaca-verde">
+              <p className="text-sm leading-relaxed text-milsaca-cafezal">
                 {laudo.observacoes}
               </p>
             </CardContent>
@@ -372,7 +369,7 @@ export default async function LaudoPublicoPage({
         )}
 
         {/* QR + identificador */}
-        <Card className="border-milsaca-cream-escuro">
+        <Card className="border-neutral-200">
           <CardContent className="flex flex-wrap items-center justify-between gap-4 py-5">
             <div className="flex items-center gap-4">
               {/* eslint-disable-next-line @next/next/no-img-element -- data URL, sem ganho com next/image */}
@@ -381,30 +378,30 @@ export default async function LaudoPublicoPage({
                 alt="QR code para verificação"
                 className="h-24 w-24"
               />
-              <div className="text-xs text-milsaca-verde-claro">
-                <p className="font-medium text-milsaca-verde">
+              <div className="text-xs text-neutral-600">
+                <p className="font-medium text-milsaca-cafezal">
                   Verifique este laudo
                 </p>
                 <p>Escaneie o QR ou compartilhe o link abaixo.</p>
                 <p className="mt-1 break-all font-mono text-[11px]">
                   {publicUrl}
                 </p>
-                <p className="mt-2 text-[10px] uppercase tracking-wider text-milsaca-verde-claro">
+                <p className="mt-2 text-[10px] uppercase tracking-wider text-neutral-600">
                   Hash SHA-256
                 </p>
-                <p className="break-all font-mono text-[10px] text-milsaca-verde">
+                <p className="break-all font-mono text-[10px] text-milsaca-cafezal">
                   {contentHash}
                 </p>
               </div>
             </div>
-            <div className="text-right text-[11px] text-milsaca-verde-claro">
+            <div className="text-right text-[11px] text-neutral-600">
               <p>ID: {laudo.id.slice(0, 8)}</p>
               <p>Schema IN 8/2003 · v{laudo.schema_version}</p>
             </div>
           </CardContent>
         </Card>
 
-        <footer className="pt-4 text-center text-xs text-milsaca-verde-claro">
+        <footer className="pt-4 text-center text-xs text-neutral-600">
           <p className="inline-flex items-center gap-1">
             <MapPin className="h-3 w-3" />
             Gerado pela Milsaca — milsaca.app
@@ -418,10 +415,10 @@ export default async function LaudoPublicoPage({
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[11px] uppercase tracking-wider text-milsaca-verde-claro">
+      <p className="text-[11px] uppercase tracking-wider text-neutral-600">
         {label}
       </p>
-      <p className="font-medium text-milsaca-verde">{value}</p>
+      <p className="font-medium text-milsaca-cafezal">{value}</p>
     </div>
   );
 }
