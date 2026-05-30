@@ -15,8 +15,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/status-badge";
+import { cn } from "@/lib/utils";
 import { requireUser } from "@/lib/auth";
 import { listCorretorasParaProdutor } from "./_lib/queries";
 import { toggleFavorito } from "./_actions";
@@ -67,17 +68,15 @@ export default async function CorretorasProdutorPage({
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
-          Corretoras
-        </h1>
-        <p className="text-sm text-milsaca-verde-claro">
+        <h1 className="text-h1 text-milsaca-cafezal">Corretoras</h1>
+        <p className="text-body-sm text-neutral-600">
           Catálogo de corretoras cadastradas na Milsaca. Marque favoritas pra
           ver as cotações delas em destaque no painel.
         </p>
       </header>
 
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-milsaca-verde-claro">Mostrar:</span>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-body-sm text-neutral-600">Mostrar:</span>
         {FILTERS.map((f) => {
           const params = new URLSearchParams();
           if (f.value) params.set("filter", f.value);
@@ -92,13 +91,13 @@ export default async function CorretorasProdutorPage({
               href={href}
               className={
                 active
-                  ? "rounded-full bg-milsaca-verde px-3 py-1 text-xs font-medium text-milsaca-cream"
-                  : "rounded-full border border-milsaca-cream-escuro px-3 py-1 text-xs text-milsaca-verde-claro hover:text-milsaca-verde"
+                  ? "rounded-pill bg-milsaca-cafezal px-3 py-1 text-caption font-medium text-milsaca-cream"
+                  : "rounded-pill border border-neutral-200 px-3 py-1 text-caption text-neutral-600 transition-colors hover:border-milsaca-dourado hover:text-milsaca-cafezal"
               }
             >
               {f.label}
               {f.value === "favoritas" && totalFavoritas > 0 && (
-                <span className="ml-1.5 rounded-full bg-milsaca-dourado/30 px-1.5 text-[10px]">
+                <span className="ml-1.5 rounded-pill bg-milsaca-dourado/30 px-1.5 text-[10px]">
                   {totalFavoritas}
                 </span>
               )}
@@ -107,8 +106,8 @@ export default async function CorretorasProdutorPage({
         })}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-milsaca-verde-claro">Região:</span>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-body-sm text-neutral-600">Região:</span>
         {[null, ...REGIOES_CAFEEIRAS.map((r) => r.value)].map((value) => {
           const params = new URLSearchParams();
           if (filter) params.set("filter", filter);
@@ -124,8 +123,8 @@ export default async function CorretorasProdutorPage({
               href={href}
               className={
                 active
-                  ? "rounded-full bg-milsaca-dourado px-3 py-1 text-xs font-medium text-milsaca-verde"
-                  : "rounded-full border border-milsaca-cream-escuro px-3 py-1 text-xs text-milsaca-verde-claro hover:text-milsaca-verde"
+                  ? "rounded-pill bg-milsaca-dourado px-3 py-1 text-caption font-medium text-milsaca-cafezal"
+                  : "rounded-pill border border-neutral-200 px-3 py-1 text-caption text-neutral-600 transition-colors hover:border-milsaca-dourado hover:text-milsaca-cafezal"
               }
             >
               {label}
@@ -151,11 +150,11 @@ export default async function CorretorasProdutorPage({
           }));
         return pins.length > 0 ? (
           <section className="space-y-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
+            <h2 className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
               No mapa
             </h2>
             <CorretorasMapWrapper pins={pins} />
-            <p className="text-[10px] text-milsaca-verde-claro/70">
+            <p className="text-caption text-neutral-500">
               {pins.length} corretora{pins.length === 1 ? "" : "s"} com
               localização confirmada. As demais aparecem só na lista abaixo.
             </p>
@@ -164,12 +163,12 @@ export default async function CorretorasProdutorPage({
       })()}
 
       {lista.length === 0 ? (
-        <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
+        <Card tone="muted" className="border-dashed">
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-milsaca-verde/10 text-milsaca-verde">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-milsaca-cafezal/10 text-milsaca-cafezal">
               <Building2 className="h-6 w-6" />
             </span>
-            <p className="text-sm text-milsaca-verde">
+            <p className="text-body-sm font-medium text-milsaca-cafezal">
               {filter === "favoritas"
                 ? "Você ainda não favoritou nenhuma corretora."
                 : filter === "verificadas"
@@ -177,12 +176,7 @@ export default async function CorretorasProdutorPage({
                   : "Nenhuma corretora cadastrada ainda."}
             </p>
             {filter && (
-              <Button
-                asChild
-                size="sm"
-                variant="outline"
-                className="mt-2 border-milsaca-verde text-milsaca-verde"
-              >
+              <Button asChild size="sm" variant="outline" className="mt-2">
                 <Link href="/painel/produtor/corretoras">
                   Ver todas as corretoras
                 </Link>
@@ -198,14 +192,14 @@ export default async function CorretorasProdutorPage({
               message: `Oi! Vi a ${c.name} no Milsaca e gostaria de conversar sobre cotações de café.`,
             });
             return (
-              <Card key={c.id} className="border-milsaca-cream-escuro">
+              <Card key={c.id} interactive>
                 <CardHeader className="pb-3">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="flex-1">
-                      <CardTitle className="text-base text-milsaca-verde">
+                      <CardTitle className="text-milsaca-cafezal">
                         {c.name}
                       </CardTitle>
-                      <CardDescription className="flex items-center gap-2 text-xs">
+                      <CardDescription className="flex flex-wrap items-center gap-2">
                         {(c.city || c.state) && (
                           <span className="inline-flex items-center gap-1">
                             <MapPin className="h-3 w-3" />
@@ -213,10 +207,10 @@ export default async function CorretorasProdutorPage({
                           </span>
                         )}
                         {c.verified && (
-                          <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
+                          <StatusBadge tone="premium" withDot={false}>
                             <ShieldCheck className="mr-1 h-3 w-3" />
                             Verificada
-                          </Badge>
+                          </StatusBadge>
                         )}
                       </CardDescription>
                     </div>
@@ -238,11 +232,12 @@ export default async function CorretorasProdutorPage({
                             ? "Remover dos favoritos"
                             : "Adicionar aos favoritos"
                         }
-                        className={
+                        className={cn(
+                          "rounded-md p-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                           c.is_favorita
                             ? "text-milsaca-dourado hover:opacity-80"
-                            : "text-milsaca-verde-claro hover:text-milsaca-dourado"
-                        }
+                            : "text-neutral-400 hover:text-milsaca-dourado",
+                        )}
                       >
                         {c.is_favorita ? (
                           <Star className="h-5 w-5 fill-current" />
@@ -259,14 +254,14 @@ export default async function CorretorasProdutorPage({
                       {c.regioes_atendimento.map((r) => (
                         <span
                           key={r}
-                          className="rounded-full bg-milsaca-dourado/15 px-2 py-0.5 text-[10px] text-milsaca-verde"
+                          className="rounded-pill bg-milsaca-dourado/15 px-2 py-0.5 text-[10px] text-milsaca-cafezal"
                         >
                           {REGIAO_LABEL[r]}
                         </span>
                       ))}
                     </div>
                   )}
-                  <div className="space-y-1 text-xs text-milsaca-verde-claro">
+                  <div className="space-y-1 text-caption text-neutral-600">
                     {c.phone && (
                       <div className="flex items-center gap-1.5">
                         <Phone className="h-3 w-3" />
@@ -282,15 +277,15 @@ export default async function CorretorasProdutorPage({
                   </div>
 
                   {(c.qtd_negociacoes > 0 || c.qtd_contratos > 0) && (
-                    <div className="flex gap-2 text-[11px]">
+                    <div className="flex flex-wrap gap-2 text-caption">
                       {c.qtd_negociacoes > 0 && (
-                        <span className="rounded bg-milsaca-cream-escuro/60 px-2 py-0.5 text-milsaca-verde">
+                        <span className="rounded-pill bg-neutral-100 px-2 py-0.5 text-neutral-700">
                           {c.qtd_negociacoes} negociaç
                           {c.qtd_negociacoes === 1 ? "ão" : "ões"}
                         </span>
                       )}
                       {c.qtd_contratos > 0 && (
-                        <span className="rounded bg-emerald-100 px-2 py-0.5 text-emerald-800">
+                        <span className="rounded-pill bg-success-50 px-2 py-0.5 text-success-700">
                           {c.qtd_contratos} contrato
                           {c.qtd_contratos === 1 ? "" : "s"}
                         </span>
@@ -307,12 +302,7 @@ export default async function CorretorasProdutorPage({
                       />
                     )}
                     {c.qtd_negociacoes > 0 && (
-                      <Button
-                        asChild
-                        size="sm"
-                        variant="outline"
-                        className="border-milsaca-cream-escuro text-milsaca-verde"
-                      >
+                      <Button asChild size="sm" variant="outline">
                         <Link href="/painel/produtor/negociacoes">
                           Ver propostas
                         </Link>

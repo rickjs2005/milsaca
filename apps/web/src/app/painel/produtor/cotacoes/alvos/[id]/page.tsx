@@ -63,7 +63,7 @@ export default async function EditAlvoPage({
       <div>
         <Link
           href="/painel/produtor/cotacoes/alvos"
-          className="inline-flex items-center gap-1 text-sm text-milsaca-verde-claro hover:text-milsaca-verde"
+          className="inline-flex items-center gap-1 rounded-sm text-body-sm text-neutral-600 transition-colors hover:text-milsaca-cafezal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <ArrowLeft className="h-4 w-4" />
           Voltar para alvos
@@ -71,29 +71,27 @@ export default async function EditAlvoPage({
       </div>
 
       <header>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
-          Editar alvo
-        </h1>
-        <p className="text-sm text-milsaca-verde-claro">
+        <h1 className="text-h1 text-milsaca-cafezal">Editar alvo</h1>
+        <p className="text-body-sm text-neutral-600">
           Mudanças entram em vigor na próxima verificação automática (a cada
           ~12h).
         </p>
       </header>
 
       {sp.saved ? (
-        <p className="rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
+        <p className="rounded-md border border-success-100 bg-success-50 px-4 py-2 text-body-sm text-success-700">
           Alterações salvas.
         </p>
       ) : null}
       {sp.error ? (
-        <p className="rounded-md border border-rose-300 bg-rose-50 px-4 py-2 text-sm text-rose-700">
+        <p className="rounded-md border border-danger-100 bg-danger-50 px-4 py-2 text-body-sm text-danger-700">
           {sp.error}
         </p>
       ) : null}
 
-      <Card className="border-milsaca-cream-escuro">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-base">Dados do alvo</CardTitle>
+          <CardTitle>Dados do alvo</CardTitle>
         </CardHeader>
         <CardContent>
           <form action={updateAlert} className="space-y-5">
@@ -113,14 +111,11 @@ export default async function EditAlvoPage({
                 (regions ?? []) as { id: string; name: string; state: string }[]
               }
             />
-            <div className="flex justify-end gap-2 border-t border-milsaca-cream-escuro/60 pt-4">
+            <div className="flex justify-end gap-2 border-t border-neutral-200 pt-4">
               <Button asChild variant="outline">
                 <Link href="/painel/produtor/cotacoes/alvos">Cancelar</Link>
               </Button>
-              <SubmitButton
-                pendingLabel="Salvando..."
-                className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
-              >
+              <SubmitButton variant="primary" pendingLabel="Salvando...">
                 Salvar alterações
               </SubmitButton>
             </div>

@@ -15,7 +15,7 @@ export function Sparkline({
   values,
   width = 96,
   height = 28,
-  color = "#2D3A2E",
+  color = "#0F3D2E",
   className,
 }: SparklineProps) {
   if (values.length === 0) {

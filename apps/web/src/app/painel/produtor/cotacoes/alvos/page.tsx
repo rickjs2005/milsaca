@@ -12,6 +12,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/status-badge";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { SubmitButton } from "@/components/submit-button";
 import { requireUser } from "@/lib/auth";
@@ -78,7 +79,7 @@ export default async function AlvosPage() {
       <div>
         <Link
           href="/painel/produtor/cotacoes"
-          className="inline-flex items-center gap-1 text-sm text-milsaca-verde-claro hover:text-milsaca-verde"
+          className="inline-flex items-center gap-1 rounded-sm text-body-sm text-neutral-600 transition-colors hover:text-milsaca-cafezal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <ArrowLeft className="h-4 w-4" />
           Voltar para Cotações
@@ -87,18 +88,13 @@ export default async function AlvosPage() {
 
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
-            Alvos de preço
-          </h1>
-          <p className="text-sm text-milsaca-verde-claro">
+          <h1 className="text-h1 text-milsaca-cafezal">Alvos de preço</h1>
+          <p className="text-body-sm text-neutral-600">
             Receba uma notificação quando uma cotação bater o preço que você
             quer.
           </p>
         </div>
-        <Button
-          asChild
-          className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
-        >
+        <Button asChild variant="primary">
           <Link href="/painel/produtor/cotacoes/alvos/novo">
             <Plus className="mr-1.5 h-4 w-4" />
             Novo alvo
@@ -107,22 +103,19 @@ export default async function AlvosPage() {
       </header>
 
       {rows.length === 0 ? (
-        <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
+        <Card tone="muted" className="border-dashed">
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-milsaca-verde/10 text-milsaca-verde">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-milsaca-cafezal/10 text-milsaca-cafezal">
               <Bell className="h-6 w-6" />
             </span>
-            <p className="text-sm text-milsaca-verde">
+            <p className="text-body-sm font-medium text-milsaca-cafezal">
               Você ainda não criou nenhum alvo.
             </p>
-            <p className="max-w-md text-xs text-milsaca-verde-claro">
+            <p className="max-w-md text-caption text-neutral-600">
               Crie um alvo (ex: &quot;avisar quando Arábica passar de R$
               2.000&quot;) e o Milsaca notifica você quando bater o preço.
             </p>
-            <Button
-              asChild
-              className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
-            >
+            <Button asChild variant="primary">
               <Link href="/painel/produtor/cotacoes/alvos/novo">
                 Criar primeiro alvo
               </Link>
@@ -138,76 +131,71 @@ export default async function AlvosPage() {
             return (
               <Card
                 key={r.id}
-                className={
-                  r.active
-                    ? "border-milsaca-cream-escuro"
-                    : "border-milsaca-cream-escuro bg-milsaca-cream-escuro/30 opacity-70"
-                }
+                tone={r.active ? "default" : "muted"}
+                className={r.active ? undefined : "opacity-70"}
               >
                 <CardContent className="space-y-3 pt-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-base font-semibold text-milsaca-verde">
+                      <p className="text-h3 text-milsaca-cafezal">
                         {ct?.name ?? "—"}
                       </p>
                       {pr ? (
-                        <p className="text-xs text-milsaca-verde-claro">
+                        <p className="text-caption text-neutral-600">
                           {pr.name}/{pr.state}
                         </p>
                       ) : (
-                        <p className="text-xs italic text-milsaca-verde-claro/80">
+                        <p className="text-caption italic text-neutral-500">
                           Qualquer praça
                         </p>
                       )}
                     </div>
                     {r.active ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
-                        <Bell className="h-3 w-3" />
+                      <StatusBadge tone="success" withDot={false}>
+                        <Bell className="mr-1 h-3 w-3" />
                         Ativo
-                      </span>
+                      </StatusBadge>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-medium text-slate-600">
-                        <BellOff className="h-3 w-3" />
+                      <StatusBadge tone="neutral" withDot={false}>
+                        <BellOff className="mr-1 h-3 w-3" />
                         Pausado
-                      </span>
+                      </StatusBadge>
                     )}
                   </div>
 
                   <div className="flex items-baseline gap-2">
-                    <span className="inline-flex items-center gap-1 text-sm font-medium text-milsaca-verde">
+                    <span className="inline-flex items-center gap-1 text-body-sm font-medium text-milsaca-cafezal">
                       {above ? (
-                        <TrendingUp className="h-4 w-4 text-emerald-700" />
+                        <TrendingUp className="h-4 w-4 text-success-600" />
                       ) : (
-                        <TrendingDown className="h-4 w-4 text-rose-700" />
+                        <TrendingDown className="h-4 w-4 text-danger-600" />
                       )}
                       {above ? "Subir acima de" : "Cair abaixo de"}
                     </span>
-                    <span className="text-2xl font-semibold text-milsaca-verde">
+                    <span className="text-2xl font-semibold text-milsaca-cafezal">
                       {fmtBRL(r.target_price)}
                     </span>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-milsaca-verde-claro">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-caption text-neutral-600">
                     <span>Notificar: {CHANNEL_LABEL[r.channel]}</span>
                     {r.last_triggered_at ? (
-                      <span>
-                        Último: {timeAgo(r.last_triggered_at)}
-                      </span>
+                      <span>Último: {timeAgo(r.last_triggered_at)}</span>
                     ) : (
                       <span className="italic">Sem disparos</span>
                     )}
                   </div>
 
                   {r.notes ? (
-                    <p className="text-xs italic text-milsaca-verde-claro">
+                    <p className="text-caption italic text-neutral-600">
                       “{r.notes}”
                     </p>
                   ) : null}
 
-                  <div className="flex items-center justify-end gap-2 border-t border-milsaca-cream-escuro/60 pt-3">
+                  <div className="flex items-center justify-end gap-2 border-t border-neutral-200 pt-3">
                     <Link
                       href={`/painel/produtor/cotacoes/alvos/${r.id}`}
-                      className="text-xs font-medium text-milsaca-verde hover:underline"
+                      className="rounded-sm text-caption font-medium text-milsaca-cafezal hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
                       Editar
                     </Link>
@@ -232,7 +220,7 @@ export default async function AlvosPage() {
                       <ConfirmSubmit
                         variant="ghost"
                         size="sm"
-                        className="h-7 text-[11px] text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                        className="h-7 text-[11px] text-danger-600 hover:bg-danger-50 hover:text-danger-700"
                         confirmTitle="Apagar alvo?"
                         confirmMessage={
                           <p>

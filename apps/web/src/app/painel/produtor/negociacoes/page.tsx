@@ -13,13 +13,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
 import {
   listMinhasNegociacoes,
   LEAD_STATUS_LABEL,
-  LEAD_STATUS_COLOR,
   LEAD_STATUS_ORDER,
   type LeadStatus,
 } from "./_lib/queries";
@@ -28,6 +27,15 @@ import { buildWhatsAppInviteUrl } from "../../corretora/produtores/_lib/whatsapp
 export const metadata = { title: "Negociações — Painel do produtor" };
 
 type SearchParams = Promise<{ status?: string }>;
+
+// status → tonalidade semântica (tokens de fundação). Espelha o detalhe.
+const LEAD_STATUS_TONE: Record<LeadStatus, StatusTone> = {
+  novo: "premium",
+  em_negociacao: "info",
+  convertido: "success",
+  perdido: "danger",
+  arquivado: "neutral",
+};
 
 const FILTERS: { value: "" | LeadStatus; label: string }[] = [
   { value: "", label: "Todas" },
@@ -88,17 +96,15 @@ export default async function NegociacoesProdutorPage({
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
-          Negociações
-        </h1>
-        <p className="text-sm text-milsaca-verde-claro">
+        <h1 className="text-h1 text-milsaca-cafezal">Negociações</h1>
+        <p className="text-body-sm text-neutral-600">
           Propostas das corretoras parceiras. Veja o histórico, fale por
           WhatsApp e acompanhe o avanço de cada conversa.
         </p>
       </header>
 
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-milsaca-verde-claro">Status:</span>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-body-sm text-neutral-600">Status:</span>
         {FILTERS.map((f) => {
           const params = new URLSearchParams();
           if (f.value) params.set("status", f.value);
@@ -112,8 +118,8 @@ export default async function NegociacoesProdutorPage({
               href={href}
               className={
                 active
-                  ? "rounded-full bg-milsaca-verde px-3 py-1 text-xs font-medium text-milsaca-cream"
-                  : "rounded-full border border-milsaca-cream-escuro px-3 py-1 text-xs text-milsaca-verde-claro hover:text-milsaca-verde"
+                  ? "rounded-pill bg-milsaca-cafezal px-3 py-1 text-caption font-medium text-milsaca-cream"
+                  : "rounded-pill border border-neutral-200 px-3 py-1 text-caption text-neutral-600 transition-colors hover:border-milsaca-dourado hover:text-milsaca-cafezal"
               }
             >
               {f.label}
@@ -123,24 +129,19 @@ export default async function NegociacoesProdutorPage({
       </div>
 
       {itens.length === 0 ? (
-        <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
+        <Card tone="muted" className="border-dashed">
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-milsaca-verde/10 text-milsaca-verde">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-milsaca-cafezal/10 text-milsaca-cafezal">
               <Handshake className="h-6 w-6" />
             </span>
-            <p className="text-sm text-milsaca-verde">
+            <p className="text-body-sm font-medium text-milsaca-cafezal">
               Nenhuma negociação{status ? " com esse status" : ""}.
             </p>
-            <p className="text-xs text-milsaca-verde-claro">
+            <p className="text-caption text-neutral-600">
               Quando uma corretora abrir uma proposta com você, ela aparece
               aqui.
             </p>
-            <Button
-              asChild
-              size="sm"
-              variant="outline"
-              className="mt-2 border-milsaca-verde text-milsaca-verde"
-            >
+            <Button asChild size="sm" variant="outline" className="mt-2">
               <Link href="/painel/produtor/corretoras">
                 Ver corretoras parceiras
               </Link>
@@ -155,22 +156,19 @@ export default async function NegociacoesProdutorPage({
               message: shortMessage(it),
             });
             return (
-              <Card
-                key={it.id}
-                className="border-milsaca-cream-escuro"
-              >
+              <Card key={it.id} interactive>
                 <CardHeader className="pb-3">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                      <CardTitle className="text-base text-milsaca-verde">
+                      <CardTitle className="text-milsaca-cafezal">
                         <Link
                           href={`/painel/produtor/negociacoes/${it.id}`}
-                          className="hover:underline"
+                          className="rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         >
                           {it.corretora_nome}
                         </Link>
                       </CardTitle>
-                      <CardDescription className="flex items-center gap-3 text-xs">
+                      <CardDescription className="flex items-center gap-3">
                         {it.corretora_city && (
                           <span className="inline-flex items-center gap-1">
                             <MapPin className="h-3 w-3" />
@@ -183,38 +181,36 @@ export default async function NegociacoesProdutorPage({
                         </span>
                       </CardDescription>
                     </div>
-                    <Badge
-                      className={`${LEAD_STATUS_COLOR[it.status]} hover:${LEAD_STATUS_COLOR[it.status]}`}
-                    >
+                    <StatusBadge tone={LEAD_STATUS_TONE[it.status]} withDot>
                       {LEAD_STATUS_LABEL[it.status]}
-                    </Badge>
+                    </StatusBadge>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="grid grid-cols-3 gap-2 text-sm">
+                  <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <p className="text-[11px] uppercase tracking-wider text-milsaca-verde-claro">
+                      <p className="text-caption uppercase tracking-wider text-neutral-500">
                         Café
                       </p>
-                      <p className="font-medium text-milsaca-verde">
+                      <p className="text-body-sm font-medium text-milsaca-cafezal">
                         {it.coffee_type ?? "—"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[11px] uppercase tracking-wider text-milsaca-verde-claro">
+                      <p className="text-caption uppercase tracking-wider text-neutral-500">
                         Sacas
                       </p>
-                      <p className="font-medium text-milsaca-verde">
+                      <p className="text-body-sm font-medium text-milsaca-cafezal">
                         {it.bag_count != null
                           ? it.bag_count.toLocaleString("pt-BR")
                           : "—"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[11px] uppercase tracking-wider text-milsaca-verde-claro">
+                      <p className="text-caption uppercase tracking-wider text-neutral-500">
                         Por saca
                       </p>
-                      <p className="font-medium text-milsaca-verde">
+                      <p className="text-body-sm font-medium text-milsaca-cafezal">
                         {it.proposed_price != null
                           ? formatBRL(it.proposed_price)
                           : "—"}
@@ -223,46 +219,35 @@ export default async function NegociacoesProdutorPage({
                   </div>
 
                   {it.proposed_price != null && it.bag_count != null && (
-                    <div className="rounded-md bg-milsaca-cream-escuro/30 px-3 py-2 text-xs">
-                      <span className="text-milsaca-verde-claro">
-                        Valor total:
-                      </span>{" "}
-                      <span className="font-semibold text-milsaca-verde">
+                    <div className="rounded-md bg-milsaca-cream px-3 py-2 text-body-sm">
+                      <span className="text-neutral-600">Valor total:</span>{" "}
+                      <span className="font-semibold text-milsaca-cafezal">
                         {formatBRL(it.proposed_price * it.bag_count)}
                       </span>
                     </div>
                   )}
 
                   {it.notes && (
-                    <p className="text-sm italic text-milsaca-verde-claro">
+                    <p className="text-body-sm italic text-neutral-600">
                       &quot;{it.notes}&quot;
                     </p>
                   )}
 
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
                     {it.corretora_phone && (
-                      <span className="inline-flex items-center gap-1 text-milsaca-verde-claro">
+                      <span className="inline-flex items-center gap-1 text-caption text-neutral-600">
                         <Phone className="h-3 w-3" />
                         {it.corretora_phone}
                       </span>
                     )}
                     <div className="ml-auto flex gap-2">
-                      <Button
-                        asChild
-                        size="sm"
-                        variant="outline"
-                        className="border-milsaca-cream-escuro text-milsaca-verde"
-                      >
+                      <Button asChild size="sm" variant="outline">
                         <Link href={`/painel/produtor/negociacoes/${it.id}`}>
                           Ver detalhes
                         </Link>
                       </Button>
                       {waUrl && (
-                        <Button
-                          asChild
-                          size="sm"
-                          className="bg-emerald-600 text-white hover:bg-emerald-700"
-                        >
+                        <Button asChild size="sm" variant="success">
                           <a
                             href={waUrl}
                             target="_blank"

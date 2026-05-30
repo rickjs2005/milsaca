@@ -1,5 +1,7 @@
-import { Input } from "@/components/ui/input";
+import { Input, inputBaseClassName } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 type Option = { id: string; name: string; state?: string };
 
@@ -32,12 +34,11 @@ export function AlertFormFields({
     <div className="space-y-5">
       <div className="space-y-2">
         <Label htmlFor="product_id">Tipo de café *</Label>
-        <select
+        <Select
           id="product_id"
           name="product_id"
           required
           defaultValue={d.product_id ?? ""}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <option value="" disabled>
             Selecione...
@@ -47,17 +48,12 @@ export function AlertFormFields({
               {p.name}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="region_id">Praça (opcional)</Label>
-        <select
-          id="region_id"
-          name="region_id"
-          defaultValue={d.region_id ?? ""}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
+        <Select id="region_id" name="region_id" defaultValue={d.region_id ?? ""}>
           <option value="">— Qualquer praça</option>
           {regions.map((r) => (
             <option key={r.id} value={r.id}>
@@ -65,8 +61,8 @@ export function AlertFormFields({
               {r.state ? `/${r.state}` : ""}
             </option>
           ))}
-        </select>
-        <p className="text-[10px] text-milsaca-verde-claro/70">
+        </Select>
+        <p className="text-caption text-neutral-500">
           Se vazio, dispara assim que qualquer praça bater o preço alvo.
         </p>
       </div>
@@ -74,16 +70,15 @@ export function AlertFormFields({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="condition">Condição *</Label>
-          <select
+          <Select
             id="condition"
             name="condition"
             required
             defaultValue={d.condition ?? "acima_de"}
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <option value="acima_de">Subir acima de</option>
             <option value="abaixo_de">Cair abaixo de</option>
-          </select>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="target_price">Preço alvo (R$/saca) *</Label>
@@ -101,18 +96,17 @@ export function AlertFormFields({
 
       <div className="space-y-2">
         <Label htmlFor="channel">Como avisar *</Label>
-        <select
+        <Select
           id="channel"
           name="channel"
           required
           defaultValue={d.channel ?? "app"}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <option value="app">No app (notificação interna)</option>
           <option value="whatsapp">WhatsApp</option>
           <option value="email">E-mail</option>
-        </select>
-        <p className="text-[10px] text-milsaca-verde-claro/70">
+        </Select>
+        <p className="text-caption text-neutral-500">
           Notificação no app sempre é criada. WhatsApp/E-mail precisam do
           provider configurado pelo time Milsaca pra chegar — caso contrário
           fica em fila.
@@ -127,16 +121,16 @@ export function AlertFormFields({
           rows={2}
           defaultValue={d.notes ?? ""}
           placeholder="Lembrete pessoal..."
-          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className={cn(inputBaseClassName, "h-auto")}
         />
       </div>
 
-      <label className="flex cursor-pointer items-center gap-2 text-sm text-milsaca-verde">
+      <label className="flex cursor-pointer items-center gap-2 text-body-sm text-milsaca-cafezal">
         <input
           type="checkbox"
           name="active"
           defaultChecked={d.active ?? true}
-          className="h-4 w-4 cursor-pointer accent-milsaca-verde"
+          className="h-4 w-4 cursor-pointer accent-milsaca-cafezal"
         />
         Alvo ativo (dispara notificações)
       </label>

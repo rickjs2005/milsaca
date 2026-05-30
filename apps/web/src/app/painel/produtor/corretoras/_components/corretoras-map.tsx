@@ -47,7 +47,7 @@ const defaultIcon = L.icon({
 
 const verifiedIcon = L.divIcon({
   className: "milsaca-pin-verified",
-  html: `<div style="background:#C9A961;width:24px;height:24px;border-radius:50%;border:3px solid #2D3A2E;box-shadow:0 2px 4px rgba(0,0,0,0.25)"></div>`,
+  html: `<div style="background:#C9A961;width:24px;height:24px;border-radius:50%;border:3px solid #0F3D2E;box-shadow:0 2px 4px rgba(0,0,0,0.25)"></div>`,
   iconSize: [24, 24],
   iconAnchor: [12, 12],
   popupAnchor: [0, -12],
@@ -80,12 +80,12 @@ export function CorretorasMap({ pins }: Props) {
 
   if (pins.length === 0) {
     return (
-      <div className="flex h-[420px] items-center justify-center rounded-2xl border border-dashed border-milsaca-cream-escuro bg-milsaca-cream/40 text-center">
+      <div className="flex h-[420px] items-center justify-center rounded-card border border-dashed border-neutral-200 bg-milsaca-cream/40 text-center">
         <div className="space-y-2 px-6">
-          <p className="text-sm font-medium text-milsaca-verde">
+          <p className="text-body-sm font-medium text-milsaca-cafezal">
             Nenhuma corretora com localização no mapa
           </p>
-          <p className="text-xs text-milsaca-verde-claro">
+          <p className="text-caption text-neutral-600">
             Quando as corretoras informarem coordenadas, elas aparecem aqui.
           </p>
         </div>
@@ -94,7 +94,7 @@ export function CorretorasMap({ pins }: Props) {
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-milsaca-cream-escuro shadow-sm">
+    <div className="overflow-hidden rounded-card border border-neutral-200 shadow-card">
       <MapContainer
         center={fallbackCenter}
         zoom={7}
@@ -114,16 +114,16 @@ export function CorretorasMap({ pins }: Props) {
           >
             <Popup>
               <div className="space-y-1">
-                <p className="text-sm font-semibold text-milsaca-verde">
+                <p className="text-body-sm font-semibold text-milsaca-cafezal">
                   {p.name}
                 </p>
                 {p.city || p.state ? (
-                  <p className="text-xs text-milsaca-verde-claro">
+                  <p className="text-caption text-neutral-600">
                     {[p.city, p.state].filter(Boolean).join("/")}
                   </p>
                 ) : null}
                 {p.verified ? (
-                  <span className="inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+                  <span className="inline-block rounded-pill bg-success-50 px-2 py-0.5 text-[10px] font-medium text-success-700">
                     Verificada
                   </span>
                 ) : null}

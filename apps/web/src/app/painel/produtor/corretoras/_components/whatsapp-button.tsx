@@ -56,7 +56,8 @@ export function WhatsAppButton({
       type="button"
       onClick={handleClick}
       size="sm"
-      className={className ?? "flex-1 bg-emerald-600 text-white hover:bg-emerald-700"}
+      variant="success"
+      className={className ?? "flex-1"}
     >
       <MessageCircle className="mr-1 h-3.5 w-3.5" />
       WhatsApp
