@@ -64,6 +64,46 @@ Paleta Milsaca — define em `packages/config-tailwind/tokens.js`.
 
 **Regra de uso:** ao refatorar telas críticas (admin shell, sidebar, hero, dashboard), prefira keys premium. UIs existentes ficam com legacy até serem tocadas.
 
+### Tokens de fundação (proposta D1, 2026-05-30 — aditivos, nada removido)
+
+> Definidos em `packages/config-tailwind/tokens.js` e expostos pelo preset (`index.js`). São a base canônica pra parar de improvisar com `slate-*`/`emerald-*`/`sky-*`/`rose-*` soltos. Aplicação nas telas/componentes é fase posterior (D2+).
+
+**Cores semânticas de estado** (sóbrias, derivadas da marca — escalas `50/100/500/600/700`):
+
+| Token | 500 (hex) | Deriva de / harmonia | Uso |
+| --- | --- | --- | --- |
+| `success` | `#2E7D52` | folha `#1B5E3F` (= `success-600`) | sucesso, confirmado, ativo |
+| `warning` | `#C98A1E` | âmbar quente que conversa com o dourado | atenção, pendente |
+| `danger` | `#B23B2E` | vermelho terroso (não rose puro) | erro, destrutivo, rejeitado |
+| `info` | `#4B6B82` | azul-acinzentado discreto (não sky vivo) | informativo, neutro-frio |
+
+Convenção: `bg-{token}-50` + `text-{token}-700` + `border-{token}-100` pra badges/alerts suaves; `text-{token}-600`/`700` pra texto sobre cream/branco (AA); `500` como cor cheia (preencher botão/ícone). **Substituem** `emerald→success`, `amber→warning`, `rose/red→danger`, `sky→info`.
+
+**Neutros de marca** — escala `neutral.50..900`, cinza levemente quente/esverdeado (hue cafezal nas pontas). É a alternativa de marca ao `slate-*` genérico. **Use `neutral-*` no lugar de `slate-*`** em texto/borda/fundo neutro (`text-neutral-600` p/ secundário, `border-neutral-200` p/ divisores, `bg-neutral-50` p/ fundo sutil). `slate` não foi removido (compat), mas é desencorajado em código novo.
+
+**Tipografia semântica** (`fontSize` com line-height e weight embutidos; tamanhos default do Tailwind seguem válidos):
+
+| Classe | Tamanho | line-height | weight | Uso |
+| --- | --- | --- | --- | --- |
+| `text-display` | 40px | 1.1 | 700 | hero / landing |
+| `text-h1` | 32px | 1.15 | 700 | título de página |
+| `text-h2` | 24px | 1.2 | 600 | seção |
+| `text-h3` | 20px | 1.3 | 600 | subseção / título de card |
+| `text-body-lg` | 18px | 1.6 | 400 | parágrafo destaque |
+| `text-body` | 16px | 1.6 | 400 | corpo padrão |
+| `text-body-sm` | 14px | 1.5 | 400 | corpo secundário |
+| `text-label` | 14px | 1.4 | 500 | labels de form |
+| `text-caption` | 12px | 1.4 | 400 | meta / hint / timestamp |
+
+**Espaçamento** — escala canônica é a do Tailwind: **4 / 8 / 12 / 16 / 24 / 32 / 40** (`p-1/2/3/4/6/8/10`). Dois aliases de layout só pros gaps recorrentes: `p-card` (20px, padding interno de card) e gap/`mt-section` etc. via `section` (40px, espaço entre seções). Não inventar tokens de espaço além desses.
+
+**Estados (convenção a aplicar nos componentes na fase 2):**
+- **Foco:** `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2` — `ring` default agora é dourado `#C9A961` (`ringColor.DEFAULT`).
+- **Disabled:** `disabled:opacity-50 disabled:cursor-not-allowed`.
+- **Hover:** usar `folha`/`cafezal` em superfícies escuras e `dourado`/`dourado-claro` em realces; em superfícies claras, escurecer 1 tom (`cream`→`cream-escuro`, `neutral-50`→`neutral-100`).
+
+**Contraste / dourado (importante):** o `dourado` `#C9A961` **não passa AA como texto** sobre `cream`/branco. Regra: **dourado só em fundo, borda, ícone de realce e estados ativos** — nunca como texto de leitura. Pra "texto dourado" use o token `milsaca.dourado-texto` `#8A6D2F` (~AA sobre cream), ou prefira `cafezal`/`preto`. (Hoje há ~68 usos de `text-milsaca-dourado` que deverão migrar pra `dourado-texto` na fase de componentes.)
+
 Fonte: **Inter** (via `next/font/google` no web, `@expo-google-fonts/inter` no mobile).
 
 ## Multi-tenant e segurança

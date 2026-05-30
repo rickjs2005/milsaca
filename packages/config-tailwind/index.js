@@ -11,8 +11,11 @@ module.exports = {
     extend: {
       colors: tokens.colors,
       fontFamily: tokens.fontFamily,
+      fontSize: tokens.fontSize,
+      spacing: tokens.spacing,
       borderRadius: tokens.borderRadius,
       boxShadow: tokens.boxShadow,
+      ringColor: tokens.ringColor,
     },
   },
   plugins: [],
