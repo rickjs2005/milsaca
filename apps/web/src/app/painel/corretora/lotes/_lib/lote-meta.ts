@@ -88,9 +88,61 @@ export type LoteRow = {
   state: string | null;
   ultimo_tipo: string | null;
   ultimo_fora_de_tipo: boolean;
+  ultimo_classificacao_id: string | null;
 };
 
 export type ProdutorOption = {
   id: string;
   nome: string;
 };
+
+/**
+ * Ação PRIMÁRIA do card do lote (1 clique), alinhada ao estágio do ciclo de
+ * classificação. Mesmo padrão do `primaryLeadAction`. `share` = botão WhatsApp
+ * (o card monta o link com a cotação ref); `advance` = server action;
+ * `link` = navegação.
+ */
+export type LoteAction =
+  | { type: "share" }
+  | { type: "advance"; label: string; toStatus: LoteStatus }
+  | { type: "link"; label: string; href: string }
+  | null;
+
+export function nextLoteAction(lote: LoteRow): LoteAction {
+  switch (lote.status) {
+    case "rascunho":
+      return {
+        type: "advance",
+        label: "Enviar pra classificação",
+        toStatus: "aguardando_classificacao",
+      };
+    case "aguardando_classificacao":
+      return {
+        type: "link",
+        label: "Lançar classificação",
+        href: `/painel/corretora/lotes/${lote.id}/classificar`,
+      };
+    case "classificado":
+      return { type: "share" };
+    case "fora_de_tipo":
+      return {
+        type: "advance",
+        label: "Rebeneficiar",
+        toStatus: "rebeneficiar",
+      };
+    case "rebeneficiar":
+      return {
+        type: "advance",
+        label: "Marcar classificado",
+        toStatus: "classificado",
+      };
+    case "vendido":
+      return {
+        type: "link",
+        label: "Ver contrato",
+        href: `/painel/corretora/lotes/${lote.id}`,
+      };
+    default:
+      return null;
+  }
+}

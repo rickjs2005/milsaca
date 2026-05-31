@@ -36,7 +36,7 @@ export async function listLotes(
     .select(
       `id, codigo, specie, processo, safra, peso_sacas, status, created_at, updated_at,
        produtor:profiles!lotes_produtor_id_fkey(id, full_name, phone, produtores(city, state, fazenda_nome)),
-       classificacoes_cob(tipo, fora_de_tipo, created_at, anulada)`,
+       classificacoes_cob(id, tipo, fora_de_tipo, created_at, anulada)`,
       { count: "exact" },
     )
     .eq("corretora_id", corretoraId)
@@ -82,6 +82,7 @@ export async function listLotes(
         }[]
       | null;
     classificacoes_cob: Array<{
+      id: string;
       tipo: string | null;
       fora_de_tipo: boolean;
       created_at: string;
@@ -119,6 +120,7 @@ export async function listLotes(
       state: prodExt?.state ?? null,
       ultimo_tipo: vigente?.tipo ?? null,
       ultimo_fora_de_tipo: vigente?.fora_de_tipo ?? false,
+      ultimo_classificacao_id: vigente?.id ?? null,
     };
   });
 
@@ -193,11 +195,18 @@ export type LotesKpis = {
   sacasDisponiveis: number;
   classificados: number;
   vendidosMes: number;
+  valorVendidos: number;
 };
 
 export async function loadLotesKpis(corretoraId: string): Promise<LotesKpis> {
   if (!corretoraId) {
-    return { ativos: 0, sacasDisponiveis: 0, classificados: 0, vendidosMes: 0 };
+    return {
+      ativos: 0,
+      sacasDisponiveis: 0,
+      classificados: 0,
+      vendidosMes: 0,
+      valorVendidos: 0,
+    };
   }
   const supabase = await createClient();
 
@@ -213,24 +222,36 @@ export async function loadLotesKpis(corretoraId: string): Promise<LotesKpis> {
     "rebeneficiar",
   ];
 
-  const [ativosRows, classificados, vendidosMes] = await Promise.all([
+  const cotRef = (t: "arabica" | "conillon") =>
     supabase
-      .from("lotes")
-      .select("peso_sacas")
-      .eq("corretora_id", corretoraId)
-      .in("status", ATIVOS),
-    supabase
-      .from("lotes")
-      .select("*", { count: "exact", head: true })
-      .eq("corretora_id", corretoraId)
-      .eq("status", "classificado"),
-    supabase
-      .from("lotes")
-      .select("*", { count: "exact", head: true })
-      .eq("corretora_id", corretoraId)
-      .eq("status", "vendido")
-      .gte("updated_at", monthIso),
-  ]);
+      .from("cotacoes")
+      .select("price")
+      .eq("coffee_type", t)
+      .order("reference_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+  const [ativosRows, classificados, vendidoRows, cotArabica, cotConillon] =
+    await Promise.all([
+      supabase
+        .from("lotes")
+        .select("peso_sacas")
+        .eq("corretora_id", corretoraId)
+        .in("status", ATIVOS),
+      supabase
+        .from("lotes")
+        .select("*", { count: "exact", head: true })
+        .eq("corretora_id", corretoraId)
+        .eq("status", "classificado"),
+      supabase
+        .from("lotes")
+        .select("specie, peso_sacas")
+        .eq("corretora_id", corretoraId)
+        .eq("status", "vendido")
+        .gte("updated_at", monthIso),
+      cotRef("arabica"),
+      cotRef("conillon"),
+    ]);
 
   const ativosData = (ativosRows.data ?? []) as Array<{
     peso_sacas: number | string | null;
@@ -240,10 +261,27 @@ export async function loadLotesKpis(corretoraId: string): Promise<LotesKpis> {
     0,
   );
 
+  const cot: Record<"arabica" | "conillon", number> = {
+    arabica: Number((cotArabica.data as { price: number } | null)?.price ?? 0),
+    conillon: Number(
+      (cotConillon.data as { price: number } | null)?.price ?? 0,
+    ),
+  };
+  const vendido = (vendidoRows.data ?? []) as Array<{
+    specie: "arabica" | "conillon";
+    peso_sacas: number | string | null;
+  }>;
+  const valorVendidos = vendido.reduce(
+    (sum, r) =>
+      sum + (r.peso_sacas != null ? Number(r.peso_sacas) * (cot[r.specie] ?? 0) : 0),
+    0,
+  );
+
   return {
     ativos: ativosData.length,
     sacasDisponiveis,
     classificados: classificados.count ?? 0,
-    vendidosMes: vendidosMes.count ?? 0,
+    vendidosMes: vendido.length,
+    valorVendidos,
   };
 }

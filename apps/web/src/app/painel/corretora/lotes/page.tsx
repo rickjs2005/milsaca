@@ -38,6 +38,11 @@ function isSpecie(v: string | undefined): v is "arabica" | "conillon" {
 }
 
 const NUM = new Intl.NumberFormat("pt-BR");
+const BRL = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  maximumFractionDigits: 0,
+});
 
 async function loadCorretoraName(corretoraId: string): Promise<string> {
   const supabase = await createClient();
@@ -83,7 +88,7 @@ export default async function LotesPage({
     <div className="space-y-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-h1 text-milsaca-verde">Lotes de café</h1>
+          <h1 className="text-h1 text-milsaca-cafezal">Lotes de café</h1>
           <p className="mt-1 text-body-sm text-neutral-600">
             Vitrine comercial — compartilhe lotes, acompanhe o ciclo de
             classificação e mova pra vendido com 1 click.
@@ -100,7 +105,7 @@ export default async function LotesPage({
 
       <section
         aria-label="Indicadores de lotes"
-        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+        className="grid grid-cols-2 gap-4 xl:grid-cols-4"
       >
         <KpiCard
           label="Sacas disponíveis"
@@ -125,10 +130,10 @@ export default async function LotesPage({
         />
         <KpiCard
           label="Vendidos no mês"
-          value={NUM.format(kpis.vendidosMes)}
+          value={BRL.format(kpis.valorVendidos)}
           icon={ShoppingBag}
           tone="success"
-          hint="Marcados como vendidos a partir do dia 1"
+          hint={`${kpis.vendidosMes} lote${kpis.vendidosMes === 1 ? "" : "s"} · volume estimado`}
         />
       </section>
 

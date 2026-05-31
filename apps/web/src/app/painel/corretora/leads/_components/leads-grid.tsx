@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Inbox, Search, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Pagination } from "@/components/pagination";
 import { EmptyState as SharedEmptyState } from "@/components/empty-state";
+import { FilterSheet } from "@/components/filter-sheet";
 import {
   LEAD_STATUS_LABEL,
   LEAD_STATUS_ORDER,
@@ -58,6 +59,7 @@ export function LeadsGrid({
 }) {
   const pathname = usePathname();
   const params = useSearchParams();
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [urgencia, setUrgencia] = useState<"" | Urgencia>("");
   const [sort, setSort] = useState<SortKey>("recentes");
@@ -230,96 +232,42 @@ export function LeadsGrid({
         </div>
       ) : null}
 
-      {/* BOTTOM SHEET (mobile) */}
-      {sheetOpen ? (
-        <div className="fixed inset-0 z-50 sm:hidden">
-          <button
-            type="button"
-            aria-label="Fechar filtros"
-            onClick={() => setSheetOpen(false)}
-            className="absolute inset-0 bg-milsaca-cafezal/50 backdrop-blur-sm"
-          />
-          <div
-            className="absolute inset-x-0 bottom-0 space-y-4 rounded-t-2xl bg-white p-4"
-            style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
-          >
-            <div className="mx-auto h-1 w-10 rounded-full bg-neutral-300" />
-            <div className="flex items-center justify-between">
-              <h2 className="text-h3 text-milsaca-cafezal">Filtros</h2>
-              <Link
-                href={pathname}
-                onClick={() => {
-                  setUrgencia("");
-                  setSheetOpen(false);
-                }}
-                className="text-caption font-medium text-milsaca-cafezal hover:underline"
-              >
-                Limpar
-              </Link>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
-                Status
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {STATUS_FILTERS.map((f) => {
-                  const active = (current.status ?? "") === f.value;
-                  return (
-                    <Link
-                      key={`sh-st-${f.value || "all"}`}
-                      href={statusHref(f.value)}
-                      onClick={() => setSheetOpen(false)}
-                      className={cn(
-                        "rounded-pill px-3 py-1.5 text-caption font-medium transition-colors",
-                        active
-                          ? "bg-milsaca-cafezal text-milsaca-cream"
-                          : "border border-neutral-200 text-neutral-600",
-                      )}
-                    >
-                      {f.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
-                Urgência
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {(["", ...URGENCIA_FILTER_ORDER] as const).map((u) => {
-                  const active = urgencia === u;
-                  return (
-                    <button
-                      key={`sh-urg-${u || "any"}`}
-                      type="button"
-                      onClick={() => setUrgencia(u)}
-                      className={cn(
-                        "rounded-pill px-3 py-1.5 text-caption font-medium transition-colors",
-                        active
-                          ? "bg-milsaca-cafezal text-milsaca-cream"
-                          : "border border-neutral-200 text-neutral-600",
-                      )}
-                    >
-                      {u ? URGENCIA_LABEL[u] : "Qualquer"}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setSheetOpen(false)}
-              className="h-11 w-full rounded-md bg-milsaca-cafezal text-label font-semibold text-milsaca-cream transition-colors hover:bg-milsaca-folha"
-            >
-              Ver {filtered.length} {filtered.length === 1 ? "lead" : "leads"}
-            </button>
-          </div>
-        </div>
-      ) : null}
+      <FilterSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        groups={[
+          {
+            key: "status",
+            label: "Status",
+            options: STATUS_FILTERS.map((f) => ({
+              value: f.value,
+              label: f.label,
+            })),
+            value: current.status ?? "",
+            onSelect: (v) => router.push(statusHref(v)),
+          },
+          {
+            key: "urgencia",
+            label: "Urgência",
+            options: [
+              { value: "", label: "Qualquer" },
+              ...URGENCIA_FILTER_ORDER.map((u) => ({
+                value: u,
+                label: URGENCIA_LABEL[u],
+              })),
+            ],
+            value: urgencia,
+            onSelect: (v) => setUrgencia(v as "" | Urgencia),
+          },
+        ]}
+        resultCount={filtered.length}
+        resultNoun={filtered.length === 1 ? "lead" : "leads"}
+        onClear={() => {
+          setUrgencia("");
+          router.push(pathname);
+          setSheetOpen(false);
+        }}
+      />
     </div>
   );
 }
