@@ -66,9 +66,9 @@ grant execute on function public.is_app_admin() to authenticated;
 -- a migration roda sem erro mas ninguém vira admin. O provisionamento
 -- pode ser refeito via script ou inserindo manualmente em app_admins.
 insert into public.app_admins (user_id, notes)
-select id, 'Rick - founder'
+select id, 'Admin Milsaca - founder'
   from auth.users
- where email = 'rickjanuario0@gmail.com'
+ where email = 'milsaca2026@gmail.com'
    and not exists (
      select 1 from public.app_admins a where a.user_id = auth.users.id
    );
