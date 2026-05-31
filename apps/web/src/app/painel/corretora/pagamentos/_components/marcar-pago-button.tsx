@@ -41,7 +41,7 @@ export function MarcarPagoButton({
 
       <Button
         type="button"
-        variant="success"
+        variant="primary"
         size="sm"
         className={
           full

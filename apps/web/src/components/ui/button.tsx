@@ -23,9 +23,10 @@ const buttonVariants = cva(
         link: "text-milsaca-cafezal underline-offset-4 hover:underline",
 
         // ── Variantes premium de marca (Fundação D1) ─────────────────────────
-        // CTA principal: cafezal profundo, texto cream, hover folha (verde vivo).
+        // CTA principal de tela (criar/registrar): cafezal profundo, texto cream,
+        // hover escurece o próprio cafezal (NÃO muda pra verde folha).
         primary:
-          "bg-milsaca-cafezal text-milsaca-cream hover:bg-milsaca-folha",
+          "bg-milsaca-cafezal text-milsaca-cream hover:bg-milsaca-cafezal/90",
         // Destaque dourado: fundo dourado, texto cafezal (NUNCA texto dourado),
         // hover dourado-claro. Dourado só em fundo/realce, conforme regra de AA.
         gold: "bg-milsaca-dourado text-milsaca-cafezal hover:bg-milsaca-dourado-claro",
