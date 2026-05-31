@@ -158,6 +158,14 @@ export async function marcarPago(formData: FormData) {
     comprovante = path;
   }
 
+  // Marcar como pago exige comprovante anexado (foto/PDF do PIX) — ação
+  // crítica e irreversível na prática (o produtor passa a ver "pago").
+  if (!comprovante) {
+    redirect(
+      `/painel/corretora/pagamentos?error=${encodeURIComponent("Anexe o comprovante para marcar como pago.")}`,
+    );
+  }
+
   const { error } = await supabase
     .from("produtor_pagamentos")
     .update({

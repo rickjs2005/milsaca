@@ -1,51 +1,20 @@
 import { createClient } from "@milsaca/db/web/server";
-import type { Database } from "@milsaca/types/database";
-import type { StatusTone } from "@/components/status-badge";
+import {
+  PAGAMENTO_ABERTO_STATUS,
+  type PagamentoStatus,
+  type PagamentoItem,
+} from "./pagamento-meta";
 
-export type PagamentoStatus = Database["public"]["Enums"]["pagamento_status"];
-
-export const PAGAMENTO_STATUS_ORDER: PagamentoStatus[] = [
-  "pendente",
-  "pago",
-  "vencido",
-  "cancelado",
-];
-
-export const PAGAMENTO_STATUS_LABEL: Record<PagamentoStatus, string> = {
-  pendente: "A pagar",
-  pago: "Pago",
-  vencido: "Vencido",
-  cancelado: "Cancelado",
-};
-
-export const PAGAMENTO_STATUS_COLOR: Record<PagamentoStatus, string> = {
-  pendente: "bg-milsaca-dourado/20 text-milsaca-verde",
-  pago: "bg-emerald-100 text-emerald-800",
-  vencido: "bg-rose-100 text-rose-800",
-  cancelado: "bg-slate-200 text-slate-700",
-};
-
-// Tone semântico (fundação D1) — usado pelo <StatusBadge> nas listagens.
-export const PAGAMENTO_STATUS_TONE: Record<PagamentoStatus, StatusTone> = {
-  pendente: "warning",
-  pago: "success",
-  vencido: "danger",
-  cancelado: "neutral",
-};
-
-export type PagamentoItem = {
-  id: string;
-  valor_bruto: number;
-  valor_liquido: number;
-  status: PagamentoStatus;
-  data_prevista: string | null;
-  data_paga: string | null;
-  comprovante_url: string | null;
-  observacoes: string | null;
-  created_at: string;
-  contrato_code: string | null;
-  produtor_nome: string;
-};
+// Re-export da meta pura — clients importam de "./pagamento-meta" direto.
+export {
+  PAGAMENTO_STATUS_ORDER,
+  PAGAMENTO_STATUS_LABEL,
+  PAGAMENTO_STATUS_COLOR,
+  PAGAMENTO_STATUS_TONE,
+  isPagamentoAberto,
+  nextPaymentAction,
+} from "./pagamento-meta";
+export type { PagamentoStatus, PagamentoItem } from "./pagamento-meta";
 
 function pickOne<T>(v: T | T[] | null | undefined): T | null {
   if (v == null) return null;
@@ -62,11 +31,32 @@ type Row = {
   comprovante_url: string | null;
   observacoes: string | null;
   created_at: string;
+  contrato_id: string | null;
   produtor: { full_name: string | null } | { full_name: string | null }[] | null;
   contrato: { code: string } | { code: string }[] | null;
 };
 
 export const PAGAMENTOS_PAGE_SIZE = 20;
+
+/**
+ * Conjunto de contrato_ids (dentre os informados) que já têm ao menos uma
+ * entrega conferida — sinal de que o repasse ao produtor está liberado.
+ */
+async function contratosComEntregaConferida(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  corretoraId: string,
+  contratoIds: string[],
+): Promise<Set<string>> {
+  if (contratoIds.length === 0) return new Set();
+  const { data } = await supabase
+    .from("entregas")
+    .select("contrato_id")
+    .eq("corretora_id", corretoraId)
+    .eq("status", "conferida")
+    .in("contrato_id", contratoIds);
+  const rows = (data ?? []) as { contrato_id: string | null }[];
+  return new Set(rows.map((r) => r.contrato_id).filter((v): v is string => !!v));
+}
 
 export async function listPagamentos(
   corretoraId: string,
@@ -80,7 +70,7 @@ export async function listPagamentos(
     .from("produtor_pagamentos")
     .select(
       `id, valor_bruto, valor_liquido, status, data_prevista, data_paga,
-       comprovante_url, observacoes, created_at,
+       comprovante_url, observacoes, created_at, contrato_id,
        produtor:profiles!produtor_pagamentos_produtor_id_fkey(full_name),
        contrato:contratos!produtor_pagamentos_contrato_id_fkey(code)`,
       { count: "exact" },
@@ -93,6 +83,12 @@ export async function listPagamentos(
 
   const { data, count } = await q;
   const rows = (data ?? []) as unknown as Row[];
+
+  const conferidas = await contratosComEntregaConferida(
+    supabase,
+    corretoraId,
+    [...new Set(rows.map((r) => r.contrato_id).filter((v): v is string => !!v))],
+  );
 
   return {
     rows: rows.map((r): PagamentoItem => {
@@ -110,34 +106,51 @@ export async function listPagamentos(
         created_at: r.created_at,
         contrato_code: cont?.code ?? null,
         produtor_nome: prod?.full_name ?? "—",
+        entrega_conferida: r.contrato_id
+          ? conferidas.has(r.contrato_id)
+          : false,
       };
     }),
     count: count ?? 0,
   };
 }
 
+export type PagamentosKpis = {
+  /** Líquido pendente + vencido. */
+  aPagar: number;
+  /** Líquido já pago. */
+  pago: number;
+  /** Líquido vencido (subconjunto de aPagar) — atenção. */
+  vencido: number;
+};
+
 /**
- * Totais (líquido) de "a pagar" (pendente + vencido) e "já pago" —
- * globais, independentes de filtro/paginação. Pros cards do topo.
+ * Totais (líquido) globais, independentes de filtro/paginação. Pros KPIs do
+ * topo. "A pagar" = pendente + vencido; "Vencido" é o recorte em atraso.
  */
-export async function sumPagamentosLiquido(
+export async function loadPagamentosKpis(
   corretoraId: string,
-): Promise<{ aPagar: number; pago: number }> {
+): Promise<PagamentosKpis> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("produtor_pagamentos")
     .select("valor_liquido, status")
     .eq("corretora_id", corretoraId);
 
-  const rows = (data ?? []) as { valor_liquido: number | string; status: PagamentoStatus }[];
+  const rows = (data ?? []) as {
+    valor_liquido: number | string;
+    status: PagamentoStatus;
+  }[];
   let aPagar = 0;
   let pago = 0;
+  let vencido = 0;
   for (const r of rows) {
     const v = Number(r.valor_liquido);
-    if (r.status === "pendente" || r.status === "vencido") aPagar += v;
+    if (PAGAMENTO_ABERTO_STATUS.includes(r.status)) aPagar += v;
+    if (r.status === "vencido") vencido += v;
     else if (r.status === "pago") pago += v;
   }
-  return { aPagar, pago };
+  return { aPagar, pago, vencido };
 }
 
 /**
