@@ -1,24 +1,9 @@
 import { createClient } from "@milsaca/db/web/server";
 
-export type ProdutorListItem = {
-  kind: "produtor" | "contato";
-  /** id do profile (produtor real) ou do produtor_contatos (sombra) */
-  id: string;
-  full_name: string;
-  email: string | null;
-  phone: string | null;
-  fazenda_nome: string | null;
-  city: string | null;
-  state: string | null;
-  /** apenas produtor real */
-  has_account: boolean;
-  /** apenas contato sombra: se já foi reivindicado (claimed_profile_id != null) */
-  claimed: boolean;
-  qtd_leads: number;
-  qtd_contratos: number;
-  /** opaco — usado pra ordenar por atividade recente */
-  last_activity: string | null;
-};
+import type { ProdutorListItem } from "./produtor-meta";
+
+// Re-export pra compat de quem importa o tipo a partir de queries.
+export type { ProdutorListItem } from "./produtor-meta";
 
 export async function listProdutoresEContatos(
   corretoraId: string,
@@ -35,7 +20,7 @@ export async function listProdutoresEContatos(
         .not("produtor_id", "is", null),
       supabase
         .from("contratos")
-        .select("produtor_id, created_at")
+        .select("produtor_id, created_at, total_value")
         .eq("corretora_id", corretoraId),
       supabase
         .from("favoritos")
@@ -115,6 +100,8 @@ export async function listProdutoresEContatos(
   // Contagens por produtor real
   const leadsCount = new Map<string, number>();
   const contratosCount = new Map<string, number>();
+  // Soma de contratos.total_value por produtor real (R$ movimentado)
+  const valorByProdutor = new Map<string, number>();
   for (const r of (leadsRows.data ?? []) as {
     produtor_id: string | null;
   }[]) {
@@ -123,12 +110,18 @@ export async function listProdutoresEContatos(
   }
   for (const r of (contratosRows.data ?? []) as {
     produtor_id: string | null;
+    total_value: number | null;
   }[]) {
-    if (r.produtor_id)
+    if (r.produtor_id) {
       contratosCount.set(
         r.produtor_id,
         (contratosCount.get(r.produtor_id) ?? 0) + 1,
       );
+      valorByProdutor.set(
+        r.produtor_id,
+        (valorByProdutor.get(r.produtor_id) ?? 0) + Number(r.total_value ?? 0),
+      );
+    }
   }
 
   // Contagens por contato sombra (leads onde contato_id = contato.id)
@@ -164,7 +157,9 @@ export async function listProdutoresEContatos(
       claimed: false,
       qtd_leads: leadsCount.get(p.id) ?? 0,
       qtd_contratos: contratosCount.get(p.id) ?? 0,
+      valor_movimentado: valorByProdutor.get(p.id) ?? 0,
       last_activity: lastByProdutor.get(p.id) ?? null,
+      na_plataforma: true,
     };
   });
 
@@ -194,7 +189,9 @@ export async function listProdutoresEContatos(
     claimed: c.claimed_profile_id != null,
     qtd_leads: leadsPorContato.get(c.id) ?? 0,
     qtd_contratos: 0,
+    valor_movimentado: 0,
     last_activity: c.updated_at,
+    na_plataforma: c.claimed_profile_id != null,
   }));
 
   // Mescla e ordena por última atividade desc, fallback nome
