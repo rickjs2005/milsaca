@@ -67,45 +67,24 @@ export function SubscriptionBanner({ info }: { info: SubscriptionInfo }) {
 /* Estado: nunca teve plano (oportunidade de upgrade)                    */
 /* ====================================================================== */
 function UpgradeCard() {
+  // Barra fina, uma linha — não rouba a dobra do dashboard (feedback UX).
   return (
-    <section className="relative overflow-hidden rounded-card border border-milsaca-dourado/40 bg-gradient-to-br from-milsaca-cafezal via-milsaca-cafezal to-[#0a261c] p-6 text-milsaca-cream shadow-card-hover sm:p-7">
-      <DecorativeGlow />
-      <div className="relative grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-milsaca-dourado/20 text-milsaca-dourado ring-1 ring-inset ring-milsaca-dourado/40">
-              <Sparkles className="h-3.5 w-3.5" />
-            </span>
-            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-milsaca-dourado">
-              Plano gratuito ativo
-            </span>
-          </div>
-          <h3 className="text-h2 tracking-tight">
-            Libere a corretora completa.
-          </h3>
-          <p className="max-w-2xl text-body-sm leading-relaxed text-milsaca-cream/80">
-            Você está usando recursos limitados da Milsaca. Ative o plano{" "}
-            <strong className="text-milsaca-dourado">Premium</strong> (R$100/mês,
-            1º mês grátis) e libere gestão completa de lotes, leads, propostas,
-            contratos e analytics. Sem limite por operador.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-2 lg:items-end">
-          <CtaPrimary href="/painel/corretora/assinatura">
-            Ver planos
-          </CtaPrimary>
-          <div className="flex gap-2">
-            <CtaSecondary href="/painel/corretora/assinatura">
-              Liberar painel completo
-            </CtaSecondary>
-            <CtaIcon href={WHATSAPP_SUPPORT} external>
-              <MessageCircle className="h-4 w-4" />
-            </CtaIcon>
-          </div>
-        </div>
-      </div>
-    </section>
+    <Link
+      href="/painel/corretora/assinatura"
+      className="group flex items-center justify-between gap-3 rounded-md border border-milsaca-dourado/30 bg-milsaca-dourado/10 px-4 py-2.5 transition-colors hover:bg-milsaca-dourado/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    >
+      <span className="flex min-w-0 items-center gap-2 text-body-sm text-milsaca-cafezal">
+        <Sparkles className="h-4 w-4 shrink-0 text-dourado-texto" />
+        <span className="truncate">
+          <strong>Plano gratuito.</strong> Ative o Premium (R$100/mês, 1º mês
+          grátis) e libere tudo.
+        </span>
+      </span>
+      <span className="inline-flex shrink-0 items-center gap-1 text-caption font-semibold text-dourado-texto transition-all group-hover:gap-2">
+        Liberar
+        <ArrowRight className="h-3.5 w-3.5" />
+      </span>
+    </Link>
   );
 }
 
@@ -251,78 +230,3 @@ function BlockedCard({
   );
 }
 
-/* ====================================================================== */
-/* Pieces                                                                  */
-/* ====================================================================== */
-
-function DecorativeGlow() {
-  return (
-    <>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-milsaca-dourado/15 blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-24 -left-12 h-56 w-56 rounded-full bg-milsaca-folha/30 blur-3xl"
-      />
-    </>
-  );
-}
-
-function CtaPrimary({
-  href,
-  children,
-}: {
-  href: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className="inline-flex h-11 items-center justify-center gap-1.5 rounded-md bg-milsaca-dourado px-4 text-label font-semibold text-milsaca-cafezal shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_6px_18px_-8px_rgba(201,169,97,0.6)] transition-all duration-150 hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-milsaca-cream focus-visible:ring-offset-2 focus-visible:ring-offset-milsaca-cafezal"
-    >
-      {children}
-      <ArrowRight className="h-4 w-4" />
-    </Link>
-  );
-}
-
-function CtaSecondary({
-  href,
-  children,
-}: {
-  href: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className="inline-flex h-11 items-center justify-center rounded-md border border-milsaca-dourado/40 bg-transparent px-4 text-label font-semibold text-milsaca-cream transition-colors hover:bg-milsaca-dourado/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-milsaca-cream focus-visible:ring-offset-2 focus-visible:ring-offset-milsaca-cafezal"
-    >
-      {children}
-    </Link>
-  );
-}
-
-function CtaIcon({
-  href,
-  external,
-  children,
-}: {
-  href: string;
-  external?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      target={external ? "_blank" : undefined}
-      rel={external ? "noopener noreferrer" : undefined}
-      aria-label="Falar com o suporte no WhatsApp"
-      className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-milsaca-dourado/40 bg-transparent text-milsaca-cream transition-colors hover:bg-milsaca-dourado/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-milsaca-cream focus-visible:ring-offset-2 focus-visible:ring-offset-milsaca-cafezal"
-    >
-      {children}
-    </Link>
-  );
-}

@@ -7,21 +7,21 @@ import {
   Handshake,
   Package,
   FileText,
-  User,
+  MoreHorizontal,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Item = { href: string; label: string; icon: LucideIcon; exact?: boolean };
 
-// Navegação primária da corretora no celular (estilo app). O resto fica na
-// sidebar (drawer não existe no mobile quando há bottom nav) / nas telas.
+// 4 destinos principais + "Mais" (abre o resto do sistema). Garante paridade
+// de navegação no mobile: tudo que está na sidebar é alcançável pelo celular.
 const ITEMS: Item[] = [
   { href: "/painel/corretora", label: "Início", icon: Home, exact: true },
   { href: "/painel/corretora/leads", label: "Leads", icon: Handshake },
   { href: "/painel/corretora/lotes", label: "Lotes", icon: Package },
   { href: "/painel/corretora/contratos", label: "Contratos", icon: FileText },
-  { href: "/painel/corretora/perfil", label: "Perfil", icon: User },
+  { href: "/painel/corretora/mais", label: "Mais", icon: MoreHorizontal },
 ];
 
 export function CorretoraBottomNav() {

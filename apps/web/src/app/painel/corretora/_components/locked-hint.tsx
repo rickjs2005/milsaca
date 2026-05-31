@@ -27,14 +27,14 @@ export function LockedHint({
       : feature;
 
   const defaultDesc =
-    "Esta área faz parte do plano Pro. Você pode visualizar o que já existe; criar novos itens fica liberado depois do upgrade.";
+    "Esta área faz parte do plano Premium. Você pode visualizar o que já existe; criar novos itens fica liberado depois do upgrade.";
 
   if (variant === "subtle") {
     return (
       <div className="flex items-start gap-2 rounded-md border border-milsaca-dourado/40 bg-milsaca-dourado/10 px-3 py-2 text-caption text-milsaca-cafezal">
         <Lock className="mt-0.5 h-3 w-3 shrink-0" />
         <span className="flex-1">
-          <strong>{label}</strong> está disponível no plano Corretora Pro.{" "}
+          <strong>{label}</strong> está disponível no plano Premium.{" "}
           <Link
             href="/painel/corretora/assinatura"
             className="rounded-sm font-semibold underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -63,7 +63,7 @@ export function LockedHint({
               <Sparkles className="h-3.5 w-3.5" />
             </span>
             <span className="text-caption font-semibold uppercase tracking-[0.16em] text-milsaca-cafezal">
-              Recurso do plano Pro
+              Recurso do plano Premium
             </span>
           </div>
           <h3 className="text-h3 text-milsaca-cafezal">

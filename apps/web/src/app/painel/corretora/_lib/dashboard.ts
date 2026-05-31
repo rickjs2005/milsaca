@@ -17,6 +17,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export type DashboardKpis = {
   leadsNovos: number;
   emNegociacao: number;
+  valorEmNegociacao: number;
   convertidosMes: number;
   contratosAtivos: number;
   receitaMes: number;
@@ -33,6 +34,7 @@ export async function loadDashboardKpis(
     return {
       leadsNovos: 0,
       emNegociacao: 0,
+      valorEmNegociacao: 0,
       convertidosMes: 0,
       contratosAtivos: 0,
       receitaMes: 0,
@@ -62,6 +64,7 @@ export async function loadDashboardKpis(
   const [
     novos,
     emNeg,
+    emNegValores,
     convMes,
     contratosAtivos,
     contratosMes,
@@ -77,6 +80,11 @@ export async function loadDashboardKpis(
     supabase
       .from("leads")
       .select("*", { count: "exact", head: true })
+      .eq("corretora_id", corretoraId)
+      .eq("status", "em_negociacao"),
+    supabase
+      .from("leads")
+      .select("proposed_price, bag_count")
       .eq("corretora_id", corretoraId)
       .eq("status", "em_negociacao"),
     supabase
@@ -127,9 +135,24 @@ export async function loadDashboardKpis(
     0,
   );
 
+  const valorEmNegociacao = (
+    (emNegValores.data ?? []) as Array<{
+      proposed_price: number | string | null;
+      bag_count: number | null;
+    }>
+  ).reduce(
+    (sum, r) =>
+      sum +
+      (r.proposed_price != null && r.bag_count != null
+        ? Number(r.proposed_price) * r.bag_count
+        : 0),
+    0,
+  );
+
   return {
     leadsNovos: novos.count ?? 0,
     emNegociacao: emNeg.count ?? 0,
+    valorEmNegociacao,
     convertidosMes: convMes.count ?? 0,
     contratosAtivos: contratosAtivos.count ?? 0,
     receitaMes,
@@ -147,6 +170,8 @@ export type DashboardLead = {
   coffee_type: string | null;
   status: LeadStatus;
   data: string;
+  valor: number | null;
+  updatedAt: string;
 };
 
 export async function loadLeadsRecentes(
@@ -157,7 +182,7 @@ export async function loadLeadsRecentes(
   const { data } = await supabase
     .from("leads")
     .select(
-      "id, status, coffee_type, bag_count, created_at, produtor:profiles!leads_produtor_id_fkey(full_name)",
+      "id, status, coffee_type, bag_count, proposed_price, created_at, updated_at, produtor:profiles!leads_produtor_id_fkey(full_name)",
     )
     .eq("corretora_id", corretoraId)
     .order("created_at", { ascending: false })
@@ -168,7 +193,9 @@ export async function loadLeadsRecentes(
     status: LeadStatus;
     coffee_type: string | null;
     bag_count: number | null;
+    proposed_price: number | string | null;
     created_at: string;
+    updated_at: string;
     produtor:
       | { full_name: string | null }
       | { full_name: string | null }[]
@@ -179,12 +206,18 @@ export async function loadLeadsRecentes(
     const produtor = Array.isArray(r.produtor)
       ? r.produtor[0]?.full_name
       : r.produtor?.full_name;
+    const valor =
+      r.proposed_price != null && r.bag_count != null
+        ? Number(r.proposed_price) * r.bag_count
+        : null;
     return {
       id: r.id,
       produtor: produtor ?? "Produtor sem nome",
       bag_count: r.bag_count,
       coffee_type: r.coffee_type,
       status: r.status,
+      valor,
+      updatedAt: r.updated_at,
       data: new Date(r.created_at).toLocaleDateString("pt-BR", {
         day: "2-digit",
         month: "2-digit",
