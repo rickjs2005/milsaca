@@ -1,57 +1,14 @@
 import { createClient } from "@milsaca/db/web/server";
-import type { Database } from "@milsaca/types/database";
-import type { StatusTone } from "@/components/status-badge";
+import type { ContratoStatus, ContratoListItem } from "./contrato-meta";
 
-export type ContratoStatus = Database["public"]["Enums"]["contrato_status"];
-
-export const CONTRATO_STATUS_ORDER: ContratoStatus[] = [
-  "rascunho",
-  "em_analise",
-  "ativo",
-  "finalizado",
-  "cancelado",
-];
-
-export const CONTRATO_STATUS_LABEL: Record<ContratoStatus, string> = {
-  rascunho: "Rascunho",
-  em_analise: "Em análise",
-  ativo: "Ativo",
-  finalizado: "Finalizado",
-  cancelado: "Cancelado",
-};
-
-export const CONTRATO_STATUS_COLOR: Record<ContratoStatus, string> = {
-  rascunho: "bg-slate-200 text-slate-700",
-  em_analise: "bg-milsaca-dourado/20 text-milsaca-verde",
-  ativo: "bg-emerald-100 text-emerald-800",
-  finalizado: "bg-milsaca-verde text-milsaca-cream",
-  cancelado: "bg-rose-100 text-rose-800",
-};
-
-// Tone semântico (fundação D1) — usado pelo <StatusBadge> nas listagens.
-export const CONTRATO_STATUS_TONE: Record<ContratoStatus, StatusTone> = {
-  rascunho: "neutral",
-  em_analise: "warning",
-  ativo: "success",
-  finalizado: "premium",
-  cancelado: "danger",
-};
-
-export type ContratoListItem = {
-  id: string;
-  code: string;
-  status: ContratoStatus;
-  coffee_type: string | null;
-  bag_count: number | null;
-  total_value: number | null;
-  signed_at: string | null;
-  created_at: string;
-  updated_at: string;
-  produtor_id: string;
-  produtor_nome: string;
-  produtor_phone: string | null;
-  lead_id: string | null;
-};
+// Re-export da meta pura — clients importam de "./contrato-meta" direto.
+export {
+  CONTRATO_STATUS_ORDER,
+  CONTRATO_STATUS_LABEL,
+  CONTRATO_STATUS_TONE,
+  CONTRATO_STATUS_COLOR,
+} from "./contrato-meta";
+export type { ContratoStatus, ContratoListItem } from "./contrato-meta";
 
 type ContratoRow = {
   id: string;
@@ -60,6 +17,7 @@ type ContratoRow = {
   coffee_type: string | null;
   bag_count: number | null;
   total_value: number | null;
+  comissao_total: number | null;
   signed_at: string | null;
   created_at: string;
   updated_at: string;
@@ -69,6 +27,7 @@ type ContratoRow = {
     | { id: string; full_name: string | null; phone: string | null }
     | { id: string; full_name: string | null; phone: string | null }[]
     | null;
+  comprador: { name: string } | { name: string }[] | null;
 };
 
 function pickOne<T>(v: T | T[] | null | undefined): T | null {
@@ -107,9 +66,10 @@ export async function listContratos(
   let q = supabase
     .from("contratos")
     .select(
-      `id, code, status, coffee_type, bag_count, total_value, signed_at,
+      `id, code, status, coffee_type, bag_count, total_value, comissao_total, signed_at,
        created_at, updated_at, produtor_id, lead_id,
-       produtor:profiles!contratos_produtor_id_fkey(id, full_name, phone)`,
+       produtor:profiles!contratos_produtor_id_fkey(id, full_name, phone),
+       comprador:compradores!contratos_comprador_id_fkey(name)`,
       { count: "exact" },
     )
     .eq("corretora_id", corretoraId)
@@ -130,17 +90,58 @@ export async function listContratos(
       coffee_type: r.coffee_type,
       bag_count: r.bag_count,
       total_value: r.total_value != null ? Number(r.total_value) : null,
+      comissao_total: r.comissao_total != null ? Number(r.comissao_total) : null,
       signed_at: r.signed_at,
       created_at: r.created_at,
       updated_at: r.updated_at,
       produtor_id: r.produtor_id,
       produtor_nome: p?.full_name ?? "—",
       produtor_phone: p?.phone ?? null,
+      comprador_nome: pickOne(r.comprador)?.name ?? null,
       lead_id: r.lead_id,
     };
   });
 
   return { rows: mapped, count: count ?? 0 };
+}
+
+export type ContratosKpis = {
+  ativosValor: number;
+  comissaoProjetada: number;
+  aguardandoAssinatura: number;
+  finalizados: number;
+};
+
+export async function loadContratosKpis(
+  corretoraId: string,
+): Promise<ContratosKpis> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("contratos")
+    .select("status, total_value, comissao_total")
+    .eq("corretora_id", corretoraId);
+
+  const rows = (data ?? []) as Array<{
+    status: ContratoStatus;
+    total_value: number | string | null;
+    comissao_total: number | string | null;
+  }>;
+
+  let ativosValor = 0;
+  let comissaoProjetada = 0;
+  let aguardandoAssinatura = 0;
+  let finalizados = 0;
+  for (const r of rows) {
+    const tv = r.total_value != null ? Number(r.total_value) : 0;
+    const cm = r.comissao_total != null ? Number(r.comissao_total) : 0;
+    if (r.status === "ativo") ativosValor += tv;
+    if (r.status === "ativo" || r.status === "finalizado")
+      comissaoProjetada += cm;
+    if (r.status === "rascunho" || r.status === "em_analise")
+      aguardandoAssinatura += 1;
+    if (r.status === "finalizado") finalizados += 1;
+  }
+  return { ativosValor, comissaoProjetada, aguardandoAssinatura, finalizados };
 }
 
 export type ContratoDetail = ContratoListItem & {
