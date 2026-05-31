@@ -4,7 +4,6 @@ import Link from "next/link";
 import {
   ArrowRight,
   FileSignature,
-  HandCoins,
   MapPin,
   MessageCircle,
   MoreHorizontal,
@@ -22,10 +21,10 @@ import {
   LEAD_ORIGEM_LABEL,
   LEAD_ORIGEM_TONE,
   type LeadListItem,
-  type LeadStatus,
 } from "../_lib/lead-meta";
 import {
   nextActionFor,
+  primaryLeadAction,
   URGENCIA_LABEL,
   type Urgencia,
 } from "../_lib/next-action";
@@ -49,12 +48,6 @@ const URGENCIA_TONE: Record<Urgencia, StatusTone> = {
   frio: "neutral",
 };
 
-// Próximo status no avanço de 1 clique.
-const NEXT_STATUS: Partial<Record<LeadStatus, LeadStatus>> = {
-  novo: "em_negociacao",
-  em_negociacao: "convertido",
-};
-
 export function LeadCard({
   lead,
   corretoraName,
@@ -64,16 +57,12 @@ export function LeadCard({
 }) {
   const next = nextActionFor(lead);
   const wa = whatsappLinkFor(lead, corretoraName);
-  const advanceTo = NEXT_STATUS[lead.status];
+  const primary = primaryLeadAction(lead);
   const local = [lead.city, lead.state].filter(Boolean).join("/");
   const total =
     lead.proposed_price != null && lead.bag_count != null
       ? lead.proposed_price * lead.bag_count
       : null;
-  // Convertido → próximo passo é gerar contrato (não propor de novo).
-  const isConvertido = lead.status === "convertido";
-  const showCriarProposta =
-    lead.status !== "perdido" && lead.status !== "arquivado" && !isConvertido;
 
   return (
     <Card tone="default" interactive className="group p-card sm:p-6">
@@ -87,7 +76,6 @@ export function LeadCard({
             >
               {lead.produtor_nome}
             </Link>
-            {/* "produtor" é o default — só sinaliza quando é contato-sombra */}
             {lead.produtor_kind === "contato" ? (
               <StatusBadge
                 tone="premium"
@@ -118,23 +106,8 @@ export function LeadCard({
             ) : null}
           </div>
 
-          <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-body-sm text-neutral-600">
-            {local ? (
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
-                {local}
-              </span>
-            ) : null}
-            {lead.produtor_phone ? (
-              <span className="inline-flex items-center gap-1">
-                <Phone className="h-3 w-3" />
-                {lead.produtor_phone}
-              </span>
-            ) : null}
-          </div>
-
-          {/* Valor TOTAL do negócio lidera; unitário/sacas viram legenda */}
-          <div className="pt-1">
+          {/* Valor TOTAL lidera; sacas/unitário viram legenda */}
+          <div>
             {total != null ? (
               <>
                 <p className="text-h2 leading-none tabular-nums text-milsaca-cafezal">
@@ -164,6 +137,21 @@ export function LeadCard({
             )}
           </div>
 
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-caption text-neutral-600">
+            {local ? (
+              <span className="inline-flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                {local}
+              </span>
+            ) : null}
+            {lead.produtor_phone ? (
+              <span className="inline-flex items-center gap-1">
+                <Phone className="h-3 w-3" />
+                {lead.produtor_phone}
+              </span>
+            ) : null}
+          </div>
+
           <p className="text-body-sm leading-relaxed text-neutral-600">
             <span className="font-semibold text-milsaca-cafezal">
               Próxima ação:
@@ -172,15 +160,40 @@ export function LeadCard({
           </p>
         </div>
 
-        {/* Botões de ação */}
+        {/* Botões — primário (estágio) + WhatsApp + detalhes */}
         <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+          {primary ? (
+            primary.type === "advance" ? (
+              <form action={updateLeadStatus} className="contents">
+                <input type="hidden" name="id" value={lead.id} />
+                <input type="hidden" name="status" value={primary.toStatus} />
+                <button
+                  type="submit"
+                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-milsaca-cafezal px-3 text-caption font-semibold text-milsaca-cream transition-colors hover:bg-milsaca-folha focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  {primary.label}
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              </form>
+            ) : (
+              <Link
+                href={primary.href}
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-success-600 px-3 text-caption font-semibold text-white transition-colors hover:bg-success-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <FileSignature className="h-3.5 w-3.5" />
+                {primary.label}
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            )
+          ) : null}
+
           <a
             href={wa.href}
             target="_blank"
             rel="noopener noreferrer"
             title={wa.preview}
             className={cn(
-              "inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-caption font-semibold transition-colors",
+              "inline-flex h-9 items-center justify-center gap-1.5 rounded-md px-3 text-caption font-semibold transition-colors",
               wa.hasPhone
                 ? "bg-[#25D366] text-white hover:bg-[#1ebe5d]"
                 : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200",
@@ -190,45 +203,9 @@ export function LeadCard({
             {wa.hasPhone ? "WhatsApp" : "Abrir WhatsApp"}
           </a>
 
-          {/* Ação primária alinhada ao estágio */}
-          {isConvertido ? (
-            <Link
-              href={`/painel/corretora/contratos/novo?lead=${lead.id}`}
-              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-success-600/40 bg-success-50 px-3 text-caption font-semibold text-success-700 transition-colors hover:bg-success-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            >
-              <FileSignature className="h-3.5 w-3.5" />
-              Gerar contrato
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          ) : showCriarProposta ? (
-            <Link
-              href={`/painel/corretora/leads/${lead.id}#nova-proposta`}
-              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-milsaca-cafezal/40 bg-milsaca-cafezal/5 px-3 text-caption font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-cafezal/15"
-            >
-              <HandCoins className="h-3.5 w-3.5" />
-              Criar proposta
-            </Link>
-          ) : null}
-
-          {advanceTo ? (
-            <form action={updateLeadStatus}>
-              <input type="hidden" name="id" value={lead.id} />
-              <input type="hidden" name="status" value={advanceTo} />
-              <button
-                type="submit"
-                className="inline-flex h-9 items-center gap-1.5 rounded-md border border-milsaca-dourado/50 bg-milsaca-dourado/10 px-3 text-caption font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-dourado/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                {advanceTo === "em_negociacao"
-                  ? "Marcar em negociação"
-                  : "Marcar convertido"}
-                <ArrowRight className="h-3.5 w-3.5" />
-              </button>
-            </form>
-          ) : null}
-
           <Link
             href={`/painel/corretora/leads/${lead.id}`}
-            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-neutral-200 px-3 text-caption font-semibold text-neutral-600 transition-colors hover:border-milsaca-dourado/50 hover:text-milsaca-cafezal"
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-neutral-200 px-3 text-caption font-semibold text-neutral-600 transition-colors hover:border-milsaca-dourado/50 hover:text-milsaca-cafezal"
           >
             <MoreHorizontal className="h-3.5 w-3.5" />
             Ver detalhes

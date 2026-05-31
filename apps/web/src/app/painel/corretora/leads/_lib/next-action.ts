@@ -75,6 +75,44 @@ export function nextActionFor(lead: LeadListItem): NextAction {
   return ACTIONS[lead.status](lead);
 }
 
+/**
+ * Ação PRIMÁRIA do card (1 clique), centralizada e alinhada ao estágio:
+ *   - novo            → avança pra em_negociacao
+ *   - em_negociacao   → avança pra convertido
+ *   - convertido      → gera contrato (regra: só aparece em deal_won)
+ *   - perdido/arquiv. → sem ação primária
+ * `advance` usa server action (form); `link` é navegação.
+ */
+export type PrimaryAction =
+  | { type: "advance"; label: string; toStatus: LeadStatus }
+  | { type: "link"; label: string; href: string }
+  | null;
+
+export function primaryLeadAction(lead: LeadListItem): PrimaryAction {
+  switch (lead.status) {
+    case "novo":
+      return {
+        type: "advance",
+        label: "Marcar em negociação",
+        toStatus: "em_negociacao",
+      };
+    case "em_negociacao":
+      return {
+        type: "advance",
+        label: "Marcar convertido",
+        toStatus: "convertido",
+      };
+    case "convertido":
+      return {
+        type: "link",
+        label: "Gerar contrato",
+        href: `/painel/corretora/contratos/novo?lead=${lead.id}`,
+      };
+    default:
+      return null;
+  }
+}
+
 export const URGENCIA_LABEL: Record<Urgencia, string> = {
   quente: "Quente",
   morno: "Morno",

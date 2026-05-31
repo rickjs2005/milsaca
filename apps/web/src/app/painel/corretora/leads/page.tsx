@@ -44,56 +44,62 @@ async function loadLeadsKpis(corretoraId: string) {
   monthStart.setUTCHours(0, 0, 0, 0);
   const monthIso = monthStart.toISOString();
 
-  const [novos, emNeg, emNegVal, convMes, perdMes] = await Promise.all([
-    supabase
-      .from("leads")
-      .select("*", { count: "exact", head: true })
-      .eq("corretora_id", corretoraId)
-      .eq("status", "novo"),
-    supabase
-      .from("leads")
-      .select("*", { count: "exact", head: true })
-      .eq("corretora_id", corretoraId)
-      .eq("status", "em_negociacao"),
-    supabase
+  const valsFor = (status: string, sinceMonth = false) => {
+    let q = supabase
       .from("leads")
       .select("proposed_price, bag_count")
       .eq("corretora_id", corretoraId)
-      .eq("status", "em_negociacao"),
-    supabase
-      .from("leads")
-      .select("*", { count: "exact", head: true })
-      .eq("corretora_id", corretoraId)
-      .eq("status", "convertido")
-      .gte("updated_at", monthIso),
-    supabase
-      .from("leads")
-      .select("*", { count: "exact", head: true })
-      .eq("corretora_id", corretoraId)
-      .eq("status", "perdido")
-      .gte("updated_at", monthIso),
-  ]);
+      .eq("status", status);
+    if (sinceMonth) q = q.gte("updated_at", monthIso);
+    return q;
+  };
 
-  const valorEmNeg = (
-    (emNegVal.data ?? []) as Array<{
-      proposed_price: number | string | null;
-      bag_count: number | null;
-    }>
-  ).reduce(
-    (sum, r) =>
-      sum +
-      (r.proposed_price != null && r.bag_count != null
-        ? Number(r.proposed_price) * r.bag_count
-        : 0),
-    0,
-  );
+  const [novos, emNeg, perdMes, novosVal, emNegVal, convVal] =
+    await Promise.all([
+      supabase
+        .from("leads")
+        .select("*", { count: "exact", head: true })
+        .eq("corretora_id", corretoraId)
+        .eq("status", "novo"),
+      supabase
+        .from("leads")
+        .select("*", { count: "exact", head: true })
+        .eq("corretora_id", corretoraId)
+        .eq("status", "em_negociacao"),
+      supabase
+        .from("leads")
+        .select("*", { count: "exact", head: true })
+        .eq("corretora_id", corretoraId)
+        .eq("status", "perdido")
+        .gte("updated_at", monthIso),
+      valsFor("novo"),
+      valsFor("em_negociacao"),
+      valsFor("convertido", true),
+    ]);
+
+  const sumTotal = (data: unknown): number =>
+    (
+      (data ?? []) as Array<{
+        proposed_price: number | string | null;
+        bag_count: number | null;
+      }>
+    ).reduce(
+      (sum, r) =>
+        sum +
+        (r.proposed_price != null && r.bag_count != null
+          ? Number(r.proposed_price) * r.bag_count
+          : 0),
+      0,
+    );
 
   return {
     novos: novos.count ?? 0,
     emNeg: emNeg.count ?? 0,
-    valorEmNeg,
-    convMes: convMes.count ?? 0,
     perdMes: perdMes.count ?? 0,
+    convMes: (convVal.data ?? []).length,
+    valorNovos: sumTotal(novosVal.data),
+    valorEmNeg: sumTotal(emNegVal.data),
+    valorConv: sumTotal(convVal.data),
   };
 }
 
@@ -153,10 +159,10 @@ export default async function LeadsPage({
       >
         <KpiCard
           label="Leads novos"
-          value={NUM.format(kpis.novos)}
+          value={BRL.format(kpis.valorNovos)}
           icon={Handshake}
           tone="premium"
-          hint="Aguardando primeiro contato"
+          hint={`${kpis.novos} aguardando contato`}
         />
         <KpiCard
           label="Em negociação"
@@ -167,10 +173,10 @@ export default async function LeadsPage({
         />
         <KpiCard
           label="Convertidos no mês"
-          value={NUM.format(kpis.convMes)}
+          value={BRL.format(kpis.valorConv)}
           icon={CheckCircle2}
           tone="success"
-          hint="Fechados a partir do dia 1"
+          hint={`${kpis.convMes} fechado${kpis.convMes === 1 ? "" : "s"}`}
         />
         <KpiCard
           label="Perdidos no mês"
