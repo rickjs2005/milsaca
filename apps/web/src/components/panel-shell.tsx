@@ -3,24 +3,37 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Coffee, LogOut, Menu, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type Props = {
   /** A sidebar do painel (renderizada no desktop e dentro do drawer mobile). */
   sidebar: React.ReactNode;
   /** Rótulo curto no header mobile ("Corretora" | "Produtor"). */
   brandLabel: string;
+  /**
+   * Barra de navegação inferior do mobile (estilo app). Quando presente,
+   * substitui o hambúrguer/drawer no celular — a navegação primária fica na
+   * barra de baixo. O componente se posiciona sozinho (fixed bottom).
+   */
+  bottomNav?: React.ReactNode;
   children: React.ReactNode;
 };
 
 /**
  * Casco responsivo dos painéis (corretora/produtor). Espelha o AdminShell:
  *   - lg+: sidebar fixa lateral (escondida no mobile).
- *   - <lg: header com hambúrguer que abre a MESMA sidebar num drawer overlay.
- * Fecha o drawer ao trocar de rota e trava o scroll do body quando aberto.
+ *   - <lg sem bottomNav: header com hambúrguer que abre a sidebar num drawer.
+ *   - <lg com bottomNav: header enxuto (marca + sair) + barra inferior fixa.
  */
-export function PanelShell({ sidebar, brandLabel, children }: Props) {
+export function PanelShell({
+  sidebar,
+  brandLabel,
+  bottomNav,
+  children,
+}: Props) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const hasBottomNav = Boolean(bottomNav);
 
   // Fecha o drawer ao navegar.
   useEffect(() => {
@@ -42,8 +55,8 @@ export function PanelShell({ sidebar, brandLabel, children }: Props) {
       {/* Sidebar desktop */}
       <div className="hidden lg:flex">{sidebar}</div>
 
-      {/* Overlay do drawer (mobile) */}
-      {open ? (
+      {/* Overlay + drawer (mobile) — só quando NÃO há bottom nav */}
+      {!hasBottomNav && open ? (
         <button
           type="button"
           aria-label="Fechar menu"
@@ -52,38 +65,41 @@ export function PanelShell({ sidebar, brandLabel, children }: Props) {
         />
       ) : null}
 
-      {/* Drawer (mobile) */}
-      <div
-        className={
-          "fixed inset-y-0 left-0 z-50 transform transition-transform lg:hidden " +
-          (open ? "translate-x-0" : "-translate-x-full")
-        }
-      >
-        <div className="relative">
-          {sidebar}
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            aria-label="Fechar menu"
-            className="absolute right-3 top-3 rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-milsaca-cream-escuro hover:text-milsaca-cafezal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <X className="h-5 w-5" />
-          </button>
+      {!hasBottomNav ? (
+        <div
+          className={
+            "fixed inset-y-0 left-0 z-50 transform transition-transform lg:hidden " +
+            (open ? "translate-x-0" : "-translate-x-full")
+          }
+        >
+          <div className="relative">
+            {sidebar}
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Fechar menu"
+              className="absolute right-3 top-3 rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-milsaca-cream-escuro hover:text-milsaca-cafezal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {/* Conteúdo */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Header mobile (<lg) */}
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-milsaca-cream-escuro bg-white/95 px-4 shadow-sm backdrop-blur lg:hidden">
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            aria-label="Abrir menu"
-            className="rounded-md p-1.5 text-milsaca-cafezal transition-colors hover:bg-milsaca-cream-escuro focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
+          {!hasBottomNav ? (
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              aria-label="Abrir menu"
+              className="rounded-md p-1.5 text-milsaca-cafezal transition-colors hover:bg-milsaca-cream-escuro focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          ) : null}
           <div className="flex items-center gap-2">
             <span
               className="flex h-7 w-7 items-center justify-center rounded-lg"
@@ -109,8 +125,18 @@ export function PanelShell({ sidebar, brandLabel, children }: Props) {
           </form>
         </header>
 
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main
+          className={cn(
+            "flex-1 overflow-y-auto",
+            hasBottomNav && "pb-20 lg:pb-0",
+          )}
+        >
+          {children}
+        </main>
       </div>
+
+      {/* Barra inferior (mobile) */}
+      {bottomNav}
     </div>
   );
 }

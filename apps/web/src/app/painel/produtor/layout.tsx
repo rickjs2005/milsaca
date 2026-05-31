@@ -3,6 +3,7 @@ import { enforceProfileStatus, getProfile, requireUser } from "@/lib/auth";
 import { ToastFromSearchParams } from "@/components/toast-from-search-params";
 import { PanelShell } from "@/components/panel-shell";
 import { ProdutorSidebar } from "./_components/sidebar";
+import { ProdutorBottomNav } from "./_components/bottom-nav";
 import { getProdutorByProfileId, needsOnboarding } from "./_lib/produtor";
 
 export default async function PainelProdutorLayout({
@@ -38,6 +39,7 @@ export default async function PainelProdutorLayout({
     <>
       <PanelShell
         brandLabel="Produtor"
+        bottomNav={<ProdutorBottomNav />}
         sidebar={
           <ProdutorSidebar
             producerName={profile?.full_name ?? user.email ?? "produtor"}
