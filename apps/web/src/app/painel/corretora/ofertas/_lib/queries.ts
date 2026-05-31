@@ -1,59 +1,14 @@
 import { createClient } from "@milsaca/db/web/server";
-import type { StatusTone } from "@/components/status-badge";
+import type { OfertaStatus, OfertaItem } from "./oferta-meta";
 
-export type OfertaStatus =
-  | "rascunho"
-  | "enviada"
-  | "aceita"
-  | "recusada"
-  | "expirada";
-
-export const OFERTA_STATUS_ORDER: OfertaStatus[] = [
-  "enviada",
-  "aceita",
-  "recusada",
-  "expirada",
-  "rascunho",
-];
-
-export const OFERTA_STATUS_LABEL: Record<OfertaStatus, string> = {
-  rascunho: "Rascunho",
-  enviada: "Enviada",
-  aceita: "Aceita",
-  recusada: "Recusada",
-  expirada: "Expirada",
-};
-
-export const OFERTA_STATUS_COLOR: Record<OfertaStatus, string> = {
-  rascunho: "bg-slate-200 text-slate-700",
-  enviada: "bg-milsaca-dourado/20 text-milsaca-verde",
-  aceita: "bg-emerald-100 text-emerald-800",
-  recusada: "bg-rose-100 text-rose-800",
-  expirada: "bg-slate-200 text-slate-700",
-};
-
-// Tone semântico (fundação D1) — usado pelo <StatusBadge> nas listagens.
-export const OFERTA_STATUS_TONE: Record<OfertaStatus, StatusTone> = {
-  rascunho: "neutral",
-  enviada: "warning",
-  aceita: "success",
-  recusada: "danger",
-  expirada: "neutral",
-};
-
-export type OfertaItem = {
-  id: string;
-  preco_saca: number;
-  bag_count: number | null;
-  validade_ate: string | null;
-  mensagem: string | null;
-  status: OfertaStatus;
-  created_at: string;
-  comprador_id: string;
-  comprador_nome: string;
-  lote_id: string | null;
-  lote_codigo: string | null;
-};
+// Re-export da meta pura — clients importam de "./oferta-meta" direto.
+export {
+  OFERTA_STATUS_ORDER,
+  OFERTA_STATUS_LABEL,
+  OFERTA_STATUS_TONE,
+  OFERTA_STATUS_COLOR,
+} from "./oferta-meta";
+export type { OfertaStatus, OfertaItem } from "./oferta-meta";
 
 function pickOne<T>(v: T | T[] | null | undefined): T | null {
   if (v == null) return null;
@@ -151,4 +106,41 @@ export async function listLotesParaOferta(
     .order("created_at", { ascending: false })
     .limit(500);
   return (data ?? []) as LotePicker[];
+}
+
+export type OfertasKpis = {
+  ofertado: number;
+  enviadas: number;
+  aceitas: number;
+  conversao: number;
+};
+
+export async function loadOfertasKpis(
+  corretoraId: string,
+): Promise<OfertasKpis> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("ofertas_comprador")
+    .select("status, preco_saca, bag_count")
+    .eq("corretora_id", corretoraId);
+
+  const rows = (data ?? []) as Array<{
+    status: OfertaStatus;
+    preco_saca: number | string;
+    bag_count: number | null;
+  }>;
+
+  let ofertado = 0;
+  let enviadas = 0;
+  let aceitas = 0;
+  let base = 0; // tudo que saiu do rascunho (denominador da conversão)
+  for (const r of rows) {
+    const total = r.bag_count != null ? Number(r.preco_saca) * r.bag_count : 0;
+    if (r.status === "enviada" || r.status === "aceita") ofertado += total;
+    if (r.status === "enviada") enviadas += 1;
+    if (r.status === "aceita") aceitas += 1;
+    if (r.status !== "rascunho") base += 1;
+  }
+  const conversao = base > 0 ? Math.round((aceitas / base) * 100) : 0;
+  return { ofertado, enviadas, aceitas, conversao };
 }
