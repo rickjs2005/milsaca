@@ -31,6 +31,14 @@ export default async function PainelCorretoraLayout({
   const user = await requireUser("/painel/corretora");
   const profile = await getProfile();
   enforceProfileStatus(profile);
+
+  // Guard de papel: quem não tem o papel 'corretora' não fica preso/perdido
+  // aqui — manda pra /painel, que roteia pro lugar certo (admin → /admin,
+  // papel único → painel correspondente, multi-papel → /painel/escolher).
+  if (profile && !profile.roles.includes("corretora")) {
+    redirect("/painel");
+  }
+
   const corretora = await loadCorretora(profile?.corretora_id ?? null);
   const showSwitcher = (profile?.roles.length ?? 0) > 1;
 

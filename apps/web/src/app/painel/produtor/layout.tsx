@@ -13,6 +13,14 @@ export default async function PainelProdutorLayout({
   const user = await requireUser("/painel/produtor");
   const profile = await getProfile();
   enforceProfileStatus(profile);
+
+  // Guard de papel: quem não tem o papel 'produtor' é redirecionado pro
+  // painel correto via /painel (admin → /admin, papel único → painel certo,
+  // multi-papel → /painel/escolher).
+  if (profile && !profile.roles.includes("produtor")) {
+    redirect("/painel");
+  }
+
   const showSwitcher = (profile?.roles.length ?? 0) > 1;
 
   // Gate de onboarding — sem dados mínimos, manda pra rota externa
