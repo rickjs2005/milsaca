@@ -5,16 +5,11 @@ import { usePathname } from "next/navigation";
 import {
   Coffee,
   Home,
-  TrendingUp,
   Handshake,
-  FileText,
-  Users,
   User,
   LogOut,
   Repeat,
-  Truck,
-  FileCheck2,
-  Bell,
+  Package,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -27,16 +22,14 @@ type NavItem = {
   exact?: boolean;
 };
 
+// Menu enxuto, organizado pelos objetivos do produtor (não por features do
+// sistema). Cotações/Corretoras são alcançadas pelo dashboard (cards + CTA);
+// Entregas/Notificações ficam aninhadas nas áreas correspondentes.
 const NAV_ITEMS: NavItem[] = [
   { href: "/painel/produtor", label: "Início", icon: Home, exact: true },
-  { href: "/painel/produtor/cotacoes", label: "Cotações", icon: TrendingUp },
-  { href: "/painel/produtor/negociacoes", label: "Negociações", icon: Handshake },
-  { href: "/painel/produtor/contratos", label: "Contratos", icon: FileText },
-  { href: "/painel/produtor/laudos", label: "Laudos", icon: FileCheck2 },
-  { href: "/painel/produtor/entregas", label: "Entregas", icon: Truck },
+  { href: "/painel/produtor/laudos", label: "Sacas", icon: Package },
+  { href: "/painel/produtor/negociacoes", label: "Propostas", icon: Handshake },
   { href: "/painel/produtor/financeiro", label: "Financeiro", icon: Wallet },
-  { href: "/painel/produtor/notificacoes", label: "Notificações", icon: Bell },
-  { href: "/painel/produtor/corretoras", label: "Corretoras", icon: Users },
   { href: "/painel/produtor/perfil", label: "Perfil", icon: User },
 ];
 
@@ -54,7 +47,7 @@ export function ProdutorSidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-milsaca-cream-escuro bg-white">
+    <aside className="flex h-screen w-64 shrink-0 flex-col bg-milsaca-cafezal text-milsaca-cream">
       {/* Header com brand */}
       <div className="flex items-center gap-2.5 px-5 py-5">
         <span
@@ -66,10 +59,10 @@ export function ProdutorSidebar({
           <Coffee className="h-4 w-4 text-milsaca-cafezal" strokeWidth={2.5} />
         </span>
         <div className="leading-tight">
-          <p className="text-body font-semibold tracking-tight text-milsaca-cafezal">
+          <p className="text-body font-semibold tracking-tight text-milsaca-cream">
             Milsaca
           </p>
-          <p className="text-caption uppercase tracking-[0.18em] text-neutral-500">
+          <p className="text-caption uppercase tracking-[0.18em] text-milsaca-cream/55">
             Painel do produtor
           </p>
         </div>
@@ -87,13 +80,26 @@ export function ProdutorSidebar({
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-body-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+                "group relative flex items-center gap-3 rounded-md px-3 py-2 text-body-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-milsaca-dourado focus-visible:ring-inset",
                 active
-                  ? "bg-milsaca-cafezal text-milsaca-cream"
-                  : "text-neutral-600 hover:bg-milsaca-cream-escuro hover:text-milsaca-cafezal",
+                  ? "bg-white/10 text-milsaca-cream"
+                  : "text-milsaca-cream/65 hover:bg-white/5 hover:text-milsaca-cream",
               )}
             >
-              <Icon className="h-4 w-4" />
+              {active ? (
+                <span
+                  aria-hidden
+                  className="absolute inset-y-1.5 left-0 w-1 rounded-full bg-milsaca-dourado"
+                />
+              ) : null}
+              <Icon
+                className={cn(
+                  "h-4 w-4 shrink-0 transition-colors",
+                  active
+                    ? "text-milsaca-dourado"
+                    : "text-milsaca-cream/60 group-hover:text-milsaca-cream",
+                )}
+              />
               {item.label}
             </Link>
           );
@@ -101,23 +107,23 @@ export function ProdutorSidebar({
       </nav>
 
       {/* Footer com produtor */}
-      <div className="border-t border-milsaca-cream-escuro p-3">
+      <div className="border-t border-white/10 p-3">
         <div className="mb-2 px-3 py-1">
           <p
-            className="truncate text-body-sm font-semibold text-milsaca-cafezal"
+            className="truncate text-body-sm font-semibold text-milsaca-cream"
             title={producerEmail || producerName}
           >
             {producerName}
           </p>
           {fazendaNome ? (
             <p
-              className="mt-1 truncate text-caption text-neutral-600"
+              className="mt-1 truncate text-caption text-milsaca-cream/55"
               title={fazendaNome}
             >
               {fazendaNome}
             </p>
           ) : (
-            <p className="mt-1 text-caption uppercase tracking-wider text-neutral-500">
+            <p className="mt-1 text-caption uppercase tracking-wider text-milsaca-cream/45">
               Produtor
             </p>
           )}
@@ -125,7 +131,7 @@ export function ProdutorSidebar({
         {showSwitcher && (
           <Link
             href="/painel/escolher"
-            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-body-sm font-medium text-neutral-600 transition-colors hover:bg-milsaca-cream-escuro hover:text-milsaca-cafezal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-body-sm font-medium text-milsaca-cream/65 transition-colors hover:bg-white/5 hover:text-milsaca-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-milsaca-dourado focus-visible:ring-inset"
           >
             <Repeat className="h-4 w-4" />
             Trocar painel
@@ -134,7 +140,7 @@ export function ProdutorSidebar({
         <form action="/sair" method="post">
           <button
             type="submit"
-            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-body-sm font-medium text-neutral-600 transition-colors hover:bg-milsaca-cream-escuro hover:text-milsaca-cafezal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-body-sm font-medium text-milsaca-cream/65 transition-colors hover:bg-white/5 hover:text-milsaca-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-milsaca-dourado focus-visible:ring-inset"
           >
             <LogOut className="h-4 w-4" />
             Sair

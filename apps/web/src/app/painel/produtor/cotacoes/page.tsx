@@ -1,13 +1,13 @@
 import Link from "next/link";
 import {
-  Activity,
   ArrowDownRight,
   ArrowUpRight,
   Bell,
   Building2,
   Coffee,
+  Flame,
   MapPin,
-  Sparkles,
+  Activity,
   Star,
 } from "lucide-react";
 import { requireUser } from "@/lib/auth";
@@ -22,12 +22,9 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { loadProdutorCotacoes } from "./_lib/queries";
-import { Sparkline } from "./_components/sparkline";
+import { CotacoesFiltros } from "./_components/cotacoes-filtros";
 import type { CoffeeProcesso, CoffeeSpecie } from "@milsaca/types";
-import type {
-  CotacaoCard,
-  MarketIndicator,
-} from "./_lib/queries";
+import type { CotacaoCard, MarketIndicator } from "./_lib/queries";
 
 export const metadata = { title: "Cotações — Painel do produtor" };
 
@@ -43,12 +40,6 @@ const PROCESS_LABEL: Record<CoffeeProcesso, string> = {
   despolpado: "Despolpado",
   fermentacao_induzida: "Fermentação induzida",
 };
-
-const SPECIE_FILTERS: { value: "" | CoffeeSpecie; label: string }[] = [
-  { value: "", label: "Todas" },
-  { value: "arabica", label: "Arábica" },
-  { value: "conillon", label: "Conillón" },
-];
 
 type SearchParams = Promise<{ specie?: string; praca?: string }>;
 
@@ -93,33 +84,35 @@ export default async function CotacoesProdutorPage({
     praca,
   });
 
-  function buildHref(next: { specie?: string; praca?: string }) {
-    const params = new URLSearchParams();
-    if (next.specie !== undefined) {
-      if (next.specie) params.set("specie", next.specie);
-    } else if (specie) {
-      params.set("specie", specie);
-    }
-    if (next.praca !== undefined) {
-      if (next.praca) params.set("praca", next.praca);
-    } else if (praca) {
-      params.set("praca", praca);
-    }
-    const qs = params.toString();
-    return qs
-      ? `/painel/produtor/cotacoes?${qs}`
-      : "/painel/produtor/cotacoes";
-  }
+  // "Melhor preço hoje" — a maior oferta entre as corretoras (favoritas +
+  // outras), com o quanto está acima da média. É a resposta nº 1 do produtor:
+  // quem está pagando mais?
+  const ofertas = [...data.minhasCorretoras, ...data.outrasPracas];
+  const best =
+    ofertas.length > 0
+      ? ofertas.reduce((b, c) => (c.current_price > b.current_price ? c : b))
+      : null;
+  const media =
+    ofertas.length > 0
+      ? ofertas.reduce((s, c) => s + c.current_price, 0) / ofertas.length
+      : null;
+  const bestAcimaMedia =
+    best && media && media > 0
+      ? ((best.current_price - media) / media) * 100
+      : null;
+
+  // Mercado: só cards COM dado (sem "fonte indisponível" frustrando o produtor)
+  const marketComDado = data.market.filter((m) => m.price != null);
 
   return (
     <div className="space-y-8">
       <DemoModeBadge />
+
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-h1 text-milsaca-cafezal">Cotações</h1>
           <p className="text-body-sm text-neutral-600">
-            Acompanhe o preço da saca pelo mercado e pelas corretoras que você
-            segue.
+            Quanto as corretoras estão pagando pelo seu café hoje.
           </p>
         </div>
         <Link
@@ -131,84 +124,43 @@ export default async function CotacoesProdutorPage({
         </Link>
       </header>
 
-      {/* Filtros */}
-      <div className="space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-body-sm text-neutral-600">Café:</span>
-          {SPECIE_FILTERS.map((f) => {
-            const active = (specie ?? "") === f.value;
-            return (
-              <Link
-                key={f.value || "all"}
-                href={buildHref({ specie: f.value })}
-                className={
-                  active
-                    ? "rounded-pill bg-milsaca-cafezal px-3 py-1 text-caption font-medium text-milsaca-cream"
-                    : "rounded-pill border border-neutral-200 px-3 py-1 text-caption text-neutral-600 transition-colors hover:border-milsaca-dourado hover:text-milsaca-cafezal"
-                }
-              >
-                {f.label}
-              </Link>
-            );
-          })}
-        </div>
+      {/* Filtros enxutos (2 dropdowns) */}
+      <CotacoesFiltros
+        specie={specie}
+        praca={praca}
+        pracas={data.pracasDisponiveis}
+      />
 
-        {data.pracasDisponiveis.length > 0 ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-body-sm text-neutral-600">Praça:</span>
-            <Link
-              href={buildHref({ praca: "" })}
-              className={
-                !praca
-                  ? "rounded-pill bg-milsaca-cafezal px-3 py-1 text-caption font-medium text-milsaca-cream"
-                  : "rounded-pill border border-neutral-200 px-3 py-1 text-caption text-neutral-600 transition-colors hover:border-milsaca-dourado hover:text-milsaca-cafezal"
-              }
-            >
-              Todas
-            </Link>
-            {data.pracasDisponiveis.map((p) => {
-              const active = praca === p.slug;
-              return (
-                <Link
-                  key={p.slug}
-                  href={buildHref({ praca: p.slug })}
-                  className={
-                    active
-                      ? "rounded-pill bg-milsaca-cafezal px-3 py-1 text-caption font-medium text-milsaca-cream"
-                      : "rounded-pill border border-neutral-200 px-3 py-1 text-caption text-neutral-600 transition-colors hover:border-milsaca-dourado hover:text-milsaca-cafezal"
-                  }
-                >
-                  {p.name}/{p.state}
-                </Link>
-              );
-            })}
-          </div>
-        ) : null}
-      </div>
+      {/* 🔥 Melhor preço hoje — resposta imediata "quem paga mais?" */}
+      {best ? (
+        <Card tone="premium">
+          <CardContent className="flex flex-wrap items-end justify-between gap-4 p-card">
+            <div>
+              <p className="inline-flex items-center gap-1.5 text-caption font-semibold uppercase tracking-wider text-dourado-texto">
+                <Flame className="h-4 w-4" />
+                Melhor preço hoje
+              </p>
+              <p className="mt-2 text-display leading-none text-milsaca-cafezal">
+                {fmtBRL(best.current_price)}
+              </p>
+              <p className="mt-2 text-body-sm text-neutral-600">
+                {best.corretora_name ?? best.region ?? "—"}
+                {" · "}
+                {best.specie ? SPECIE_LABEL[best.specie] : best.coffee_type}
+                {best.process ? ` ${PROCESS_LABEL[best.process]}` : ""}
+              </p>
+            </div>
+            {bestAcimaMedia != null && bestAcimaMedia > 0.05 ? (
+              <span className="inline-flex items-center gap-1 rounded-pill bg-success-50 px-3 py-1 text-body-sm font-semibold text-success-700">
+                <ArrowUpRight className="h-4 w-4" />
+                {bestAcimaMedia.toFixed(1)}% acima da média
+              </span>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
-      {/* 1. Mercado */}
-      <section className="space-y-3">
-        <header>
-          <h2 className="flex items-center gap-2 text-h3 text-milsaca-cafezal">
-            <Activity className="h-4 w-4 text-milsaca-dourado" />
-            Mercado
-          </h2>
-          <p className="text-caption text-neutral-600">
-            Atualizado automaticamente — CEPEA/ESALQ, ICE NY e Banco Central.
-          </p>
-        </header>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {data.market.map((m) => (
-            <MarketCard key={`${m.source}-${m.symbol}`} m={m} />
-          ))}
-        </div>
-        <p className="text-caption text-neutral-500">
-          Robusta/Conilon de mercado: fonte automática indisponível no
-          momento — veja seções abaixo se uma corretora postou manualmente.
-        </p>
-      </section>
-
-      {/* 2. Minha corretora (favoritas) */}
+      {/* 1. Minhas corretoras — quem compra o MEU café (vem antes do mercado) */}
       <section className="space-y-3">
         <header>
           <h2 className="flex items-center gap-2 text-h3 text-milsaca-cafezal">
@@ -218,15 +170,7 @@ export default async function CotacoesProdutorPage({
               : "Minhas corretoras"}
           </h2>
           <p className="text-caption text-neutral-600">
-            Cotações das corretoras que você favoritou. Favorite mais corretoras
-            em{" "}
-            <Link
-              href="/painel/produtor/corretoras"
-              className="font-medium text-milsaca-cafezal underline-offset-2 hover:underline"
-            >
-              Corretoras
-            </Link>
-            .
+            Cotações das corretoras que você favoritou.
           </p>
         </header>
 
@@ -255,17 +199,16 @@ export default async function CotacoesProdutorPage({
         )}
       </section>
 
-      {/* 3. Outras praças */}
+      {/* 2. Outras praças */}
       {data.outrasPracas.length > 0 ? (
         <section className="space-y-3">
           <header>
             <h2 className="flex items-center gap-2 text-h3 text-milsaca-cafezal">
               <MapPin className="h-4 w-4 text-milsaca-dourado" />
-              Outras praças ({data.outrasPracas.length})
+              Outras corretoras ({data.outrasPracas.length})
             </h2>
             <p className="text-caption text-neutral-600">
-              Cotações de outras corretoras na plataforma — comparar antes de
-              fechar.
+              Compare antes de fechar negócio.
             </p>
           </header>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -276,7 +219,30 @@ export default async function CotacoesProdutorPage({
         </section>
       ) : null}
 
-      {data.minhasCorretoras.length === 0 && data.outrasPracas.length === 0 ? (
+      {/* 3. Mercado (referência) — por último, só com dado disponível */}
+      {marketComDado.length > 0 ? (
+        <section className="space-y-3">
+          <header>
+            <h2 className="flex items-center gap-2 text-h3 text-milsaca-cafezal">
+              <Activity className="h-4 w-4 text-milsaca-dourado" />
+              Mercado
+            </h2>
+            <p className="text-caption text-neutral-600">
+              Referência — CEPEA/ESALQ, ICE NY e Banco Central.
+            </p>
+          </header>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {marketComDado.map((m) => (
+              <MarketCard key={`${m.source}-${m.symbol}`} m={m} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* Vazio total */}
+      {data.minhasCorretoras.length === 0 &&
+      data.outrasPracas.length === 0 &&
+      marketComDado.length === 0 ? (
         <Card tone="muted" className="border-dashed">
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
             <span className="flex h-12 w-12 items-center justify-center rounded-full bg-milsaca-cafezal/10 text-milsaca-cafezal">
@@ -313,43 +279,35 @@ function MarketCard({ m }: { m: MarketIndicator }) {
         <CardDescription className="text-caption">{m.sublabel}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-1.5">
-        {m.price == null ? (
-          <p className="text-body-sm italic text-warning-700">
-            Fonte automática indisponível
-          </p>
-        ) : (
-          <>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-semibold text-milsaca-cafezal">
-                {fmtFn(m.price)}
-              </span>
-              {m.variation_pct != null ? (
-                <span
-                  className={`inline-flex items-center gap-0.5 text-body-sm font-medium ${
-                    up
-                      ? "text-success-700"
-                      : down
-                        ? "text-danger-700"
-                        : "text-neutral-500"
-                  }`}
-                >
-                  {up && <ArrowUpRight className="h-3.5 w-3.5" />}
-                  {down && <ArrowDownRight className="h-3.5 w-3.5" />}
-                  {m.variation_pct > 0 ? "+" : ""}
-                  {m.variation_pct.toFixed(2)}%
-                </span>
-              ) : null}
-            </div>
-            <p
-              className={`text-caption ${
-                m.stale ? "text-warning-700" : "text-neutral-500"
+        <div className="flex items-baseline gap-2">
+          <span className="text-h2 font-semibold text-milsaca-cafezal">
+            {m.price != null ? fmtFn(m.price) : "—"}
+          </span>
+          {m.variation_pct != null ? (
+            <span
+              className={`inline-flex items-center gap-0.5 text-body-sm font-medium ${
+                up
+                  ? "text-success-700"
+                  : down
+                    ? "text-danger-700"
+                    : "text-neutral-500"
               }`}
             >
-              {m.stale ? "Desatualizado · " : ""}
-              {timeAgo(m.fetched_at)}
-            </p>
-          </>
-        )}
+              {up && <ArrowUpRight className="h-3.5 w-3.5" />}
+              {down && <ArrowDownRight className="h-3.5 w-3.5" />}
+              {m.variation_pct > 0 ? "+" : ""}
+              {m.variation_pct.toFixed(2)}%
+            </span>
+          ) : null}
+        </div>
+        <p
+          className={`text-caption ${
+            m.stale ? "text-warning-700" : "text-neutral-500"
+          }`}
+        >
+          {m.stale ? "Desatualizado · " : ""}
+          {timeAgo(m.fetched_at)}
+        </p>
       </CardContent>
     </Card>
   );
@@ -359,43 +317,42 @@ function CotacaoCardView({ c, accent }: { c: CotacaoCard; accent?: boolean }) {
   const v = c.variacao_pct;
   const up = v != null && v > 0.001;
   const down = v != null && v < -0.001;
-  // Cores de marca: success (#2E7D52) pra alta, danger (#B23B2E) pra baixa,
-  // cafezal (#0F3D2E) pra estável — em vez de emerald/rose crus.
-  const sparkColor = up ? "#2E7D52" : down ? "#B23B2E" : "#0F3D2E";
   const stale = c.status === "stale";
 
   return (
     <Card tone={accent ? "premium" : "default"} interactive>
-      <CardHeader className="pb-2">
+      <CardContent className="space-y-3 p-card">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <CardTitle className="flex items-center gap-1.5 text-milsaca-cafezal">
+            {/* Corretora = âncora visual do card */}
+            <p className="truncate text-body font-semibold text-milsaca-cafezal">
+              {c.corretora_name ?? c.region ?? "Corretora"}
+            </p>
+            <p className="mt-0.5 inline-flex items-center gap-1 text-caption text-neutral-600">
               {c.specie ? SPECIE_LABEL[c.specie] : c.coffee_type}
-              {accent ? (
-                <Sparkles className="h-3.5 w-3.5 text-milsaca-dourado" />
-              ) : null}
-            </CardTitle>
-            <CardDescription className="text-caption">
-              {c.process ? PROCESS_LABEL[c.process] : "Sem processo"}
-              {c.region ? (
-                <span className="ml-2 inline-flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  {c.region}
-                </span>
-              ) : null}
-            </CardDescription>
+              {c.process ? ` · ${PROCESS_LABEL[c.process]}` : ""}
+            </p>
           </div>
-          <Sparkline values={c.series} color={sparkColor} />
+          {accent ? (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-pill bg-milsaca-dourado/15 px-2 py-0.5 text-[10px] font-medium text-milsaca-cafezal">
+              <Star className="h-3 w-3" />
+              Favorita
+            </span>
+          ) : c.region ? (
+            <span className="inline-flex shrink-0 items-center gap-1 text-caption text-neutral-500">
+              <Building2 className="h-3 w-3" />
+              {c.region}
+            </span>
+          ) : null}
         </div>
-      </CardHeader>
-      <CardContent className="space-y-2">
+
         <div className="flex items-baseline justify-between gap-2">
-          <span className="text-2xl font-semibold text-milsaca-cafezal">
+          <span className="text-h1 leading-none text-milsaca-cafezal">
             {fmtBRL(c.current_price)}
           </span>
           {v != null ? (
             <span
-              className={`inline-flex items-center gap-1 text-body-sm font-medium ${
+              className={`inline-flex items-center gap-0.5 text-body-sm font-semibold ${
                 up
                   ? "text-success-700"
                   : down
@@ -406,62 +363,17 @@ function CotacaoCardView({ c, accent }: { c: CotacaoCard; accent?: boolean }) {
               {up && <ArrowUpRight className="h-3.5 w-3.5" />}
               {down && <ArrowDownRight className="h-3.5 w-3.5" />}
               {v > 0 ? "+" : ""}
-              {v.toFixed(2)}%
+              {v.toFixed(1)}%
             </span>
           ) : null}
         </div>
 
-        {/* Janelas 1d/7d/30d */}
-        <div className="flex flex-wrap gap-3 border-t border-neutral-200 pt-2 text-caption">
-          <Janela label="dia" value={c.variacao_pct} />
-          <Janela label="7d" value={c.variacao_7d_pct} />
-          <Janela label="30d" value={c.variacao_30d_pct} />
-        </div>
-
-        <footer className="flex items-center justify-between gap-2 text-caption">
-          <span
-            className={stale ? "font-medium text-warning-700" : "text-neutral-500"}
-          >
-            {stale ? "Desatualizada · " : ""}
-            {timeAgo(c.current_date)} · {fmtDate(c.current_date)}
-          </span>
-          {c.corretora_name ? (
-            <span className="inline-flex items-center gap-1 rounded-pill bg-milsaca-dourado/15 px-2 py-0.5 text-[10px] font-medium text-milsaca-cafezal">
-              <Building2 className="h-3 w-3" />
-              {c.corretora_name}
-            </span>
-          ) : null}
-        </footer>
+        <p
+          className={`text-caption ${stale ? "font-medium text-warning-700" : "text-neutral-500"}`}
+        >
+          {stale ? "Desatualizada · " : ""}saca 60kg · {fmtDate(c.current_date)}
+        </p>
       </CardContent>
     </Card>
-  );
-}
-
-function Janela({ label, value }: { label: string; value: number | null }) {
-  if (value == null) {
-    return (
-      <span className="text-neutral-400">
-        {label}: <span className="font-mono">—</span>
-      </span>
-    );
-  }
-  const up = value > 0.001;
-  const down = value < -0.001;
-  return (
-    <span
-      className={
-        up
-          ? "font-medium text-success-700"
-          : down
-            ? "font-medium text-danger-700"
-            : "text-neutral-500"
-      }
-    >
-      {label}:{" "}
-      <span className="font-mono">
-        {value > 0 ? "+" : ""}
-        {value.toFixed(2)}%
-      </span>
-    </span>
   );
 }

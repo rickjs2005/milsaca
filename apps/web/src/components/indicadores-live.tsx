@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { createClient } from "@milsaca/db/web/server";
+import { cn } from "@/lib/utils";
 
 type MarketQuote = {
   source: string;
@@ -147,7 +148,7 @@ export async function IndicadoresLive() {
 
   return (
     <section className="space-y-3">
-      <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
+      <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-500">
         <Activity className="h-4 w-4" />
         Indicadores ao vivo
       </h2>
@@ -186,7 +187,7 @@ function IndicadorCard({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-milsaca-verde-claro">
+          <p className="text-body-sm text-neutral-500">
             Sem dado ainda. Aguardando primeira sincronização.
           </p>
         </CardContent>
@@ -201,23 +202,24 @@ function IndicadorCard({
   const stale = isStale(quote.fetched_at);
 
   return (
-    <Card className="border-milsaca-cream-escuro">
+    <Card className="border-neutral-200">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div>
-          <CardTitle className="text-sm font-semibold text-milsaca-verde">
+          <CardTitle className="text-label font-semibold text-milsaca-cafezal">
             {indicador.label}
           </CardTitle>
-          <CardDescription className="text-xs">
+          <CardDescription className="text-caption">
             {indicador.sublabel}
           </CardDescription>
         </div>
         {variation !== null ? (
           <span
-            className={
+            className={cn(
+              "inline-flex items-center gap-0.5 rounded-pill px-2 py-0.5 text-caption font-semibold",
               up
-                ? "flex items-center gap-0.5 text-xs font-medium text-emerald-700"
-                : "flex items-center gap-0.5 text-xs font-medium text-rose-700"
-            }
+                ? "bg-success-50 text-success-700"
+                : "bg-danger-50 text-danger-700",
+            )}
           >
             <Arrow className="h-3.5 w-3.5" />
             {up ? "+" : ""}
@@ -226,18 +228,18 @@ function IndicadorCard({
         ) : null}
       </CardHeader>
       <CardContent>
-        <p className="text-2xl font-semibold tracking-tight text-milsaca-verde">
+        <p className="text-h2 tracking-tight text-milsaca-cafezal">
           {formatted?.primary ?? "—"}
         </p>
         {formatted?.secondary ? (
-          <p className="mt-0.5 text-xs font-medium text-milsaca-dourado">
+          <p className="mt-0.5 text-caption font-medium text-dourado-texto">
             {formatted.secondary}
           </p>
         ) : null}
-        <p className="mt-1 flex items-center gap-2 text-[11px] text-milsaca-verde-claro/80">
+        <p className="mt-1 flex items-center gap-2 text-caption text-neutral-500">
           <span>atualizado há {fmtAge(quote.fetched_at)}</span>
           {stale ? (
-            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
+            <span className="rounded bg-warning-50 px-1.5 py-0.5 text-[10px] font-medium text-warning-700">
               desatualizado
             </span>
           ) : null}
@@ -246,7 +248,7 @@ function IndicadorCard({
               href={indicador.externalUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-auto text-milsaca-dourado hover:underline"
+              className="ml-auto text-dourado-texto hover:underline"
             >
               fonte ↗
             </a>
