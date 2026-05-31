@@ -156,23 +156,22 @@ export function CorretoraSidebar({
   const b = badges ?? EMPTY_BADGES;
 
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-milsaca-cream-escuro bg-white">
+    <aside className="flex h-screen w-64 shrink-0 flex-col bg-milsaca-cafezal text-milsaca-cream">
       {/* Header com brand */}
       <div className="flex items-center gap-2.5 px-5 py-5">
         <span
           className="flex h-9 w-9 items-center justify-center rounded-lg shadow-[0_4px_18px_-6px_rgba(201,169,97,0.5)]"
           style={{
-            background:
-              "linear-gradient(135deg, #C9A961 0%, #8a6d34 100%)",
+            background: "linear-gradient(135deg, #C9A961 0%, #8a6d34 100%)",
           }}
         >
           <Coffee className="h-4 w-4 text-milsaca-cafezal" strokeWidth={2.5} />
         </span>
         <div className="leading-tight">
-          <p className="text-body font-semibold tracking-tight text-milsaca-cafezal">
+          <p className="text-body font-semibold tracking-tight text-milsaca-cream">
             Milsaca
           </p>
-          <p className="text-caption uppercase tracking-[0.18em] text-neutral-500">
+          <p className="text-caption uppercase tracking-[0.18em] text-milsaca-cream/55">
             Painel da corretora
           </p>
         </div>
@@ -182,7 +181,7 @@ export function CorretoraSidebar({
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-3">
         {NAV_GROUPS.map((group) => (
           <div key={group.title} className="space-y-1">
-            <p className="px-3 pb-1 text-caption font-semibold uppercase tracking-[0.16em] text-neutral-500">
+            <p className="px-3 pb-1 text-caption font-semibold uppercase tracking-[0.16em] text-milsaca-cream/45">
               {group.title}
             </p>
             {group.items.map((item) => {
@@ -198,25 +197,36 @@ export function CorretoraSidebar({
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex items-center justify-between gap-3 rounded-md px-3 py-2 text-body-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+                    "group relative flex items-center justify-between gap-3 rounded-md px-3 py-2 text-body-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-milsaca-dourado focus-visible:ring-inset",
                     active
-                      ? "bg-milsaca-cafezal text-milsaca-cream"
-                      : "text-neutral-600 hover:bg-milsaca-cream-escuro hover:text-milsaca-cafezal",
+                      ? "bg-white/10 text-milsaca-cream"
+                      : "text-milsaca-cream/65 hover:bg-white/5 hover:text-milsaca-cream",
                   )}
                 >
+                  {active ? (
+                    <span
+                      aria-hidden
+                      className="absolute inset-y-1.5 left-0 w-1 rounded-full bg-milsaca-dourado"
+                    />
+                  ) : null}
                   <span className="flex items-center gap-3">
-                    <Icon className="h-4 w-4" />
+                    <Icon
+                      className={cn(
+                        "h-4 w-4 shrink-0 transition-colors",
+                        active
+                          ? "text-milsaca-dourado"
+                          : "text-milsaca-cream/60 group-hover:text-milsaca-cream",
+                      )}
+                    />
                     {item.label}
                   </span>
                   {count > 0 ? (
                     <span
                       className={cn(
                         "inline-flex h-5 min-w-[20px] items-center justify-center rounded-pill px-1.5 text-caption font-semibold",
-                        active
-                          ? "bg-milsaca-cream/20 text-milsaca-cream"
-                          : item.badgeTone === "warn"
-                            ? "bg-warning-100 text-warning-700"
-                            : "bg-milsaca-dourado/25 text-milsaca-cafezal",
+                        item.badgeTone === "warn"
+                          ? "bg-warning-500 text-white"
+                          : "bg-milsaca-dourado text-milsaca-cafezal",
                       )}
                     >
                       {count > 99 ? "99+" : count}
@@ -230,19 +240,19 @@ export function CorretoraSidebar({
       </nav>
 
       {/* Footer com operador */}
-      <div className="border-t border-milsaca-cream-escuro p-3">
+      <div className="border-t border-white/10 p-3">
         <div className="mb-2 px-3 py-1">
           <p
-            className="truncate text-body-sm font-semibold text-milsaca-cafezal"
+            className="truncate text-body-sm font-semibold text-milsaca-cream"
             title={corretoraLabel ?? "Corretora não vinculada"}
           >
             {corretoraLabel ?? "Corretora não vinculada"}
           </p>
-          <p className="mt-1 text-caption uppercase tracking-wider text-neutral-500">
+          <p className="mt-1 text-caption uppercase tracking-wider text-milsaca-cream/45">
             Operador
           </p>
           <p
-            className="truncate text-caption text-neutral-600"
+            className="truncate text-caption text-milsaca-cream/55"
             title={operatorEmail || operatorName}
           >
             {operatorName}
@@ -251,7 +261,7 @@ export function CorretoraSidebar({
         {showSwitcher && (
           <Link
             href="/painel/escolher"
-            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-body-sm font-medium text-neutral-600 transition-colors hover:bg-milsaca-cream-escuro hover:text-milsaca-cafezal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-body-sm font-medium text-milsaca-cream/65 transition-colors hover:bg-white/5 hover:text-milsaca-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-milsaca-dourado focus-visible:ring-inset"
           >
             <Repeat className="h-4 w-4" />
             Trocar painel
@@ -260,7 +270,7 @@ export function CorretoraSidebar({
         <form action="/sair" method="post">
           <button
             type="submit"
-            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-body-sm font-medium text-neutral-600 transition-colors hover:bg-milsaca-cream-escuro hover:text-milsaca-cafezal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-body-sm font-medium text-milsaca-cream/65 transition-colors hover:bg-white/5 hover:text-milsaca-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-milsaca-dourado focus-visible:ring-inset"
           >
             <LogOut className="h-4 w-4" />
             Sair

@@ -4,6 +4,7 @@ import { createClient } from "@milsaca/db/web/server";
 import { ToastFromSearchParams } from "@/components/toast-from-search-params";
 import { PanelShell } from "@/components/panel-shell";
 import { CorretoraSidebar } from "./_components/sidebar";
+import { CorretoraBottomNav } from "./_components/bottom-nav";
 import { SubscriptionBanner } from "./_components/subscription-banner";
 import {
   getCorretoraOnboarding,
@@ -71,6 +72,7 @@ export default async function PainelCorretoraLayout({
     <>
       <PanelShell
         brandLabel="Corretora"
+        bottomNav={<CorretoraBottomNav />}
         sidebar={
           <CorretoraSidebar
             operatorName={profile?.full_name ?? user.email ?? "operador"}
