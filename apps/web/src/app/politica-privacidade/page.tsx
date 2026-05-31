@@ -119,10 +119,10 @@ export default function PoliticaPrivacidadePage() {
             <li>
               Solicitar exclusão (envia um pedido em{" "}
               <a
-                href="mailto:contato@milsaca.app"
+                href="mailto:milsaca2026@gmail.com"
                 className="font-medium text-milsaca-cafezal underline-offset-2 hover:underline"
               >
-                contato@milsaca.app
+                milsaca2026@gmail.com
               </a>
               ). Marcamos sua conta como excluída em até 7 dias; seus
               dados pessoais são removidos do acesso e retidos apenas no
@@ -180,10 +180,10 @@ export default function PoliticaPrivacidadePage() {
             Dúvidas, solicitações ou denúncias relacionadas a dados pessoais:
             <br />
             <a
-              href="mailto:contato@milsaca.app"
+              href="mailto:milsaca2026@gmail.com"
               className="font-medium text-milsaca-cafezal underline-offset-2 hover:underline"
             >
-              contato@milsaca.app
+              milsaca2026@gmail.com
             </a>
           </p>
         </Section>

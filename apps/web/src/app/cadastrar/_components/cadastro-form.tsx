@@ -226,7 +226,7 @@ export function CadastroForm({
             e autorizo o Milsaca a usar meus dados pra conectar com{" "}
             {role === "corretora" ? "produtores" : "corretoras"} de café.
             Posso revogar a qualquer momento em{" "}
-            <code className="text-caption">contato@milsaca.app</code>.
+            <code className="text-caption">milsaca2026@gmail.com</code>.
           </span>
         </label>
       </div>

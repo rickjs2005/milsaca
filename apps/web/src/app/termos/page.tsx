@@ -259,10 +259,10 @@ export default function TermosPage() {
             Dúvidas sobre estes Termos:
             <br />
             <a
-              href="mailto:contato@milsaca.app"
+              href="mailto:milsaca2026@gmail.com"
               className="font-medium text-milsaca-cafezal underline-offset-2 hover:underline"
             >
-              contato@milsaca.app
+              milsaca2026@gmail.com
             </a>
           </p>
         </Section>

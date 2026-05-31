@@ -47,7 +47,7 @@ insert into public.platform_settings (key, value, description) values
   ('public_signup_corretora', 'true', 'Cadastro público de corretora habilitado (requer aprovação)'),
   ('manual_approval_corretora', 'true', 'Aprovação manual obrigatória pra corretora'),
   ('support_whatsapp', '"5533999999999"', 'WhatsApp oficial do suporte (E.164 sem +)'),
-  ('support_email', '"contato@milsaca.app"', 'E-mail oficial do suporte'),
+  ('support_email', '"milsaca2026@gmail.com"', 'E-mail oficial do suporte'),
   ('whatsapp_provider', '"wa_me"', 'Provider WhatsApp: wa_me | meta_cloud'),
   ('cotacoes_provider', '"cepea_scrape"', 'Provider de cotações: cepea_scrape | cepea_api'),
   ('region_default', '"MG"', 'UF padrão no catálogo público'),

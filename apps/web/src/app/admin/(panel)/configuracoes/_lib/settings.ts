@@ -112,7 +112,7 @@ export const SETTING_TYPES: Record<SettingKey, SettingType> = {
   founder_program_open: { kind: "boolean" },
   founder_slots_total: { kind: "number", min: 0, max: 100, suffix: "vagas" },
   support_whatsapp: { kind: "string", placeholder: "5533999999999" },
-  support_email: { kind: "string", placeholder: "contato@milsaca.app" },
+  support_email: { kind: "string", placeholder: "milsaca2026@gmail.com" },
   whatsapp_provider: {
     kind: "select",
     options: [

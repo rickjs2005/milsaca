@@ -28,7 +28,7 @@ export interface Quote {
 }
 
 const UA =
-  "MilsacaBot/1.0 (+https://milsaca.com.br; rickjanuario0@gmail.com) cotacao-cache-15min";
+  "MilsacaBot/1.0 (+https://milsaca.com.br; milsaca2026@gmail.com) cotacao-cache-15min";
 
 /**
  * fetch com timeout por tentativa (8s) + retry/backoff para falhas

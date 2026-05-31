@@ -68,7 +68,7 @@ export default async function EscolherPainelPage() {
                   <p className="text-sm text-milsaca-verde-claro">
                     Sua conta não tem papel de produtor nem corretora
                     vinculado. Saia e entre de novo — se persistir, fale com o
-                    suporte (rickjanuario0@gmail.com).
+                    suporte (milsaca2026@gmail.com).
                   </p>
                 </div>
               </div>

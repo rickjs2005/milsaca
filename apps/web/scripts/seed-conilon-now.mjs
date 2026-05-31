@@ -39,7 +39,7 @@ async function fetchConilon() {
   const res = await fetch(url, {
     headers: {
       "User-Agent":
-        "MilsacaBot/1.0 (+https://milsaca.com.br; rickjanuario0@gmail.com)",
+        "MilsacaBot/1.0 (+https://milsaca.com.br; milsaca2026@gmail.com)",
       Accept: "text/html",
     },
   });
