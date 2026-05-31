@@ -175,8 +175,9 @@ export function OfertasView({
         </span>
       </div>
 
-      {/* DESKTOP: tabela densa */}
-      <div className="hidden overflow-hidden rounded-card border border-neutral-200 bg-white shadow-card lg:block">
+      {/* DESKTOP: tabela densa (sem overflow-hidden em ancestral — senão
+          recorta o dropdown do menu "⋯") */}
+      <div className="hidden rounded-card border border-neutral-200 bg-white shadow-card lg:block">
         <table className="w-full text-body-sm">
           <thead className="border-b border-neutral-200 bg-neutral-50 text-caption font-medium uppercase tracking-wider text-neutral-600">
             <tr>
