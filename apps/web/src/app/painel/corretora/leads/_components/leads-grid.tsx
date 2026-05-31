@@ -23,7 +23,6 @@ import { LeadCard } from "./lead-card";
 
 type ToolbarState = {
   status?: LeadStatus;
-  urgencia?: Urgencia;
 };
 
 const STATUS_FILTERS: { value: "" | LeadStatus; label: string }[] = [
@@ -34,23 +33,27 @@ const STATUS_FILTERS: { value: "" | LeadStatus; label: string }[] = [
   })),
 ];
 
-const URGENCIA_FILTERS: { value: "" | Urgencia; label: string }[] = [
-  { value: "", label: "Qualquer urgência" },
-  ...URGENCIA_FILTER_ORDER.map((u) => ({
-    value: u,
-    label: URGENCIA_LABEL[u],
-  })),
-];
+type SortKey = "recentes" | "valor" | "quente" | "frio";
+
+const SORT_LABEL: Record<SortKey, string> = {
+  recentes: "Mais recentes",
+  valor: "Maior valor",
+  quente: "Mais quentes",
+  frio: "Sem contato há mais tempo",
+};
+
+const URG_RANK: Record<Urgencia, number> = { quente: 3, morno: 2, frio: 1 };
+
+function totalOf(l: LeadListItem): number {
+  return l.proposed_price != null && l.bag_count != null
+    ? l.proposed_price * l.bag_count
+    : 0;
+}
 
 /**
- * Container client da Central de Leads: toolbar (status URL, urgência URL,
- * busca client-state) + lista de cards.
- *
- * Filtros vão pra URL pra deep link e refresh seguros — exceto a busca,
- * que é estado local pra não criar history junk a cada tecla.
- *
- * O server já trouxe os leads filtrados por status; aqui aplicamos
- * urgência (derivada) e query em memória.
+ * Container client da Central de Leads: toolbar (status na URL p/ deep-link +
+ * filtro server; busca, urgência e ordenação como estado local em memória) +
+ * lista de cards. Filtro + ordenação juntos tornam a lista operável.
  */
 export function LeadsGrid({
   leads,
@@ -68,14 +71,13 @@ export function LeadsGrid({
   const pathname = usePathname();
   const params = useSearchParams();
   const [query, setQuery] = useState("");
+  const [urgencia, setUrgencia] = useState<"" | Urgencia>("");
+  const [sort, setSort] = useState<SortKey>("recentes");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return leads.filter((l) => {
-      if (current.urgencia) {
-        const u = nextActionFor(l).urgencia;
-        if (u !== current.urgencia) return false;
-      }
+    const list = leads.filter((l) => {
+      if (urgencia && nextActionFor(l).urgencia !== urgencia) return false;
       if (!q) return true;
       const haystack = [
         l.produtor_nome,
@@ -88,13 +90,30 @@ export function LeadsGrid({
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [leads, current.urgencia, query]);
 
-  function buildHref(key: "status" | "urgencia", value: string): string {
+    const sorted = [...list];
+    sorted.sort((a, b) => {
+      switch (sort) {
+        case "valor":
+          return totalOf(b) - totalOf(a);
+        case "quente":
+          return (
+            URG_RANK[nextActionFor(b).urgencia] -
+            URG_RANK[nextActionFor(a).urgencia]
+          );
+        case "frio":
+          return +new Date(a.updated_at) - +new Date(b.updated_at);
+        default:
+          return +new Date(b.created_at) - +new Date(a.created_at);
+      }
+    });
+    return sorted;
+  }, [leads, urgencia, query, sort]);
+
+  function buildStatusHref(value: string): string {
     const next = new URLSearchParams(params.toString());
-    if (value) next.set(key, value);
-    else next.delete(key);
-    // Trocar de filtro reseta a paginação.
+    if (value) next.set("status", value);
+    else next.delete("status");
     next.delete("page");
     const qs = next.toString();
     return qs ? `${pathname}?${qs}` : pathname;
@@ -108,17 +127,16 @@ export function LeadsGrid({
     return qs ? `${pathname}?${qs}` : pathname;
   }
 
-  const hasAnyUrl =
-    Boolean(current.status) || Boolean(current.urgencia);
   const hasQuery = query.length > 0;
-  const hasAnyFilter = hasAnyUrl || hasQuery;
+  const selectClass =
+    "h-10 rounded-md border border-neutral-200 bg-white px-3 text-body-sm text-milsaca-cafezal outline-none transition-colors hover:border-milsaca-dourado focus-visible:ring-2 focus-visible:ring-ring/40";
 
   return (
     <div className="space-y-5">
-      {/* ============= TOOLBAR ============= */}
+      {/* TOOLBAR — busca + urgência + ordenação numa faixa só */}
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="relative flex-1 sm:max-w-sm">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-[160px] flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
             <input
               type="search"
@@ -128,102 +146,81 @@ export function LeadsGrid({
               className="h-10 w-full rounded-md border border-neutral-200 bg-white pl-9 pr-3 text-body-sm text-milsaca-preto placeholder:text-neutral-400 outline-none transition-colors focus-visible:border-milsaca-dourado focus-visible:ring-2 focus-visible:ring-ring/40"
             />
           </div>
-          <div className="flex items-center gap-3 text-caption text-neutral-500">
-            <span>
-              <strong className="text-milsaca-verde">{filtered.length}</strong>{" "}
-              {filtered.length === 1 ? "lead" : "leads"}
-            </span>
-            {hasAnyFilter ? (
-              <>
-                {hasQuery ? (
-                  <button
-                    type="button"
-                    onClick={() => setQuery("")}
-                    className="inline-flex items-center gap-1 font-medium text-milsaca-cafezal hover:underline"
-                  >
-                    <X className="h-3 w-3" />
-                    limpar busca
-                  </button>
-                ) : null}
-                {hasAnyUrl ? (
-                  <Link
-                    href={pathname}
-                    onClick={() => setQuery("")}
-                    className="inline-flex items-center gap-1 font-medium text-milsaca-cafezal hover:underline"
-                  >
-                    <X className="h-3 w-3" />
-                    limpar filtros
-                  </Link>
-                ) : null}
-              </>
-            ) : null}
+          <select
+            aria-label="Filtrar por urgência"
+            value={urgencia}
+            onChange={(e) => setUrgencia(e.target.value as "" | Urgencia)}
+            className={selectClass}
+          >
+            <option value="">Qualquer urgência</option>
+            {URGENCIA_FILTER_ORDER.map((u) => (
+              <option key={u} value={u}>
+                {URGENCIA_LABEL[u]}
+              </option>
+            ))}
+          </select>
+          <select
+            aria-label="Ordenar"
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortKey)}
+            className={selectClass}
+          >
+            {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => (
+              <option key={k} value={k}>
+                {SORT_LABEL[k]}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {STATUS_FILTERS.map((f) => {
+              const active = (current.status ?? "") === f.value;
+              return (
+                <Link
+                  key={`status-${f.value || "all"}`}
+                  href={buildStatusHref(f.value)}
+                  className={cn(
+                    "rounded-pill px-3 py-1 text-caption font-medium transition-colors",
+                    active
+                      ? "bg-milsaca-cafezal text-milsaca-cream"
+                      : "border border-neutral-200 text-neutral-600 hover:border-milsaca-dourado/50 hover:text-milsaca-cafezal",
+                  )}
+                >
+                  {f.label}
+                </Link>
+              );
+            })}
           </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
-            Status
-          </span>
-          {STATUS_FILTERS.map((f) => {
-            const active = (current.status ?? "") === f.value;
-            return (
-              <Link
-                key={`status-${f.value || "all"}`}
-                href={buildHref("status", f.value)}
-                className={cn(
-                  "rounded-pill px-3 py-1 text-caption font-medium transition-colors",
-                  active
-                    ? "bg-milsaca-cafezal text-milsaca-cream"
-                    : "border border-neutral-200 text-neutral-600 hover:border-milsaca-dourado/50 hover:text-milsaca-cafezal",
-                )}
+          <span className="text-caption text-neutral-500">
+            <strong className="text-milsaca-cafezal">{filtered.length}</strong>{" "}
+            {filtered.length === 1 ? "lead" : "leads"}
+            {hasQuery ? (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="ml-2 inline-flex items-center gap-1 font-medium text-milsaca-cafezal hover:underline"
               >
-                {f.label}
-              </Link>
-            );
-          })}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
-            Urgência
+                <X className="h-3 w-3" />
+                limpar busca
+              </button>
+            ) : null}
           </span>
-          {URGENCIA_FILTERS.map((f) => {
-            const active = (current.urgencia ?? "") === f.value;
-            return (
-              <Link
-                key={`urgencia-${f.value || "all"}`}
-                href={buildHref("urgencia", f.value)}
-                className={cn(
-                  "rounded-pill px-3 py-1 text-caption font-medium transition-colors",
-                  active
-                    ? "bg-milsaca-cafezal text-milsaca-cream"
-                    : "border border-neutral-200 text-neutral-600 hover:border-milsaca-dourado/50 hover:text-milsaca-cafezal",
-                )}
-              >
-                {f.label}
-              </Link>
-            );
-          })}
         </div>
       </div>
 
-      {/* ============= GRID ============= */}
+      {/* GRID */}
       {filtered.length === 0 ? (
-        <EmptyState hasFilter={hasAnyFilter} />
+        <EmptyState hasFilter={Boolean(current.status) || hasQuery || !!urgencia} />
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {filtered.map((lead) => (
-            <LeadCard
-              key={lead.id}
-              lead={lead}
-              corretoraName={corretoraName}
-            />
+            <LeadCard key={lead.id} lead={lead} corretoraName={corretoraName} />
           ))}
         </div>
       )}
 
-      {/* Paginação server-side. A busca e a urgência filtram apenas a
-          página atual; pra varrer tudo, navegue pelas páginas. */}
       {totalPages > 1 ? (
         <div className="border-t border-neutral-200 pt-4">
           <Pagination page={page} totalPages={totalPages} hrefFor={pageHref} />

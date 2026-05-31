@@ -3,12 +3,11 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  Coffee,
+  FileSignature,
   HandCoins,
   MapPin,
   MessageCircle,
   MoreHorizontal,
-  Package,
   Phone,
   User2,
 } from "lucide-react";
@@ -44,22 +43,13 @@ const BRL = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 0,
 });
 
-// Urgência derivada → tone semântico do <StatusBadge> (fundação D1).
 const URGENCIA_TONE: Record<Urgencia, StatusTone> = {
   quente: "danger",
   morno: "warning",
   frio: "neutral",
 };
 
-/**
- * Card de lead — server component. Botões de ação usam forms (server
- * actions) e <a target=_blank> pra WhatsApp. Sem JS no client.
- *
- * Próximo status sugerido vem do enum existente — depois do `novo`,
- * o caminho natural é `em_negociacao` → `convertido`. O botão "Avançar"
- * pula 1 step na frente; pra outros movimentos (perdido/arquivado), o
- * corretor abre os detalhes.
- */
+// Próximo status no avanço de 1 clique.
 const NEXT_STATUS: Partial<Record<LeadStatus, LeadStatus>> = {
   novo: "em_negociacao",
   em_negociacao: "convertido",
@@ -75,33 +65,39 @@ export function LeadCard({
   const next = nextActionFor(lead);
   const wa = whatsappLinkFor(lead, corretoraName);
   const advanceTo = NEXT_STATUS[lead.status];
-
   const local = [lead.city, lead.state].filter(Boolean).join("/");
+  const total =
+    lead.proposed_price != null && lead.bag_count != null
+      ? lead.proposed_price * lead.bag_count
+      : null;
+  // Convertido → próximo passo é gerar contrato (não propor de novo).
+  const isConvertido = lead.status === "convertido";
+  const showCriarProposta =
+    lead.status !== "perdido" && lead.status !== "arquivado" && !isConvertido;
 
   return (
-    <Card
-      tone="default"
-      interactive
-      className="group p-card sm:p-6"
-    >
+    <Card tone="default" interactive className="group p-card sm:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         {/* Identidade do lead */}
         <div className="flex-1 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Link
               href={`/painel/corretora/leads/${lead.id}`}
-              className="text-h3 text-milsaca-verde hover:underline"
+              className="text-h3 text-milsaca-cafezal hover:underline"
             >
               {lead.produtor_nome}
             </Link>
-            <StatusBadge
-              tone={lead.produtor_kind === "produtor" ? "success" : "premium"}
-              withDot={false}
-              className="uppercase tracking-wider"
-            >
-              <User2 className="h-2.5 w-2.5" />
-              {lead.produtor_kind}
-            </StatusBadge>
+            {/* "produtor" é o default — só sinaliza quando é contato-sombra */}
+            {lead.produtor_kind === "contato" ? (
+              <StatusBadge
+                tone="premium"
+                withDot={false}
+                className="uppercase tracking-wider"
+              >
+                <User2 className="h-2.5 w-2.5" />
+                contato
+              </StatusBadge>
+            ) : null}
             <StatusBadge tone={LEAD_STATUS_TONE[lead.status]} withDot={false}>
               {LEAD_STATUS_LABEL[lead.status]}
             </StatusBadge>
@@ -135,24 +131,27 @@ export function LeadCard({
                 {lead.produtor_phone}
               </span>
             ) : null}
-            {lead.coffee_type ? (
-              <span className="inline-flex items-center gap-1">
-                <Coffee className="h-3 w-3" />
-                {COFFEE_LABEL[lead.coffee_type] ?? lead.coffee_type}
-              </span>
-            ) : null}
-            {lead.bag_count != null ? (
-              <span className="inline-flex items-center gap-1">
-                <Package className="h-3 w-3" />
-                {lead.bag_count} sacas
-              </span>
-            ) : null}
           </div>
 
-          {/* Valor proposto + próxima ação */}
-          <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 pt-1">
-            {lead.proposed_price != null ? (
-              <p className="text-h3 tabular-nums text-milsaca-verde">
+          {/* Valor TOTAL do negócio lidera; unitário/sacas viram legenda */}
+          <div className="pt-1">
+            {total != null ? (
+              <>
+                <p className="text-h2 leading-none tabular-nums text-milsaca-cafezal">
+                  {BRL.format(total)}
+                </p>
+                <p className="mt-1 text-caption text-neutral-500">
+                  {lead.bag_count} sc
+                  {lead.coffee_type
+                    ? ` ${COFFEE_LABEL[lead.coffee_type] ?? lead.coffee_type}`
+                    : ""}
+                  {lead.proposed_price != null
+                    ? ` · ${BRL.format(lead.proposed_price)}/sc`
+                    : ""}
+                </p>
+              </>
+            ) : lead.proposed_price != null ? (
+              <p className="text-h3 tabular-nums text-milsaca-cafezal">
                 {BRL.format(lead.proposed_price)}
                 <span className="ml-1 text-caption font-medium text-neutral-500">
                   /sc
@@ -191,13 +190,25 @@ export function LeadCard({
             {wa.hasPhone ? "WhatsApp" : "Abrir WhatsApp"}
           </a>
 
-          <Link
-            href={`/painel/corretora/leads/${lead.id}#nova-proposta`}
-            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-milsaca-cafezal/40 bg-milsaca-cafezal/5 px-3 text-caption font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-cafezal/15"
-          >
-            <HandCoins className="h-3.5 w-3.5" />
-            Criar proposta
-          </Link>
+          {/* Ação primária alinhada ao estágio */}
+          {isConvertido ? (
+            <Link
+              href={`/painel/corretora/contratos/novo?lead=${lead.id}`}
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-success-600/40 bg-success-50 px-3 text-caption font-semibold text-success-700 transition-colors hover:bg-success-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <FileSignature className="h-3.5 w-3.5" />
+              Gerar contrato
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          ) : showCriarProposta ? (
+            <Link
+              href={`/painel/corretora/leads/${lead.id}#nova-proposta`}
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-milsaca-cafezal/40 bg-milsaca-cafezal/5 px-3 text-caption font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-cafezal/15"
+            >
+              <HandCoins className="h-3.5 w-3.5" />
+              Criar proposta
+            </Link>
+          ) : null}
 
           {advanceTo ? (
             <form action={updateLeadStatus}>
@@ -234,9 +245,4 @@ export function LeadCard({
   );
 }
 
-/**
- * Lista todos os status pra um filtro select fallback (caso o user
- * queira mover pra um status não-padrão). Não é renderizado no card
- * — vive aqui só pra agrupar as constantes.
- */
 export const ALL_LEAD_STATUSES = LEAD_STATUS_ORDER;

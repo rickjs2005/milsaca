@@ -16,10 +16,6 @@ import {
   LEAD_STATUS_ORDER,
   type LeadStatus,
 } from "./_lib/queries";
-import {
-  URGENCIA_FILTER_ORDER,
-  type Urgencia,
-} from "./_lib/next-action";
 import { LeadsGrid } from "./_components/leads-grid";
 
 export const metadata = { title: "Central de Leads — Painel da corretora" };
@@ -34,11 +30,12 @@ function isLeadStatus(v: string | undefined): v is LeadStatus {
   return !!v && (LEAD_STATUS_ORDER as readonly string[]).includes(v);
 }
 
-function isUrgencia(v: string | undefined): v is Urgencia {
-  return !!v && (URGENCIA_FILTER_ORDER as readonly string[]).includes(v);
-}
-
 const NUM = new Intl.NumberFormat("pt-BR");
+const BRL = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  maximumFractionDigits: 0,
+});
 
 async function loadLeadsKpis(corretoraId: string) {
   const supabase = await createClient();
@@ -47,7 +44,7 @@ async function loadLeadsKpis(corretoraId: string) {
   monthStart.setUTCHours(0, 0, 0, 0);
   const monthIso = monthStart.toISOString();
 
-  const [novos, emNeg, convMes, perdMes] = await Promise.all([
+  const [novos, emNeg, emNegVal, convMes, perdMes] = await Promise.all([
     supabase
       .from("leads")
       .select("*", { count: "exact", head: true })
@@ -56,6 +53,11 @@ async function loadLeadsKpis(corretoraId: string) {
     supabase
       .from("leads")
       .select("*", { count: "exact", head: true })
+      .eq("corretora_id", corretoraId)
+      .eq("status", "em_negociacao"),
+    supabase
+      .from("leads")
+      .select("proposed_price, bag_count")
       .eq("corretora_id", corretoraId)
       .eq("status", "em_negociacao"),
     supabase
@@ -72,9 +74,24 @@ async function loadLeadsKpis(corretoraId: string) {
       .gte("updated_at", monthIso),
   ]);
 
+  const valorEmNeg = (
+    (emNegVal.data ?? []) as Array<{
+      proposed_price: number | string | null;
+      bag_count: number | null;
+    }>
+  ).reduce(
+    (sum, r) =>
+      sum +
+      (r.proposed_price != null && r.bag_count != null
+        ? Number(r.proposed_price) * r.bag_count
+        : 0),
+    0,
+  );
+
   return {
     novos: novos.count ?? 0,
     emNeg: emNeg.count ?? 0,
+    valorEmNeg,
     convMes: convMes.count ?? 0,
     perdMes: perdMes.count ?? 0,
   };
@@ -102,7 +119,6 @@ export default async function LeadsPage({
 
   const sp = await searchParams;
   const status = isLeadStatus(sp.status) ? sp.status : undefined;
-  const urgencia = isUrgencia(sp.urgencia) ? sp.urgencia : undefined;
   const page = Math.max(1, Number(sp.page) || 1);
 
   const [{ rows: leads, count }, kpis, corretoraName] = await Promise.all([
@@ -116,7 +132,7 @@ export default async function LeadsPage({
     <div className="space-y-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-h1 text-milsaca-verde">Central de Leads</h1>
+          <h1 className="text-h1 text-milsaca-cafezal">Central de Leads</h1>
           <p className="mt-1 text-body-sm text-neutral-600">
             Pipeline comercial da corretora — converse no WhatsApp, avance
             status e fechamento.
@@ -133,7 +149,7 @@ export default async function LeadsPage({
 
       <section
         aria-label="Indicadores de leads"
-        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+        className="grid grid-cols-2 gap-4 xl:grid-cols-4"
       >
         <KpiCard
           label="Leads novos"
@@ -144,10 +160,10 @@ export default async function LeadsPage({
         />
         <KpiCard
           label="Em negociação"
-          value={NUM.format(kpis.emNeg)}
+          value={BRL.format(kpis.valorEmNeg)}
           icon={TrendingUp}
           tone="info"
-          hint="Propostas abertas"
+          hint={`${kpis.emNeg} proposta${kpis.emNeg === 1 ? "" : "s"} aberta${kpis.emNeg === 1 ? "" : "s"}`}
         />
         <KpiCard
           label="Convertidos no mês"
@@ -168,7 +184,7 @@ export default async function LeadsPage({
       <LeadsGrid
         leads={leads}
         corretoraName={corretoraName}
-        current={{ status, urgencia }}
+        current={{ status }}
         page={page}
         totalPages={totalPages}
       />
