@@ -1,65 +1,24 @@
 import { createClient } from "@milsaca/db/web/server";
-import type { Database } from "@milsaca/types/database";
-import type { StatusTone } from "@/components/status-badge";
+import {
+  ENTREGA_PENDENTE_STATUS as PENDENTE_STATUS,
+  type EntregaStatus,
+  type EntregaListItem,
+} from "./entrega-meta";
 
-export type EntregaStatus = Database["public"]["Enums"]["entrega_status"];
-
-export const ENTREGA_STATUS_ORDER: EntregaStatus[] = [
-  "programada",
-  "em_transito",
-  "recebida",
-  "conferida",
-  "cancelada",
-];
-
-export const ENTREGA_STATUS_LABEL: Record<EntregaStatus, string> = {
-  programada: "Programada",
-  em_transito: "Em trânsito",
-  recebida: "Recebida",
-  conferida: "Conferida",
-  cancelada: "Cancelada",
-};
-
-export const ENTREGA_STATUS_COLOR: Record<EntregaStatus, string> = {
-  programada: "bg-milsaca-dourado/20 text-milsaca-verde",
-  em_transito: "bg-sky-100 text-sky-800",
-  recebida: "bg-emerald-100 text-emerald-800",
-  conferida: "bg-milsaca-verde text-milsaca-cream",
-  cancelada: "bg-slate-200 text-slate-700",
-};
-
-// Tone semântico (fundação D1) — usado pelo <StatusBadge> nas listagens.
-export const ENTREGA_STATUS_TONE: Record<EntregaStatus, StatusTone> = {
-  programada: "warning",
-  em_transito: "info",
-  recebida: "success",
-  conferida: "premium",
-  cancelada: "neutral",
-};
-
-// "Pendente" = ainda não recebeu/conferiu/cancelou
-const PENDENTE_STATUS: EntregaStatus[] = ["programada", "em_transito"];
-
-export type EntregaListItem = {
-  id: string;
-  sequencia: number;
-  bag_count: number | null;
-  status: EntregaStatus;
-  data_prevista: string | null;
-  data_realizada: string | null;
-  contrato_id: string;
-  contrato_code: string;
-  produtor_id: string;
-  produtor_nome: string;
-  is_atrasada: boolean;
-  created_at: string;
-  updated_at: string;
-};
+// Re-export da meta pura — clients importam de "./entrega-meta" direto.
+export {
+  ENTREGA_STATUS_ORDER,
+  ENTREGA_STATUS_LABEL,
+  ENTREGA_STATUS_TONE,
+  ENTREGA_STATUS_COLOR,
+} from "./entrega-meta";
+export type { EntregaStatus, EntregaListItem } from "./entrega-meta";
 
 type Row = {
   id: string;
   sequencia: number;
   bag_count: number | null;
+  peso_liquido_kg?: number | string | null;
   status: EntregaStatus;
   data_prevista: string | null;
   data_realizada: string | null;
@@ -67,10 +26,7 @@ type Row = {
   produtor_id: string;
   created_at: string;
   updated_at: string;
-  contrato:
-    | { code: string }
-    | { code: string }[]
-    | null;
+  contrato: { code: string } | { code: string }[] | null;
   produtor:
     | { full_name: string | null }
     | { full_name: string | null }[]
@@ -93,6 +49,7 @@ function toListItem(r: Row, today: string): EntregaListItem {
     id: r.id,
     sequencia: r.sequencia,
     bag_count: r.bag_count,
+    peso_liquido_kg: r.peso_liquido_kg != null ? Number(r.peso_liquido_kg) : null,
     status: r.status,
     data_prevista: r.data_prevista,
     data_realizada: r.data_realizada,
@@ -123,7 +80,7 @@ export async function listEntregas(
   let q = supabase
     .from("entregas")
     .select(
-      `id, sequencia, bag_count, status, data_prevista, data_realizada,
+      `id, sequencia, bag_count, peso_liquido_kg, status, data_prevista, data_realizada,
        contrato_id, produtor_id, created_at, updated_at,
        contrato:contratos!entregas_contrato_id_fkey(code),
        produtor:profiles!entregas_produtor_id_fkey(full_name)`,
@@ -160,6 +117,38 @@ export async function countEntregasAtrasadas(
     .in("status", PENDENTE_STATUS)
     .lt("data_prevista", today);
   return count ?? 0;
+}
+
+export type EntregasKpis = {
+  programadas: number;
+  emTransito: number;
+  aConferir: number;
+  atrasadas: number;
+};
+
+export async function loadEntregasKpis(
+  corretoraId: string,
+): Promise<EntregasKpis> {
+  const supabase = await createClient();
+  const today = todayISO();
+  const baseCount = () =>
+    supabase
+      .from("entregas")
+      .select("*", { count: "exact", head: true })
+      .eq("corretora_id", corretoraId);
+
+  const [prog, trans, conf, atras] = await Promise.all([
+    baseCount().eq("status", "programada"),
+    baseCount().eq("status", "em_transito"),
+    baseCount().eq("status", "recebida"),
+    baseCount().in("status", PENDENTE_STATUS).lt("data_prevista", today),
+  ]);
+  return {
+    programadas: prog.count ?? 0,
+    emTransito: trans.count ?? 0,
+    aConferir: conf.count ?? 0,
+    atrasadas: atras.count ?? 0,
+  };
 }
 
 export type EntregaDetail = EntregaListItem & {
