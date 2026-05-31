@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { Bell } from "lucide-react";
 import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { createClient } from "@milsaca/db/web/server";
@@ -61,10 +60,7 @@ export default async function NotificacoesPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="flex items-center gap-2 text-h1 text-milsaca-cafezal">
-          <Bell className="h-7 w-7" />
-          Notificações
-        </h1>
+        <h1 className="text-h1 text-milsaca-cafezal">Notificações</h1>
         <p className="mt-1 text-body-sm text-neutral-600">
           Avisos sobre cotações, propostas, contratos, entregas e pagamentos.
         </p>

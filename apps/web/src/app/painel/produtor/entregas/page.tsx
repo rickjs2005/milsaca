@@ -61,10 +61,7 @@ export default async function MinhasEntregasPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="flex items-center gap-2 text-h1 text-milsaca-verde">
-          <Truck className="h-7 w-7" />
-          Minhas entregas
-        </h1>
+        <h1 className="text-h1 text-milsaca-cafezal">Minhas entregas</h1>
         <p className="mt-1 text-body-sm text-neutral-600">
           Acompanhe as entregas programadas e recebidas pelas corretoras.
         </p>
@@ -102,7 +99,7 @@ export default async function MinhasEntregasPage() {
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-mono text-caption text-milsaca-verde">
+                      <p className="font-mono text-caption text-dourado-texto">
                         {c?.code ?? "—"}
                       </p>
                       <span className="text-caption text-neutral-500">

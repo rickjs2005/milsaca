@@ -61,7 +61,7 @@ export default async function ContratosProdutorPage({
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-h1 text-milsaca-verde">Contratos</h1>
+        <h1 className="text-h1 text-milsaca-cafezal">Contratos</h1>
         <p className="mt-1 text-body-sm text-neutral-600">
           Operações fechadas com suas corretoras parceiras.
         </p>
@@ -136,12 +136,12 @@ export default async function ContratosProdutorPage({
                       <td className="px-5 py-3">
                         <Link
                           href={`/painel/produtor/contratos/${c.id}`}
-                          className="font-medium text-milsaca-verde hover:underline"
+                          className="font-medium text-milsaca-cafezal hover:underline"
                         >
                           {c.code}
                         </Link>
                       </td>
-                      <td className="px-5 py-3 text-milsaca-verde">
+                      <td className="px-5 py-3 text-milsaca-cafezal">
                         {c.corretora_nome}
                         {c.corretora_city && (
                           <span className="ml-1.5 inline-flex items-center gap-0.5 text-caption text-neutral-500">
@@ -158,7 +158,7 @@ export default async function ContratosProdutorPage({
                           ? c.bag_count.toLocaleString("pt-BR")
                           : "—"}
                       </td>
-                      <td className="px-5 py-3 text-right font-medium tabular-nums text-milsaca-verde">
+                      <td className="px-5 py-3 text-right font-medium tabular-nums text-milsaca-cafezal">
                         {c.total_value != null
                           ? formatBRL(c.total_value)
                           : "—"}

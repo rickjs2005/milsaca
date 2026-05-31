@@ -77,7 +77,7 @@ export default async function ContratoProdutorDetalhePage({
       <div>
         <Link
           href="/painel/produtor/contratos"
-          className="inline-flex items-center gap-1 text-body-sm text-neutral-600 hover:text-milsaca-verde"
+          className="inline-flex items-center gap-1 text-body-sm text-neutral-600 hover:text-milsaca-cafezal"
         >
           <ArrowLeft className="h-4 w-4" />
           Voltar para Contratos
@@ -86,7 +86,7 @@ export default async function ContratoProdutorDetalhePage({
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
-          <h1 className="text-h1 text-milsaca-verde">{contrato.code}</h1>
+          <h1 className="text-h1 text-milsaca-cafezal">{contrato.code}</h1>
           <div className="flex flex-wrap items-center gap-2 text-body-sm">
             <StatusBadge tone={CONTRATO_STATUS_TONE[contrato.status]}>
               {CONTRATO_STATUS_LABEL[contrato.status]}
@@ -132,7 +132,7 @@ export default async function ContratoProdutorDetalhePage({
                 <p className="text-caption uppercase tracking-wider text-neutral-500">
                   Café
                 </p>
-                <p className="font-medium text-milsaca-verde">
+                <p className="font-medium text-milsaca-cafezal">
                   {contrato.coffee_type ?? "—"}
                 </p>
               </div>
@@ -140,7 +140,7 @@ export default async function ContratoProdutorDetalhePage({
                 <p className="text-caption uppercase tracking-wider text-neutral-500">
                   Sacas (60kg)
                 </p>
-                <p className="font-medium tabular-nums text-milsaca-verde">
+                <p className="font-medium tabular-nums text-milsaca-cafezal">
                   {contrato.bag_count != null
                     ? contrato.bag_count.toLocaleString("pt-BR")
                     : "—"}
@@ -150,7 +150,7 @@ export default async function ContratoProdutorDetalhePage({
                 <p className="text-caption uppercase tracking-wider text-neutral-500">
                   Por saca
                 </p>
-                <p className="font-medium tabular-nums text-milsaca-verde">
+                <p className="font-medium tabular-nums text-milsaca-cafezal">
                   {pricePerBag != null ? formatBRL(pricePerBag) : "—"}
                 </p>
               </div>
@@ -161,7 +161,7 @@ export default async function ContratoProdutorDetalhePage({
                 <p className="text-caption uppercase tracking-wider text-neutral-500">
                   Valor total
                 </p>
-                <p className="text-h2 tabular-nums text-milsaca-verde">
+                <p className="text-h2 tabular-nums text-milsaca-cafezal">
                   {formatBRL(contrato.total_value)}
                 </p>
               </div>
@@ -169,13 +169,13 @@ export default async function ContratoProdutorDetalhePage({
 
             <div className="grid gap-2 text-caption text-neutral-600 sm:grid-cols-2">
               <div>
-                <span className="font-medium text-milsaca-verde">
+                <span className="font-medium text-milsaca-cafezal">
                   Aberto em
                 </span>
                 : {formatDateTime(contrato.created_at)}
               </div>
               <div>
-                <span className="font-medium text-milsaca-verde">
+                <span className="font-medium text-milsaca-cafezal">
                   Última atualização
                 </span>
                 : {formatDateTime(contrato.updated_at)}
@@ -207,7 +207,7 @@ export default async function ContratoProdutorDetalhePage({
             ) : (
               <p className="text-caption text-neutral-600">
                 Ainda não foi assinado. O status atual é{" "}
-                <span className="font-medium text-milsaca-verde">
+                <span className="font-medium text-milsaca-cafezal">
                   {CONTRATO_STATUS_LABEL[contrato.status]}
                 </span>
                 .

@@ -121,10 +121,7 @@ export default async function FinanceiroPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="flex items-center gap-2 text-h1 text-milsaca-verde">
-          <Wallet className="h-7 w-7" />
-          Financeiro
-        </h1>
+        <h1 className="text-h1 text-milsaca-cafezal">Financeiro</h1>
         <p className="mt-1 text-body-sm text-neutral-600">
           Repasses das corretoras pelos seus contratos.
         </p>
@@ -173,7 +170,7 @@ export default async function FinanceiroPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-mono text-caption text-milsaca-dourado-texto">
+                        <p className="font-mono text-caption text-dourado-texto">
                           {con?.code ?? "—"}
                         </p>
                         <span className="text-caption text-neutral-600">
@@ -255,7 +252,7 @@ function KpiCard({
       ? "text-danger-700"
       : tone === "success" && value > 0
         ? "text-success-700"
-        : "text-milsaca-verde";
+        : "text-milsaca-cafezal";
   return (
     <Card className={className}>
       <CardContent className="space-y-2 p-card">
@@ -290,7 +287,7 @@ function Money({
       <p
         className={
           strong
-            ? "text-body-sm font-semibold tabular-nums text-milsaca-verde"
+            ? "text-body-sm font-semibold tabular-nums text-milsaca-cafezal"
             : "text-body-sm tabular-nums text-neutral-600"
         }
       >
