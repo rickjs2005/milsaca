@@ -36,7 +36,7 @@ export async function listLotes(
     .select(
       `id, codigo, specie, processo, safra, peso_sacas, status, created_at, updated_at,
        produtor:profiles!lotes_produtor_id_fkey(id, full_name, phone, produtores(city, state, fazenda_nome)),
-       classificacoes_cob(id, tipo, fora_de_tipo, created_at, anulada)`,
+       classificacoes_cob(id, tipo, fora_de_tipo, peneira_dominante, created_at, anulada)`,
       { count: "exact" },
     )
     .eq("corretora_id", corretoraId)
@@ -85,6 +85,7 @@ export async function listLotes(
       id: string;
       tipo: string | null;
       fora_de_tipo: boolean;
+      peneira_dominante: string | null;
       created_at: string;
       anulada: boolean;
     }> | null;
@@ -121,6 +122,7 @@ export async function listLotes(
       ultimo_tipo: vigente?.tipo ?? null,
       ultimo_fora_de_tipo: vigente?.fora_de_tipo ?? false,
       ultimo_classificacao_id: vigente?.id ?? null,
+      ultimo_peneira: vigente?.peneira_dominante ?? null,
     };
   });
 

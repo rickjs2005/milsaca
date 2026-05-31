@@ -89,6 +89,7 @@ export type LoteRow = {
   ultimo_tipo: string | null;
   ultimo_fora_de_tipo: boolean;
   ultimo_classificacao_id: string | null;
+  ultimo_peneira: string | null;
 };
 
 export type ProdutorOption = {

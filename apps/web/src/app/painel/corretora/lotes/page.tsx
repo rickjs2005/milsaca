@@ -26,6 +26,9 @@ type SearchParams = Promise<{
   status?: string;
   specie?: string;
   safra?: string;
+  tipo?: string;
+  peneira?: string;
+  regiao?: string;
   page?: string;
 }>;
 
@@ -68,6 +71,11 @@ export default async function LotesPage({
   const status = isLoteStatus(sp.status) ? sp.status : undefined;
   const specie = isSpecie(sp.specie) ? sp.specie : undefined;
   const safra = typeof sp.safra === "string" && sp.safra ? sp.safra : undefined;
+  const tipo = typeof sp.tipo === "string" && sp.tipo ? sp.tipo : undefined;
+  const peneira =
+    typeof sp.peneira === "string" && sp.peneira ? sp.peneira : undefined;
+  const regiao =
+    typeof sp.regiao === "string" && sp.regiao ? sp.regiao : undefined;
   const page = Math.max(1, Number(sp.page) || 1);
 
   const [{ rows: lotes, count }, cotacoes, kpis, corretoraName] =
@@ -141,7 +149,7 @@ export default async function LotesPage({
         lotes={lotes}
         corretoraName={corretoraName}
         cotacoesBySpecie={cotacoesBySpecie}
-        current={{ status, specie, safra }}
+        current={{ status, specie, safra, tipo, peneira, regiao }}
         page={page}
         totalPages={totalPages}
       />
