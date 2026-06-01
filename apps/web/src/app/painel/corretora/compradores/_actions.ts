@@ -29,6 +29,29 @@ function regime(v: FormDataEntryValue | null): RegimeTributario | null {
     : null;
 }
 
+/**
+ * Monta o "Perfil de compra" (matching) a partir do form. Guardado no JSONB
+ * `compradores.preferencias` — sem schema novo. Ver `comprador-meta.PerfilCompra`.
+ */
+function buildPreferencias(formData: FormData): Record<string, unknown> {
+  const str = (k: string) => {
+    const t = String(formData.get(k) ?? "").trim();
+    return t || null;
+  };
+  const volRaw = String(formData.get("perfil_volume_sacas") ?? "").replace(
+    /\D+/g,
+    "",
+  );
+  const volume = volRaw ? Number(volRaw) : 0;
+  return {
+    cafe: str("perfil_cafe"),
+    peneira: str("perfil_peneira"),
+    processo: str("perfil_processo"),
+    volume_sacas: volume > 0 ? volume : null,
+    exige_eudr: formData.get("perfil_exige_eudr") != null,
+  };
+}
+
 async function ensureCorretora() {
   const profile = await getProfile();
   if (!profile?.corretora_id) {
@@ -60,6 +83,7 @@ export async function createComprador(formData: FormData) {
     corretora_id: profile.corretora_id,
     ...parsed.data,
     regime_tributario,
+    preferencias: buildPreferencias(formData),
   });
   if (error) {
     redirect(
@@ -88,7 +112,11 @@ export async function updateComprador(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("compradores")
-    .update({ ...parsed.data, regime_tributario })
+    .update({
+      ...parsed.data,
+      regime_tributario,
+      preferencias: buildPreferencias(formData),
+    })
     .eq("corretora_id", profile.corretora_id)
     .eq("id", id);
   if (error) {

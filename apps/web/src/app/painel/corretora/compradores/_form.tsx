@@ -3,6 +3,10 @@ import { Label } from "@/components/ui/label";
 import { MaskedInput } from "@/components/forms/masked-input";
 import { UfSelect } from "@/components/forms/uf-select";
 import { REGIME_LABEL, type CompradorDetail } from "./_lib/queries";
+import {
+  CAFE_PREF_LABEL,
+  PROCESSO_PREF_LABEL,
+} from "./_lib/comprador-meta";
 
 type Props = {
   defaults?: Partial<CompradorDetail>;
@@ -135,6 +139,86 @@ export function CompradorFormFields({ defaults = {} }: Props) {
             />
           </div>
         </div>
+      </div>
+
+      <div className="border-t border-milsaca-cream-escuro pt-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-milsaca-verde-claro">
+          Perfil de compra
+        </p>
+        <p className="mt-1 text-caption text-neutral-500">
+          O que este comprador procura — usado pra casar oferta com comprador
+          certo (Tipo, peneira, EUDR).
+        </p>
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="perfil_cafe">Café preferido</Label>
+          <select
+            id="perfil_cafe"
+            name="perfil_cafe"
+            defaultValue={defaults.perfil?.cafe ?? ""}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <option value="">—</option>
+            {Object.entries(CAFE_PREF_LABEL).map(([v, label]) => (
+              <option key={v} value={v}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="perfil_processo">Processo preferido</Label>
+          <select
+            id="perfil_processo"
+            name="perfil_processo"
+            defaultValue={defaults.perfil?.processo ?? ""}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <option value="">—</option>
+            {Object.entries(PROCESSO_PREF_LABEL).map(([v, label]) => (
+              <option key={v} value={v}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="perfil_peneira">Faixa de peneira</Label>
+          <Input
+            id="perfil_peneira"
+            name="perfil_peneira"
+            defaultValue={defaults.perfil?.peneira ?? ""}
+            placeholder="Ex: 16/17+"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="perfil_volume_sacas">Volume típico (sacas)</Label>
+          <Input
+            id="perfil_volume_sacas"
+            name="perfil_volume_sacas"
+            type="number"
+            min={0}
+            inputMode="numeric"
+            defaultValue={
+              defaults.perfil?.volume_sacas != null
+                ? String(defaults.perfil.volume_sacas)
+                : ""
+            }
+            placeholder="Ex: 500"
+          />
+        </div>
+        <label className="flex items-center gap-2 sm:col-span-2">
+          <input
+            type="checkbox"
+            name="perfil_exige_eudr"
+            defaultChecked={defaults.perfil?.exige_eudr ?? false}
+            className="h-4 w-4 rounded border-input text-milsaca-cafezal focus-visible:ring-2 focus-visible:ring-ring"
+          />
+          <span className="text-sm text-milsaca-verde">
+            Exige rastreabilidade EUDR (UE 2023/1115)
+          </span>
+        </label>
       </div>
 
       <div className="space-y-2">

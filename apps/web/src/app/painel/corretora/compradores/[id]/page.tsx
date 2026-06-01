@@ -8,6 +8,11 @@ import { getProfile } from "@/lib/auth";
 import { deadlineStatus } from "@/lib/deadline";
 import { getComprador, getCompradorHistorico } from "../_lib/queries";
 import {
+  CAFE_PREF_LABEL,
+  PROCESSO_PREF_LABEL,
+  temPerfil,
+} from "../_lib/comprador-meta";
+import {
   OFERTA_STATUS_LABEL,
   OFERTA_STATUS_TONE,
   type OfertaStatus,
@@ -221,6 +226,66 @@ export default async function CompradorDetalhePage({
         )}
       </section>
 
+      {/* Perfil de compra (matching oferta↔comprador) */}
+      <section className="space-y-2">
+        <h2 className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
+          Perfil de compra
+        </h2>
+        <Card>
+          <CardContent className="p-card">
+            {temPerfil(c.perfil) ? (
+              <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                <PerfilItem
+                  label="Café"
+                  value={
+                    c.perfil.cafe
+                      ? (CAFE_PREF_LABEL[c.perfil.cafe] ?? c.perfil.cafe)
+                      : "—"
+                  }
+                />
+                <PerfilItem label="Peneira" value={c.perfil.peneira ?? "—"} />
+                <PerfilItem
+                  label="Processo"
+                  value={
+                    c.perfil.processo
+                      ? (PROCESSO_PREF_LABEL[c.perfil.processo] ??
+                        c.perfil.processo)
+                      : "—"
+                  }
+                />
+                <PerfilItem
+                  label="Volume típico"
+                  value={
+                    c.perfil.volume_sacas != null
+                      ? `${NUM.format(c.perfil.volume_sacas)} sc`
+                      : "—"
+                  }
+                />
+                <div>
+                  <dt className="text-caption font-medium uppercase tracking-wider text-neutral-500">
+                    EUDR
+                  </dt>
+                  <dd className="mt-1">
+                    {c.perfil.exige_eudr ? (
+                      <StatusBadge tone="info">Exige</StatusBadge>
+                    ) : (
+                      <span className="text-body-sm text-neutral-600">
+                        Não exige
+                      </span>
+                    )}
+                  </dd>
+                </div>
+              </dl>
+            ) : (
+              <p className="text-caption text-neutral-500">
+                Nenhum perfil de compra definido ainda. Preencha nos dados
+                abaixo para casar ofertas com este comprador.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
       {/* Dados (edição) */}
       <Card>
         <CardHeader>
@@ -262,6 +327,17 @@ function MiniStat({
         </p>
       </CardContent>
     </Card>
+  );
+}
+
+function PerfilItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-caption font-medium uppercase tracking-wider text-neutral-500">
+        {label}
+      </dt>
+      <dd className="mt-1 text-body-sm text-milsaca-cafezal">{value}</dd>
+    </div>
   );
 }
 

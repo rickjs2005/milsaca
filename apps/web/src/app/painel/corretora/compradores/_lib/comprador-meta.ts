@@ -184,6 +184,84 @@ export function buildBuyerWhatsAppUrl({
 }
 
 // ---------------------------------------------------------------------------
+// Perfil de compra (matching oferta↔comprador)
+// ---------------------------------------------------------------------------
+
+/**
+ * O que o comprador procura. Guardado na coluna JSONB `compradores.preferencias`
+ * (que já existe, `not null default '{}'`) — SEM schema novo. Estruturado o
+ * suficiente pra, no futuro, cruzar com Lotes (Tipo/peneira/EUDR) e sugerir
+ * "lotes pra este comprador" / "compradores pra este lote".
+ */
+export type PerfilCompra = {
+  /** "" | "arabica" | "conillon" | "ambos" */
+  cafe: string | null;
+  /** Faixa de peneira em texto livre. Ex.: "16/17+", "acima de 17". */
+  peneira: string | null;
+  /** "" | "natural" | "cereja_descascado" | "lavado" | "fermentado" */
+  processo: string | null;
+  /** Volume típico de compra, em sacas. */
+  volume_sacas: number | null;
+  /** Exige rastreabilidade EUDR (UE 2023/1115). */
+  exige_eudr: boolean;
+};
+
+export const CAFE_PREF_LABEL: Record<string, string> = {
+  arabica: "Arábica",
+  conillon: "Conillón",
+  ambos: "Arábica e Conillón",
+};
+
+export const PROCESSO_PREF_LABEL: Record<string, string> = {
+  natural: "Natural",
+  cereja_descascado: "Cereja descascado (CD)",
+  lavado: "Lavado",
+  fermentado: "Fermentado",
+};
+
+export const PERFIL_VAZIO: PerfilCompra = {
+  cafe: null,
+  peneira: null,
+  processo: null,
+  volume_sacas: null,
+  exige_eudr: false,
+};
+
+/** Parse defensivo do JSONB `preferencias` para o tipo `PerfilCompra`. */
+export function parsePerfilCompra(raw: unknown): PerfilCompra {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return { ...PERFIL_VAZIO };
+  }
+  const o = raw as Record<string, unknown>;
+  const str = (v: unknown): string | null => {
+    const t = typeof v === "string" ? v.trim() : "";
+    return t ? t : null;
+  };
+  const num = (v: unknown): number | null => {
+    const n = typeof v === "number" ? v : Number(v);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  return {
+    cafe: str(o.cafe),
+    peneira: str(o.peneira),
+    processo: str(o.processo),
+    volume_sacas: num(o.volume_sacas),
+    exige_eudr: o.exige_eudr === true,
+  };
+}
+
+/** true se o perfil tem ao menos um campo preenchido (pra mostrar a seção). */
+export function temPerfil(p: PerfilCompra): boolean {
+  return (
+    p.cafe != null ||
+    p.peneira != null ||
+    p.processo != null ||
+    p.volume_sacas != null ||
+    p.exige_eudr
+  );
+}
+
+// ---------------------------------------------------------------------------
 // KPIs de carteira (derivados PUROS da lista já carregada)
 // ---------------------------------------------------------------------------
 

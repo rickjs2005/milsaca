@@ -1,7 +1,11 @@
 import { createClient } from "@milsaca/db/web/server";
 import type { Database } from "@milsaca/types/database";
 
-import type { CompradorListItem } from "./comprador-meta";
+import {
+  parsePerfilCompra,
+  type CompradorListItem,
+  type PerfilCompra,
+} from "./comprador-meta";
 
 // Re-export pra compat de quem importa o tipo a partir de queries.
 export type { CompradorListItem } from "./comprador-meta";
@@ -137,6 +141,8 @@ export type CompradorDetail = CompradorRow & {
   contact_email: string | null;
   contact_phone: string | null;
   observacoes: string | null;
+  /** Perfil de compra parseado do JSONB `preferencias`. */
+  perfil: PerfilCompra;
 };
 
 export async function getComprador(
@@ -149,12 +155,15 @@ export async function getComprador(
     .select(
       `id, name, trade_name, cnpj, inscricao_estadual, regime_tributario,
        contact_name, contact_email, contact_phone, city, state, tipo,
-       ativo, observacoes, created_at`,
+       ativo, observacoes, preferencias, created_at`,
     )
     .eq("corretora_id", corretoraId)
     .eq("id", id)
     .maybeSingle();
-  return (data as CompradorDetail | null) ?? null;
+  if (!data) return null;
+  type Raw = Omit<CompradorDetail, "perfil"> & { preferencias: unknown };
+  const row = data as Raw;
+  return { ...row, perfil: parsePerfilCompra(row.preferencias) };
 }
 
 // ---------------------------------------------------------------------------
