@@ -200,7 +200,7 @@ export async function getContrato(
     city: string | null;
     state: string | null;
   };
-  type ContratoDetailRow = Omit<ContratoRow, "produtor"> & {
+  type ContratoDetailRow = Omit<ContratoRow, "produtor" | "comprador"> & {
     lead: { notes: string | null } | { notes: string | null }[] | null;
     comprador_id: string | null;
     comissao_pct: number | string | null;

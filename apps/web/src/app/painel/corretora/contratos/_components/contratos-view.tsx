@@ -47,7 +47,7 @@ const SORT_LABEL: Record<SortKey, string> = {
 };
 
 function fmtDate(iso: string) {
-  const [y, m, d] = iso.slice(0, 10).split("-");
+  const [y = "", m = "", d = ""] = iso.slice(0, 10).split("-");
   return `${d}/${m}/${y.slice(2)}`;
 }
 
