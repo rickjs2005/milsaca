@@ -1366,6 +1366,9 @@ export type Database = {
         Row: {
           avatar_url: string | null
           corretora_id: string | null
+          corretora_role:
+            | Database["public"]["Enums"]["corretora_member_role"]
+            | null
           created_at: string
           deleted_at: string | null
           full_name: string | null
@@ -1379,6 +1382,9 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           corretora_id?: string | null
+          corretora_role?:
+            | Database["public"]["Enums"]["corretora_member_role"]
+            | null
           created_at?: string
           deleted_at?: string | null
           full_name?: string | null
@@ -1392,6 +1398,9 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           corretora_id?: string | null
+          corretora_role?:
+            | Database["public"]["Enums"]["corretora_member_role"]
+            | null
           created_at?: string
           deleted_at?: string | null
           full_name?: string | null
@@ -1669,6 +1678,9 @@ export type Database = {
       list_corretora_operadores: {
         Args: never
         Returns: {
+          corretora_role:
+            | Database["public"]["Enums"]["corretora_member_role"]
+            | null
           full_name: string
           id: string
           is_self: boolean
@@ -1676,6 +1688,7 @@ export type Database = {
           status: Database["public"]["Enums"]["profile_status"]
         }[]
       }
+      is_corretora_dono: { Args: never; Returns: boolean }
       list_convites_corretora_self: {
         Args: never
         Returns: {
@@ -1767,6 +1780,7 @@ export type Database = {
         | "despolpado"
         | "fermentacao_induzida"
       coffee_specie: "arabica" | "conillon"
+      corretora_member_role: "dono" | "operador"
       contrato_status:
         | "rascunho"
         | "em_analise"

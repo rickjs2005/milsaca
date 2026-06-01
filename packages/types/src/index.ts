@@ -2,12 +2,17 @@ export type UserRole = "produtor" | "corretora" | "admin";
 
 export type ProfileStatus = "ativo" | "pendente" | "bloqueado";
 
+/** Papel do membro DENTRO da corretora (não confundir com user_role). */
+export type CorretoraMemberRole = "dono" | "operador";
+
 export interface Profile {
   id: string;
   role: UserRole;
   roles: UserRole[];
   status: ProfileStatus;
   corretora_id: string | null;
+  /** dono = acesso total; operador = sem Pagamentos/Equipe/Assinatura. null se não é membro de corretora. */
+  corretora_role: CorretoraMemberRole | null;
   full_name: string | null;
   phone: string | null;
   avatar_url: string | null;

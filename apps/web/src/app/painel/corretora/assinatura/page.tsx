@@ -17,7 +17,10 @@ import {
 } from "@/components/ui/card";
 import { getProfile } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
-import { getCorretoraSubscriptionInfo } from "../_lib/corretora";
+import {
+  getCorretoraSubscriptionInfo,
+  requireCorretoraDono,
+} from "../_lib/corretora";
 import {
   detectCurrentTier,
   loadPlans,
@@ -70,6 +73,7 @@ export default async function AssinaturaPage() {
   if (!profile?.corretora_id) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
   }
+  requireCorretoraDono(profile);
 
   const [subscription, corretoraName, plans] = await Promise.all([
     getCorretoraSubscriptionInfo(profile.corretora_id),

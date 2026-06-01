@@ -15,10 +15,18 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { getProfile } from "@/lib/auth";
+import { isCorretoraDono } from "../_lib/corretora";
 
 export const metadata = { title: "Mais — Painel da corretora" };
 
-type Item = { href: string; label: string; icon: LucideIcon };
+type Item = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  /** Só o dono vê (Pagamentos, Assinatura, Equipe). */
+  ownerOnly?: boolean;
+};
 type Group = { title: string; items: Item[] };
 
 // Tudo que não cabe nas 4 abas principais do mobile. Espelha a sidebar do
@@ -38,7 +46,12 @@ const GROUPS: Group[] = [
         icon: Store,
       },
       { href: "/painel/corretora/entregas", label: "Entregas", icon: Truck },
-      { href: "/painel/corretora/pagamentos", label: "Pagamentos", icon: Wallet },
+      {
+        href: "/painel/corretora/pagamentos",
+        label: "Pagamentos",
+        icon: Wallet,
+        ownerOnly: true,
+      },
     ],
   },
   {
@@ -70,14 +83,27 @@ const GROUPS: Group[] = [
         href: "/painel/corretora/assinatura",
         label: "Assinatura",
         icon: Sparkles,
+        ownerOnly: true,
       },
-      { href: "/painel/corretora/equipe", label: "Equipe", icon: Users },
+      {
+        href: "/painel/corretora/equipe",
+        label: "Equipe",
+        icon: Users,
+        ownerOnly: true,
+      },
       { href: "/painel/corretora/perfil", label: "Perfil", icon: User },
     ],
   },
 ];
 
-export default function MaisPage() {
+export default async function MaisPage() {
+  const profile = await getProfile();
+  const isDono = isCorretoraDono(profile);
+  const groups = GROUPS.map((g) => ({
+    ...g,
+    items: g.items.filter((it) => !it.ownerOnly || isDono),
+  })).filter((g) => g.items.length > 0);
+
   return (
     <div className="space-y-6">
       <header>
@@ -87,7 +113,7 @@ export default function MaisPage() {
         </p>
       </header>
 
-      {GROUPS.map((group) => (
+      {groups.map((group) => (
         <section key={group.title} className="space-y-2">
           <h2 className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
             {group.title}

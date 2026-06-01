@@ -25,6 +25,12 @@ import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import { InviteLinkCard } from "@/app/admin/(panel)/corretoras/_components/invite-link-card";
 import {
+  getCorretoraSubscriptionInfo,
+  requireCorretoraDono,
+} from "../_lib/corretora";
+import { isProOrAbove } from "../_lib/plan-gate";
+import { LockedHint } from "../_components/locked-hint";
+import {
   gerarConviteEquipe,
   revogarConviteEquipe,
   removerOperador,
@@ -58,24 +64,33 @@ export default async function EquipePage({
   if (!profile?.corretora_id) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
   }
+  // Só o dono gerencia a equipe.
+  requireCorretoraDono(profile);
 
   const sp = await searchParams;
   const supabase = await createClient();
 
-  const [{ data: operadores }, { data: convites }, { data: corretora }] =
-    await Promise.all([
-      supabase.rpc("list_corretora_operadores"),
-      supabase.rpc("list_convites_corretora_self"),
-      supabase
-        .from("corretoras")
-        .select("name")
-        .eq("id", profile.corretora_id)
-        .maybeSingle(),
-    ]);
+  const [
+    { data: operadores },
+    { data: convites },
+    { data: corretora },
+    subscription,
+  ] = await Promise.all([
+    supabase.rpc("list_corretora_operadores"),
+    supabase.rpc("list_convites_corretora_self"),
+    supabase
+      .from("corretoras")
+      .select("name")
+      .eq("id", profile.corretora_id)
+      .maybeSingle(),
+    getCorretoraSubscriptionInfo(profile.corretora_id),
+  ]);
 
   const corretoraName = corretora?.name ?? "Sua corretora";
   const team: Operador[] = operadores ?? [];
   const invitesAtivos: ConviteEquipe[] = convites ?? [];
+  // Gate por plano: Gratuito = só o dono; convidar operadores é do Premium.
+  const podeConvidar = isProOrAbove(subscription);
 
   // URL absoluta do convite recém-gerado (?invite_token=X), reusando o
   // fluxo público /convite/[token].
@@ -98,8 +113,10 @@ export default async function EquipePage({
             Equipe
           </h1>
           <p className="text-sm text-milsaca-verde-claro">
-            Convide operadores pra trabalhar na {corretoraName}. Todos têm o
-            mesmo acesso ao painel.
+            Convide operadores pra trabalhar na {corretoraName}. Você é o{" "}
+            <strong>dono</strong> (acesso total); o <strong>operador</strong>{" "}
+            cuida da operação comercial, mas não acessa Pagamentos, Equipe nem
+            Assinatura.
           </p>
         </div>
       </header>
@@ -122,37 +139,45 @@ export default async function EquipePage({
       )}
 
       {/* Convidar operador */}
-      <Card className="border-milsaca-cream-escuro">
-        <CardHeader>
-          <CardTitle className="text-base">Convidar operador</CardTitle>
-          <CardDescription>
-            Gere um link de convite. O operador cria a conta com OTP e já entra
-            vinculado à corretora. O email é opcional — serve só pra registro.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            action={gerarConviteEquipe}
-            className="flex flex-col gap-3 sm:flex-row sm:items-end"
-          >
-            <div className="flex-1 space-y-2">
-              <Label htmlFor="email">Email do operador (opcional)</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="operador@email.com"
-              />
-            </div>
-            <SubmitButton
-              pendingLabel="Gerando..."
-              className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+      {podeConvidar ? (
+        <Card className="border-milsaca-cream-escuro">
+          <CardHeader>
+            <CardTitle className="text-base">Convidar operador</CardTitle>
+            <CardDescription>
+              Gere um link de convite. O operador cria a conta com OTP e já
+              entra vinculado à corretora (como <strong>operador</strong>). O
+              email é opcional — serve só pra registro.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              action={gerarConviteEquipe}
+              className="flex flex-col gap-3 sm:flex-row sm:items-end"
             >
-              Gerar link de convite
-            </SubmitButton>
-          </form>
-        </CardContent>
-      </Card>
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="email">Email do operador (opcional)</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="operador@email.com"
+                />
+              </div>
+              <SubmitButton
+                pendingLabel="Gerando..."
+                className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+              >
+                Gerar link de convite
+              </SubmitButton>
+            </form>
+          </CardContent>
+        </Card>
+      ) : (
+        <LockedHint
+          feature="Convidar operadores"
+          description="No plano Gratuito só o dono acessa o painel. Ative o Premium para montar sua equipe com operadores ilimitados."
+        />
+      )}
 
       {/* Convites pendentes */}
       {invitesAtivos.length > 0 && (
@@ -241,7 +266,16 @@ export default async function EquipePage({
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Badge
+                    className={
+                      op.corretora_role === "dono"
+                        ? "bg-milsaca-dourado/20 text-milsaca-cafezal hover:bg-milsaca-dourado/20"
+                        : "bg-milsaca-cream-escuro text-milsaca-verde hover:bg-milsaca-cream-escuro"
+                    }
+                  >
+                    {op.corretora_role === "dono" ? "Dono" : "Operador"}
+                  </Badge>
                   <Badge
                     className={
                       op.status === "ativo"

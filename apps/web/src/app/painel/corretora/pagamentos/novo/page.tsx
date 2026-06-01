@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/submit-button";
 import { getProfile } from "@/lib/auth";
+import { requireCorretoraDono } from "../../_lib/corretora";
 import { listContratosParaPagamento } from "../_lib/queries";
 import { createPagamento } from "../_actions";
 
@@ -26,6 +27,7 @@ export default async function NovoPagamentoPage() {
   if (!profile?.corretora_id) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
   }
+  requireCorretoraDono(profile);
   const contratos = await listContratosParaPagamento(profile.corretora_id);
 
   return (

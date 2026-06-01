@@ -9,6 +9,7 @@ import { SubscriptionBanner } from "./_components/subscription-banner";
 import {
   getCorretoraOnboarding,
   getCorretoraSubscriptionInfo,
+  isCorretoraDono,
   needsCorretoraOnboarding,
 } from "./_lib/corretora";
 import { loadSidebarBadges } from "./_lib/dashboard";
@@ -80,6 +81,7 @@ export default async function PainelCorretoraLayout({
             corretoraLabel={corretoraLabel}
             showSwitcher={showSwitcher}
             badges={badges}
+            isDono={isCorretoraDono(profile)}
           />
         }
       >

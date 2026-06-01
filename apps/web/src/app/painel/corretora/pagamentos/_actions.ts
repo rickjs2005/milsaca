@@ -6,7 +6,12 @@ import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { uuidSchema } from "../_lib/schemas";
-import { requireActiveSubscription } from "../_lib/corretora";
+import { isCorretoraDono, requireActiveSubscription } from "../_lib/corretora";
+
+const PAGAMENTOS = "/painel/corretora/pagamentos";
+const SO_DONO = encodeURIComponent(
+  "Só o dono da corretora pode registrar e confirmar pagamentos.",
+);
 
 function parseBRL(v: FormDataEntryValue | null): number | null {
   if (v == null) return null;
@@ -31,6 +36,9 @@ export async function createPagamento(formData: FormData) {
   const profile = await getProfile();
   if (!profile?.corretora_id) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
+  }
+  if (!isCorretoraDono(profile)) {
+    redirect(`${PAGAMENTOS}/novo?error=${SO_DONO}`);
   }
   await requireActiveSubscription(
     profile.corretora_id,
@@ -110,6 +118,9 @@ export async function marcarPago(formData: FormData) {
   const profile = await getProfile();
   if (!profile?.corretora_id) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
+  }
+  if (!isCorretoraDono(profile)) {
+    redirect(`${PAGAMENTOS}?error=${SO_DONO}`);
   }
 
   const idParsed = uuidSchema.safeParse(String(formData.get("id") ?? "").trim());
@@ -196,6 +207,9 @@ export async function cancelarPagamento(formData: FormData) {
   const profile = await getProfile();
   if (!profile?.corretora_id) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
+  }
+  if (!isCorretoraDono(profile)) {
+    redirect(`${PAGAMENTOS}?error=${SO_DONO}`);
   }
 
   const idParsed = uuidSchema.safeParse(String(formData.get("id") ?? "").trim());

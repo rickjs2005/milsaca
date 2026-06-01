@@ -34,6 +34,8 @@ type NavItem = {
   badgeKey?: keyof SidebarBadges;
   /** Tom do badge quando > 0. */
   badgeTone?: "primary" | "warn";
+  /** Só o dono vê (Pagamentos, Assinatura, Equipe). Operador não. */
+  ownerOnly?: boolean;
 };
 
 type NavGroup = {
@@ -86,6 +88,7 @@ const NAV_GROUPS: NavGroup[] = [
         href: "/painel/corretora/pagamentos",
         label: "Pagamentos",
         icon: Wallet,
+        ownerOnly: true,
       },
     ],
   },
@@ -126,8 +129,14 @@ const NAV_GROUPS: NavGroup[] = [
         href: "/painel/corretora/assinatura",
         label: "Assinatura",
         icon: Sparkles,
+        ownerOnly: true,
       },
-      { href: "/painel/corretora/equipe", label: "Equipe", icon: Users },
+      {
+        href: "/painel/corretora/equipe",
+        label: "Equipe",
+        icon: Users,
+        ownerOnly: true,
+      },
       { href: "/painel/corretora/perfil", label: "Perfil", icon: User },
     ],
   },
@@ -145,12 +154,15 @@ export function CorretoraSidebar({
   corretoraLabel,
   showSwitcher,
   badges,
+  isDono = true,
 }: {
   operatorName: string;
   operatorEmail: string;
   corretoraLabel: string | null;
   showSwitcher: boolean;
   badges?: SidebarBadges;
+  /** Dono vê tudo; operador não vê Pagamentos/Assinatura/Equipe. */
+  isDono?: boolean;
 }) {
   const pathname = usePathname();
   const b = badges ?? EMPTY_BADGES;
@@ -179,12 +191,15 @@ export function CorretoraSidebar({
 
       {/* Nav agrupada */}
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-3">
-        {NAV_GROUPS.map((group) => (
+        {NAV_GROUPS.map((group) => {
+          const items = group.items.filter((it) => !it.ownerOnly || isDono);
+          if (items.length === 0) return null;
+          return (
           <div key={group.title} className="space-y-1">
             <p className="px-3 pb-1 text-caption font-semibold uppercase tracking-[0.16em] text-milsaca-cream/45">
               {group.title}
             </p>
-            {group.items.map((item) => {
+            {items.map((item) => {
               const active = item.exact
                 ? pathname === item.href
                 : pathname === item.href ||
@@ -236,7 +251,8 @@ export function CorretoraSidebar({
               );
             })}
           </div>
-        ))}
+          );
+        })}
       </nav>
 
       {/* Footer com operador */}
@@ -249,7 +265,7 @@ export function CorretoraSidebar({
             {corretoraLabel ?? "Corretora não vinculada"}
           </p>
           <p className="mt-1 text-caption uppercase tracking-wider text-milsaca-cream/45">
-            Operador
+            {isDono ? "Dono" : "Operador"}
           </p>
           <p
             className="truncate text-caption text-milsaca-cream/55"

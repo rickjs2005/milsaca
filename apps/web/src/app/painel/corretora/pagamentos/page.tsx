@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/empty-state";
 import { KpiCard } from "@/components/kpi-card";
 import { getProfile } from "@/lib/auth";
+import { requireCorretoraDono } from "../_lib/corretora";
 import {
   listPagamentos,
   loadPagamentosKpis,
@@ -39,6 +40,7 @@ export default async function PagamentosPage({
   if (!profile?.corretora_id) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
   }
+  requireCorretoraDono(profile);
   const sp = await searchParams;
   const status = isStatus(sp.status) ? sp.status : undefined;
   const page = Math.max(1, Number(sp.page) || 1);
