@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { requireAppAdmin } from "@/lib/auth";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import { friendlyPostgresError } from "../_lib/errors";
 import {
   flattenZodErrors,
@@ -47,18 +49,35 @@ export async function updateSubscription(formData: FormData) {
     .eq("id", id);
 
   if (error) {
+    const log = await getReqLogger({
+      action: "updateSubscription",
+      userId: actor.id,
+      entityId: id,
+    });
+    log.error("subscription_update_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     redirect(
       `/admin/assinaturas/${id}?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditErr } = await supabase.from("audit_log").insert({
     actor_id: actor.id,
     action: "update_subscription",
     entity: "subscription",
     entity_id: id,
     payload: { status, plan_id },
   });
+  if (auditErr) {
+    const log = await getReqLogger({
+      action: "updateSubscription",
+      userId: actor.id,
+      entityId: id,
+    });
+    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+  }
 
   revalidatePath("/admin/assinaturas");
   revalidatePath(`/admin/assinaturas/${id}`);
@@ -86,6 +105,15 @@ export async function markSubscriptionPaid(formData: FormData) {
   });
 
   if (error) {
+    const log = await getReqLogger({
+      action: "markSubscriptionPaid",
+      userId: actor.id,
+      entityId: id,
+    });
+    log.error("subscription_paid_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     redirect(
       `/admin/assinaturas/${id}?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
@@ -93,13 +121,21 @@ export async function markSubscriptionPaid(formData: FormData) {
 
   const newEnd = typeof data === "string" ? data : null;
 
-  await supabase.from("audit_log").insert({
+  const { error: auditErr } = await supabase.from("audit_log").insert({
     actor_id: actor.id,
     action: "subscription_paid",
     entity: "subscription",
     entity_id: id,
     payload: { new_period_end: newEnd },
   });
+  if (auditErr) {
+    const log = await getReqLogger({
+      action: "markSubscriptionPaid",
+      userId: actor.id,
+      entityId: id,
+    });
+    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+  }
 
   revalidatePath("/admin/assinaturas");
   revalidatePath(`/admin/assinaturas/${id}`);
@@ -117,21 +153,40 @@ export async function cancelSubscription(formData: FormData) {
   const { id } = parsed.data;
 
   const supabase = await createClient();
-  await supabase
+  const { error } = await supabase
     .from("subscriptions")
     .update({
       status: "canceled",
       canceled_at: new Date().toISOString(),
     })
     .eq("id", id);
+  if (error) {
+    const log = await getReqLogger({
+      action: "cancelSubscription",
+      userId: actor.id,
+      entityId: id,
+    });
+    log.error("subscription_cancel_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
+  }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditErr } = await supabase.from("audit_log").insert({
     actor_id: actor.id,
     action: "subscription_canceled",
     entity: "subscription",
     entity_id: id,
     payload: {},
   });
+  if (auditErr) {
+    const log = await getReqLogger({
+      action: "cancelSubscription",
+      userId: actor.id,
+      entityId: id,
+    });
+    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+  }
 
   revalidatePath("/admin/assinaturas");
   revalidatePath(`/admin/assinaturas/${id}`);

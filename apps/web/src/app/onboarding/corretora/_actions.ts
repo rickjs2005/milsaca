@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile, requireUser } from "@/lib/auth";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import {
   citySchema,
   cnpjSchema,
@@ -69,12 +71,19 @@ export async function completarOnboardingCorretora(formData: FormData) {
   const telefone_fixo = fixoParsed.data;
 
   const supabase = await createClient();
+  const log = await getReqLogger({
+    action: "completarOnboardingCorretora",
+    corretoraId: profile.corretora_id,
+  });
 
   const { error: pErr } = await supabase
     .from("profiles")
     .update({ full_name, phone })
     .eq("id", user.id);
-  if (pErr) redirectError(pErr.message);
+  if (pErr) {
+    log.error("profile_update_falhou", { err: safeError(pErr), code: pErr.code });
+    redirectError(pErr.message);
+  }
 
   const { error: cErr } = await supabase
     .from("corretoras")
@@ -91,7 +100,10 @@ export async function completarOnboardingCorretora(formData: FormData) {
       site_url,
     })
     .eq("id", profile.corretora_id);
-  if (cErr) redirectError(cErr.message);
+  if (cErr) {
+    log.error("corretora_update_falhou", { err: safeError(cErr), code: cErr.code });
+    redirectError(cErr.message);
+  }
 
   revalidatePath("/painel/corretora");
   revalidatePath("/admin/corretoras");

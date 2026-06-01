@@ -23,6 +23,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // @ts-expect-error — Deno runtime
 import * as Sentry from "https://esm.sh/@sentry/deno@8.45.1";
+import { log, safeError } from "../_shared/log.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -61,6 +62,14 @@ type Template = {
 function renderTemplate(body: string, vars: Record<string, unknown>): string {
   return body.replace(/\{\{(\w+)\}\}/g, (_, k) => String(vars[k] ?? `{{${k}}}`));
 }
+
+// Erros ESPERADOS enquanto não há provider contratado. Allowlist explícita
+// (não `endsWith("_not_implemented")`) pra NÃO engolir erros reais futuros —
+// quando os providers forem implementados, qualquer erro novo vai pro Sentry.
+const EXPECTED_ERRORS = new Set([
+  "whatsapp_provider_not_implemented",
+  "email_provider_not_implemented",
+]);
 
 // -----------------------------------------------------------------
 // Providers — placeholders. Substituir por implementação real.
@@ -127,6 +136,10 @@ Deno.serve(async (req: Request) => {
     .maybeSingle<Dispatch>();
 
   if (dErr || !dispatch) {
+    log.warn("dispatch_not_found", {
+      dispatchId,
+      ...(dErr ? { err: safeError(dErr) } : {}),
+    });
     return new Response("dispatch_not_found", { status: 404 });
   }
   if (dispatch.status !== "pending") {
@@ -144,6 +157,10 @@ Deno.serve(async (req: Request) => {
   }
 
   if (!template) {
+    log.warn("template_not_found", {
+      dispatchId,
+      templateId: dispatch.template_id,
+    });
     await supabase
       .from("message_dispatches")
       .update({ status: "failed", error: "template_not_found" })
@@ -179,10 +196,24 @@ Deno.serve(async (req: Request) => {
     );
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    // Não polui o Sentry com os placeholders "_not_implemented" esperados
-    // enquanto não há provider contratado; só erros reais de envio.
-    if (SENTRY_DSN && !msg.endsWith("_not_implemented")) {
-      Sentry.captureException(e, { tags: { dispatch_id: dispatchId } });
+    const expected = EXPECTED_ERRORS.has(msg);
+    // Placeholders esperados (sem provider contratado) viram warn; qualquer
+    // erro fora da allowlist é falha real de envio → error + Sentry.
+    if (expected) {
+      log.warn("dispatch_provider_pendente", {
+        dispatchId,
+        channel: dispatch.channel,
+        reason: msg,
+      });
+    } else {
+      log.error("dispatch_send_falhou", {
+        dispatchId,
+        channel: dispatch.channel,
+        err: safeError(e),
+      });
+      if (SENTRY_DSN) {
+        Sentry.captureException(e, { tags: { dispatch_id: dispatchId } });
+      }
     }
     await supabase
       .from("message_dispatches")

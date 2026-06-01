@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@milsaca/db/web/server";
 import { defaultRouteFor } from "@/lib/auth";
+import { logger, safeError } from "@/lib/logger";
+import { tagSentryReqId } from "@/lib/req-logger";
 import type { Profile } from "@milsaca/types";
 
 /**
@@ -9,6 +11,9 @@ import type { Profile } from "@milsaca/types";
  * Usado, por exemplo, em recuperação de senha ou confirmação de email.
  */
 export async function GET(request: NextRequest) {
+  const reqId = request.headers.get("x-request-id") ?? undefined;
+  tagSentryReqId(reqId);
+  const log = logger.child({ reqId });
   const { searchParams, origin } = new URL(request.url);
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
@@ -26,9 +31,7 @@ export async function GET(request: NextRequest) {
     // Mensagem genérica fixa: não ecoar error.message cru do Supabase na
     // query string (evita enumeração/diagnóstico). Padrão de
     // confirmar-email/_actions.ts.
-    if (process.env.NODE_ENV !== "production") {
-      console.error("[auth/confirm] verifyOtp error:", error);
-    }
+    log.error("auth_verify_otp_falhou", { type, err: safeError(error) });
     return NextResponse.redirect(
       `${origin}/entrar?error=${encodeURIComponent("Link inválido ou expirado. Peça um novo.")}`,
     );

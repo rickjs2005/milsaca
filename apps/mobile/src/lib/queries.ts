@@ -9,6 +9,7 @@ import type {
 } from "@milsaca/types";
 
 import { supabase } from "./supabase";
+import { logger, safeError } from "./logger";
 
 // ----------------------------------------------------------------- //
 // COTAÇÕES
@@ -933,8 +934,13 @@ export async function listMinhasPropostas(
   });
 
   if (error) {
-    console.warn("listMinhasPropostas:", error.message);
-    return [];
+    // ANTES: `console.warn` + `return []` engolia o erro de leitura e o produtor
+    // via "Nenhuma proposta" — mascarava falha de RPC/RLS como lista vazia.
+    // AGORA: loga como ERROR (não warn) e RELANÇA. Quem chama esta query é o
+    // `useList` da tela negociacoes, que captura no try/catch e expõe via
+    // `error` (renderizado como banner) — sem nunca mentir "vazio".
+    logger.error("listar_propostas_falhou", { err: safeError(error) });
+    throw error;
   }
 
   // produtorId mantido na assinatura por compat; a RPC já filtra por

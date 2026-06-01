@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getUser } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import {
   flattenZodErrors,
   formDataToObject,
@@ -30,6 +32,14 @@ export async function updatePerfilCorretora(formData: FormData) {
     .eq("id", user.id);
 
   if (error) {
+    const log = await getReqLogger({
+      action: "updatePerfilCorretora",
+      userId: user.id,
+    });
+    log.error("perfil_update_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     redirect(
       `/painel/corretora/perfil?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );

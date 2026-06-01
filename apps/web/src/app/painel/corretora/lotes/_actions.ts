@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import { requireActiveSubscription } from "../_lib/corretora";
 import {
   createLoteSchema,
@@ -48,6 +50,14 @@ export async function createLote(formData: FormData) {
     .single();
 
   if (error) {
+    const log = await getReqLogger({
+      action: "createLote",
+      corretoraId: profile.corretora_id,
+    });
+    log.error("lote_insert_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     const params = new URLSearchParams({
       error: friendlyPostgresError(error),
     });
@@ -84,6 +94,16 @@ export async function updateLoteStatus(formData: FormData) {
     .eq("corretora_id", profile.corretora_id);
 
   if (error) {
+    const log = await getReqLogger({
+      action: "updateLoteStatus",
+      corretoraId: profile.corretora_id,
+      loteId: id,
+    });
+    log.error("lote_status_update_falhou", {
+      to: next,
+      code: error.code,
+      err: safeError(error),
+    });
     const params = new URLSearchParams({
       error: friendlyPostgresError(error),
     });

@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { defaultRouteFor, isAppAdmin } from "@/lib/auth";
 import { checkRateLimit, identityKey } from "@/lib/rate-limit";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import type { Profile } from "@milsaca/types";
 
 /**
@@ -48,9 +50,8 @@ export async function confirmEmail(formData: FormData) {
   });
 
   if (error) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("[confirmar-email] verifyOtp error:", error);
-    }
+    const log = await getReqLogger({ action: "confirmEmail", isCorretora });
+    log.warn("confirm_email_verify_otp_falhou", { err: safeError(error) });
     redirect(
       `/confirmar-email?email=${encodeURIComponent(email)}&error=${encodeURIComponent("Código incorreto ou expirado.")}${isCorretora ? "&corretora=1" : ""}`,
     );
@@ -111,9 +112,8 @@ export async function resendConfirmation(formData: FormData) {
   });
 
   if (error) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("[confirmar-email] resend error:", error);
-    }
+    const log = await getReqLogger({ action: "resendConfirmation", isCorretora });
+    log.warn("confirm_email_resend_falhou", { err: safeError(error) });
     // Anti-enumeration: mensagem genérica mesmo em erro
     redirect(qs("Se a conta existir, um novo código foi enviado.", "ok"));
   }

@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import { uuidSchema } from "../_lib/schemas";
 import { isCorretoraDono, requireActiveSubscription } from "../_lib/corretora";
 
@@ -94,6 +96,15 @@ export async function createPagamento(formData: FormData) {
   });
 
   if (error) {
+    const log = await getReqLogger({
+      action: "createPagamento",
+      corretoraId: profile.corretora_id,
+      contratoId: contrato.id,
+    });
+    log.error("pagamento_insert_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     // 23505 = violação do índice unique parcial produtor_pagamentos_contrato_unico:
     // já existe um pagamento não-cancelado para este contrato (achado 6.1).
     if (error.code === "23505") {
@@ -162,6 +173,12 @@ export async function marcarPago(formData: FormData) {
       .upload(path, arquivo, { upsert: true, contentType: arquivo.type });
 
     if (uploadError) {
+      const log = await getReqLogger({
+        action: "marcarPago",
+        corretoraId: profile.corretora_id,
+        pagamentoId,
+      });
+      log.error("comprovante_upload_falhou", { err: safeError(uploadError) });
       redirect(
         `/painel/corretora/pagamentos?error=${encodeURIComponent("Não foi possível enviar o comprovante. Tente novamente.")}`,
       );
@@ -188,6 +205,15 @@ export async function marcarPago(formData: FormData) {
     .eq("corretora_id", profile.corretora_id);
 
   if (error) {
+    const log = await getReqLogger({
+      action: "marcarPago",
+      corretoraId: profile.corretora_id,
+      pagamentoId,
+    });
+    log.error("pagamento_marcar_pago_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     redirect(
       `/painel/corretora/pagamentos?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
@@ -216,11 +242,26 @@ export async function cancelarPagamento(formData: FormData) {
   if (!idParsed.success) redirect("/painel/corretora/pagamentos");
 
   const supabase = await createClient();
-  await supabase
+  const { error } = await supabase
     .from("produtor_pagamentos")
     .update({ status: "cancelado" })
     .eq("id", idParsed.data)
     .eq("corretora_id", profile.corretora_id);
+
+  if (error) {
+    const log = await getReqLogger({
+      action: "cancelarPagamento",
+      corretoraId: profile.corretora_id,
+      pagamentoId: idParsed.data,
+    });
+    log.error("pagamento_cancelar_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
+    redirect(
+      `/painel/corretora/pagamentos?error=${encodeURIComponent(friendlyPostgresError(error))}`,
+    );
+  }
 
   revalidateAffected();
   redirect(

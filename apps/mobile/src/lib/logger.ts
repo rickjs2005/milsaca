@@ -1,21 +1,26 @@
-// Logger estruturado (JSON em uma linha) pro web.
+// Logger estruturado mínimo pro mobile (React Native / Expo).
 //
-// Objetivo: logs parseáveis pela Vercel/observabilidade com correlação por
-// `reqId` (ver middleware → header `x-request-id`) e SEM PII (email, CPF/CNPJ,
-// telefone, nome, token, senha) — nem em chaves, nem aninhada, nem na `msg`.
+// Espelha o conceito do logger do web (`apps/web/src/lib/logger.ts`):
+// logs em JSON de uma linha, SEM PII (email, CPF/CNPJ, telefone, nome,
+// token, senha, sessão) — nem em chaves, nem aninhada, nem na `msg`.
+// A checagem de chave sensível é por TOKEN (camelCase/snake_case são
+// quebrados em palavras), não por substring, pra não dar falso-positivo.
 //
-// Este arquivo é runtime-agnóstico (Node, Edge e browser) — NÃO importa nada
-// server-only. Pra obter um logger já com `reqId` numa Server Action / Route
-// Handler, use `getReqLogger()` de `@/lib/req-logger` (que lê `headers()`).
+// SINK DE PRODUÇÃO — FOLLOW-UP:
+//   Em `__DEV__` este logger emite no `console.*` (JSON em uma linha) pra
+//   ficar visível no Metro/Flipper. Em release ele NÃO emite no console
+//   (ruído e risco de PII em logs de device). O sink de produção pretendido
+//   é o Sentry React Native (`@sentry/react-native`), que NÃO foi instalado
+//   aqui porque exige config nativa/EAS impossível de verificar neste
+//   ambiente. Quando o Sentry RN entrar, plugar a emissão de release em
+//   `emit()` (ex.: `Sentry.captureMessage` / `Sentry.captureException`
+//   reaproveitando `safeError`). Até lá, release = silencioso no console.
 //
 // Uso:
-//   import { logger } from "@/lib/logger";
-//   logger.info("contrato_assinado", { reqId, contratoId, corretoraId });
-//   logger.error("rpc_falhou", { reqId, rpc: "approve_corretora", err: safeError(e) });
-//   const log = logger.child({ reqId, action: "createPagamento" });
-//   log.error("pagamento_insert_falhou", { corretoraId, code });
+//   import { logger, safeError } from "@/lib/logger";  // ou caminho relativo
+//   logger.error("responder_proposta_falhou", { propostaId, err: safeError(e) });
 
-type LogLevel = "debug" | "info" | "warn" | "error" | "fatal";
+type LogLevel = "debug" | "info" | "warn" | "error";
 
 type LogFields = Record<string, unknown>;
 
@@ -30,32 +35,24 @@ interface Logger {
   info(msg: string, fields?: LogFields): void;
   warn(msg: string, fields?: LogFields): void;
   error(msg: string, fields?: LogFields): void;
-  /** Erro irrecuperável (boot, integridade transacional). Vai pro stream de erro;
-   *  o caller normalmente também deve `Sentry.captureException`. */
-  fatal(msg: string, fields?: LogFields): void;
-  /** Deriva um logger que injeta `bindings` (ex.: reqId/userId/action) em toda linha. */
-  child(bindings: LogFields): Logger;
 }
 
 // ───────────────────────── Masking de PII ─────────────────────────
-// Tokens (palavras) cujo nome de campo indica PII/segredo. A checagem é por
-// TOKEN (camelCase/snake_case são quebrados em palavras), não por substring —
-// evita falso-positivo tipo "descr-IP-tion" e pega "userEmail"/"access_token".
+// Tokens (palavras) cujo nome de campo indica PII/segredo.
 const PII_TOKENS = new Set([
   "email", "mail", "cpf", "cnpj", "document", "documento", "rg", "pix",
   "phone", "telefone", "tel", "celular", "whatsapp", "cep",
   "password", "senha", "pass", "secret", "token", "authorization", "cookie",
-  "session", "apikey", "ip", "name", "nome", "fullname", "firstname",
+  "session", "apikey", "name", "nome", "fullname", "firstname",
   "lastname", "sobrenome", "address", "endereco", "bairro",
 ]);
 
-// Chaves seguras que têm token de PII mas NÃO são PII — vencem a denylist.
+// Chaves seguras que contêm token de PII mas NÃO são PII — vencem a denylist.
 const SAFE_KEYS = new Set([
-  "reqid", "runid", "action", "code", "kind", "status", "rpc", "level",
-  "adaptername", "tablename", "field", "step", "to", "from", "count",
-  "corretoraid", "produtorid", "compradorid", "userid", "profileid",
-  "loteid", "contratoid", "leadid", "pagamentoid", "entregaid",
-  "propostaid", "ofertaid", "dispatchid",
+  "action", "code", "kind", "status", "rpc", "level", "field", "step",
+  "to", "from", "count", "corretoraid", "produtorid", "compradorid",
+  "userid", "profileid", "loteid", "contratoid", "leadid", "pagamentoid",
+  "entregaid", "propostaid", "ofertaid",
 ]);
 
 function tokenize(key: string): string[] {
@@ -86,7 +83,9 @@ function scrubString(s: string): string {
     .replace(CNPJ_RE, "[cnpj]")
     .replace(CPF_RE, "[cpf]")
     .replace(PHONE_RE, "[tel]");
-  if (out.length > MAX_STRING) out = `${out.slice(0, MAX_STRING)}…[+${out.length - MAX_STRING}]`;
+  if (out.length > MAX_STRING) {
+    out = `${out.slice(0, MAX_STRING)}…[+${out.length - MAX_STRING}]`;
+  }
   return out;
 }
 
@@ -96,17 +95,15 @@ function isPostgrestLike(v: object): boolean {
 
 /**
  * Serializa um erro pra log com segurança: só `name`/`code`/`message` (com a
- * mensagem passada pelo scrub). NUNCA `details`/`hint` (o Postgres embute valores
- * de linha — ex.: `Key (email)=(...)`) nem `stack` em produção.
+ * mensagem passada pelo scrub). NUNCA `details`/`hint` (o Postgres embute
+ * valores de linha — ex.: `Key (email)=(...)`). `stack` só em `__DEV__`.
  */
 export function safeError(err: unknown): LogFields {
   if (err instanceof Error) {
     const out: LogFields = { name: err.name, message: scrubString(err.message) };
     const code = (err as { code?: unknown }).code;
     if (typeof code === "string" || typeof code === "number") out.code = code;
-    if (process.env.NODE_ENV !== "production" && err.stack) {
-      out.stack = scrubString(err.stack);
-    }
+    if (__DEV__ && err.stack) out.stack = scrubString(err.stack);
     return out;
   }
   if (err && typeof err === "object" && isPostgrestLike(err)) {
@@ -123,7 +120,11 @@ export function safeError(err: unknown): LogFields {
 const MAX_DEPTH = 4;
 
 /** Redação recursiva: mascara chaves sensíveis, scrub de strings, serializa Error. */
-export function redact(value: unknown, depth = 0, seen = new WeakSet<object>()): unknown {
+export function sanitize(
+  value: unknown,
+  depth = 0,
+  seen = new WeakSet<object>(),
+): unknown {
   if (value === null || value === undefined) return value;
   if (typeof value === "string") return scrubString(value);
   if (typeof value === "number" || typeof value === "boolean") return value;
@@ -135,50 +136,47 @@ export function redact(value: unknown, depth = 0, seen = new WeakSet<object>()):
   seen.add(value as object);
 
   if (Array.isArray(value)) {
-    return value.slice(0, 50).map((v) => redact(v, depth + 1, seen));
+    return value.slice(0, 50).map((v) => sanitize(v, depth + 1, seen));
   }
   if (isPostgrestLike(value as object)) return safeError(value);
 
   const out: LogFields = {};
   for (const [k, v] of Object.entries(value as LogFields)) {
     if (v === undefined) continue;
-    out[k] = isSensitiveKey(k) ? "[redacted]" : redact(v, depth + 1, seen);
+    out[k] = isSensitiveKey(k) ? "[redacted]" : sanitize(v, depth + 1, seen);
   }
   return out;
 }
 
 // ───────────────────────── Emissão ─────────────────────────
-function createLogger(bindings: LogFields = {}): Logger {
-  function emit(level: LogLevel, msg: string, fields: LogFields = {}): void {
-    if (level === "debug" && process.env.NODE_ENV === "production") return;
+function emit(level: LogLevel, msg: string, fields: LogFields = {}): void {
+  // Em release, o console é silencioso — o sink de produção (Sentry RN) é
+  // follow-up (ver bloco no topo). Mantemos a API no-op pra não vazar PII
+  // nem ruído em logs de device.
+  if (!__DEV__) return;
 
-    const merged = redact({ ...bindings, ...fields }) as LogFields;
-    const record: LogRecord = {
-      level,
-      msg: scrubString(msg),
-      ts: new Date().toISOString(),
-      ...merged,
-    };
-    const line = JSON.stringify(record);
-    if (level === "error" || level === "fatal") {
-      console.error(line);
-    } else if (level === "warn") {
-      console.warn(line);
-    } else {
-      console.log(line);
-    }
-  }
-
-  return {
-    debug: (msg, fields) => emit("debug", msg, fields),
-    info: (msg, fields) => emit("info", msg, fields),
-    warn: (msg, fields) => emit("warn", msg, fields),
-    error: (msg, fields) => emit("error", msg, fields),
-    fatal: (msg, fields) => emit("fatal", msg, fields),
-    child: (childBindings) => createLogger({ ...bindings, ...childBindings }),
+  const merged = sanitize(fields) as LogFields;
+  const record: LogRecord = {
+    level,
+    msg: scrubString(msg),
+    ts: new Date().toISOString(),
+    ...merged,
   };
+  const line = JSON.stringify(record);
+  if (level === "error") {
+    console.error(line);
+  } else if (level === "warn") {
+    console.warn(line);
+  } else {
+    console.log(line);
+  }
 }
 
-export const logger: Logger = createLogger();
+export const logger: Logger = {
+  debug: (msg, fields) => emit("debug", msg, fields),
+  info: (msg, fields) => emit("info", msg, fields),
+  warn: (msg, fields) => emit("warn", msg, fields),
+  error: (msg, fields) => emit("error", msg, fields),
+};
 
 export type { LogLevel, LogFields, Logger };

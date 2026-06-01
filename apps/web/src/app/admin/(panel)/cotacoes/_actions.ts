@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { getReqLogger } from "@/lib/req-logger";
+import { safeError } from "@/lib/logger";
 import type { CoffeeProcesso, CoffeeSpecie } from "@milsaca/types";
 
 const SPECIES: readonly CoffeeSpecie[] = ["arabica", "conillon"];
@@ -183,6 +185,10 @@ export async function createCotacaoAdmin(formData: FormData) {
     redirect(`/admin/cotacoes/nova?${params.toString()}`);
   }
 
+  const log = await getReqLogger({
+    action: "createCotacaoAdmin",
+    corretoraId: fields.corretora_id,
+  });
   const supabase = await createClient();
   const { error } = await supabase.from("cotacoes").insert({
     corretora_id: fields.corretora_id,
@@ -204,13 +210,17 @@ export async function createCotacaoAdmin(formData: FormData) {
   });
 
   if (error) {
+    log.error("cotacao_insert_falhou", {
+      err: safeError(error),
+      code: error.code,
+    });
     const params = new URLSearchParams({
       error: friendlyPostgresError(error),
     });
     redirect(`/admin/cotacoes/nova?${params.toString()}`);
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditError } = await supabase.from("audit_log").insert({
     actor_id: user.id,
     action: "create_cotacao",
     entity: "cotacoes",
@@ -223,6 +233,12 @@ export async function createCotacaoAdmin(formData: FormData) {
       reference_date: fields.reference_date,
     },
   });
+  if (auditError) {
+    log.warn("audit_insert_falhou", {
+      err: safeError(auditError),
+      code: auditError.code,
+    });
+  }
 
   revalidateAffected();
   redirect(`/admin/cotacoes?ok=${encodeURIComponent("Cotação cadastrada")}`);
@@ -239,6 +255,11 @@ export async function updateCotacaoAdmin(formData: FormData) {
     redirect(`/admin/cotacoes/${id}?${params.toString()}`);
   }
 
+  const log = await getReqLogger({
+    action: "updateCotacaoAdmin",
+    cotacaoId: id,
+    corretoraId: fields.corretora_id,
+  });
   const supabase = await createClient();
   const { error } = await supabase
     .from("cotacoes")
@@ -262,12 +283,16 @@ export async function updateCotacaoAdmin(formData: FormData) {
     .eq("id", id);
 
   if (error) {
+    log.error("cotacao_update_falhou", {
+      err: safeError(error),
+      code: error.code,
+    });
     redirect(
       `/admin/cotacoes/${id}?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditError } = await supabase.from("audit_log").insert({
     actor_id: user.id,
     action: "update_cotacao",
     entity: "cotacoes",
@@ -275,6 +300,12 @@ export async function updateCotacaoAdmin(formData: FormData) {
     corretora_id: fields.corretora_id,
     payload: { price: fields.price, reference_date: fields.reference_date },
   });
+  if (auditError) {
+    log.warn("audit_insert_falhou", {
+      err: safeError(auditError),
+      code: auditError.code,
+    });
+  }
 
   revalidateAffected();
   redirect(`/admin/cotacoes/${id}?saved=1`);
@@ -285,6 +316,7 @@ export async function deleteCotacaoAdmin(formData: FormData) {
   const id = String(formData.get("id") ?? "").trim();
   if (!id) redirect("/admin/cotacoes?error=ID%20inv%C3%A1lido");
 
+  const log = await getReqLogger({ action: "deleteCotacaoAdmin", cotacaoId: id });
   const supabase = await createClient();
   const { data: row } = await supabase
     .from("cotacoes")
@@ -294,12 +326,16 @@ export async function deleteCotacaoAdmin(formData: FormData) {
 
   const { error } = await supabase.from("cotacoes").delete().eq("id", id);
   if (error) {
+    log.error("cotacao_delete_falhou", {
+      err: safeError(error),
+      code: error.code,
+    });
     redirect(
       `/admin/cotacoes?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditError } = await supabase.from("audit_log").insert({
     actor_id: user.id,
     action: "delete_cotacao",
     entity: "cotacoes",
@@ -307,6 +343,12 @@ export async function deleteCotacaoAdmin(formData: FormData) {
     corretora_id: row?.corretora_id ?? null,
     payload: row ?? {},
   });
+  if (auditError) {
+    log.warn("audit_insert_falhou", {
+      err: safeError(auditError),
+      code: auditError.code,
+    });
+  }
 
   revalidateAffected();
   redirect(`/admin/cotacoes?ok=${encodeURIComponent("Cotação removida")}`);

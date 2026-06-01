@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { requireAppAdmin } from "@/lib/auth";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import { friendlyPostgresError } from "../_lib/errors";
 import { flattenZodErrors, planSchema, uuidSchema } from "../_lib/schemas";
 
@@ -74,12 +76,19 @@ export async function createPlano(formData: FormData) {
     .single();
 
   if (error || !created) {
+    const log = await getReqLogger({
+      action: "createPlano",
+      userId: actor.id,
+    });
+    log.error("create_plan_falhou", {
+      ...(error ? { code: error.code, err: safeError(error) } : {}),
+    });
     redirect(
       `/admin/planos/novo?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditErr } = await supabase.from("audit_log").insert({
     actor_id: actor.id,
     action: "create_plan",
     entity: "plan",
@@ -91,6 +100,14 @@ export async function createPlano(formData: FormData) {
       billing_period: fields.billing_period,
     },
   });
+  if (auditErr) {
+    const log = await getReqLogger({
+      action: "createPlano",
+      userId: actor.id,
+      entityId: created.id,
+    });
+    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+  }
 
   revalidatePath("/admin/planos");
   redirect("/admin/planos?ok=" + encodeURIComponent("Plano criado"));
@@ -115,12 +132,21 @@ export async function updatePlano(formData: FormData) {
   const { error } = await supabase.from("plans").update(fields).eq("id", id);
 
   if (error) {
+    const log = await getReqLogger({
+      action: "updatePlano",
+      userId: actor.id,
+      entityId: id,
+    });
+    log.error("update_plan_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     redirect(
       `/admin/planos/${id}?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditErr } = await supabase.from("audit_log").insert({
     actor_id: actor.id,
     action: "update_plan",
     entity: "plan",
@@ -132,6 +158,14 @@ export async function updatePlano(formData: FormData) {
       active: fields.active,
     },
   });
+  if (auditErr) {
+    const log = await getReqLogger({
+      action: "updatePlano",
+      userId: actor.id,
+      entityId: id,
+    });
+    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+  }
 
   revalidatePath("/admin/planos");
   revalidatePath(`/admin/planos/${id}`);
@@ -147,15 +181,37 @@ export async function togglePlanoActive(formData: FormData) {
   const next = formData.get("active") === "true";
 
   const supabase = await createClient();
-  await supabase.from("plans").update({ active: next }).eq("id", id);
+  const { error } = await supabase
+    .from("plans")
+    .update({ active: next })
+    .eq("id", id);
+  if (error) {
+    const log = await getReqLogger({
+      action: "togglePlanoActive",
+      userId: actor.id,
+      entityId: id,
+    });
+    log.error("toggle_plan_active_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
+  }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditErr } = await supabase.from("audit_log").insert({
     actor_id: actor.id,
     action: next ? "activate_plan" : "deactivate_plan",
     entity: "plan",
     entity_id: id,
     payload: { active: next },
   });
+  if (auditErr) {
+    const log = await getReqLogger({
+      action: "togglePlanoActive",
+      userId: actor.id,
+      entityId: id,
+    });
+    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+  }
 
   revalidatePath("/admin/planos");
 }

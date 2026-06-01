@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { requireUser } from "@/lib/auth";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 
 /**
  * Contraproposta LEVE do produtor: manda um contra-valor (R$/saca + msg
@@ -36,6 +38,13 @@ export async function contraproporNegociacao(formData: FormData) {
   const row = Array.isArray(data) ? data[0] : data;
 
   if (error || !row?.success) {
+    const log = await getReqLogger({
+      action: "contraproporNegociacao",
+      leadId,
+    });
+    log.error("contrapropor_lead_falhou", {
+      ...(error ? { err: safeError(error) } : {}),
+    });
     redirect(
       `${back}?error=${encodeURIComponent("Não foi possível enviar a contraproposta. Tente de novo.")}`,
     );

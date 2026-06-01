@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getUser } from "@/lib/auth";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import {
   cityOptionalSchema,
   cpfOrCnpjOptionalSchema,
@@ -115,13 +117,17 @@ export async function updatePerfilProdutor(formData: FormData) {
   );
 
   const supabase = await createClient();
+  const log = await getReqLogger({ action: "updatePerfilProdutor" });
 
   const { error: pErr } = await supabase
     .from("profiles")
     .update({ full_name, phone })
     .eq("id", user.id);
 
-  if (pErr) redirectError(pErr.message);
+  if (pErr) {
+    log.error("profile_update_falhou", { err: safeError(pErr), code: pErr.code });
+    redirectError(pErr.message);
+  }
 
   // Upsert produtor estendido com todos os campos novos
   const payload = {
@@ -147,7 +153,10 @@ export async function updatePerfilProdutor(formData: FormData) {
   const { error: extErr } = await supabase
     .from("produtores")
     .upsert(payload, { onConflict: "profile_id" });
-  if (extErr) redirectError(extErr.message);
+  if (extErr) {
+    log.error("produtor_upsert_falhou", { err: safeError(extErr), code: extErr.code });
+    redirectError(extErr.message);
+  }
 
   revalidatePath("/painel/produtor/perfil");
   revalidatePath("/painel/produtor");

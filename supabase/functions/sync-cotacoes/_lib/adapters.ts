@@ -16,6 +16,8 @@
 //     meta?: Record<string, unknown>,
 //   }
 
+import { log, safeError } from "../../_shared/log.ts";
+
 export interface Quote {
   source: string;
   symbol: string;
@@ -57,6 +59,7 @@ async function fetchWithTimeout(
       // 4xx é definitivo → devolve pro caller decidir (sem retry).
       if (res.status >= 500 && attempt < maxAttempts - 1) {
         lastErr = new Error(`HTTP ${res.status}`);
+        log.warn("fetch_retry", { url, attempt, status: res.status });
         continue;
       }
       return res;
@@ -64,6 +67,7 @@ async function fetchWithTimeout(
       // Erro de rede ou abort por timeout → retenta enquanto houver tentativa.
       lastErr = err;
       if (attempt >= maxAttempts - 1) break;
+      log.warn("fetch_retry", { url, attempt, err: safeError(err) });
     } finally {
       clearTimeout(t);
     }
@@ -73,7 +77,9 @@ async function fetchWithTimeout(
     await new Promise((r) => setTimeout(r, backoff));
   }
 
-  throw lastErr ?? new Error(`fetchWithTimeout falhou: ${url}`);
+  const finalErr = lastErr ?? new Error(`fetchWithTimeout falhou: ${url}`);
+  log.warn("fetch_falhou", { url, attempts: maxAttempts, err: safeError(finalErr) });
+  throw finalErr;
 }
 
 // ---------------------------------------------------------------------------
@@ -90,7 +96,10 @@ export async function fetchIceArabica(): Promise<Quote | null> {
       Accept: "application/json",
     },
   });
-  if (!res.ok) return null;
+  if (!res.ok) {
+    log.warn("fetch_nao_ok", { url, status: res.status });
+    return null;
+  }
 
   const body = await res.json().catch(() => null);
   const meta = body?.chart?.result?.[0]?.meta;
@@ -169,10 +178,16 @@ export async function fetchIceRobusta(): Promise<Quote | null> {
       const res = await fetchWithTimeout(url, {
         headers: { "User-Agent": UA, Accept: "text/csv" },
       });
-      if (!res.ok) continue;
+      if (!res.ok) {
+        log.warn("fetch_nao_ok", { url, status: res.status });
+        continue;
+      }
       const csv = await res.text();
       const parsed = parseStooqQuote(csv);
-      if (!parsed) continue;
+      if (!parsed) {
+        log.warn("stooq_parse_vazio", { url });
+        continue;
+      }
 
       // Robusta é cotado em USD/ton (não centavos). Guardamos × 100 pra
       // ficar inteiro (price_usd_cents é "USD × 100" — meta.unit deixa
@@ -197,8 +212,9 @@ export async function fetchIceRobusta(): Promise<Quote | null> {
           raw_price: parsed.close,
         },
       };
-    } catch {
-      // tenta próximo mirror
+    } catch (err) {
+      // Loga antes de tentar o próximo mirror (não engole mais o erro).
+      log.warn("stooq_mirror_falhou", { url, err: safeError(err) });
     }
   }
   return null;
@@ -226,7 +242,10 @@ export async function fetchBcbPtax(): Promise<Quote | null> {
   const res = await fetchWithTimeout(url, {
     headers: { Accept: "application/json", "User-Agent": UA },
   });
-  if (!res.ok) return null;
+  if (!res.ok) {
+    log.warn("fetch_nao_ok", { url, status: res.status });
+    return null;
+  }
 
   const json = await res.json().catch(() => null);
   const arr = Array.isArray(json?.value) ? json.value : [];
@@ -294,10 +313,14 @@ export async function fetchCepeaOfficial(): Promise<Quote | null> {
         "User-Agent": UA,
       },
     });
-  } catch {
+  } catch (err) {
+    log.warn("cepea_oficial_fetch_falhou", { url, err: safeError(err) });
     return null;
   }
-  if (!res.ok) return null;
+  if (!res.ok) {
+    log.warn("fetch_nao_ok", { url, status: res.status });
+    return null;
+  }
 
   const body = await res.json().catch(() => null);
   if (!body || typeof body !== "object") return null;
@@ -401,7 +424,10 @@ async function fetchCepeaPageNoticias(
     headers: { "User-Agent": UA, Accept: "text/html" },
     redirect: "follow",
   });
-  if (!res.ok) return null;
+  if (!res.ok) {
+    log.warn("fetch_nao_ok", { url: spec.url, status: res.status });
+    return null;
+  }
   const html = await res.text();
 
   let priceReais: number | null = null;

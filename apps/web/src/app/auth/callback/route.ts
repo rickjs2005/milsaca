@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@milsaca/db/web/server";
 import { defaultRouteFor, isAppAdmin } from "@/lib/auth";
+import { logger, safeError } from "@/lib/logger";
+import { tagSentryReqId } from "@/lib/req-logger";
 import type { Profile } from "@milsaca/types";
 
 /**
@@ -11,6 +13,9 @@ import type { Profile } from "@milsaca/types";
  * Se a sessão validar, mandar para o painel correto.
  */
 export async function GET(request: NextRequest) {
+  const reqId = request.headers.get("x-request-id") ?? undefined;
+  tagSentryReqId(reqId);
+  const log = logger.child({ reqId });
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const nextParam = searchParams.get("next");
@@ -27,9 +32,7 @@ export async function GET(request: NextRequest) {
     // Mensagem genérica fixa: não ecoar error.message cru do Supabase na
     // query string (evita enumeração/diagnóstico). Padrão de
     // confirmar-email/_actions.ts.
-    if (process.env.NODE_ENV !== "production") {
-      console.error("[auth/callback] exchangeCodeForSession error:", error);
-    }
+    log.error("auth_exchange_code_falhou", { err: safeError(error) });
     return NextResponse.redirect(
       `${origin}/entrar?error=${encodeURIComponent("Link inválido ou expirado. Peça um novo.")}`,
     );

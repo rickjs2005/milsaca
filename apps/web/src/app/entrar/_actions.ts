@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { defaultRouteFor, isAppAdmin } from "@/lib/auth";
 import { checkRateLimit, identityKey } from "@/lib/rate-limit";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import type { Profile } from "@milsaca/types";
 
 /**
@@ -36,6 +38,8 @@ export async function signIn(formData: FormData) {
   });
 
   if (error) {
+    const log = await getReqLogger({ action: "signIn" });
+    log.warn("signin_credencial_falhou", { err: safeError(error) });
     const params = new URLSearchParams({
       email,
       error: error.message,
@@ -74,11 +78,15 @@ export async function signIn(formData: FormData) {
     redirect("/admin");
   }
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileErr } = await supabase
     .from("profiles")
     .select("roles")
     .eq("id", user.id)
     .single<Pick<Profile, "roles">>();
+  if (profileErr) {
+    const log = await getReqLogger({ action: "signIn", userId: user.id });
+    log.error("signin_profile_fetch_falhou", { err: safeError(profileErr) });
+  }
 
   const target = profile?.roles?.length
     ? defaultRouteFor(profile)
@@ -106,6 +114,8 @@ export async function verifyMfa(formData: FormData) {
   const { data: challenge, error: cErr } =
     await supabase.auth.mfa.challenge({ factorId });
   if (cErr || !challenge) {
+    const log = await getReqLogger({ action: "verifyMfa" });
+    log.warn("mfa_challenge_falhou", { err: safeError(cErr) });
     redirect(
       `/entrar/mfa?error=${encodeURIComponent("Falha ao validar. Tente de novo.")}`,
     );
@@ -117,6 +127,8 @@ export async function verifyMfa(formData: FormData) {
     code,
   });
   if (vErr) {
+    const log = await getReqLogger({ action: "verifyMfa" });
+    log.warn("mfa_verify_falhou", { err: safeError(vErr) });
     redirect(
       `/entrar/mfa?error=${encodeURIComponent("Código incorreto. Tente de novo.")}`,
     );

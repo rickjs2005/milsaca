@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@milsaca/db/web/server";
 import { createHash } from "node:crypto";
 import { checkRateLimit, ipKey } from "@/lib/rate-limit";
+import { logger, safeError } from "@/lib/logger";
 
 type RequestBody = {
   corretora_id?: string;
@@ -93,6 +94,9 @@ function buildDefaultMessage(
  * audit interno aqui).
  */
 export async function POST(req: NextRequest) {
+  const reqId = req.headers.get("x-request-id") ?? undefined;
+  const log = logger.child({ reqId });
+
   // Rate limit por IP: 30 cliques/min. Generoso pra não atrapalhar uso
   // legítimo (produtor pode clicar várias corretoras seguidas) mas
   // corta scraping/spam.
@@ -223,6 +227,10 @@ export async function POST(req: NextRequest) {
       user_agent: ua,
       ip_hash: ipHash,
     });
+
+  if (insertError) {
+    log.warn("wa_lead_insert_falhou", { err: safeError(insertError) });
+  }
 
   return NextResponse.json({
     wa_url: waUrl,

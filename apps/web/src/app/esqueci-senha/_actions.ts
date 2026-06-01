@@ -4,6 +4,8 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { checkRateLimit, identityKey } from "@/lib/rate-limit";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import { createHash } from "node:crypto";
 
 /**
@@ -62,7 +64,8 @@ export async function requestPasswordReset(formData: FormData) {
   // Não vaza se o email existe ou não — sempre redireciona pro mesmo
   // estado de sucesso. Reduz superfície de enumeration.
   if (error) {
-    console.error("[esqueci-senha] resetPasswordForEmail:", error.message);
+    const log = await getReqLogger({ action: "requestPasswordReset" });
+    log.warn("reset_senha_email_falhou", { err: safeError(error) });
   }
 
   redirect(`/esqueci-senha?ok=${encodeURIComponent(ok)}`);

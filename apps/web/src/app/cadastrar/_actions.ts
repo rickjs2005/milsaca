@@ -14,6 +14,8 @@ import {
 import { getFounderProgramStatus } from "@/lib/founder-program";
 import { POLITICA_VERSAO, TERMOS_VERSAO } from "@/lib/legal";
 import { validarSenha } from "@/lib/password";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import { createHash } from "node:crypto";
 import type { Profile } from "@milsaca/types";
 
@@ -183,10 +185,9 @@ export async function signUp(formData: FormData) {
     // por tipo do erro. Variar (ex.: "senha fraca" vs "erro genérico")
     // permite ao atacante usar /cadastrar como oráculo de email existente
     // — bastaria mandar senhas diferentes e ver qual ramo dispara.
-    // Mensagem técnica vai só pro console.error em dev.
-    if (process.env.NODE_ENV !== "production") {
-      console.error("[cadastrar] signUp error:", error);
-    }
+    // Mensagem técnica vai só pro log (não vaza pro usuário).
+    const log = await getReqLogger({ action: "signUp", role });
+    log.warn("signup_falhou", { err: safeError(error) });
     params.set(
       "error",
       "Não foi possível concluir o cadastro. Verifique os dados e tente novamente em alguns minutos.",

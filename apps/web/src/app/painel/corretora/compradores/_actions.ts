@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import {
   compradorSchema,
   flattenZodErrors,
@@ -86,6 +88,14 @@ export async function createComprador(formData: FormData) {
     preferencias: buildPreferencias(formData),
   });
   if (error) {
+    const log = await getReqLogger({
+      action: "createComprador",
+      corretoraId: profile.corretora_id,
+    });
+    log.error("comprador_insert_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     redirect(
       `/painel/corretora/compradores/novo?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
@@ -120,6 +130,15 @@ export async function updateComprador(formData: FormData) {
     .eq("corretora_id", profile.corretora_id)
     .eq("id", id);
   if (error) {
+    const log = await getReqLogger({
+      action: "updateComprador",
+      corretoraId: profile.corretora_id,
+      compradorId: id,
+    });
+    log.error("comprador_update_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     redirect(
       `/painel/corretora/compradores/${id}?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
@@ -137,11 +156,23 @@ export async function toggleCompradorAtivo(formData: FormData) {
   const next = formData.get("ativo") === "true";
 
   const supabase = await createClient();
-  await supabase
+  const { error } = await supabase
     .from("compradores")
     .update({ ativo: next })
     .eq("corretora_id", profile.corretora_id)
     .eq("id", id);
+  if (error) {
+    const log = await getReqLogger({
+      action: "toggleCompradorAtivo",
+      corretoraId: profile.corretora_id,
+      compradorId: id,
+    });
+    log.error("comprador_toggle_ativo_falhou", {
+      to: next,
+      code: error.code,
+      err: safeError(error),
+    });
+  }
   revalidatePath("/painel/corretora/compradores");
   revalidatePath(`/painel/corretora/compradores/${id}`);
 }

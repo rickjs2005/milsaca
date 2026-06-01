@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Linking,
   Pressable,
   RefreshControl,
@@ -27,6 +28,7 @@ import {
 } from "../../src/lib/queries";
 import { buildWhatsAppUrl } from "../../src/lib/whatsapp";
 import { useList } from "../../src/lib/use-list";
+import { logger } from "../../src/lib/logger";
 import type { LeadStatus } from "@milsaca/types";
 
 const BRL = new Intl.NumberFormat("pt-BR", {
@@ -47,7 +49,7 @@ export default function NegociacoesScreen() {
   const { profile } = useAuth();
   const [filter, setFilter] = useState<LeadStatus | "all">("all");
   const [respondendoId, setRespondendoId] = useState<string | null>(null);
-  const { data, refreshing, onRefresh, setData } = useList<{
+  const { data, error, refreshing, onRefresh, reload, setData } = useList<{
     leads: LeadItem[];
     propostas: PropostaParaProdutor[];
   }>(async () => {
@@ -71,8 +73,17 @@ export default function NegociacoesScreen() {
     const result = await responderProposta(propostaId, resposta);
     setRespondendoId(null);
     if (result.error) {
-      // Mantém o card mas sem indicar sucesso. Refresh manual recupera.
-      console.warn("responderProposta:", result.error);
+      // Loga observável (sem PII — só id da proposta + mensagem da RPC) e
+      // AVISA o produtor: antes era um console.warn silencioso e o card só
+      // ficava parado, parecendo que tinha respondido.
+      logger.error("responder_proposta_falhou", {
+        propostaId,
+        err: result.error,
+      });
+      Alert.alert(
+        "Não foi possível responder",
+        `${result.error} Tente de novo.`,
+      );
       return;
     }
     // Remove a proposta respondida da lista pendente (optimistic)
@@ -184,7 +195,35 @@ export default function NegociacoesScreen() {
           })}
         </ScrollView>
 
-        {!items ? (
+        {error ? (
+          // Falha de carregamento (ex.: listMinhasPropostas relançou): nunca
+          // mostramos "vazio" no lugar de um erro. Banner + botão de retry.
+          <View className="mt-10 rounded-2xl border border-red-300/30 bg-red-500/10 p-5">
+            <Text
+              className="text-sm text-red-100"
+              style={{ fontFamily: "Inter_600SemiBold" }}
+            >
+              Não conseguimos carregar suas negociações.
+            </Text>
+            <Text
+              className="mt-1 text-xs text-milsaca-cream/70"
+              style={{ fontFamily: "Inter_400Regular" }}
+            >
+              Verifique sua conexão e tente de novo.
+            </Text>
+            <Pressable
+              onPress={reload}
+              className="mt-3 self-start rounded-xl bg-milsaca-dourado px-4 py-2 active:opacity-80"
+            >
+              <Text
+                className="text-sm text-milsaca-verde"
+                style={{ fontFamily: "Inter_600SemiBold" }}
+              >
+                Tentar de novo
+              </Text>
+            </Pressable>
+          </View>
+        ) : !items ? (
           <View className="mt-12 items-center">
             <ActivityIndicator color="#C9A961" />
           </View>

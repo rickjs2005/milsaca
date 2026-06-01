@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import { uuidSchema } from "../_lib/schemas";
 import { requireActiveSubscription } from "../_lib/corretora";
 import type { OfertaStatus } from "./_lib/queries";
@@ -87,6 +89,14 @@ export async function createOferta(formData: FormData) {
   });
 
   if (error) {
+    const log = await getReqLogger({
+      action: "createOferta",
+      corretoraId: profile.corretora_id,
+    });
+    log.error("oferta_insert_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     redirect(`${back}?error=${encodeURIComponent(friendlyPostgresError(error))}`);
   }
 
@@ -115,6 +125,16 @@ export async function atualizarStatusOferta(formData: FormData) {
     .eq("corretora_id", profile.corretora_id);
 
   if (error) {
+    const log = await getReqLogger({
+      action: "atualizarStatusOferta",
+      corretoraId: profile.corretora_id,
+      ofertaId: idParsed.data,
+    });
+    log.error("oferta_status_update_falhou", {
+      to: status,
+      code: error.code,
+      err: safeError(error),
+    });
     redirect(`${back}?error=${encodeURIComponent(friendlyPostgresError(error))}`);
   }
 
@@ -132,11 +152,22 @@ export async function deleteOferta(formData: FormData) {
   if (!idParsed.success) redirect(back);
 
   const supabase = await createClient();
-  await supabase
+  const { error } = await supabase
     .from("ofertas_comprador")
     .delete()
     .eq("id", idParsed.data)
     .eq("corretora_id", profile.corretora_id);
+  if (error) {
+    const log = await getReqLogger({
+      action: "deleteOferta",
+      corretoraId: profile.corretora_id,
+      ofertaId: idParsed.data,
+    });
+    log.error("oferta_delete_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
+  }
 
   revalidateAffected();
   redirect(`${back}?saved=${encodeURIComponent("Oferta removida.")}`);

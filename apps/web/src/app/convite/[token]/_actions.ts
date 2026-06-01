@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { validarSenha } from "@/lib/password";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import { createHash } from "node:crypto";
 
 /**
@@ -111,9 +113,11 @@ export async function aceitarConvite(formData: FormData) {
   });
 
   if (signUpErr) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("[convite] signUp error:", signUpErr);
-    }
+    const log = await getReqLogger({
+      action: "aceitarConvite",
+      corretoraId: invite.corretora_id,
+    });
+    log.warn("convite_signup_falhou", { err: safeError(signUpErr) });
     // Pode ser email já cadastrado. Mostra mensagem genérica.
     err(
       "Não conseguimos criar a conta. Se já tem conta com esse email, faça login e entre em contato com o admin.",
@@ -129,9 +133,12 @@ export async function aceitarConvite(formData: FormData) {
       { invite_token: token, consuming_user_id: userId },
     );
     if (consumeErr) {
-      if (process.env.NODE_ENV !== "production") {
-        console.error("[convite] consume error:", consumeErr);
-      }
+      const log = await getReqLogger({
+        action: "aceitarConvite",
+        corretoraId: invite.corretora_id,
+        userId,
+      });
+      log.error("convite_consume_falhou", { err: safeError(consumeErr) });
       err("Conta criada mas falhou ao vincular à corretora. Fale com o admin.");
     }
     const consumeResult = (

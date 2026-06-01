@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 
 const CONDITIONS = ["acima_de", "abaixo_de"] as const;
 const CHANNELS = ["app", "whatsapp", "email"] as const;
@@ -82,6 +84,8 @@ export async function createAlert(formData: FormData) {
     .insert({ ...fields, produtor_id: user.id });
 
   if (error) {
+    const log = await getReqLogger({ action: "createAlert" });
+    log.error("price_alert_insert_falhou", { err: safeError(error), code: error.code });
     const p = new URLSearchParams({ error: friendlyPostgresError(error) });
     redirect(`/painel/produtor/cotacoes/alvos/novo?${p.toString()}`);
   }
@@ -110,6 +114,8 @@ export async function updateAlert(formData: FormData) {
     .eq("produtor_id", user.id);
 
   if (error) {
+    const log = await getReqLogger({ action: "updateAlert", alertId: id });
+    log.error("price_alert_update_falhou", { err: safeError(error), code: error.code });
     redirect(
       `/painel/produtor/cotacoes/alvos/${id}?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
@@ -133,6 +139,8 @@ export async function toggleAlertActive(formData: FormData) {
     .eq("produtor_id", user.id);
 
   if (error) {
+    const log = await getReqLogger({ action: "toggleAlertActive", alertId: id });
+    log.error("price_alert_toggle_falhou", { err: safeError(error), code: error.code });
     redirect(
       `/painel/produtor/cotacoes/alvos?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
@@ -150,11 +158,15 @@ export async function deleteAlert(formData: FormData) {
   if (!id) redirect("/painel/produtor/cotacoes/alvos?error=ID%20inv%C3%A1lido");
 
   const supabase = await createClient();
-  await supabase
+  const { error } = await supabase
     .from("price_alerts")
     .delete()
     .eq("id", id)
     .eq("produtor_id", user.id);
+  if (error) {
+    const log = await getReqLogger({ action: "deleteAlert", alertId: id });
+    log.error("price_alert_delete_falhou", { err: safeError(error), code: error.code });
+  }
 
   revalidatePath("/painel/produtor/cotacoes/alvos");
   redirect("/painel/produtor/cotacoes/alvos?ok=Alvo%20removido");

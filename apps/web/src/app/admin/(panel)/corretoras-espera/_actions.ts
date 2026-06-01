@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 
 const VALID = ["aguardando", "convidada", "entrou", "descartada"] as const;
 
@@ -28,18 +30,35 @@ export async function setCorretoraWaitlistStatus(formData: FormData) {
     .eq("id", id);
 
   if (error) {
+    const log = await getReqLogger({
+      action: "setCorretoraWaitlistStatus",
+      userId: user.id,
+      entityId: id,
+    });
+    log.error("corretora_waitlist_update_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     redirect(
       `/admin/corretoras-espera?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditErr } = await supabase.from("audit_log").insert({
     actor_id: user.id,
     action: `corretora_waitlist_${status}`,
     entity: "corretora_waitlist",
     entity_id: id,
     payload: {},
   });
+  if (auditErr) {
+    const log = await getReqLogger({
+      action: "setCorretoraWaitlistStatus",
+      userId: user.id,
+      entityId: id,
+    });
+    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+  }
 
   revalidatePath("/admin/corretoras-espera");
   redirect("/admin/corretoras-espera?ok=Status%20atualizado");

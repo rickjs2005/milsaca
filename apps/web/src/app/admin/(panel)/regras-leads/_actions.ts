@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { getReqLogger } from "@/lib/req-logger";
+import { safeError } from "@/lib/logger";
 
 const VALID_ACTIONS = ["match", "skip", "fallback_support"] as const;
 type RuleAction = (typeof VALID_ACTIONS)[number];
@@ -69,22 +71,33 @@ export async function createRule(formData: FormData) {
     );
   }
 
+  const log = await getReqLogger({ action: "createRule" });
   const supabase = await createClient();
   const { error } = await supabase
     .from("lead_distribution_rules")
     .insert(fields);
   if (error) {
+    log.error("lead_rule_insert_falhou", {
+      err: safeError(error),
+      code: error.code,
+    });
     redirect(
       `/admin/regras-leads/nova?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditError } = await supabase.from("audit_log").insert({
     actor_id: user.id,
     action: "create_lead_rule",
     entity: "lead_distribution_rules",
     payload: { name: fields.name, priority: fields.priority, action: fields.action },
   });
+  if (auditError) {
+    log.warn("audit_insert_falhou", {
+      err: safeError(auditError),
+      code: auditError.code,
+    });
+  }
 
   revalidatePath("/admin/regras-leads");
   redirect("/admin/regras-leads?ok=Regra%20criada");
@@ -102,24 +115,35 @@ export async function updateRule(formData: FormData) {
     );
   }
 
+  const log = await getReqLogger({ action: "updateRule", ruleId: id });
   const supabase = await createClient();
   const { error } = await supabase
     .from("lead_distribution_rules")
     .update(fields)
     .eq("id", id);
   if (error) {
+    log.error("lead_rule_update_falhou", {
+      err: safeError(error),
+      code: error.code,
+    });
     redirect(
       `/admin/regras-leads/${id}?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditError } = await supabase.from("audit_log").insert({
     actor_id: user.id,
     action: "update_lead_rule",
     entity: "lead_distribution_rules",
     entity_id: id,
     payload: { name: fields.name, priority: fields.priority, action: fields.action },
   });
+  if (auditError) {
+    log.warn("audit_insert_falhou", {
+      err: safeError(auditError),
+      code: auditError.code,
+    });
+  }
 
   revalidatePath("/admin/regras-leads");
   redirect(`/admin/regras-leads/${id}?saved=1`);
@@ -131,24 +155,35 @@ export async function toggleRuleActive(formData: FormData) {
   const next = formData.get("active") === "true";
   if (!id) redirect("/admin/regras-leads?error=ID%20inv%C3%A1lido");
 
+  const log = await getReqLogger({ action: "toggleRuleActive", ruleId: id });
   const supabase = await createClient();
   const { error } = await supabase
     .from("lead_distribution_rules")
     .update({ active: next })
     .eq("id", id);
   if (error) {
+    log.error("lead_rule_update_falhou", {
+      err: safeError(error),
+      code: error.code,
+    });
     redirect(
       `/admin/regras-leads?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditError } = await supabase.from("audit_log").insert({
     actor_id: user.id,
     action: next ? "activate_lead_rule" : "deactivate_lead_rule",
     entity: "lead_distribution_rules",
     entity_id: id,
     payload: { active: next },
   });
+  if (auditError) {
+    log.warn("audit_insert_falhou", {
+      err: safeError(auditError),
+      code: auditError.code,
+    });
+  }
 
   revalidatePath("/admin/regras-leads");
   redirect(

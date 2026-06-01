@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { validarSenha } from "@/lib/password";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 
 export async function resetPassword(formData: FormData) {
   const password = String(formData.get("password") ?? "");
@@ -30,6 +32,8 @@ export async function resetPassword(formData: FormData) {
 
   const { error } = await supabase.auth.updateUser({ password });
   if (error) {
+    const log = await getReqLogger({ action: "resetPassword", userId: user.id });
+    log.error("reset_senha_update_falhou", { err: safeError(error) });
     redirect(`/redefinir-senha?error=${encodeURIComponent(error.message)}`);
   }
 

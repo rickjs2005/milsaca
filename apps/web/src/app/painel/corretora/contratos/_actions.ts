@@ -8,6 +8,8 @@ import type { Json } from "@milsaca/types/database";
 import { getProfile } from "@/lib/auth";
 import { CONTRATO_VERSAO } from "@/lib/legal";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import { notify } from "@/lib/notify";
 import { requireActiveSubscription } from "../_lib/corretora";
 import {
@@ -32,8 +34,10 @@ async function logAudit(
       p_entity_id: entityId,
       p_payload: payload as Json,
     });
-  } catch {
+  } catch (e) {
     // auditoria é best-effort; nunca derruba a operação de negócio.
+    const log = await getReqLogger({ action, entityId });
+    log.warn("audit_best_effort_falhou", { err: safeError(e) });
   }
 }
 
@@ -193,6 +197,14 @@ export async function createContrato(formData: FormData) {
     .single();
 
   if (error || !data) {
+    const log = await getReqLogger({
+      action: "createContrato",
+      corretoraId: profile.corretora_id,
+    });
+    log.error("contrato_insert_falhou", {
+      code: error?.code,
+      err: error ? safeError(error) : { message: "insert sem retorno" },
+    });
     const params = new URLSearchParams({
       error: error?.message ?? "Falha ao criar contrato",
     });
@@ -364,6 +376,19 @@ export async function updateContratoStatus(formData: FormData) {
     .eq("corretora_id", profile.corretora_id);
 
   if (error) {
+    const log = await getReqLogger({
+      action: "updateContratoStatus",
+      corretoraId: profile.corretora_id,
+      contratoId: id,
+    });
+    // Transição → ativo é a assinatura (grava signed_at/content_hash);
+    // separa o evento pra facilitar alerta.
+    log.error(
+      next === "ativo"
+        ? "contrato_assinatura_falhou"
+        : "contrato_status_update_falhou",
+      { from: current.status, to: next, code: error.code, err: safeError(error) },
+    );
     const params = new URLSearchParams({ error: friendlyPostgresError(error) });
     redirect(`/painel/corretora/contratos/${id}?${params.toString()}`);
   }

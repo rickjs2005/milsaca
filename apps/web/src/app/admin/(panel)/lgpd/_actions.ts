@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 
 /**
  * Anonimização de titular (LGPD art. 18). Tem duas etapas:
@@ -35,6 +37,11 @@ export async function anonimizarTitular(formData: FormData) {
   });
 
   if (error) {
+    const log = await getReqLogger({ action: "anonimizarTitular", userId });
+    log.error("anonimizar_titular_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     redirect(
       `/admin/lgpd?error=${encodeURIComponent(error.message ?? "Falha ao anonimizar")}`,
     );
@@ -43,10 +50,8 @@ export async function anonimizarTitular(formData: FormData) {
   // Etapa 2 — neutralizar o e-mail de login em auth.users via Admin API.
   const admin = createAdminClient();
   if (!admin) {
-    console.warn(
-      "[lgpd] SUPABASE_SECRET_KEY ausente: e-mail em auth.users NÃO foi neutralizado para o titular",
-      userId,
-    );
+    const log = await getReqLogger({ action: "anonimizarTitular", userId });
+    log.warn("anonimizar_titular_secret_key_ausente");
     revalidatePath("/admin/lgpd");
     redirect(
       "/admin/lgpd?warn=" +
@@ -65,11 +70,10 @@ export async function anonimizarTitular(formData: FormData) {
   });
 
   if (authError) {
-    console.error(
-      "[lgpd] Admin API falhou ao neutralizar e-mail em auth.users para",
-      userId,
-      authError.message,
-    );
+    const log = await getReqLogger({ action: "anonimizarTitular", userId });
+    log.error("anonimizar_titular_auth_neutralizar_falhou", {
+      err: safeError(authError),
+    });
     revalidatePath("/admin/lgpd");
     redirect(
       "/admin/lgpd?warn=" +

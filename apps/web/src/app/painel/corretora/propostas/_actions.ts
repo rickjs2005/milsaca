@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile, getUser } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import { requireActiveSubscription } from "../_lib/corretora";
 import {
   PROPOSTA_STATUS_ORDER,
@@ -131,6 +133,16 @@ export async function createProposta(formData: FormData) {
   });
 
   if (error) {
+    const log = await getReqLogger({
+      action: "createProposta",
+      corretoraId: profile.corretora_id,
+      leadId,
+      loteId,
+    });
+    log.error("proposta_insert_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     const params = new URLSearchParams({ error: friendlyPostgresError(error) });
     redirect(`${backHref}?${params.toString()}`);
   }
@@ -205,6 +217,17 @@ export async function updatePropostaStatus(formData: FormData) {
       : "/painel/corretora";
 
   if (error) {
+    const log = await getReqLogger({
+      action: "updatePropostaStatus",
+      corretoraId: profile.corretora_id,
+      propostaId: id,
+    });
+    log.error("proposta_status_update_falhou", {
+      from: c.status,
+      to: next,
+      code: error.code,
+      err: safeError(error),
+    });
     const params = new URLSearchParams({ error: friendlyPostgresError(error) });
     redirect(`${backHref}?${params.toString()}`);
   }
@@ -267,6 +290,15 @@ export async function deleteProposta(formData: FormData) {
     .eq("corretora_id", profile.corretora_id);
 
   if (error) {
+    const log = await getReqLogger({
+      action: "deleteProposta",
+      corretoraId: profile.corretora_id,
+      propostaId: id,
+    });
+    log.error("proposta_delete_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     const params = new URLSearchParams({ error: friendlyPostgresError(error) });
     redirect(`${backHref}?${params.toString()}`);
   }

@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile, getUser } from "@/lib/auth";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import { getCorretoraSubscriptionInfo } from "../../../_lib/corretora";
 import { calcularLaudo, calcularPVA } from "@milsaca/cob";
 import type { DefeitosCrus, OpcoesCalculo } from "@milsaca/cob";
@@ -91,16 +93,36 @@ export async function saveClassificacao(input: ClassificarInput) {
   });
 
   if (error) {
+    const log = await getReqLogger({
+      action: "saveClassificacao",
+      corretoraId: profile.corretora_id,
+      loteId: input.loteId,
+    });
+    log.error("classificacao_insert_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     return { ok: false as const, error: error.message };
   }
 
   // Atualizar status do lote conforme resultado
-  await supabase
+  const { error: loteErr } = await supabase
     .from("lotes")
     .update({
       status: resultado.fora_de_tipo ? "fora_de_tipo" : "classificado",
     })
     .eq("id", input.loteId);
+  if (loteErr) {
+    const log = await getReqLogger({
+      action: "saveClassificacao",
+      corretoraId: profile.corretora_id,
+      loteId: input.loteId,
+    });
+    log.error("lote_status_update_falhou", {
+      code: loteErr.code,
+      err: safeError(loteErr),
+    });
+  }
 
   revalidatePath(`/painel/corretora/lotes/${input.loteId}`);
   revalidatePath("/painel/corretora/lotes");

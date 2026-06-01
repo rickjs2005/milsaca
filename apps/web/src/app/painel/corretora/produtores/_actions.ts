@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import {
   createProdutorContatoSchema,
   flattenZodErrors,
@@ -45,6 +47,14 @@ export async function createContato(formData: FormData) {
     .single();
 
   if (error) {
+    const log = await getReqLogger({
+      action: "createContato",
+      corretoraId: profile.corretora_id,
+    });
+    log.error("contato_insert_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     const params = new URLSearchParams({
       error: friendlyPostgresError(error),
     });
@@ -84,6 +94,15 @@ export async function updateContato(formData: FormData) {
     .eq("corretora_id", profile.corretora_id);
 
   if (error) {
+    const log = await getReqLogger({
+      action: "updateContato",
+      corretoraId: profile.corretora_id,
+      contatoId: id,
+    });
+    log.error("contato_update_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     const params = new URLSearchParams({
       error: friendlyPostgresError(error),
     });
@@ -128,12 +147,23 @@ export async function deleteContato(formData: FormData) {
   // linhas não-null de não-admin. Marcar o timestamp preserva a trilha
   // pra auditoria/compliance em vez de apagar o registro de vez (o
   // hard-delete anterior era inconsistente com o soft-delete do resto).
-  await supabase
+  const { error } = await supabase
     .from("produtor_contatos")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", id)
     .eq("corretora_id", profile.corretora_id)
     .is("deleted_at", null);
+  if (error) {
+    const log = await getReqLogger({
+      action: "deleteContato",
+      corretoraId: profile.corretora_id,
+      contatoId: id,
+    });
+    log.error("contato_soft_delete_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
+  }
 
   revalidatePath("/painel/corretora/produtores");
   redirect("/painel/corretora/produtores");

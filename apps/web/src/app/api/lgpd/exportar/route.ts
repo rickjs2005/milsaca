@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@milsaca/db/web/server";
 import { requireUser } from "@/lib/auth";
+import { logger, safeError } from "@/lib/logger";
 
 export const runtime = "nodejs";
 
@@ -15,23 +16,37 @@ export const runtime = "nodejs";
  *
  * Devolve com Content-Disposition: attachment pra baixar como arquivo.
  */
-export async function GET() {
+export async function GET(request: Request) {
   const user = await requireUser("/api/lgpd/exportar");
   const supabase = await createClient();
+  const reqId = request.headers.get("x-request-id") ?? undefined;
+  const log = logger.child({ reqId });
 
   // profile do titular
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", user.id)
     .maybeSingle();
+  if (profileError) {
+    log.warn("lgpd_export_query_parcial", {
+      part: "profile",
+      err: safeError(profileError),
+    });
+  }
 
   // produtor (1-1 com profile, se houver)
-  const { data: produtor } = await supabase
+  const { data: produtor, error: produtorError } = await supabase
     .from("produtores")
     .select("*")
     .eq("profile_id", user.id)
     .maybeSingle();
+  if (produtorError) {
+    log.warn("lgpd_export_query_parcial", {
+      part: "produtor",
+      err: safeError(produtorError),
+    });
+  }
 
   // corretora vinculada (se o titular for corretora)
   let corretora: unknown = null;
@@ -40,34 +55,58 @@ export async function GET() {
       ? (profile as { corretora_id: string | null }).corretora_id
       : null;
   if (corretoraId) {
-    const { data } = await supabase
+    const { data, error: corretoraError } = await supabase
       .from("corretoras")
       .select("*")
       .eq("id", corretoraId)
       .maybeSingle();
+    if (corretoraError) {
+      log.warn("lgpd_export_query_parcial", {
+        part: "corretora",
+        err: safeError(corretoraError),
+      });
+    }
     corretora = data ?? null;
   }
 
   // consentimentos LGPD do titular
-  const { data: consents } = await supabase
+  const { data: consents, error: consentsError } = await supabase
     .from("lgpd_consents")
     .select("*")
     .eq("profile_id", user.id)
     .order("created_at", { ascending: false });
+  if (consentsError) {
+    log.warn("lgpd_export_query_parcial", {
+      part: "consentimentos",
+      err: safeError(consentsError),
+    });
+  }
 
   // leads em que o titular é o produtor
-  const { data: leads } = await supabase
+  const { data: leads, error: leadsError } = await supabase
     .from("leads")
     .select("*")
     .eq("produtor_id", user.id)
     .order("created_at", { ascending: false });
+  if (leadsError) {
+    log.warn("lgpd_export_query_parcial", {
+      part: "leads",
+      err: safeError(leadsError),
+    });
+  }
 
   // contratos em que o titular é o produtor
-  const { data: contratos } = await supabase
+  const { data: contratos, error: contratosError } = await supabase
     .from("contratos")
     .select("*")
     .eq("produtor_id", user.id)
     .order("created_at", { ascending: false });
+  if (contratosError) {
+    log.warn("lgpd_export_query_parcial", {
+      part: "contratos",
+      err: safeError(contratosError),
+    });
+  }
 
   const payload = {
     titular: { id: user.id, email: user.email ?? null },

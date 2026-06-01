@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { getReqLogger } from "@/lib/req-logger";
+import { safeError } from "@/lib/logger";
 
 function slugify(s: string): string {
   return s
@@ -46,20 +48,31 @@ export async function createPraca(formData: FormData) {
     );
   }
 
+  const log = await getReqLogger({ action: "createPraca" });
   const supabase = await createClient();
   const { error } = await supabase.from("pracas").insert(fields);
   if (error) {
+    log.error("praca_insert_falhou", {
+      err: safeError(error),
+      code: error.code,
+    });
     redirect(
       `/admin/cotacoes/pracas/nova?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditError } = await supabase.from("audit_log").insert({
     actor_id: user.id,
     action: "create_praca",
     entity: "pracas",
     payload: { slug: fields.slug, state: fields.state },
   });
+  if (auditError) {
+    log.warn("audit_insert_falhou", {
+      err: safeError(auditError),
+      code: auditError.code,
+    });
+  }
 
   revalidatePath("/admin/cotacoes/pracas");
   redirect("/admin/cotacoes/pracas?ok=Pra%C3%A7a%20criada");
@@ -76,21 +89,32 @@ export async function updatePraca(formData: FormData) {
     );
   }
 
+  const log = await getReqLogger({ action: "updatePraca", pracaId: id });
   const supabase = await createClient();
   const { error } = await supabase.from("pracas").update(fields).eq("id", id);
   if (error) {
+    log.error("praca_update_falhou", {
+      err: safeError(error),
+      code: error.code,
+    });
     redirect(
       `/admin/cotacoes/pracas/${id}?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditError } = await supabase.from("audit_log").insert({
     actor_id: user.id,
     action: "update_praca",
     entity: "pracas",
     entity_id: id,
     payload: { slug: fields.slug },
   });
+  if (auditError) {
+    log.warn("audit_insert_falhou", {
+      err: safeError(auditError),
+      code: auditError.code,
+    });
+  }
 
   revalidatePath("/admin/cotacoes/pracas");
   redirect(`/admin/cotacoes/pracas/${id}?saved=1`);
@@ -102,23 +126,34 @@ export async function togglePracaActive(formData: FormData) {
   const next = formData.get("active") === "true";
   if (!id) redirect("/admin/cotacoes/pracas?error=ID%20inv%C3%A1lido");
 
+  const log = await getReqLogger({ action: "togglePracaActive", pracaId: id });
   const supabase = await createClient();
   const { error } = await supabase
     .from("pracas")
     .update({ active: next })
     .eq("id", id);
   if (error) {
+    log.error("praca_update_falhou", {
+      err: safeError(error),
+      code: error.code,
+    });
     redirect(
       `/admin/cotacoes/pracas?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditError } = await supabase.from("audit_log").insert({
     actor_id: user.id,
     action: next ? "activate_praca" : "deactivate_praca",
     entity: "pracas",
     entity_id: id,
   });
+  if (auditError) {
+    log.warn("audit_insert_falhou", {
+      err: safeError(auditError),
+      code: auditError.code,
+    });
+  }
 
   revalidatePath("/admin/cotacoes/pracas");
   redirect(

@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile, requireUser } from "@/lib/auth";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import {
   citySchema,
   cpfOrCnpjSchema,
@@ -65,6 +67,7 @@ export async function completarOnboarding(formData: FormData) {
   const state = stateParsed.data;
 
   const supabase = await createClient();
+  const log = await getReqLogger({ action: "completarOnboarding" });
 
   const profilePatch: Record<string, unknown> = {
     full_name,
@@ -79,7 +82,10 @@ export async function completarOnboarding(formData: FormData) {
     .from("profiles")
     .update(profilePatch)
     .eq("id", user.id);
-  if (pErr) redirectError(pErr.message);
+  if (pErr) {
+    log.error("profile_update_falhou", { err: safeError(pErr), code: pErr.code });
+    redirectError(pErr.message);
+  }
 
   const { error: prErr } = await supabase.from("produtores").upsert(
     {
@@ -94,14 +100,20 @@ export async function completarOnboarding(formData: FormData) {
     },
     { onConflict: "profile_id" },
   );
-  if (prErr) redirectError(prErr.message);
+  if (prErr) {
+    log.error("produtor_upsert_falhou", { err: safeError(prErr), code: prErr.code });
+    redirectError(prErr.message);
+  }
 
   if (corretora_id) {
-    await supabase
+    const { error: favErr } = await supabase
       .from("favoritos")
       .upsert({ produtor_id: user.id, corretora_id }, {
         onConflict: "produtor_id,corretora_id",
       });
+    if (favErr) {
+      log.warn("favorito_upsert_falhou", { err: safeError(favErr), code: favErr.code });
+    }
   }
 
   revalidatePath("/painel/produtor");

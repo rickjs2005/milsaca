@@ -6,6 +6,8 @@ import type { PostgrestError } from "@supabase/supabase-js";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import { notify } from "@/lib/notify";
 import { requireActiveSubscription } from "../_lib/corretora";
 import type { EntregaStatus } from "./_lib/queries";
@@ -140,6 +142,15 @@ export async function createEntrega(formData: FormData) {
   );
 
   if ("error" in result) {
+    const log = await getReqLogger({
+      action: "createEntrega",
+      corretoraId: profile.corretora_id,
+      contratoId,
+    });
+    log.error("entrega_insert_falhou", {
+      code: result.error?.code,
+      err: safeError(result.error),
+    });
     redirect(
       `/painel/corretora/entregas/nova?contrato=${contratoId}&error=${encodeURIComponent(friendlyPostgresError(result.error, "Erro ao criar entrega"))}`,
     );
@@ -201,6 +212,15 @@ export async function gerarEntregaDoContrato(formData: FormData) {
   );
 
   if ("error" in result) {
+    const log = await getReqLogger({
+      action: "gerarEntregaDoContrato",
+      corretoraId: profile.corretora_id,
+      contratoId,
+    });
+    log.error("entrega_insert_falhou", {
+      code: result.error?.code,
+      err: safeError(result.error),
+    });
     redirect(
       `/painel/corretora/contratos/${contratoId}?error=${encodeURIComponent(friendlyPostgresError(result.error, "Erro ao gerar entrega"))}`,
     );
@@ -253,11 +273,24 @@ export async function updateEntregaStatus(formData: FormData) {
     patch.data_realizada = new Date().toISOString().slice(0, 10);
   }
 
-  await supabase
+  const { error: updateErr } = await supabase
     .from("entregas")
     .update(patch)
     .eq("corretora_id", profile.corretora_id)
     .eq("id", id);
+  if (updateErr) {
+    const log = await getReqLogger({
+      action: "updateEntregaStatus",
+      corretoraId: profile.corretora_id,
+      entregaId: id,
+    });
+    log.error("entrega_status_update_falhou", {
+      from: current.status,
+      to: status,
+      code: updateErr.code,
+      err: safeError(updateErr),
+    });
+  }
 
   if (current.status !== status) {
     await notify({
@@ -293,7 +326,7 @@ export async function updateEntregaFields(formData: FormData) {
   let liquido = parseNum(formData.get("peso_liquido_kg"));
   if (liquido == null && bruto != null && tara != null) liquido = bruto - tara;
 
-  await supabase
+  const { error: updateErr } = await supabase
     .from("entregas")
     .update({
       bag_count: parseInt0(formData.get("bag_count")),
@@ -313,6 +346,17 @@ export async function updateEntregaFields(formData: FormData) {
     })
     .eq("corretora_id", profile.corretora_id)
     .eq("id", id);
+  if (updateErr) {
+    const log = await getReqLogger({
+      action: "updateEntregaFields",
+      corretoraId: profile.corretora_id,
+      entregaId: id,
+    });
+    log.error("entrega_fields_update_falhou", {
+      code: updateErr.code,
+      err: safeError(updateErr),
+    });
+  }
 
   revalidatePath("/painel/corretora/entregas");
   revalidatePath(`/painel/corretora/entregas/${id}`);

@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 
 const VALID_RESOLUTIONS = ["actioned", "dismissed", "reviewing"] as const;
 
@@ -32,18 +34,35 @@ export async function resolveReport(formData: FormData) {
     .eq("id", id);
 
   if (error) {
+    const log = await getReqLogger({
+      action: "resolveReport",
+      userId: user.id,
+      entityId: id,
+    });
+    log.error("moderation_resolve_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     redirect(
       `/admin/moderacao?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditErr } = await supabase.from("audit_log").insert({
     actor_id: user.id,
     action: `moderation_${status}`,
     entity: "moderation_reports",
     entity_id: id,
     payload: { resolution },
   });
+  if (auditErr) {
+    const log = await getReqLogger({
+      action: "resolveReport",
+      userId: user.id,
+      entityId: id,
+    });
+    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+  }
 
   revalidatePath("/admin/moderacao");
   redirect(`/admin/moderacao?ok=Den%C3%BAncia%20atualizada`);

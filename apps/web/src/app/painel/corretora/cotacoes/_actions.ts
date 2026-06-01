@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import { uuidSchema } from "../_lib/schemas";
 import { requireActiveSubscription } from "../_lib/corretora";
 import type { CoffeeProcesso, CoffeeSpecie } from "@milsaca/types";
@@ -84,6 +86,14 @@ export async function createCotacao(formData: FormData) {
   });
 
   if (error) {
+    const log = await getReqLogger({
+      action: "createCotacao",
+      corretoraId: profile.corretora_id,
+    });
+    log.error("cotacao_insert_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     const params = new URLSearchParams({ error: friendlyPostgresError(error) });
     redirect(`/painel/corretora/cotacoes/novo?${params.toString()}`);
   }
@@ -144,6 +154,14 @@ export async function updateCotacao(formData: FormData) {
     .eq("corretora_id", profile.corretora_id);
 
   if (error) {
+    const log = await getReqLogger({
+      action: "updateCotacao",
+      corretoraId: profile.corretora_id,
+    });
+    log.error("cotacao_update_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     const params = new URLSearchParams({ error: friendlyPostgresError(error) });
     redirect(`/painel/corretora/cotacoes/${id}?${params.toString()}`);
   }
@@ -163,11 +181,21 @@ export async function deleteCotacao(formData: FormData) {
   // Filtra por corretora_id explicitamente — defesa em profundidade:
   // a RLS já bloqueia, mas o SDK não precisa nem chegar lá.
   const supabase = await createClient();
-  await supabase
+  const { error } = await supabase
     .from("cotacoes")
     .delete()
     .eq("id", id)
     .eq("corretora_id", profile.corretora_id);
+  if (error) {
+    const log = await getReqLogger({
+      action: "deleteCotacao",
+      corretoraId: profile.corretora_id,
+    });
+    log.error("cotacao_delete_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
+  }
 
   revalidateAffected();
   redirect("/painel/corretora/cotacoes");

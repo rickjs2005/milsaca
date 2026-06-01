@@ -26,6 +26,7 @@ import {
   // (CME, Investing.com via scraping, ou pagar a API).
   type Quote,
 } from "./_lib/adapters.ts";
+import { log, safeError } from "../_shared/log.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -64,7 +65,7 @@ const ADAPTERS: Array<{ name: string; run: () => Promise<Quote | null> }> = [
   { name: "bcb_ptax", run: fetchBcbPtax },
 ];
 
-async function syncAll() {
+async function syncAll(runId: string) {
   const results = await Promise.allSettled(ADAPTERS.map((a) => a.run()));
 
   const collected: string[] = [];
@@ -75,11 +76,14 @@ async function syncAll() {
     const r = results[i];
 
     if (r.status === "rejected") {
-      failed.push({ adapter, error: String(r.reason?.message ?? r.reason) });
+      const err = safeError(r.reason);
+      failed.push({ adapter, error: err.message });
+      log.warn("adapter_falhou", { runId, adapter, err });
       continue;
     }
     if (!r.value) {
       failed.push({ adapter, error: "null_result" });
+      log.warn("adapter_falhou", { runId, adapter, err: { message: "null_result" } });
       continue;
     }
 
@@ -101,10 +105,25 @@ async function syncAll() {
 
     if (error) {
       failed.push({ adapter, error: `db_upsert_failed: ${error.message}` });
+      // Falha de banco é problema nosso (não da fonte externa) → error + Sentry.
+      log.error("db_upsert_failed", {
+        runId,
+        adapter,
+        source: q.source,
+        symbol: q.symbol,
+        err: safeError(error),
+      });
+      if (SENTRY_DSN) Sentry.captureMessage("db_upsert_failed", "error");
     } else {
       collected.push(`${q.source}/${q.symbol}`);
     }
   }
+
+  log.info("sync_done", {
+    runId,
+    collected: collected.length,
+    failedCount: failed.length,
+  });
 
   return { collected, failed, ran_at: new Date().toISOString() };
 }
@@ -124,13 +143,17 @@ Deno.serve(async (req) => {
     });
   }
 
+  const runId = crypto.randomUUID();
+  if (SENTRY_DSN) Sentry.setTag("run_id", runId);
+
   try {
-    const summary = await syncAll();
+    const summary = await syncAll(runId);
     return new Response(JSON.stringify({ ok: true, ...summary }), {
       status: 200,
       headers: { "content-type": "application/json" },
     });
   } catch (err) {
+    log.error("sync_uncaught", { runId, err: safeError(err) });
     if (SENTRY_DSN) Sentry.captureException(err);
     return new Response(
       JSON.stringify({

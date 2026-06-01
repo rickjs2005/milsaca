@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 
 /**
  * Maps job kind → SQL function name. Adicione aqui ao criar novo job.
@@ -36,6 +38,16 @@ export async function triggerJob(formData: FormData) {
   const { error } = await supabase.rpc(fn);
 
   if (error) {
+    const log = await getReqLogger({
+      action: "triggerJob",
+      userId: user.id,
+    });
+    log.error("trigger_job_falhou", {
+      kind,
+      fn,
+      code: error.code,
+      err: safeError(error),
+    });
     const friendly = friendlyPostgresError(error);
     redirect(
       `/admin/automacoes?error=${encodeURIComponent(`Falha ao rodar ${kind}: ${friendly}`)}`,
@@ -44,12 +56,19 @@ export async function triggerJob(formData: FormData) {
 
   // A própria função SQL grava system_event de success. Aqui só registra
   // auditoria humana de que o admin disparou manualmente.
-  await supabase.from("audit_log").insert({
+  const { error: auditErr } = await supabase.from("audit_log").insert({
     actor_id: user.id,
     action: "trigger_job",
     entity: "system_events",
     payload: { kind, function: fn },
   });
+  if (auditErr) {
+    const log = await getReqLogger({
+      action: "triggerJob",
+      userId: user.id,
+    });
+    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+  }
 
   revalidatePath("/admin/automacoes");
   revalidatePath("/admin/fila-eventos");

@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { createHash } from "node:crypto";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import {
   citySchema,
   ufSchema,
@@ -89,6 +91,11 @@ export async function entrarNaEspera(formData: FormData) {
   });
 
   if (error) {
+    const log = await getReqLogger({ action: "entrarNaEspera" });
+    log.error("corretora_waitlist_insert_falhou", {
+      err: safeError(error),
+      code: error.code,
+    });
     params.set("error", "Não consegui salvar agora. Tente de novo em instantes.");
     redirect(`/corretoras/espera?${params.toString()}`);
   }

@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { getReqLogger } from "@/lib/req-logger";
+import { safeError } from "@/lib/logger";
 
 const SPECIES = ["arabica", "conilon", "robusta", "cacau", "pimenta", "outro"] as const;
 const PROCESSES = [
@@ -60,20 +62,31 @@ export async function createCoffeeType(formData: FormData) {
     );
   }
 
+  const log = await getReqLogger({ action: "createCoffeeType" });
   const supabase = await createClient();
   const { error } = await supabase.from("coffee_types").insert(fields);
   if (error) {
+    log.error("coffee_type_insert_falhou", {
+      err: safeError(error),
+      code: error.code,
+    });
     redirect(
       `/admin/cotacoes/tipos/nova?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditError } = await supabase.from("audit_log").insert({
     actor_id: user.id,
     action: "create_coffee_type",
     entity: "coffee_types",
     payload: { slug: fields.slug, species: fields.species },
   });
+  if (auditError) {
+    log.warn("audit_insert_falhou", {
+      err: safeError(auditError),
+      code: auditError.code,
+    });
+  }
 
   revalidatePath("/admin/cotacoes/tipos");
   redirect("/admin/cotacoes/tipos?ok=Tipo%20criado");
@@ -91,24 +104,35 @@ export async function updateCoffeeType(formData: FormData) {
     );
   }
 
+  const log = await getReqLogger({ action: "updateCoffeeType", coffeeTypeId: id });
   const supabase = await createClient();
   const { error } = await supabase
     .from("coffee_types")
     .update(fields)
     .eq("id", id);
   if (error) {
+    log.error("coffee_type_update_falhou", {
+      err: safeError(error),
+      code: error.code,
+    });
     redirect(
       `/admin/cotacoes/tipos/${id}?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditError } = await supabase.from("audit_log").insert({
     actor_id: user.id,
     action: "update_coffee_type",
     entity: "coffee_types",
     entity_id: id,
     payload: { slug: fields.slug },
   });
+  if (auditError) {
+    log.warn("audit_insert_falhou", {
+      err: safeError(auditError),
+      code: auditError.code,
+    });
+  }
 
   revalidatePath("/admin/cotacoes/tipos");
   redirect(`/admin/cotacoes/tipos/${id}?saved=1`);
@@ -120,23 +144,34 @@ export async function toggleCoffeeTypeActive(formData: FormData) {
   const next = formData.get("active") === "true";
   if (!id) redirect("/admin/cotacoes/tipos?error=ID%20inv%C3%A1lido");
 
+  const log = await getReqLogger({ action: "toggleCoffeeTypeActive", coffeeTypeId: id });
   const supabase = await createClient();
   const { error } = await supabase
     .from("coffee_types")
     .update({ active: next })
     .eq("id", id);
   if (error) {
+    log.error("coffee_type_update_falhou", {
+      err: safeError(error),
+      code: error.code,
+    });
     redirect(
       `/admin/cotacoes/tipos?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditError } = await supabase.from("audit_log").insert({
     actor_id: user.id,
     action: next ? "activate_coffee_type" : "deactivate_coffee_type",
     entity: "coffee_types",
     entity_id: id,
   });
+  if (auditError) {
+    log.warn("audit_insert_falhou", {
+      err: safeError(auditError),
+      code: auditError.code,
+    });
+  }
 
   revalidatePath("/admin/cotacoes/tipos");
   redirect(

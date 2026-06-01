@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { isAppAdmin } from "@/lib/auth";
 import { checkRateLimit, identityKey } from "@/lib/rate-limit";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 
 /**
  * Login dedicado da área administrativa. Diferente de /entrar (que aceita
@@ -33,6 +35,8 @@ export async function signInAdmin(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
+    const log = await getReqLogger({ action: "signInAdmin" });
+    log.warn("admin_signin_credencial_falhou", { err: safeError(error) });
     const params = new URLSearchParams({ email, error: error.message });
     redirect(`/admin/login?${params.toString()}`);
   }
@@ -46,6 +50,8 @@ export async function signInAdmin(formData: FormData) {
 
   // Bloqueia quem não é operador da plataforma
   if (!(await isAppAdmin())) {
+    const log = await getReqLogger({ action: "signInAdmin" });
+    log.warn("admin_login_nao_autorizado");
     await supabase.auth.signOut();
     redirect(
       "/admin/login?error=" +

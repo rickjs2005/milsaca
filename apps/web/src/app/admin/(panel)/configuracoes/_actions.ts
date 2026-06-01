@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { requireAppAdmin } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { friendlyPostgresError } from "@/app/admin/(panel)/_lib/errors";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import {
   SETTING_SECTIONS,
   SETTING_TYPES,
@@ -73,18 +75,34 @@ export async function updateSettings(formData: FormData) {
     );
 
   if (error) {
+    const log = await getReqLogger({
+      action: "updateSettings",
+      userId: user.id,
+    });
+    log.error("update_settings_falhou", {
+      total: updates.length,
+      code: error.code,
+      err: safeError(error),
+    });
     const friendly = friendlyPostgresError(error);
     redirect(
       `/admin/configuracoes?error=${encodeURIComponent(friendly)}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditErr } = await supabase.from("audit_log").insert({
     actor_id: user.id,
     action: "update_settings",
     entity: "platform_settings",
     payload: { keys: updates.map((u) => u.key), total: updates.length },
   });
+  if (auditErr) {
+    const log = await getReqLogger({
+      action: "updateSettings",
+      userId: user.id,
+    });
+    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+  }
 
   revalidatePath("/admin/configuracoes");
   redirect(

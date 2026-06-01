@@ -6,6 +6,8 @@ import { createClient } from "@milsaca/db/web/server";
 import type { Json } from "@milsaca/types/database";
 import { getProfile, getUser } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import { notify } from "@/lib/notify";
 import { requireActiveSubscription } from "../_lib/corretora";
 import type { LeadStatus, LeadOrigem } from "./_lib/queries";
@@ -132,6 +134,14 @@ export async function createLead(formData: FormData) {
     .single();
 
   if (error || !data) {
+    const log = await getReqLogger({
+      action: "createLead",
+      corretoraId: profile.corretora_id,
+    });
+    log.error("lead_insert_falhou", {
+      code: error?.code,
+      err: safeError(error ?? "insert sem retorno"),
+    });
     // Sanitiza erro cru (vai pro toast). Inconsistente vazar texto
     // bruto do Postgres aqui se updateLeadFields já usa friendly.
     const params = new URLSearchParams({
@@ -140,7 +150,7 @@ export async function createLead(formData: FormData) {
     redirect(`/painel/corretora/leads/novo?${params.toString()}`);
   }
 
-  await supabase.from("lead_events").insert({
+  const { error: eventErr } = await supabase.from("lead_events").insert({
     lead_id: data.id,
     corretora_id: profile.corretora_id,
     actor_id: user.id,
@@ -152,6 +162,18 @@ export async function createLead(formData: FormData) {
       target_kind: t.kind,
     } as unknown as Json,
   });
+  if (eventErr) {
+    const log = await getReqLogger({
+      action: "createLead",
+      corretoraId: profile.corretora_id,
+      leadId: data.id,
+    });
+    log.warn("lead_event_insert_falhou", {
+      kind: "created",
+      code: eventErr.code,
+      err: safeError(eventErr),
+    });
+  }
 
   // Notifica o produtor apenas quando o alvo é um produtor real (com auth.user).
   // Contato sombra (produtor_contatos) não tem user_id pra notificar.
@@ -197,11 +219,20 @@ export async function updateLeadFields(formData: FormData) {
     .eq("corretora_id", profile.corretora_id);
 
   if (error) {
+    const log = await getReqLogger({
+      action: "updateLeadFields",
+      corretoraId: profile.corretora_id,
+      leadId: id,
+    });
+    log.error("lead_update_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     const params = new URLSearchParams({ error: friendlyPostgresError(error) });
     redirect(`/painel/corretora/leads/${id}?${params.toString()}`);
   }
 
-  await supabase.from("lead_events").insert({
+  const { error: eventErr } = await supabase.from("lead_events").insert({
     lead_id: id,
     corretora_id: profile.corretora_id,
     actor_id: user.id,
@@ -213,6 +244,18 @@ export async function updateLeadFields(formData: FormData) {
       notes_changed: notes != null,
     } as unknown as Json,
   });
+  if (eventErr) {
+    const log = await getReqLogger({
+      action: "updateLeadFields",
+      corretoraId: profile.corretora_id,
+      leadId: id,
+    });
+    log.warn("lead_event_insert_falhou", {
+      kind: "updated",
+      code: eventErr.code,
+      err: safeError(eventErr),
+    });
+  }
 
   revalidateLead(id);
   redirect(`/painel/corretora/leads/${id}?saved=1`);
@@ -246,13 +289,25 @@ export async function updateLeadStatus(formData: FormData) {
   if (current.status === next) {
     // sem mudança real, mas se houver comentário registra como comment
     if (comment) {
-      await supabase.from("lead_events").insert({
+      const { error: eventErr } = await supabase.from("lead_events").insert({
         lead_id: id,
         corretora_id: profile.corretora_id,
         actor_id: user.id,
         kind: "comment",
         payload: { text: comment } as unknown as Json,
       });
+      if (eventErr) {
+        const log = await getReqLogger({
+          action: "updateLeadStatus",
+          corretoraId: profile.corretora_id,
+          leadId: id,
+        });
+        log.warn("lead_event_insert_falhou", {
+          kind: "comment",
+          code: eventErr.code,
+          err: safeError(eventErr),
+        });
+      }
     }
     revalidateLead(id);
     redirect(`/painel/corretora/leads/${id}`);
@@ -265,11 +320,22 @@ export async function updateLeadStatus(formData: FormData) {
     .eq("corretora_id", profile.corretora_id);
 
   if (error) {
+    const log = await getReqLogger({
+      action: "updateLeadStatus",
+      corretoraId: profile.corretora_id,
+      leadId: id,
+    });
+    log.error("lead_status_update_falhou", {
+      from: current.status,
+      to: next,
+      code: error.code,
+      err: safeError(error),
+    });
     const params = new URLSearchParams({ error: friendlyPostgresError(error) });
     redirect(`/painel/corretora/leads/${id}?${params.toString()}`);
   }
 
-  await supabase.from("lead_events").insert({
+  const { error: eventErr } = await supabase.from("lead_events").insert({
     lead_id: id,
     corretora_id: profile.corretora_id,
     actor_id: user.id,
@@ -280,6 +346,18 @@ export async function updateLeadStatus(formData: FormData) {
       comment: comment ?? null,
     } as unknown as Json,
   });
+  if (eventErr) {
+    const log = await getReqLogger({
+      action: "updateLeadStatus",
+      corretoraId: profile.corretora_id,
+      leadId: id,
+    });
+    log.warn("lead_event_insert_falhou", {
+      kind: "status_changed",
+      code: eventErr.code,
+      err: safeError(eventErr),
+    });
+  }
 
   if (current.produtor_id) {
     await notify({
@@ -317,13 +395,25 @@ export async function addLeadComment(formData: FormData) {
   if (!id || !text) redirect(`/painel/corretora/leads/${id}`);
 
   const supabase = await createClient();
-  await supabase.from("lead_events").insert({
+  const { error: eventErr } = await supabase.from("lead_events").insert({
     lead_id: id,
     corretora_id: profile.corretora_id,
     actor_id: user.id,
     kind: "comment",
     payload: { text } as unknown as Json,
   });
+  if (eventErr) {
+    const log = await getReqLogger({
+      action: "addLeadComment",
+      corretoraId: profile.corretora_id,
+      leadId: id,
+    });
+    log.warn("lead_event_insert_falhou", {
+      kind: "comment",
+      code: eventErr.code,
+      err: safeError(eventErr),
+    });
+  }
 
   revalidateLead(id);
   redirect(`/painel/corretora/leads/${id}`);

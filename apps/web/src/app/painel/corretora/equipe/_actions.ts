@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 
 const BASE = "/painel/corretora/equipe";
 
@@ -33,6 +35,15 @@ export async function gerarConviteEquipe(formData: FormData) {
   });
 
   if (error) {
+    const log = await getReqLogger({
+      action: "gerarConviteEquipe",
+      corretoraId: profile.corretora_id,
+    });
+    log.error("convite_equipe_rpc_falhou", {
+      rpc: "gerar_convite_corretora_self",
+      code: error.code,
+      err: safeError(error),
+    });
     back({ error: friendlyPostgresError(error) });
   }
   const row = data?.[0];
@@ -64,6 +75,15 @@ export async function revogarConviteEquipe(formData: FormData) {
   });
 
   if (error) {
+    const log = await getReqLogger({
+      action: "revogarConviteEquipe",
+      corretoraId: profile.corretora_id,
+    });
+    log.error("convite_equipe_revogar_rpc_falhou", {
+      rpc: "revogar_convite_corretora_self",
+      code: error.code,
+      err: safeError(error),
+    });
     back({ error: friendlyPostgresError(error) });
   }
 
@@ -86,6 +106,15 @@ export async function removerOperador(formData: FormData) {
   });
 
   if (error) {
+    const log = await getReqLogger({
+      action: "removerOperador",
+      corretoraId: profile.corretora_id,
+    });
+    log.error("remover_operador_rpc_falhou", {
+      rpc: "remover_operador_corretora",
+      code: error.code,
+      err: safeError(error),
+    });
     back({ error: friendlyPostgresError(error) });
   }
   const row = data?.[0];

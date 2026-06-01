@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { requireAppAdmin } from "@/lib/auth";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import { friendlyPostgresError } from "./_lib/errors";
 import {
   aprovarCorretoraSchema,
@@ -56,12 +58,19 @@ export async function createCorretora(formData: FormData) {
     .single();
 
   if (error || !created) {
+    const log = await getReqLogger({
+      action: "createCorretora",
+      userId: actor.id,
+    });
+    log.error("create_corretora_falhou", {
+      ...(error ? { code: error.code, err: safeError(error) } : {}),
+    });
     redirect(
       `/admin/corretoras/nova?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditErr } = await supabase.from("audit_log").insert({
     actor_id: actor.id,
     corretora_id: created.id,
     action: "create_corretora",
@@ -69,6 +78,14 @@ export async function createCorretora(formData: FormData) {
     entity_id: created.id,
     payload: { name: fields.name, slug, cnpj: fields.cnpj, verified },
   });
+  if (auditErr) {
+    const log = await getReqLogger({
+      action: "createCorretora",
+      userId: actor.id,
+      corretoraId: created.id,
+    });
+    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+  }
 
   revalidatePath("/admin");
   revalidatePath("/admin/corretoras");
@@ -99,12 +116,21 @@ export async function updateCorretora(formData: FormData) {
     .eq("id", id);
 
   if (error) {
+    const log = await getReqLogger({
+      action: "updateCorretora",
+      userId: actor.id,
+      corretoraId: id,
+    });
+    log.error("update_corretora_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     redirect(
       `/admin/corretoras/${id}?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditErr } = await supabase.from("audit_log").insert({
     actor_id: actor.id,
     corretora_id: id,
     action: "update_corretora",
@@ -116,6 +142,14 @@ export async function updateCorretora(formData: FormData) {
       ),
     },
   });
+  if (auditErr) {
+    const log = await getReqLogger({
+      action: "updateCorretora",
+      userId: actor.id,
+      corretoraId: id,
+    });
+    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+  }
 
   revalidatePath("/admin");
   revalidatePath("/admin/corretoras");
@@ -146,12 +180,20 @@ export async function gerarConviteCorretora(formData: FormData) {
     .single();
 
   if (error || !invite) {
+    const log = await getReqLogger({
+      action: "gerarConviteCorretora",
+      userId: actor.id,
+      corretoraId,
+    });
+    log.error("gerar_convite_corretora_falhou", {
+      ...(error ? { code: error.code, err: safeError(error) } : {}),
+    });
     redirect(
       `/admin/corretoras/${corretoraId}?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditErr } = await supabase.from("audit_log").insert({
     actor_id: actor.id,
     corretora_id: corretoraId,
     action: "create_corretora_invite",
@@ -159,6 +201,14 @@ export async function gerarConviteCorretora(formData: FormData) {
     entity_id: invite.token,
     payload: { email, expires_at: invite.expires_at },
   });
+  if (auditErr) {
+    const log = await getReqLogger({
+      action: "gerarConviteCorretora",
+      userId: actor.id,
+      corretoraId,
+    });
+    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+  }
 
   revalidatePath(`/admin/corretoras/${corretoraId}`);
   redirect(`/admin/corretoras/${corretoraId}?invite_token=${invite.token}`);
@@ -181,13 +231,25 @@ export async function revogarConviteCorretora(formData: FormData) {
 
   const supabase = await createClient();
   // Marcar como expirado em vez de deletar pra manter audit trail.
-  await supabase
+  const { error } = await supabase
     .from("corretora_invites")
     .update({ expires_at: new Date(Date.now() - 1000).toISOString() })
     .eq("token", token)
     .is("used_at", null);
+  if (error) {
+    const log = await getReqLogger({
+      action: "revogarConviteCorretora",
+      userId: actor.id,
+      corretoraId,
+      entityId: token,
+    });
+    log.error("revogar_convite_corretora_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
+  }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditErr } = await supabase.from("audit_log").insert({
     actor_id: actor.id,
     corretora_id: corretoraId,
     action: "revoke_corretora_invite",
@@ -195,6 +257,15 @@ export async function revogarConviteCorretora(formData: FormData) {
     entity_id: token,
     payload: {},
   });
+  if (auditErr) {
+    const log = await getReqLogger({
+      action: "revogarConviteCorretora",
+      userId: actor.id,
+      corretoraId,
+      entityId: token,
+    });
+    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+  }
 
   revalidatePath(`/admin/corretoras/${corretoraId}`);
   redirect(`/admin/corretoras/${corretoraId}?ok=Convite%20revogado`);
@@ -209,9 +280,23 @@ export async function toggleCorretoraVerified(formData: FormData) {
   const next = formData.get("verified") === "true";
 
   const supabase = await createClient();
-  await supabase.from("corretoras").update({ verified: next }).eq("id", id);
+  const { error } = await supabase
+    .from("corretoras")
+    .update({ verified: next })
+    .eq("id", id);
+  if (error) {
+    const log = await getReqLogger({
+      action: "toggleCorretoraVerified",
+      userId: actor.id,
+      corretoraId: id,
+    });
+    log.error("corretora_verified_update_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
+  }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditErr } = await supabase.from("audit_log").insert({
     actor_id: actor.id,
     corretora_id: id,
     action: next ? "verify_corretora" : "unverify_corretora",
@@ -219,6 +304,14 @@ export async function toggleCorretoraVerified(formData: FormData) {
     entity_id: id,
     payload: { verified: next },
   });
+  if (auditErr) {
+    const log = await getReqLogger({
+      action: "toggleCorretoraVerified",
+      userId: actor.id,
+      corretoraId: id,
+    });
+    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+  }
 
   revalidatePath("/admin");
   revalidatePath("/admin/corretoras");
@@ -262,6 +355,14 @@ export async function aprovarCorretora(formData: FormData) {
 
   if (error || !row?.success) {
     const code = error?.message ?? row?.error_msg ?? "";
+    const log = await getReqLogger({
+      action: "aprovarCorretora",
+      profileId,
+    });
+    log.error("aprovar_corretora_falhou", {
+      reason: row?.error_msg ?? null,
+      ...(error ? { err: safeError(error) } : {}),
+    });
     // Mapeia o error_msg da RPC pra mensagem pt-BR amigável.
     const friendly =
       code === "forbidden"
@@ -300,18 +401,35 @@ export async function rejeitarCorretora(formData: FormData) {
     .eq("id", profileId);
 
   if (error) {
+    const log = await getReqLogger({
+      action: "rejeitarCorretora",
+      userId: actor.id,
+      profileId,
+    });
+    log.error("rejeitar_corretora_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
     redirect(
       `/admin/aprovacoes?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditErr } = await supabase.from("audit_log").insert({
     actor_id: actor.id,
     action: "rejeitar_corretora",
     entity: "profile",
     entity_id: profileId,
     payload: {},
   });
+  if (auditErr) {
+    const log = await getReqLogger({
+      action: "rejeitarCorretora",
+      userId: actor.id,
+      profileId,
+    });
+    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+  }
 
   revalidatePath("/admin");
   revalidatePath("/admin/aprovacoes");
@@ -376,15 +494,27 @@ export async function grantCorretoraTier(formData: FormData) {
   if (tier === "gratuito") {
     // Cancela subscription existente. Painel da corretora cai pra Free
     // automaticamente (detectCurrentTier resolve "none" como Gratuito).
-    await supabase
+    const { error: cancelErr } = await supabase
       .from("subscriptions")
       .update({
         status: "canceled",
         canceled_at: new Date().toISOString(),
       })
       .eq("corretora_id", corretoraId);
+    if (cancelErr) {
+      const log = await getReqLogger({
+        action: "grantCorretoraTier",
+        userId: actor.id,
+        corretoraId,
+      });
+      log.error("grant_tier_cancel_falhou", {
+        tier: "gratuito",
+        code: cancelErr.code,
+        err: safeError(cancelErr),
+      });
+    }
 
-    await supabase.from("audit_log").insert({
+    const { error: auditErr } = await supabase.from("audit_log").insert({
       actor_id: actor.id,
       corretora_id: corretoraId,
       action: "grant_tier_gratuito",
@@ -392,6 +522,14 @@ export async function grantCorretoraTier(formData: FormData) {
       entity_id: corretoraId,
       payload: { tier: "gratuito" },
     });
+    if (auditErr) {
+      const log = await getReqLogger({
+        action: "grantCorretoraTier",
+        userId: actor.id,
+        corretoraId,
+      });
+      log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+    }
 
     revalidatePath("/admin/corretoras");
     revalidatePath(`/admin/corretoras/${corretoraId}`);
@@ -405,7 +543,7 @@ export async function grantCorretoraTier(formData: FormData) {
   // Self-heal idempotente: insere o plano só se o slug ainda não existir
   // (ignoreDuplicates → ON CONFLICT (slug) DO NOTHING), depois resolve o id.
   // Evita a race do read-modify-write (dois grants simultâneos do mesmo tier).
-  await supabase
+  const { error: planUpsertErr } = await supabase
     .from("plans")
     .upsert(
       {
@@ -419,6 +557,18 @@ export async function grantCorretoraTier(formData: FormData) {
       },
       { onConflict: "slug", ignoreDuplicates: true },
     );
+  if (planUpsertErr) {
+    const log = await getReqLogger({
+      action: "grantCorretoraTier",
+      userId: actor.id,
+      corretoraId,
+    });
+    log.warn("grant_tier_plan_selfheal_falhou", {
+      tier,
+      code: planUpsertErr.code,
+      err: safeError(planUpsertErr),
+    });
+  }
 
   const { data: plan, error: planErr } = await supabase
     .from("plans")
@@ -426,6 +576,15 @@ export async function grantCorretoraTier(formData: FormData) {
     .eq("slug", planMeta.slug)
     .maybeSingle<{ id: string }>();
   if (planErr || !plan) {
+    const log = await getReqLogger({
+      action: "grantCorretoraTier",
+      userId: actor.id,
+      corretoraId,
+    });
+    log.error("grant_tier_plan_lookup_falhou", {
+      tier,
+      ...(planErr ? { code: planErr.code, err: safeError(planErr) } : {}),
+    });
     redirect(
       `/admin/corretoras/${corretoraId}?error=${encodeURIComponent(friendlyPostgresError(planErr ?? null))}`,
     );
@@ -460,12 +619,22 @@ export async function grantCorretoraTier(formData: FormData) {
     );
 
   if (subErr) {
+    const log = await getReqLogger({
+      action: "grantCorretoraTier",
+      userId: actor.id,
+      corretoraId,
+    });
+    log.error("grant_tier_subscription_upsert_falhou", {
+      tier,
+      code: subErr.code,
+      err: safeError(subErr),
+    });
     redirect(
       `/admin/corretoras/${corretoraId}?error=${encodeURIComponent(friendlyPostgresError(subErr))}`,
     );
   }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditErr } = await supabase.from("audit_log").insert({
     actor_id: actor.id,
     corretora_id: corretoraId,
     action: `grant_tier_${tier}`,
@@ -473,6 +642,14 @@ export async function grantCorretoraTier(formData: FormData) {
     entity_id: corretoraId,
     payload: { tier, plan_id: planId, period_end: periodEnd.toISOString() },
   });
+  if (auditErr) {
+    const log = await getReqLogger({
+      action: "grantCorretoraTier",
+      userId: actor.id,
+      corretoraId,
+    });
+    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+  }
 
   revalidatePath("/admin/corretoras");
   revalidatePath(`/admin/corretoras/${corretoraId}`);
@@ -502,14 +679,26 @@ export async function linkProfileToCorretora(formData: FormData) {
   }
 
   const supabase = await createClient();
-  await supabase
+  const { error } = await supabase
     .from("profiles")
     .update({
       corretora_id: corretoraId,
     })
     .eq("id", profileId);
+  if (error) {
+    const log = await getReqLogger({
+      action: "linkProfileToCorretora",
+      userId: actor.id,
+      profileId,
+      ...(corretoraId ? { corretoraId } : {}),
+    });
+    log.error("link_profile_corretora_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
+  }
 
-  await supabase.from("audit_log").insert({
+  const { error: auditErr } = await supabase.from("audit_log").insert({
     actor_id: actor.id,
     corretora_id: corretoraId,
     action: corretoraId ? "link_profile_corretora" : "unlink_profile_corretora",
@@ -517,6 +706,15 @@ export async function linkProfileToCorretora(formData: FormData) {
     entity_id: profileId,
     payload: { corretora_id: corretoraId },
   });
+  if (auditErr) {
+    const log = await getReqLogger({
+      action: "linkProfileToCorretora",
+      userId: actor.id,
+      profileId,
+      ...(corretoraId ? { corretoraId } : {}),
+    });
+    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+  }
 
   revalidatePath("/admin");
 }

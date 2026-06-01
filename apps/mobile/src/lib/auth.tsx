@@ -26,6 +26,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import type { Profile, UserRole } from "@milsaca/types";
 
 import { ACTIVE_ROLE_KEY, supabase } from "./supabase";
+import { logger, safeError } from "./logger";
 
 export type AuthStatus = "loading" | "signed_out" | "signed_in";
 
@@ -76,7 +77,8 @@ async function fetchProfile(userId: string): Promise<Profile | null> {
     .eq("id", userId)
     .maybeSingle();
   if (error) {
-    console.warn("[auth] fetchProfile error:", error.message);
+    // Não vaza email/PII: só código/mensagem sanitizada via safeError.
+    logger.error("fetch_profile_falhou", { err: safeError(error) });
     return null;
   }
   return (data as Profile | null) ?? null;
