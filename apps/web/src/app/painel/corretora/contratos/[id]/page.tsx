@@ -112,6 +112,12 @@ export default async function ContratoDetalhePage({
   ]);
   if (!contrato) notFound();
 
+  // Assinado = content_hash congelado em updateContratoStatus. Os campos
+  // materiais entram no hash, então não podem ser editados depois sem quebrar
+  // o espelho e a verificação pública: renderizamos só leitura.
+  const isSigned =
+    contrato.status === "ativo" || contrato.status === "finalizado";
+
   const waUrl = buildWhatsAppInviteUrl({
     phone: contrato.produtor_phone,
     message: `Olá ${contrato.produtor_nome.split(" ")[0] || ""}, falando sobre o contrato ${contrato.code}${contrato.bag_count ? ` (${contrato.bag_count} sacas)` : ""}. Acesse: ${SITE_URL}`,
@@ -225,11 +231,99 @@ export default async function ContratoDetalhePage({
             <CardHeader>
               <CardTitle className="text-base">Dados do contrato</CardTitle>
               <CardDescription>
-                Edite enquanto for rascunho ou em análise. Após assinado,
-                cuidado ao mudar.
+                {isSigned
+                  ? "Contrato assinado — valores travados pelo hash de verificação."
+                  : "Edite enquanto for rascunho ou em análise."}
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {isSigned ? (
+                <div className="space-y-5">
+                  <div className="flex items-start gap-2 rounded-md border border-milsaca-cream-escuro bg-milsaca-cream-escuro/40 px-4 py-3 text-sm text-milsaca-verde">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                    <p>
+                      Contrato assinado — valores travados pelo hash de
+                      verificação. Para alterar, cancele o contrato e refaça.
+                    </p>
+                  </div>
+                  <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+                    <div className="sm:col-span-2">
+                      <dt className="text-xs font-medium text-milsaca-verde-claro">
+                        Código
+                      </dt>
+                      <dd className="text-sm text-milsaca-verde">
+                        {contrato.code}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-medium text-milsaca-verde-claro">
+                        Café
+                      </dt>
+                      <dd className="text-sm text-milsaca-verde">
+                        {contrato.coffee_type ?? "—"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-medium text-milsaca-verde-claro">
+                        Sacas (60kg)
+                      </dt>
+                      <dd className="text-sm text-milsaca-verde">
+                        {contrato.bag_count ?? "—"}
+                      </dd>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <dt className="text-xs font-medium text-milsaca-verde-claro">
+                        Valor total
+                      </dt>
+                      <dd className="text-sm text-milsaca-verde">
+                        {contrato.total_value != null
+                          ? formatBRL(contrato.total_value)
+                          : "—"}
+                      </dd>
+                    </div>
+                    <div className="sm:col-span-2 border-t border-milsaca-cream-escuro pt-4">
+                      <dt className="text-xs font-medium text-milsaca-verde-claro">
+                        Comprador
+                      </dt>
+                      <dd className="text-sm text-milsaca-verde">
+                        {contrato.comprador_nome ?? "— sem comprador —"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-medium text-milsaca-verde-claro">
+                        Comissão (%)
+                      </dt>
+                      <dd className="text-sm text-milsaca-verde">
+                        {contrato.comissao_pct != null
+                          ? `${String(contrato.comissao_pct).replace(".", ",")}%`
+                          : "—"}
+                      </dd>
+                      {contrato.comissao_total != null ? (
+                        <p className="text-xs text-milsaca-verde-claro">
+                          Total: {formatBRL(contrato.comissao_total)}
+                        </p>
+                      ) : null}
+                    </div>
+                  </dl>
+                  <div className="grid gap-3 rounded-md bg-milsaca-cream-escuro/30 p-3 text-xs text-milsaca-verde-claro sm:grid-cols-2">
+                    <div>
+                      <span className="font-medium text-milsaca-verde">
+                        Criado em
+                      </span>
+                      : {formatDateTime(contrato.created_at)}
+                    </div>
+                    <div>
+                      <span className="font-medium text-milsaca-verde">
+                        Assinado em
+                      </span>
+                      :{" "}
+                      {contrato.signed_at
+                        ? formatDate(contrato.signed_at)
+                        : "—"}
+                    </div>
+                  </div>
+                </div>
+              ) : (
               <form
                 action={updateContratoFields}
                 className="grid gap-5 sm:grid-cols-2"
@@ -369,6 +463,7 @@ export default async function ContratoDetalhePage({
                   </Button>
                 </div>
               </form>
+              )}
             </CardContent>
           </Card>
         </div>

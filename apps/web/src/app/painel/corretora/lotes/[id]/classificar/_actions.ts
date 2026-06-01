@@ -52,6 +52,27 @@ export async function saveClassificacao(input: ClassificarInput) {
     };
   }
 
+  const supabase = await createClient();
+
+  // Defesa em profundidade: a RLS de INSERT só checa `corretora_id = meu`,
+  // não que o lote é meu. Validamos a posse do lote antes de classificar
+  // pra não criar classificação órfã apontando pra lote de outro tenant.
+  const { data: loteOwn } = await supabase
+    .from("lotes")
+    .select("id")
+    .eq("id", input.loteId)
+    .eq("corretora_id", profile.corretora_id)
+    .maybeSingle<{ id: string }>();
+  if (!loteOwn) {
+    const log = await getReqLogger({
+      action: "saveClassificacao",
+      corretoraId: profile.corretora_id,
+      loteId: input.loteId,
+    });
+    log.error("classificacao_lote_invalido", { loteId: input.loteId });
+    return { ok: false as const, error: "Lote inválido para esta corretora." };
+  }
+
   const opts: OpcoesCalculo = {
     brocadosPorDefeito: input.brocadosPorDefeito,
   };
@@ -66,7 +87,6 @@ export async function saveClassificacao(input: ClassificarInput) {
         })
       : null;
 
-  const supabase = await createClient();
   const { error } = await supabase.from("classificacoes_cob").insert({
     lote_id: input.loteId,
     corretora_id: profile.corretora_id,

@@ -7,6 +7,7 @@ import type { CotacaoRow, CotacoesFilter } from "./cotacao-meta";
 export type { CotacaoRow, CotacoesFilter } from "./cotacao-meta";
 
 export async function listCotacoes(
+  corretoraId: string,
   filter: CotacoesFilter = {},
 ): Promise<CotacaoRow[]> {
   const supabase = await createClient();
@@ -15,6 +16,10 @@ export async function listCotacoes(
     .select(
       "id, coffee_type, specie, process, region, price, source, reference_date, created_at",
     )
+    // Escopo de tenant: "Suas cotações manuais" são da PRÓPRIA corretora. Sem
+    // isso, a lista (e o cálculo de vigente/variação por praça) misturava
+    // cotações de outras corretoras — a RLS de SELECT é aberta (feed do produtor).
+    .eq("corretora_id", corretoraId)
     .order("reference_date", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(200);
@@ -87,10 +92,12 @@ export type CotacoesKpis = {
 async function ultimaPorEspecie(
   supabase: Awaited<ReturnType<typeof createClient>>,
   specie: CoffeeSpecie,
+  corretoraId: string,
 ): Promise<CotacaoUltima> {
   const { data } = await supabase
     .from("cotacoes")
     .select("price, reference_date, region")
+    .eq("corretora_id", corretoraId)
     .eq("specie", specie)
     .order("reference_date", { ascending: false })
     .order("created_at", { ascending: false })
@@ -112,12 +119,17 @@ function diasDesde(iso: string): number {
   return Math.round((today - ref) / 86_400_000);
 }
 
-export async function loadCotacoesKpis(): Promise<CotacoesKpis> {
+export async function loadCotacoesKpis(
+  corretoraId: string,
+): Promise<CotacoesKpis> {
   const supabase = await createClient();
   const [arabica, conillon, totalRes] = await Promise.all([
-    ultimaPorEspecie(supabase, "arabica"),
-    ultimaPorEspecie(supabase, "conillon"),
-    supabase.from("cotacoes").select("id", { count: "exact", head: true }),
+    ultimaPorEspecie(supabase, "arabica", corretoraId),
+    ultimaPorEspecie(supabase, "conillon", corretoraId),
+    supabase
+      .from("cotacoes")
+      .select("id", { count: "exact", head: true })
+      .eq("corretora_id", corretoraId),
   ]);
 
   const datas = [arabica?.reference_date, conillon?.reference_date].filter(

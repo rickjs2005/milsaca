@@ -37,7 +37,7 @@ export default async function NovoLotePage({
   if (block) return block;
 
   const sp = await searchParams;
-  const produtores = await listProdutores();
+  const produtores = await listProdutores(profile.corretora_id);
 
   return (
     <div className="space-y-6">

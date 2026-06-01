@@ -129,23 +129,63 @@ export async function listLotes(
   return { rows: mapped, count: count ?? 0 };
 }
 
-export async function listProdutores(): Promise<ProdutorOption[]> {
+/**
+ * Produtores ligados à corretora (escopo de tenant) — usado no picker do
+ * cadastro de lote. Espelha `listProdutoresReais` de contratos: o universo
+ * são os produtores que aparecem em leads, contratos ou favoritos da
+ * corretora. Picker GLOBAL era furo de cross-tenant.
+ */
+export async function listProdutores(
+  corretoraId: string,
+): Promise<ProdutorOption[]> {
+  if (!corretoraId) return [];
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("profiles")
-    .select("id, full_name, roles")
-    .order("full_name", { ascending: true });
+
+  const [leadsRows, contratosRows, favoritosRows] = await Promise.all([
+    supabase
+      .from("leads")
+      .select("produtor_id")
+      .eq("corretora_id", corretoraId)
+      .not("produtor_id", "is", null),
+    supabase
+      .from("contratos")
+      .select("produtor_id")
+      .eq("corretora_id", corretoraId),
+    supabase
+      .from("favoritos")
+      .select("produtor_id")
+      .eq("corretora_id", corretoraId),
+  ]);
+
+  const ids = new Set<string>();
+  for (const r of (leadsRows.data ?? []) as { produtor_id: string | null }[]) {
+    if (r.produtor_id) ids.add(r.produtor_id);
+  }
+  for (const r of (contratosRows.data ?? []) as {
+    produtor_id: string | null;
+  }[]) {
+    if (r.produtor_id) ids.add(r.produtor_id);
+  }
+  for (const r of (favoritosRows.data ?? []) as {
+    produtor_id: string | null;
+  }[]) {
+    if (r.produtor_id) ids.add(r.produtor_id);
+  }
+
+  if (ids.size === 0) return [];
 
   type Raw = {
     id: string;
     full_name: string | null;
-    roles: string[] | null;
   };
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", Array.from(ids))
+    .order("full_name", { ascending: true });
 
   const rows = (data ?? []) as Raw[];
-  return rows
-    .filter((r) => (r.roles ?? []).includes("produtor"))
-    .map((r) => ({ id: r.id, nome: r.full_name ?? "Sem nome" }));
+  return rows.map((r) => ({ id: r.id, nome: r.full_name ?? "Sem nome" }));
 }
 
 /**

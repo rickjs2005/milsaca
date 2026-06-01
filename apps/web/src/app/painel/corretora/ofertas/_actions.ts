@@ -76,6 +76,29 @@ export async function createOferta(formData: FormData) {
   }
 
   const supabase = await createClient();
+
+  // Defesa em profundidade: se a oferta referencia um lote, ele precisa
+  // ser desta corretora (a RLS de INSERT só garante `corretora_id = meu`,
+  // não a posse do lote referenciado). Bloqueia POST com lote de outro tenant.
+  if (loteId) {
+    const { data: loteOwn } = await supabase
+      .from("lotes")
+      .select("id")
+      .eq("id", loteId)
+      .eq("corretora_id", profile.corretora_id)
+      .maybeSingle<{ id: string }>();
+    if (!loteOwn) {
+      const log = await getReqLogger({
+        action: "createOferta",
+        corretoraId: profile.corretora_id,
+      });
+      log.error("oferta_lote_invalido", { loteId });
+      redirect(
+        `${back}?error=${encodeURIComponent("Lote inválido para esta corretora.")}`,
+      );
+    }
+  }
+
   const { error } = await supabase.from("ofertas_comprador").insert({
     corretora_id: profile.corretora_id,
     comprador_id: compradorParsed.data,

@@ -9,16 +9,20 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // ---------------------------------------------------------------------------
 
 /**
- * Tem acesso de DONO? `operador` é o único papel restrito — membros sem papel
- * atribuído (legado / antes da migration de papéis) contam como dono. Isso
- * preserva o comportamento "todos iguais" enquanto a coluna corretora_role
- * ainda não foi populada, e o gate só passa a valer pra quem for explicitamente
- * operador. Pós-migration, todo membro tem papel explícito (dono/operador).
+ * Tem acesso de DONO? Deny-by-default: só passa quem é EXPLICITAMENTE `dono`.
+ *
+ * Antes tratávamos `null`/desconhecido como dono pra preservar o "todos iguais"
+ * durante a migration de papéis — mas isso era um risco de escalonamento (um
+ * membro sem papel populado acessaria Pagamentos/Equipe/Assinatura). A migration
+ * já rodou e todos os membros têm papel explícito (verificado: 0 registros com
+ * corretora_role null), então endurecemos pra deny-by-default. Se algum dia um
+ * dono legítimo ficar sem papel, ele perde só as áreas de dono (fail-safe: nega,
+ * não escala) e resolve via suporte.
  */
 export function isCorretoraDono(
   profile: Pick<Profile, "corretora_role"> | null,
 ): boolean {
-  return profile != null && profile.corretora_role !== "operador";
+  return profile?.corretora_role === "dono";
 }
 
 /**

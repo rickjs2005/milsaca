@@ -14,6 +14,7 @@ import {
   formDataToObject,
 } from "../_lib/schemas";
 import { LOTE_STATUS_ORDER, type LoteStatus } from "./_lib/lote-meta";
+import { listProdutores } from "./_lib/queries";
 
 function isLoteStatus(v: string): v is LoteStatus {
   return (LOTE_STATUS_ORDER as readonly string[]).includes(v);
@@ -37,6 +38,24 @@ export async function createLote(formData: FormData) {
     redirect(`/painel/corretora/lotes/novo?${params.toString()}`);
   }
   const fields = parsed.data;
+
+  // Defesa em profundidade: o produtor precisa pertencer ao universo da
+  // corretora (mesmas leads/contratos/favoritos do picker). Bloqueia POST
+  // direto com UUID arbitrário de outro tenant.
+  const produtoresPermitidos = await listProdutores(profile.corretora_id);
+  if (!produtoresPermitidos.some((p) => p.id === fields.produtor_id)) {
+    const log = await getReqLogger({
+      action: "createLote",
+      corretoraId: profile.corretora_id,
+    });
+    log.error("lote_produtor_invalido", {
+      produtorId: fields.produtor_id,
+    });
+    const params = new URLSearchParams({
+      error: "Produtor inválido para esta corretora.",
+    });
+    redirect(`/painel/corretora/lotes/novo?${params.toString()}`);
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase

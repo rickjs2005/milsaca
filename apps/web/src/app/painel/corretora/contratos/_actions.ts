@@ -263,6 +263,37 @@ export async function updateContratoFields(formData: FormData) {
   }
 
   const supabase = await createClient();
+
+  // Guard de imutabilidade: TODOS os campos editáveis aqui (code, comprador_id,
+  // coffee_type, bag_count, total_value, comissao_pct, comissao_total) entram
+  // no contratoContentHash. Após a assinatura (status ativo/finalizado) o
+  // content_hash já foi CONGELADO em updateContratoStatus e não é recalculado.
+  // Editar agora produziria divergência entre os valores e o hash, quebrando o
+  // espelho e a verificação pública. Não há campo puramente interno nesta
+  // action, então recusamos o update inteiro.
+  const { data: existing } = await supabase
+    .from("contratos")
+    .select("status")
+    .eq("id", id)
+    .eq("corretora_id", profile.corretora_id)
+    .maybeSingle<{ status: ContratoStatus }>();
+
+  if (!existing) redirect("/painel/corretora/contratos");
+
+  if (existing.status === "ativo" || existing.status === "finalizado") {
+    const log = await getReqLogger({
+      action: "updateContratoFields",
+      corretoraId: profile.corretora_id,
+      contratoId: id,
+    });
+    log.warn("contrato_edit_assinado_bloqueado", { status: existing.status });
+    const params = new URLSearchParams({
+      error:
+        "Contrato assinado não pode ser editado. Cancele e refaça se necessário.",
+    });
+    redirect(`/painel/corretora/contratos/${id}?${params.toString()}`);
+  }
+
   const { error } = await supabase
     .from("contratos")
     .update({

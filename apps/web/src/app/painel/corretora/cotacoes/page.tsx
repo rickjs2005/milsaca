@@ -42,14 +42,15 @@ export default async function CotacoesCorretoraPage({
   if (!profile?.corretora_id) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
   }
+  const corretoraId = profile.corretora_id;
 
   const sp = await searchParams;
   const specie = isSpecie(sp.specie) ? sp.specie : undefined;
   const process = isProcess(sp.process) ? sp.process : undefined;
 
   const [cotacoes, kpis] = await Promise.all([
-    listCotacoes({ specie, process }),
-    loadCotacoesKpis(),
+    listCotacoes(corretoraId, { specie, process }),
+    loadCotacoesKpis(corretoraId),
   ]);
 
   const filtroAtivo = Boolean(specie || process);

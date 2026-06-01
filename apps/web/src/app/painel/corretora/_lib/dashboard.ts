@@ -233,16 +233,22 @@ export type CotacaoDashboard = {
   source: string | null;
 };
 
-export async function loadCotacoesDashboard(): Promise<CotacaoDashboard[]> {
+export async function loadCotacoesDashboard(
+  corretoraId: string,
+): Promise<CotacaoDashboard[]> {
+  if (!corretoraId) return [];
   const supabase = await createClient();
-  const types = ["arabica", "conillon"];
+  const types = ["arabica", "conillon"] as const;
 
   const queries = await Promise.all(
     types.map((t) =>
       supabase
         .from("cotacoes")
+        // Filtra pela espécie canônica (`specie`); `coffee_type` é só o label
+        // de exibição ("Arábica"/"Conillón"), não casava com o slug "arabica".
         .select("coffee_type, price, source, reference_date")
-        .eq("coffee_type", t)
+        .eq("corretora_id", corretoraId)
+        .eq("specie", t)
         .order("reference_date", { ascending: false })
         .limit(2),
     ),

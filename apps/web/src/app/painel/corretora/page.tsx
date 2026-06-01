@@ -76,7 +76,7 @@ export default async function InicioCorretoraPage() {
     await Promise.all([
       loadDashboardKpis(corretoraId),
       loadLeadsRecentes(corretoraId),
-      loadCotacoesDashboard(),
+      loadCotacoesDashboard(corretoraId),
       corretoraId
         ? listEntregasHojeEAtrasadas(corretoraId)
         : Promise.resolve({ hoje: [], atrasadas: [] }),
