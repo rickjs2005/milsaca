@@ -6,7 +6,7 @@ import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/format";
 import { coffeeLabel } from "@/lib/coffee";
-import { requireUser } from "@/lib/auth";
+import { requireUser, getProfile } from "@/lib/auth";
 import {
   listMinhasNegociacoes,
   LEAD_STATUS_LABEL,
@@ -48,18 +48,16 @@ function totalOf(it: NegociacaoListItem): number | null {
     : null;
 }
 
-function shortMessage(item: NegociacaoListItem) {
-  const head = [`Oi! Sobre a proposta da ${item.corretora_nome}`];
-  if (item.coffee_type) head[0] += ` para ${coffeeLabel(item.coffee_type)}`;
-  if (item.bag_count) head[0] += ` (${item.bag_count} sacas)`;
-  const parts = [head[0]];
+function shortMessage(item: NegociacaoListItem, nome: string | null) {
+  const intro = nome ? `Oi! Aqui é ${nome}, da Milsaca.` : "Oi! Aqui é da Milsaca.";
+  let proposta = "Sobre a proposta";
+  if (item.coffee_type) proposta += ` de ${coffeeLabel(item.coffee_type)}`;
+  if (item.bag_count) proposta += ` (${item.bag_count} sacas)`;
   if (item.proposed_price != null) {
-    parts.push(
-      `Valor: R$ ${item.proposed_price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} / saca.`,
-    );
+    proposta += ` a R$ ${item.proposed_price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}/sc`;
   }
-  parts.push("Podemos conversar?");
-  return parts.join("\n\n");
+  proposta += " — tudo certo?";
+  return `${intro}\n${proposta}\nPodemos conversar pra acertar os detalhes?`;
 }
 
 export default async function NegociacoesProdutorPage({
@@ -68,6 +66,8 @@ export default async function NegociacoesProdutorPage({
   searchParams: SearchParams;
 }) {
   const user = await requireUser("/painel/produtor/negociacoes");
+  const profile = await getProfile();
+  const nome = profile?.full_name?.trim() || null;
   const sp = await searchParams;
   const status = isLeadStatus(sp.status) ? sp.status : undefined;
 
@@ -180,7 +180,7 @@ export default async function NegociacoesProdutorPage({
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {itens.map((it) => (
-            <NegociacaoCard key={it.id} it={it} />
+            <NegociacaoCard key={it.id} it={it} nome={nome} />
           ))}
         </div>
       )}
@@ -214,11 +214,17 @@ function ResumoStat({
   );
 }
 
-function NegociacaoCard({ it }: { it: NegociacaoListItem }) {
+function NegociacaoCard({
+  it,
+  nome,
+}: {
+  it: NegociacaoListItem;
+  nome: string | null;
+}) {
   const total = totalOf(it);
   const waUrl = buildWhatsAppInviteUrl({
     phone: it.corretora_phone,
-    message: shortMessage(it),
+    message: shortMessage(it, nome),
   });
 
   return (

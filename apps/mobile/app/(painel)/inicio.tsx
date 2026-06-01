@@ -193,9 +193,13 @@ export default function InicioScreen() {
             {snap?.corretoraCasa?.phone ? (
               <Pressable
                 onPress={() => {
+                  const nome = profile?.full_name?.trim() || null;
+                  const intro = nome
+                    ? `Oi! Aqui é ${nome}, da Milsaca.`
+                    : "Oi! Aqui é da Milsaca.";
                   const url = buildWhatsAppUrl(
                     snap.corretoraCasa?.phone ?? null,
-                    `Olá ${snap.corretoraCasa?.name ?? ""}, sou ${profile?.full_name ?? "produtor"}.`,
+                    `${intro} Queria conversar sobre cotações e negócios de café.`,
                   );
                   if (url) Linking.openURL(url).catch(() => undefined);
                 }}

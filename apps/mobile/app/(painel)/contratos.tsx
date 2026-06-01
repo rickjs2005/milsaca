@@ -65,7 +65,18 @@ export default function ContratosScreen() {
   }, [filter, profile]);
 
   const openWhatsApp = (item: ContratoItem) => {
-    const msg = `Olá! Sobre o contrato ${item.code} — gostaria de conversar.`;
+    const nome = profile?.full_name?.trim() || null;
+    const intro = nome ? `Oi! Aqui é ${nome}.` : "Oi! Aqui é da Milsaca.";
+    const detalhe = [
+      item.coffee_type ? coffeeLabel(item.coffee_type) : null,
+      item.bag_count ? `${item.bag_count} sacas` : null,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    const sobre = detalhe
+      ? `É sobre o contrato ${item.code} (${detalhe}).`
+      : `É sobre o contrato ${item.code}.`;
+    const msg = `${intro}\n${sobre}\nQueria alinhar a entrega — quando puder, me chama!`;
     const url = buildWhatsAppUrl(item.corretora_phone, msg);
     if (!url) return;
     Linking.openURL(url).catch(() => undefined);

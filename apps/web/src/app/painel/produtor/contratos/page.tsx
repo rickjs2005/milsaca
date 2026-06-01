@@ -8,7 +8,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
-import { requireUser } from "@/lib/auth";
+import { requireUser, getProfile } from "@/lib/auth";
 import { coffeeLabel } from "@/lib/coffee";
 import {
   listMeusContratos,
@@ -54,6 +54,8 @@ export default async function ContratosProdutorPage({
   searchParams: SearchParams;
 }) {
   const user = await requireUser("/painel/produtor/contratos");
+  const profile = await getProfile();
+  const nome = profile?.full_name?.trim() || null;
   const sp = await searchParams;
   const status = isContratoStatus(sp.status) ? sp.status : undefined;
 
@@ -125,9 +127,21 @@ export default async function ContratosProdutorPage({
               </thead>
               <tbody className="divide-y divide-neutral-200">
                 {contratos.map((c) => {
+                  const intro = nome
+                    ? `Oi! Aqui é ${nome}.`
+                    : "Oi! Aqui é da Milsaca.";
+                  const detalhe = [
+                    c.coffee_type ? coffeeLabel(c.coffee_type) : null,
+                    c.bag_count ? `${c.bag_count} sacas` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ");
+                  const sobre = detalhe
+                    ? `É sobre o contrato ${c.code} (${detalhe}).`
+                    : `É sobre o contrato ${c.code}.`;
                   const waUrl = buildWhatsAppInviteUrl({
                     phone: c.corretora_phone,
-                    message: `Oi! Sobre o contrato ${c.code}${c.coffee_type ? ` de ${coffeeLabel(c.coffee_type)}` : ""}${c.bag_count ? ` (${c.bag_count} sacas)` : ""}. Podemos conversar?`,
+                    message: `${intro}\n${sobre}\nQueria alinhar a entrega — quando puder, me chama!`,
                   });
                   return (
                     <tr

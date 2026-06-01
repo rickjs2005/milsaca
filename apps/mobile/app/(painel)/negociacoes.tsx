@@ -99,7 +99,15 @@ export default function NegociacoesScreen() {
   };
 
   const openWhatsApp = (item: LeadItem) => {
-    const msg = `Olá ${item.corretora_nome}, queria conversar sobre a proposta de ${coffeeLabel(item.coffee_type) ?? "café"}${item.bag_count ? ` (${item.bag_count} sacas)` : ""}.`;
+    const nome = profile?.full_name?.trim() || null;
+    const intro = nome ? `Oi! Aqui é ${nome}, da Milsaca.` : "Oi! Aqui é da Milsaca.";
+    let proposta = `Sobre a proposta de ${coffeeLabel(item.coffee_type) ?? "café"}`;
+    if (item.bag_count) proposta += ` (${item.bag_count} sacas)`;
+    if (item.proposed_price != null) {
+      proposta += ` a R$ ${item.proposed_price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}/sc`;
+    }
+    proposta += " — tudo certo?";
+    const msg = `${intro}\n${proposta}\nPodemos conversar pra acertar os detalhes?`;
     const url = buildWhatsAppUrl(item.corretora_phone, msg);
     if (!url) return;
     Linking.openURL(url).catch(() => {

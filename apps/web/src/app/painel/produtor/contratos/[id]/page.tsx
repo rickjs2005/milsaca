@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
-import { requireUser } from "@/lib/auth";
+import { requireUser, getProfile } from "@/lib/auth";
 import { coffeeLabel } from "@/lib/coffee";
 import {
   getMeuContrato,
@@ -60,12 +60,26 @@ export default async function ContratoProdutorDetalhePage({
 }) {
   const user = await requireUser();
   const { id } = await params;
-  const contrato = await getMeuContrato(user.id, id);
+  const [contrato, profile] = await Promise.all([
+    getMeuContrato(user.id, id),
+    getProfile(),
+  ]);
   if (!contrato) notFound();
 
+  const nome = profile?.full_name?.trim() || null;
+  const intro = nome ? `Oi! Aqui é ${nome}.` : "Oi! Aqui é da Milsaca.";
+  const detalhe = [
+    contrato.coffee_type ? coffeeLabel(contrato.coffee_type) : null,
+    contrato.bag_count ? `${contrato.bag_count} sacas` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const sobre = detalhe
+    ? `É sobre o contrato ${contrato.code} (${detalhe}).`
+    : `É sobre o contrato ${contrato.code}.`;
   const waUrl = buildWhatsAppInviteUrl({
     phone: contrato.corretora_phone,
-    message: `Oi! Sobre o contrato ${contrato.code}${contrato.coffee_type ? ` de ${coffeeLabel(contrato.coffee_type)}` : ""}${contrato.bag_count ? ` (${contrato.bag_count} sacas)` : ""}. Podemos conversar?`,
+    message: `${intro}\n${sobre}\nQueria alinhar a entrega — quando puder, me chama!`,
   });
 
   const pricePerBag =

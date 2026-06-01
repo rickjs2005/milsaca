@@ -25,7 +25,7 @@ import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { cn } from "@/lib/utils";
 import { coffeeLabel } from "@/lib/coffee";
 import { SubmitButton } from "@/components/submit-button";
-import { requireUser } from "@/lib/auth";
+import { requireUser, getProfile } from "@/lib/auth";
 import { contraproporNegociacao } from "../_actions";
 import {
   getMinhaNegociacao,
@@ -123,12 +123,18 @@ export default async function NegociacaoDetalhePage({
 }) {
   const user = await requireUser();
   const { id } = await params;
-  const lead = await getMinhaNegociacao(user.id, id);
+  const [lead, profile] = await Promise.all([
+    getMinhaNegociacao(user.id, id),
+    getProfile(),
+  ]);
   if (!lead) notFound();
 
+  const nome = profile?.full_name?.trim() || null;
+  const intro = nome ? `Oi! Aqui é ${nome}, da Milsaca.` : "Oi! Aqui é da Milsaca.";
+  const detalheProposta = `Sobre a proposta${lead.coffee_type ? ` de ${coffeeLabel(lead.coffee_type)}` : ""}${lead.bag_count ? ` (${lead.bag_count} sacas)` : ""}${lead.proposed_price != null ? ` a R$ ${lead.proposed_price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}/sc` : ""} — tudo certo?`;
   const waUrl = buildWhatsAppInviteUrl({
     phone: lead.corretora_phone,
-    message: `Oi! Sobre a proposta da ${lead.corretora_nome}${lead.coffee_type ? ` para ${coffeeLabel(lead.coffee_type)}` : ""}${lead.bag_count ? ` (${lead.bag_count} sacas)` : ""}. Podemos conversar?`,
+    message: `${intro}\n${detalheProposta}\nPodemos conversar pra acertar os detalhes?`,
   });
 
   return (
