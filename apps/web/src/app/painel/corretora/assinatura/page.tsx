@@ -22,6 +22,9 @@ import {
   detectCurrentTier,
   loadPlans,
   PLANS,
+  PREMIUM_NAME,
+  PREMIUM_PRICE_LABEL,
+  whatsappLinkForManage,
   whatsappLinkForUpgrade,
 } from "./_lib/plans-catalog";
 import { PlanCard } from "./_components/plan-card";
@@ -164,7 +167,7 @@ export default async function AssinaturaPage() {
           />
           <FaqCard
             question="Como funciona o 1º mês grátis?"
-            answer="Você ativa o Premium e usa o painel completo por 30 dias sem pagar nada. Só a partir do 2º mês entra a mensalidade de R$100. Se não fizer sentido, é só cancelar antes — sem cobrança."
+            answer={`Você ativa o ${PREMIUM_NAME} e usa o painel completo por 30 dias sem pagar nada. Só a partir do 2º mês entra a mensalidade de ${PREMIUM_PRICE_LABEL}. Se não fizer sentido, é só cancelar antes — sem cobrança.`}
           />
         </div>
       </section>
@@ -196,6 +199,8 @@ function StatusCard({
   const planDisplay = planName ?? PLANS.find((p) => p.tier === currentTier)?.name ?? "Gratuito";
   const isOnFreePlan = currentTier === "gratuito";
   const upgradeHref = whatsappLinkForUpgrade("premium", corretoraName);
+  const talkHref = whatsappLinkForManage(corretoraName, "talk");
+  const cancelHref = whatsappLinkForManage(corretoraName, "cancel");
 
   return (
     <Card className="overflow-hidden border-milsaca-cream-escuro shadow-card">
@@ -240,7 +245,7 @@ function StatusCard({
             </Link>
           ) : (
             <Link
-              href={`https://wa.me/5533999999999?text=${encodeURIComponent(`Olá! Quero conversar sobre minha assinatura no Milsaca${corretoraName ? ` (${corretoraName})` : ""}.`)}`}
+              href={talkHref}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex h-10 items-center gap-1.5 rounded-md border border-milsaca-cafezal px-4 text-sm font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-cafezal hover:text-milsaca-cream"
@@ -255,13 +260,30 @@ function StatusCard({
         <div className="flex items-start gap-2 border-t border-milsaca-cream-escuro bg-milsaca-cream/40 px-6 py-3 text-xs text-milsaca-verde">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-milsaca-dourado" />
           <span>
-            No <strong>Premium</strong> (R$100/mês, 1º mês grátis) você libera
-            contratos completos, analytics comercial, automação de follow-up,
-            leads ilimitados e múltiplos operadores. A maioria das corretoras
-            que migra paga o plano em menos de 2 contratos fechados.
+            No <strong>{PREMIUM_NAME}</strong> ({PREMIUM_PRICE_LABEL}/mês, 1º
+            mês grátis) você libera contratos completos, analytics comercial,
+            automação de follow-up, leads ilimitados e múltiplos operadores. A
+            maioria das corretoras que migra paga o plano em menos de 2
+            contratos fechados.
           </span>
         </div>
-      ) : null}
+      ) : (
+        <div className="flex items-start gap-2 border-t border-milsaca-cream-escuro bg-milsaca-cream/40 px-6 py-3 text-xs text-milsaca-verde-claro">
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-milsaca-dourado" />
+          <span>
+            Sem fidelidade. Precisa pausar ou cancelar?{" "}
+            <Link
+              href={cancelHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-sm font-semibold text-milsaca-cafezal underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              Fale com a gente
+            </Link>{" "}
+            — seus dados continuam acessíveis em modo leitura.
+          </span>
+        </div>
+      )}
     </Card>
   );
 }

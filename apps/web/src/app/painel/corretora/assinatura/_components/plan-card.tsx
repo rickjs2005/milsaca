@@ -22,6 +22,9 @@ export function PlanCard({
 
   const containerClass = cn(
     "relative flex flex-col rounded-2xl border bg-white p-6 shadow-card transition-all sm:p-7",
+    // Premium é o alvo: aparece PRIMEIRO no mobile empilhado; no desktop volta
+    // pra ordem natural (Gratuito à esquerda, Premium à direita).
+    plan.tier === "premium" && "order-first sm:order-none",
     isCurrent
       ? "border-milsaca-cafezal/40 ring-2 ring-milsaca-cafezal/20"
       : isRecommended
@@ -68,6 +71,11 @@ export function PlanCard({
         <p className="mt-1 text-xs text-milsaca-verde-claro">
           {plan.pricePeriod}
         </p>
+        {plan.priceAnchor ? (
+          <p className="mt-2 text-xs font-medium text-emerald-700">
+            {plan.priceAnchor}
+          </p>
+        ) : null}
       </div>
 
       {/* Features */}

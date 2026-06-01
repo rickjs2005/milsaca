@@ -17,6 +17,23 @@ import { createClient } from "@milsaca/db/web/server";
 
 export type PlanTier = "gratuito" | "premium";
 
+/**
+ * FONTE ÚNICA do nome/preço do plano. Consumida pela página de assinatura,
+ * pelos banners de upsell (Início, Central de Leads…) e pelos textos de
+ * WhatsApp/FAQ. Mudou o preço? Muda **aqui** (e em `plans.price_cents` no
+ * banco, que é a fonte do card via `loadPlans`). Centralizar isso mata o drift
+ * "Premium vs Pro / R$100 vs R$99" que aparecia hardcoded em vários lugares.
+ */
+export const FREE_NAME = "Gratuito";
+export const PREMIUM_NAME = "Premium";
+export const PREMIUM_PRICE_LABEL = "R$ 100";
+export const PREMIUM_PRICE_MONTHLY = 100;
+/** Frase curta reutilizável: "Premium (R$ 100/mês, 1º mês grátis)". */
+export const PREMIUM_PITCH = `${PREMIUM_NAME} (${PREMIUM_PRICE_LABEL}/mês, 1º mês grátis)`;
+/** Ancoragem de valor — preço vs. o que a corretora ganha. Honesto e estático. */
+export const PREMIUM_VALUE_ANCHOR =
+  "Menos que a comissão de um único contrato fechado.";
+
 export type PlanFeature = {
   /** Texto curto da funcionalidade. */
   label: string;
@@ -35,6 +52,8 @@ export type PlanCatalogItem = {
   priceLabel: string;
   /** Bullet do preço (por mês / por ano / sob consulta). */
   pricePeriod: string;
+  /** Ancoragem de valor abaixo do preço (opcional). Ex.: "menos que a comissão de…". */
+  priceAnchor?: string;
   /** Highlight visual: usado em "Mais escolhido" / "Recomendado". */
   highlight: "current" | "recommended" | "enterprise" | null;
   /** Texto do CTA principal. */
@@ -64,7 +83,7 @@ export const PLANS: PlanCatalogItem[] = [
   {
     tier: "gratuito",
     slug: "gratuito",
-    name: "Gratuito",
+    name: FREE_NAME,
     tagline: "Pra começar e testar o sistema",
     priceLabel: "R$ 0",
     pricePeriod: "pra sempre",
@@ -89,10 +108,11 @@ export const PLANS: PlanCatalogItem[] = [
   {
     tier: "premium",
     slug: "corretora-premium",
-    name: "Premium",
+    name: PREMIUM_NAME,
     tagline: "Painel completo · 1º mês grátis",
-    priceLabel: "R$ 100",
+    priceLabel: PREMIUM_PRICE_LABEL,
     pricePeriod: "por mês",
+    priceAnchor: PREMIUM_VALUE_ANCHOR,
     highlight: "recommended",
     ctaLabel: "Quero o Premium",
     features: [
@@ -227,10 +247,27 @@ export function whatsappLinkForUpgrade(
   corretoraName: string | null,
 ): string {
   const planos: Record<PlanTier, string> = {
-    gratuito: "manter no plano Gratuito",
-    premium: "ativar o plano Premium (R$100/mês, 1º mês grátis)",
+    gratuito: `manter no plano ${FREE_NAME}`,
+    premium: `ativar o plano ${PREMIUM_PITCH}`,
   };
   const corretora = corretoraName ? ` (${corretoraName})` : "";
   const text = `Olá! Quero ${planos[tier]} no Milsaca${corretora}. Me passa os próximos passos?`;
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+}
+
+/**
+ * Link de WhatsApp pra GERENCIAR a assinatura (conversar ou pausar/cancelar).
+ * Coerente com o FAQ que promete "cancela quando quiser" — a UI precisa ter o
+ * caminho. Cobrança é manual, então cancelar também é por aqui.
+ */
+export function whatsappLinkForManage(
+  corretoraName: string | null,
+  intent: "talk" | "cancel",
+): string {
+  const corretora = corretoraName ? ` (${corretoraName})` : "";
+  const text =
+    intent === "cancel"
+      ? `Olá! Quero pausar ou cancelar minha assinatura no Milsaca${corretora}. Como faço?`
+      : `Olá! Quero conversar sobre minha assinatura no Milsaca${corretora}.`;
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
 }

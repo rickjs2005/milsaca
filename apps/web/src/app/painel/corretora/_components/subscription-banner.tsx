@@ -8,6 +8,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { SubscriptionInfo } from "../_lib/corretora";
+import { PREMIUM_PITCH } from "../assinatura/_lib/plans-catalog";
 
 const WHATSAPP_SUPPORT =
   "https://wa.me/5533999999999?text=" +
@@ -76,8 +77,8 @@ function UpgradeCard() {
       <span className="flex min-w-0 items-center gap-2 text-body-sm text-milsaca-cafezal">
         <Sparkles className="h-4 w-4 shrink-0 text-dourado-texto" />
         <span className="truncate">
-          <strong>Plano gratuito.</strong> Ative o Premium (R$100/mês, 1º mês
-          grátis) e libere tudo.
+          <strong>Plano gratuito.</strong> Ative o {PREMIUM_PITCH} e libere
+          tudo.
         </span>
       </span>
       <span className="inline-flex shrink-0 items-center gap-1 text-caption font-semibold text-dourado-texto transition-all group-hover:gap-2">
