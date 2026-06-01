@@ -22,6 +22,9 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { getProfile } from "@/lib/auth";
+import { fmtMoney } from "@/lib/format";
+import { getCorretoraSubscriptionInfo } from "../../_lib/corretora";
+import { isProOrAbove } from "../../_lib/plan-gate";
 import {
   getContrato,
   CONTRATO_STATUS_LABEL,
@@ -43,14 +46,6 @@ const SITE_URL =
 
 type Params = Promise<{ id: string }>;
 type SearchParams = Promise<{ error?: string; saved?: string }>;
-
-function formatBRL(value: number) {
-  return value.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    minimumFractionDigits: 2,
-  });
-}
 
 function formatDateTime(iso: string) {
   const d = new Date(iso);
@@ -106,11 +101,13 @@ export default async function ContratoDetalhePage({
   const { id } = await params;
   const sp = await searchParams;
 
-  const [contrato, compradoresOpts] = await Promise.all([
+  const [contrato, compradoresOpts, subscription] = await Promise.all([
     getContrato(profile.corretora_id, id),
     listCompradoresOptions(profile.corretora_id),
+    getCorretoraSubscriptionInfo(profile.corretora_id),
   ]);
   if (!contrato) notFound();
+  const isPro = isProOrAbove(subscription);
 
   // Assinado = content_hash congelado em updateContratoStatus. Os campos
   // materiais entram no hash, então não podem ser editados depois sem quebrar
@@ -158,16 +155,18 @@ export default async function ContratoDetalhePage({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <form action={gerarEntregaDoContrato} className="inline">
-            <input type="hidden" name="contrato_id" value={contrato.id} />
-            <button
-              type="submit"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-milsaca-verde bg-transparent px-4 text-sm font-medium text-milsaca-verde hover:bg-milsaca-verde hover:text-milsaca-cream"
-            >
-              <Truck className="h-4 w-4" />
-              Gerar entrega
-            </button>
-          </form>
+          {isPro ? (
+            <form action={gerarEntregaDoContrato} className="inline">
+              <input type="hidden" name="contrato_id" value={contrato.id} />
+              <button
+                type="submit"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-milsaca-verde bg-transparent px-4 text-sm font-medium text-milsaca-verde hover:bg-milsaca-verde hover:text-milsaca-cream"
+              >
+                <Truck className="h-4 w-4" />
+                Gerar entrega
+              </button>
+            </form>
+          ) : null}
           <Button
             asChild
             variant="outline"
@@ -277,7 +276,7 @@ export default async function ContratoDetalhePage({
                       </dt>
                       <dd className="text-sm text-milsaca-verde">
                         {contrato.total_value != null
-                          ? formatBRL(contrato.total_value)
+                          ? fmtMoney(contrato.total_value)
                           : "—"}
                       </dd>
                     </div>
@@ -300,7 +299,7 @@ export default async function ContratoDetalhePage({
                       </dd>
                       {contrato.comissao_total != null ? (
                         <p className="text-xs text-milsaca-verde-claro">
-                          Total: {formatBRL(contrato.comissao_total)}
+                          Total: {fmtMoney(contrato.comissao_total)}
                         </p>
                       ) : null}
                     </div>
@@ -539,7 +538,7 @@ export default async function ContratoDetalhePage({
                   Valor por saca
                 </span>
                 :{" "}
-                {formatBRL(contrato.total_value / contrato.bag_count)}
+                {fmtMoney(contrato.total_value / contrato.bag_count)}
               </div>
             )}
           </CardContent>

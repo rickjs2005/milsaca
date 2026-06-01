@@ -29,18 +29,8 @@ import {
   type Urgencia,
 } from "../_lib/next-action";
 import { whatsappLinkFor } from "../_lib/whatsapp-templates";
-
-const COFFEE_LABEL: Record<string, string> = {
-  arabica: "Arábica",
-  conillon: "Conillón",
-};
-
-const BRL = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 0,
-});
+import { coffeeLabel } from "@/lib/coffee";
+import { fmtMoney0 } from "@/lib/format";
 
 const URGENCIA_TONE: Record<Urgencia, StatusTone> = {
   quente: "danger",
@@ -111,21 +101,19 @@ export function LeadCard({
             {total != null ? (
               <>
                 <p className="text-h2 leading-none tabular-nums text-milsaca-cafezal">
-                  {BRL.format(total)}
+                  {fmtMoney0(total)}
                 </p>
                 <p className="mt-1 text-caption text-neutral-500">
                   {lead.bag_count} sc
-                  {lead.coffee_type
-                    ? ` ${COFFEE_LABEL[lead.coffee_type] ?? lead.coffee_type}`
-                    : ""}
+                  {lead.coffee_type ? ` ${coffeeLabel(lead.coffee_type)}` : ""}
                   {lead.proposed_price != null
-                    ? ` · ${BRL.format(lead.proposed_price)}/sc`
+                    ? ` · ${fmtMoney0(lead.proposed_price)}/sc`
                     : ""}
                 </p>
               </>
             ) : lead.proposed_price != null ? (
               <p className="text-h3 tabular-nums text-milsaca-cafezal">
-                {BRL.format(lead.proposed_price)}
+                {fmtMoney0(lead.proposed_price)}
                 <span className="ml-1 text-caption font-medium text-neutral-500">
                   /sc
                 </span>

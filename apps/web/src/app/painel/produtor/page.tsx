@@ -13,13 +13,9 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile, requireUser } from "@/lib/auth";
 import type { LeadStatus } from "@milsaca/types";
+import { coffeeLabel } from "@/lib/coffee";
 
 export const metadata = { title: "Início — Painel do produtor" };
-
-const COFFEE_LABEL: Record<string, string> = {
-  arabica: "Arábica",
-  conillon: "Conillón",
-};
 
 const BRL = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -339,9 +335,7 @@ function PropostaCard({ p }: { p: Proposta }) {
             </p>
             <p className="mt-1 text-caption text-neutral-600">
               {p.bag_count ? `${p.bag_count} sacas` : "—"} ·{" "}
-              {p.coffee_type
-                ? (COFFEE_LABEL[p.coffee_type] ?? p.coffee_type)
-                : "—"}{" "}
+              {p.coffee_type ? coffeeLabel(p.coffee_type) : "—"}{" "}
               · {p.data}
             </p>
           </div>

@@ -14,11 +14,7 @@
  */
 
 import type { LeadListItem, LeadStatus } from "./lead-meta";
-
-const COFFEE_LABEL: Record<string, string> = {
-  arabica: "Arábica",
-  conillon: "Conillón",
-};
+import { coffeeLabel } from "@/lib/coffee";
 
 const BRL = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -42,7 +38,8 @@ function firstName(fullName: string): string {
 function describeProposta(lead: LeadListItem): string {
   const parts: string[] = [];
   if (lead.coffee_type) {
-    parts.push(COFFEE_LABEL[lead.coffee_type] ?? lead.coffee_type);
+    const label = coffeeLabel(lead.coffee_type);
+    if (label) parts.push(label);
   }
   if (lead.bag_count != null) parts.push(`${lead.bag_count} sacas`);
   if (lead.proposed_price != null) {

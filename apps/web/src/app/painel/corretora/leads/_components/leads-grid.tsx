@@ -23,6 +23,7 @@ import {
   type Urgencia,
 } from "../_lib/next-action";
 import { LeadCard } from "./lead-card";
+import { coffeeLabel } from "@/lib/coffee";
 
 type ToolbarState = { status?: LeadStatus };
 
@@ -73,6 +74,7 @@ export function LeadsGrid({
       searchFields: (l) => [
         l.produtor_nome,
         l.coffee_type,
+        coffeeLabel(l.coffee_type),
         l.city,
         l.state,
         l.produtor_phone,

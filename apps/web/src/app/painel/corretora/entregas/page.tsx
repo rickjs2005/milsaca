@@ -12,6 +12,10 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { KpiCard } from "@/components/kpi-card";
 import { getProfile } from "@/lib/auth";
+import { fmtInt } from "@/lib/format";
+import { getCorretoraSubscriptionInfo } from "../_lib/corretora";
+import { isProOrAbove } from "../_lib/plan-gate";
+import { LockedHint } from "../_components/locked-hint";
 import {
   listEntregas,
   loadEntregasKpis,
@@ -24,8 +28,6 @@ import { EntregasView } from "./_components/entregas-view";
 export const metadata = { title: "Entregas — Painel da corretora" };
 
 type SearchParams = Promise<{ status?: string; page?: string }>;
-
-const NUM = new Intl.NumberFormat("pt-BR");
 
 function isEntregaStatus(v: string | undefined): v is EntregaStatus {
   return !!v && (ENTREGA_STATUS_ORDER as readonly string[]).includes(v);
@@ -44,10 +46,12 @@ export default async function EntregasCorretoraPage({
   const status = isEntregaStatus(sp.status) ? sp.status : undefined;
   const page = Math.max(1, Number(sp.page) || 1);
 
-  const [{ rows: entregas, count }, kpis] = await Promise.all([
+  const [{ rows: entregas, count }, kpis, subscription] = await Promise.all([
     listEntregas(profile.corretora_id, { status }, page),
     loadEntregasKpis(profile.corretora_id),
+    getCorretoraSubscriptionInfo(profile.corretora_id),
   ]);
+  const isPro = isProOrAbove(subscription);
   const totalPages = Math.max(1, Math.ceil(count / ENTREGAS_PAGE_SIZE));
 
   return (
@@ -60,13 +64,22 @@ export default async function EntregasCorretoraPage({
             pagamento ao produtor.
           </p>
         </div>
-        <Button asChild variant="primary">
-          <Link href="/painel/corretora/entregas/nova">
-            <Plus className="mr-2 h-4 w-4" />
-            Nova entrega
-          </Link>
-        </Button>
+        {isPro ? (
+          <Button asChild variant="primary">
+            <Link href="/painel/corretora/entregas/nova">
+              <Plus className="mr-2 h-4 w-4" />
+              Nova entrega
+            </Link>
+          </Button>
+        ) : null}
       </header>
+
+      {!isPro ? (
+        <LockedHint
+          feature="entregas"
+          description="Programe entregas, registre romaneio e libere o pagamento ao produtor. Disponível no plano Premium."
+        />
+      ) : null}
 
       <section
         aria-label="Indicadores de entregas"
@@ -74,28 +87,28 @@ export default async function EntregasCorretoraPage({
       >
         <KpiCard
           label="Programadas"
-          value={NUM.format(kpis.programadas)}
+          value={fmtInt(kpis.programadas)}
           icon={Truck}
           tone="premium"
           hint="Aguardando retirada/chegada"
         />
         <KpiCard
           label="Em trânsito"
-          value={NUM.format(kpis.emTransito)}
+          value={fmtInt(kpis.emTransito)}
           icon={PackageCheck}
           tone="info"
           hint="A caminho"
         />
         <KpiCard
           label="A conferir"
-          value={NUM.format(kpis.aConferir)}
+          value={fmtInt(kpis.aConferir)}
           icon={ClipboardCheck}
           tone="warning"
           hint="Recebidas, falta conferir peso"
         />
         <KpiCard
           label="Atrasadas"
-          value={NUM.format(kpis.atrasadas)}
+          value={fmtInt(kpis.atrasadas)}
           icon={AlertTriangle}
           tone={kpis.atrasadas > 0 ? "danger" : "default"}
           hint="Vencidas — trava pagamento"
@@ -109,10 +122,14 @@ export default async function EntregasCorretoraPage({
               icon={Truck}
               title={`Nenhuma entrega${status ? " com esse status" : ""}`}
               description="Programe a primeira entrega a partir de um contrato."
-              cta={{
-                label: "Nova entrega",
-                href: "/painel/corretora/entregas/nova",
-              }}
+              cta={
+                isPro
+                  ? {
+                      label: "Nova entrega",
+                      href: "/painel/corretora/entregas/nova",
+                    }
+                  : undefined
+              }
             />
           </CardContent>
         </Card>

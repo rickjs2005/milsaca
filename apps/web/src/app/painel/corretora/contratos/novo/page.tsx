@@ -30,6 +30,7 @@ type SearchParams = Promise<{
   lead?: string;
   // Atalho "gerar contrato" vindo de uma oferta aceita ao comprador.
   comprador_id?: string;
+  produtor_id?: string;
   lote_id?: string;
   preco?: string;
   bag_count?: string;
@@ -72,9 +73,15 @@ export default async function NovoContratoPage({
       : "";
 
   // Pré-preenchimento vindo do atalho de uma oferta aceita ao comprador.
+  // produtor_id já vem resolvido do lote na listagem de ofertas; só caímos no
+  // round-trip pelo lote quando o atalho mandou só lote_id (ex.: links antigos).
+  // Oferta avulsa (sem lote/produtor) abre o form normal com o picker usável.
   const ofertaProdutorId =
-    !lead && sp.lote_id
-      ? await getProdutorIdDoLote(profile.corretora_id, sp.lote_id)
+    !lead
+      ? (sp.produtor_id ??
+        (sp.lote_id
+          ? await getProdutorIdDoLote(profile.corretora_id, sp.lote_id)
+          : null))
       : null;
   const prefComprador = sp.comprador_id ?? "";
   const prefBag = sp.bag_count ?? "";

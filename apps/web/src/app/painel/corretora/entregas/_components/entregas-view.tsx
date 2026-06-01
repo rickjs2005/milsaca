@@ -13,6 +13,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { fmtInt } from "@/lib/format";
 import { Pagination } from "@/components/pagination";
 import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { FilterSheet } from "@/components/filter-sheet";
@@ -26,8 +27,6 @@ import {
   type EntregaListItem,
   type EntregaStatus,
 } from "../_lib/entrega-meta";
-
-const NUM = new Intl.NumberFormat("pt-BR");
 
 const STATUS_FILTERS: { value: string; label: string }[] = [
   { value: "", label: "Todas" },
@@ -80,11 +79,11 @@ function SacasCell({ e }: { e: EntregaListItem }) {
   const quebra = prev != null && receb != null ? receb - prev : null;
   return (
     <span className="tabular-nums text-neutral-700">
-      {prev != null ? `${NUM.format(prev)} prev` : "—"}
+      {prev != null ? `${fmtInt(prev)} prev` : "—"}
       {receb != null ? (
         <>
           {" · "}
-          <span className="text-milsaca-cafezal">{NUM.format(receb)} receb</span>
+          <span className="text-milsaca-cafezal">{fmtInt(receb)} receb</span>
           {quebra != null && quebra !== 0 ? (
             <span
               className={cn(
@@ -325,8 +324,8 @@ function EntregaCard({ e }: { e: EntregaListItem }) {
         </StatusBadge>
       </p>
       <p className="mt-2 text-body-sm text-milsaca-cafezal">
-        {e.bag_count != null ? `${NUM.format(e.bag_count)} sacas previstas` : "—"}
-        {receb != null ? ` · ${NUM.format(receb)} recebidas` : ""}
+        {e.bag_count != null ? `${fmtInt(e.bag_count)} sacas previstas` : "—"}
+        {receb != null ? ` · ${fmtInt(receb)} recebidas` : ""}
       </p>
       <p className="mt-0.5 text-caption text-neutral-500">{e.produtor_nome}</p>
       <div className="mt-3 flex items-center gap-2">

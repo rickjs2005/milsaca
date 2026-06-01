@@ -1,4 +1,5 @@
 import type { StatusTone } from "@/components/status-badge";
+import { fmtMoney0 } from "@/lib/format";
 
 /**
  * META PURA da tela de Compradores da corretora.
@@ -107,14 +108,13 @@ export const COMPRADOR_SORT_LABEL: Record<CompradorSortKey, string> = {
 // Formatação
 // ---------------------------------------------------------------------------
 
-const BRL_FORMATTER = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  maximumFractionDigits: 0,
-});
-
+/**
+ * Mantém a assinatura `(value: number) => string` consumida por
+ * `compradores-view.tsx`. Internamente delega pro helper único `fmtMoney0`
+ * (R$ sem casas). Como os call-sites sempre passam `number`, a saída é idêntica.
+ */
 export function formatBRL(value: number): string {
-  return BRL_FORMATTER.format(value);
+  return fmtMoney0(value);
 }
 
 export function fmtCnpj(cnpj: string | null): string {

@@ -19,6 +19,7 @@ import {
 } from "./_lib/queries";
 import type { LoteStatus } from "./_lib/lote-meta";
 import { LotesGrid } from "./_components/lotes-grid";
+import { fmtMoney0, fmtInt } from "@/lib/format";
 
 export const metadata = { title: "Lotes de café — Painel da corretora" };
 
@@ -39,13 +40,6 @@ function isLoteStatus(v: string | undefined): v is LoteStatus {
 function isSpecie(v: string | undefined): v is "arabica" | "conillon" {
   return v === "arabica" || v === "conillon";
 }
-
-const NUM = new Intl.NumberFormat("pt-BR");
-const BRL = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  maximumFractionDigits: 0,
-});
 
 async function loadCorretoraName(corretoraId: string): Promise<string> {
   const supabase = await createClient();
@@ -117,28 +111,28 @@ export default async function LotesPage({
       >
         <KpiCard
           label="Sacas disponíveis"
-          value={NUM.format(kpis.sacasDisponiveis)}
+          value={fmtInt(kpis.sacasDisponiveis)}
           icon={Coffee}
           tone="premium"
           hint="Em lotes ativos (60 kg cada)"
         />
         <KpiCard
           label="Lotes ativos"
-          value={NUM.format(kpis.ativos)}
+          value={fmtInt(kpis.ativos)}
           icon={Package}
           tone="premium"
           hint="Aguardando ou prontos pra venda"
         />
         <KpiCard
           label="Classificados"
-          value={NUM.format(kpis.classificados)}
+          value={fmtInt(kpis.classificados)}
           icon={CheckCircle2}
           tone="info"
           hint="Prontos pra compartilhar com compradores"
         />
         <KpiCard
           label="Vendidos no mês"
-          value={BRL.format(kpis.valorVendidos)}
+          value={fmtMoney0(kpis.valorVendidos)}
           icon={ShoppingBag}
           tone="success"
           hint={`${kpis.vendidosMes} lote${kpis.vendidosMes === 1 ? "" : "s"} · volume estimado`}

@@ -29,14 +29,7 @@ import {
   deleteProposta,
   updatePropostaStatus,
 } from "../_actions";
-
-const BRL = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  minimumFractionDigits: 2,
-});
-
-const NUM = new Intl.NumberFormat("pt-BR");
+import { fmtMoney, fmtInt } from "@/lib/format";
 
 function formatDateTime(iso: string | null): string {
   if (!iso) return "—";
@@ -240,19 +233,19 @@ function PropostaItem({ proposta }: { proposta: PropostaRow }) {
               {PROPOSTA_STATUS_LABEL[proposta.status]}
             </span>
             <span className="text-lg font-semibold text-milsaca-verde">
-              {BRL.format(proposta.preco_saca)}
+              {fmtMoney(proposta.preco_saca)}
               <span className="ml-1 text-[10px] font-medium text-milsaca-verde-claro">
                 /sc
               </span>
             </span>
             {proposta.bag_count != null ? (
               <span className="text-xs text-milsaca-verde-claro">
-                · {NUM.format(proposta.bag_count)} sacas
+                · {fmtInt(proposta.bag_count)} sacas
               </span>
             ) : null}
             {valorTotal != null ? (
               <span className="text-xs font-medium text-milsaca-cafezal">
-                · total {BRL.format(valorTotal)}
+                · total {fmtMoney(valorTotal)}
               </span>
             ) : null}
           </div>

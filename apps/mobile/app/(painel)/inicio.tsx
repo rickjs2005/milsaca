@@ -18,6 +18,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "../../src/lib/auth";
+import { coffeeLabel } from "../../src/lib/coffee";
 import {
   CONTRATO_STATUS_LABEL,
   LEAD_STATUS_LABEL,
@@ -375,7 +376,7 @@ export default function InicioScreen() {
                           className="mt-1 text-xs text-milsaca-cream/60"
                           style={{ fontFamily: "Inter_400Regular" }}
                         >
-                          {lead.coffee_type ?? "—"}
+                          {coffeeLabel(lead.coffee_type) ?? "—"}
                           {lead.bag_count ? ` · ${lead.bag_count} sacas` : ""}
                           {" · "}
                           {LEAD_STATUS_LABEL[lead.status]}

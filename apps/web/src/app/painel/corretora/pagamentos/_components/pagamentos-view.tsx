@@ -23,12 +23,7 @@ import {
 } from "../_lib/pagamento-meta";
 import { cancelarPagamento } from "../_actions";
 import { MarcarPagoButton } from "./marcar-pago-button";
-
-const BRL = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  minimumFractionDigits: 2,
-});
+import { fmtMoney } from "@/lib/format";
 
 const STATUS_FILTERS: { value: string; label: string }[] = [
   { value: "", label: "Todos" },
@@ -211,10 +206,10 @@ export function PagamentosView({
                   </td>
                   <td className="px-5 py-3 text-right">
                     <span className="font-semibold tabular-nums text-milsaca-cafezal">
-                      {BRL.format(p.valor_liquido)}
+                      {fmtMoney(p.valor_liquido)}
                     </span>
                     <span className="block text-[11px] tabular-nums text-neutral-400">
-                      bruto {BRL.format(p.valor_bruto)}
+                      bruto {fmtMoney(p.valor_bruto)}
                     </span>
                   </td>
                   <td className="px-5 py-3">
@@ -306,10 +301,10 @@ function PagamentoCard({
       <div className="mt-3 flex items-end justify-between gap-2">
         <div>
           <p className="text-h3 tabular-nums text-milsaca-cafezal">
-            {BRL.format(p.valor_liquido)}
+            {fmtMoney(p.valor_liquido)}
           </p>
           <p className="text-[11px] tabular-nums text-neutral-400">
-            bruto {BRL.format(p.valor_bruto)}
+            bruto {fmtMoney(p.valor_bruto)}
           </p>
         </div>
         <StatusBadge tone={pz.tone} withDot={pz.tone === "danger"}>

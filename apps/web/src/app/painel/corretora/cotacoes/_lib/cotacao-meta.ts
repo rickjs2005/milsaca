@@ -1,5 +1,6 @@
 import type { CoffeeProcesso, CoffeeSpecie } from "@milsaca/types";
 import type { StatusTone } from "@/components/status-badge";
+import { fmtMoney } from "@/lib/format";
 
 /**
  * Meta PURA da tela de Cotações — só tipos, labels, ordens e helpers de
@@ -81,14 +82,13 @@ export function isProcess(v: string | undefined): v is CoffeeProcesso {
   return (PROCESS_ORDER as readonly string[]).includes(v ?? "");
 }
 
-const BRL = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  minimumFractionDigits: 2,
-});
-
+/**
+ * Mantém a assinatura `(value: number) => string` consumida por `page.tsx` e
+ * `cotacoes-view.tsx`. Delega pro helper único `fmtMoney` (R$ com 2 casas).
+ * Call-sites passam `number`, então a saída é idêntica.
+ */
 export function formatBRL(value: number): string {
-  return BRL.format(value);
+  return fmtMoney(value);
 }
 
 /** iso 'YYYY-MM-DD' (date col) — evita criar Date com timezone. */

@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import QRCode from "qrcode";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
+import { fmtNum3 } from "@/lib/format";
 import { getContrato, CONTRATO_STATUS_LABEL } from "../../_lib/queries";
 import { PrintButton } from "./_print-button";
 
@@ -29,19 +30,9 @@ const BRL2 = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 2,
 });
 
-const NUM3 = new Intl.NumberFormat("pt-BR", {
-  minimumFractionDigits: 3,
-  maximumFractionDigits: 3,
-});
-
 function brl(v: number | null): string {
   if (v == null) return "0,00";
   return BRL2.format(v);
-}
-
-function num(v: number | null): string {
-  if (v == null) return "—";
-  return NUM3.format(v);
 }
 
 function formatDate(iso: string | null): string {
@@ -463,11 +454,11 @@ export default async function EspelhoContratoPage({
             </div>
             <div className="danfe-cell">
               <p className="danfe-label">Peso bruto</p>
-              <p className="danfe-value">{num(pesoLiquido)} kg</p>
+              <p className="danfe-value">{fmtNum3(pesoLiquido)} kg</p>
             </div>
             <div className="danfe-cell">
               <p className="danfe-label">Peso líquido</p>
-              <p className="danfe-value">{num(pesoLiquido)} kg</p>
+              <p className="danfe-value">{fmtNum3(pesoLiquido)} kg</p>
             </div>
           </div>
 
@@ -507,7 +498,7 @@ export default async function EspelhoContratoPage({
             <div className="danfe-cell danfe-mono text-center">1102</div>
             <div className="danfe-cell text-center">SC</div>
             <div className="danfe-cell text-right">
-              {num(contrato.bag_count)}
+              {fmtNum3(contrato.bag_count)}
             </div>
             <div className="danfe-cell text-right">{brl(valorPorSaca)}</div>
             <div className="danfe-cell text-right">0,00</div>

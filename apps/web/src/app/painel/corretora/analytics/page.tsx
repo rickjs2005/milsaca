@@ -34,15 +34,9 @@ import {
   LeadsPorMesChart,
   MixCafeChart,
 } from "./_components/charts";
+import { fmtMoney0, fmtInt } from "@/lib/format";
 
 export const metadata = { title: "Analytics — Painel da corretora" };
-
-const BRL = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  maximumFractionDigits: 0,
-});
-const NUM = new Intl.NumberFormat("pt-BR");
 
 const LEADS = "/painel/corretora/leads";
 const CONTRATOS = "/painel/corretora/contratos";
@@ -106,7 +100,7 @@ export default async function AnalyticsPage({
             <KpiLink href={LEADS}>
               <KpiCard
                 label="Leads novos"
-                value={NUM.format(flow.leadsNovos.value)}
+                value={fmtInt(flow.leadsNovos.value)}
                 icon={Handshake}
                 tone="premium"
                 delta={flow.leadsNovos.delta}
@@ -115,7 +109,7 @@ export default async function AnalyticsPage({
             <KpiLink href={`${LEADS}?status=convertido`}>
               <KpiCard
                 label="Convertidos"
-                value={NUM.format(flow.convertidos.value)}
+                value={fmtInt(flow.convertidos.value)}
                 icon={CheckCircle2}
                 tone="premium"
                 delta={flow.convertidos.delta}
@@ -134,7 +128,7 @@ export default async function AnalyticsPage({
             <KpiLink href={CONTRATOS}>
               <KpiCard
                 label="Comissão"
-                value={BRL.format(flow.comissao.value)}
+                value={fmtMoney0(flow.comissao.value)}
                 icon={Wallet}
                 tone="premium"
                 delta={flow.comissao.delta}
@@ -151,7 +145,7 @@ export default async function AnalyticsPage({
             <KpiLink href={CONTRATOS}>
               <KpiCard
                 label="Sacas vendidas"
-                value={NUM.format(flow.sacasVendidas.value)}
+                value={fmtInt(flow.sacasVendidas.value)}
                 icon={ShoppingBag}
                 tone="success"
                 delta={flow.sacasVendidas.delta}
@@ -160,7 +154,7 @@ export default async function AnalyticsPage({
             </KpiLink>
             <KpiCard
               label="Sacas em negociação"
-              value={NUM.format(snapshot.sacasEmNegociacao)}
+              value={fmtInt(snapshot.sacasEmNegociacao)}
               icon={Package}
               tone="info"
               hint="Em leads abertos agora"
@@ -168,7 +162,7 @@ export default async function AnalyticsPage({
             <KpiLink href="/painel/corretora/produtores">
               <KpiCard
                 label="Produtores ativos"
-                value={NUM.format(snapshot.produtoresAtivos)}
+                value={fmtInt(snapshot.produtoresAtivos)}
                 icon={Users}
                 hint="Com leads, lotes ou contratos"
               />
@@ -176,7 +170,7 @@ export default async function AnalyticsPage({
             <KpiLink href="/painel/corretora/compradores">
               <KpiCard
                 label="Compradores ativos"
-                value={NUM.format(snapshot.compradoresAtivos)}
+                value={fmtInt(snapshot.compradoresAtivos)}
                 icon={Building2}
                 hint="Cadastrados como ativos"
               />
@@ -262,14 +256,14 @@ export default async function AnalyticsPage({
           <section className="grid grid-cols-2 gap-4">
             <KpiCard
               label="Ticket médio"
-              value={BRL.format(snapshot.ticketMedio)}
+              value={fmtMoney0(snapshot.ticketMedio)}
               hint="por contrato ativo/finalizado"
               icon={Wallet}
             />
             <KpiLink href={CONTRATOS}>
               <KpiCard
                 label="Contratos ativos"
-                value={NUM.format(snapshot.contratosAtivos)}
+                value={fmtInt(snapshot.contratosAtivos)}
                 hint="em execução agora"
                 icon={Handshake}
               />
@@ -312,10 +306,10 @@ export default async function AnalyticsPage({
                       {c.contratos}
                     </td>
                     <td className="px-5 py-3 text-right tabular-nums text-neutral-600">
-                      {BRL.format(c.total)}
+                      {fmtMoney0(c.total)}
                     </td>
                     <td className="px-5 py-3 text-right font-semibold tabular-nums text-milsaca-cafezal">
-                      {BRL.format(c.comissao)}
+                      {fmtMoney0(c.comissao)}
                     </td>
                   </>
                 )}
@@ -328,10 +322,10 @@ export default async function AnalyticsPage({
                     <p className="mt-1 text-caption text-neutral-500">
                       {c.contratos}{" "}
                       {c.contratos === 1 ? "contrato" : "contratos"} ·{" "}
-                      {BRL.format(c.total)} em volume
+                      {fmtMoney0(c.total)} em volume
                     </p>
                     <p className="mt-2 text-h3 tabular-nums text-milsaca-cafezal">
-                      {BRL.format(c.comissao)}
+                      {fmtMoney0(c.comissao)}
                       <span className="ml-1 text-caption font-normal text-neutral-400">
                         comissão
                       </span>

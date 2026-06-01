@@ -41,6 +41,7 @@ import {
 import { buildWhatsAppInviteUrl } from "../../produtores/_lib/whatsapp";
 import { listPropostasDoLead } from "../../propostas/_lib/queries";
 import { PropostasBlock } from "../../propostas/_components/propostas-block";
+import { COFFEE_OPTIONS, coffeeLabel } from "@/lib/coffee";
 
 export const metadata = { title: "Lead — Milsaca" };
 
@@ -162,7 +163,7 @@ export default async function LeadDetalhePage({
 
   const waUrl = buildWhatsAppInviteUrl({
     phone: lead.produtor_phone,
-    message: `Olá ${lead.produtor_nome.split(" ")[0] || ""}, falando sobre a proposta de ${lead.coffee_type ?? "café"}${lead.bag_count ? ` (${lead.bag_count} sacas)` : ""}. Acesse: ${SITE_URL}`,
+    message: `Olá ${lead.produtor_nome.split(" ")[0] || ""}, falando sobre a proposta de ${coffeeLabel(lead.coffee_type) ?? "café"}${lead.bag_count ? ` (${lead.bag_count} sacas)` : ""}. Acesse: ${SITE_URL}`,
   });
 
   return (
@@ -254,8 +255,11 @@ export default async function LeadDetalhePage({
                     defaultValue={lead.coffee_type ?? ""}
                   >
                     <option value="">—</option>
-                    <option value="Arábica">Arábica</option>
-                    <option value="Conillón">Conillón</option>
+                    {COFFEE_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
                   </Select>
                 </div>
 

@@ -53,6 +53,9 @@ export type OfertaItem = {
   comprador_nome: string;
   lote_id: string | null;
   lote_codigo: string | null;
+  // Produtor derivado do lote da oferta (null em oferta avulsa, sem lote).
+  produtor_id: string | null;
+  produtor_nome: string | null;
 };
 
 /** Total ofertado = preço/saca × sacas. */
@@ -87,10 +90,14 @@ export function nextOfferAction(status: OfertaStatus): OfferAction {
 export function gerarContratoHref(o: {
   comprador_id: string;
   lote_id: string | null;
+  produtor_id?: string | null;
   preco_saca: number;
   bag_count: number | null;
 }): string {
   const p = new URLSearchParams({ comprador_id: o.comprador_id });
+  // produtor_id pré-seleciona direto no form (evita o round-trip pelo lote);
+  // lote_id fica como fallback caso o produtor não venha resolvido aqui.
+  if (o.produtor_id) p.set("produtor_id", o.produtor_id);
   if (o.lote_id) p.set("lote_id", o.lote_id);
   p.set("preco", String(o.preco_saca));
   if (o.bag_count != null) p.set("bag_count", String(o.bag_count));

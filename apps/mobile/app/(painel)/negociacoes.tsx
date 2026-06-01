@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "../../src/lib/auth";
+import { coffeeLabel } from "../../src/lib/coffee";
 import {
   LEAD_STATUS_BADGE,
   LEAD_STATUS_LABEL,
@@ -98,7 +99,7 @@ export default function NegociacoesScreen() {
   };
 
   const openWhatsApp = (item: LeadItem) => {
-    const msg = `Olá ${item.corretora_nome}, queria conversar sobre a proposta de ${item.coffee_type ?? "café"}${item.bag_count ? ` (${item.bag_count} sacas)` : ""}.`;
+    const msg = `Olá ${item.corretora_nome}, queria conversar sobre a proposta de ${coffeeLabel(item.coffee_type) ?? "café"}${item.bag_count ? ` (${item.bag_count} sacas)` : ""}.`;
     const url = buildWhatsAppUrl(item.corretora_phone, msg);
     if (!url) return;
     Linking.openURL(url).catch(() => {
@@ -291,7 +292,7 @@ export default function NegociacoesScreen() {
                       className="text-sm text-milsaca-cream"
                       style={{ fontFamily: "Inter_500Medium" }}
                     >
-                      {item.coffee_type ?? "Café"}
+                      {coffeeLabel(item.coffee_type) ?? "Café"}
                       {item.bag_count ? ` · ${item.bag_count} sacas` : ""}
                     </Text>
                     {item.proposed_price ? (
@@ -392,7 +393,7 @@ function PropostaCard({
           className="mt-0.5 text-xs text-milsaca-cream/70"
           style={{ fontFamily: "Inter_400Regular" }}
         >
-          {proposta.coffee_type ?? "Café"}
+          {coffeeLabel(proposta.coffee_type) ?? "Café"}
           {proposta.bag_count ? ` · ${proposta.bag_count} sacas` : ""}
           {total ? ` · total ${BRL.format(total)}` : ""}
         </Text>

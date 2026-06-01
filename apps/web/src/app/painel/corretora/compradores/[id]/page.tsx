@@ -19,18 +19,12 @@ import {
 } from "../../ofertas/_lib/oferta-meta";
 import { CompradorFormFields } from "../_form";
 import { toggleCompradorAtivo, updateComprador } from "../_actions";
+import { fmtMoney0, fmtInt } from "@/lib/format";
 
 export const metadata = { title: "Comprador — Milsaca" };
 
 type Params = Promise<{ id: string }>;
 type SearchParams = Promise<{ saved?: string; error?: string }>;
-
-const BRL = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  maximumFractionDigits: 0,
-});
-const NUM = new Intl.NumberFormat("pt-BR");
 
 const CONTRATO_TONE: Record<string, StatusTone> = {
   rascunho: "neutral",
@@ -124,17 +118,17 @@ export default async function CompradorDetalhePage({
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <MiniStat
           label="Total comprado"
-          value={BRL.format(hist.stats.totalComprado)}
+          value={fmtMoney0(hist.stats.totalComprado)}
           premium
         />
         <MiniStat
           label="Comissão gerada"
-          value={BRL.format(hist.stats.comissaoGerada)}
+          value={fmtMoney0(hist.stats.comissaoGerada)}
         />
-        <MiniStat label="Contratos" value={NUM.format(hist.stats.contratos)} />
+        <MiniStat label="Contratos" value={fmtInt(hist.stats.contratos)} />
         <MiniStat
           label="Ofertas abertas"
-          value={NUM.format(hist.stats.ofertasAbertas)}
+          value={fmtInt(hist.stats.ofertasAbertas)}
         />
       </section>
 
@@ -162,13 +156,13 @@ export default async function CompradorDetalhePage({
                     <p className="mt-0.5 text-caption text-neutral-500">
                       {fmtDate(ct.created_at)}
                       {ct.comissao_total != null
-                        ? ` · comissão ${BRL.format(ct.comissao_total)}`
+                        ? ` · comissão ${fmtMoney0(ct.comissao_total)}`
                         : ""}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     <span className="text-body-sm font-semibold tabular-nums text-milsaca-cafezal">
-                      {ct.total_value != null ? BRL.format(ct.total_value) : "—"}
+                      {ct.total_value != null ? fmtMoney0(ct.total_value) : "—"}
                     </span>
                     <StatusBadge tone={CONTRATO_TONE[ct.status] ?? "neutral"}>
                       {CONTRATO_LABEL[ct.status] ?? ct.status}
@@ -204,13 +198,13 @@ export default async function CompradorDetalhePage({
                       </p>
                       <p className="mt-0.5 text-caption text-neutral-500">
                         {o.bag_count != null ? `${o.bag_count} sc · ` : ""}
-                        {BRL.format(o.preco_saca)}/sc
+                        {fmtMoney0(o.preco_saca)}/sc
                         {o.validade_ate ? ` · ${d.label}` : ""}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
                       <span className="text-body-sm font-semibold tabular-nums text-milsaca-cafezal">
-                        {o.total != null ? BRL.format(o.total) : "—"}
+                        {o.total != null ? fmtMoney0(o.total) : "—"}
                       </span>
                       <StatusBadge
                         tone={OFERTA_STATUS_TONE[o.status as OfertaStatus] ?? "neutral"}
@@ -257,7 +251,7 @@ export default async function CompradorDetalhePage({
                   label="Volume típico"
                   value={
                     c.perfil.volume_sacas != null
-                      ? `${NUM.format(c.perfil.volume_sacas)} sc`
+                      ? `${fmtInt(c.perfil.volume_sacas)} sc`
                       : "—"
                   }
                 />

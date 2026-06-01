@@ -16,16 +16,11 @@ import {
   type PagamentoStatus,
 } from "./_lib/queries";
 import { PagamentosView } from "./_components/pagamentos-view";
+import { fmtMoney } from "@/lib/format";
 
 export const metadata = { title: "Pagamentos — Painel da corretora" };
 
 type SearchParams = Promise<{ status?: string; page?: string }>;
-
-const BRL = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  minimumFractionDigits: 2,
-});
 
 function isStatus(v: string | undefined): v is PagamentoStatus {
   return !!v && (PAGAMENTO_STATUS_ORDER as readonly string[]).includes(v);
@@ -85,21 +80,21 @@ export default async function PagamentosPage({
       >
         <KpiCard
           label="A pagar (líquido)"
-          value={BRL.format(kpis.aPagar)}
+          value={fmtMoney(kpis.aPagar)}
           icon={Wallet}
           tone="warning"
           hint="Pendente + vencido"
         />
         <KpiCard
           label="Já pago (líquido)"
-          value={BRL.format(kpis.pago)}
+          value={fmtMoney(kpis.pago)}
           icon={CheckCircle2}
           tone="success"
           hint="Repasses confirmados"
         />
         <KpiCard
           label="Vencido (líquido)"
-          value={BRL.format(kpis.vencido)}
+          value={fmtMoney(kpis.vencido)}
           icon={AlertTriangle}
           tone={kpis.vencido > 0 ? "danger" : "default"}
           hint="Atrasado — priorize"

@@ -41,6 +41,8 @@ import {
 import { getCorretoraSubscriptionInfo } from "./_lib/corretora";
 import { isProOrAbove } from "./_lib/plan-gate";
 import { AutomationCard } from "./_components/automation-card";
+import { coffeeLabel } from "@/lib/coffee";
+import { fmtMoney0, fmtInt } from "@/lib/format";
 
 export const metadata = { title: "Início — Painel da corretora" };
 
@@ -48,14 +50,6 @@ const COFFEE_LABEL: Record<string, string> = {
   arabica: "Arábica",
   conillon: "Conillón",
 };
-
-const BRL = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  maximumFractionDigits: 0,
-});
-
-const NUM = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 });
 
 function urgencia(updatedAt: string, status: LeadStatus): string {
   const dias = Math.floor(
@@ -130,7 +124,7 @@ export default async function InicioCorretoraPage() {
       >
         <MoneyCard
           label="Comissão do mês"
-          value={BRL.format(kpis.receitaMes)}
+          value={fmtMoney0(kpis.receitaMes)}
           hint="Contratos ativos e finalizados"
           icon={Wallet}
           href="/painel/corretora/contratos"
@@ -139,14 +133,14 @@ export default async function InicioCorretoraPage() {
         />
         <MoneyCard
           label="Em negociação"
-          value={BRL.format(kpis.valorEmNegociacao)}
+          value={fmtMoney0(kpis.valorEmNegociacao)}
           hint={`${kpis.emNegociacao} proposta${kpis.emNegociacao === 1 ? "" : "s"} aberta${kpis.emNegociacao === 1 ? "" : "s"}`}
           icon={TrendingUp}
           href="/painel/corretora/leads?status=em_negociacao"
         />
         <MoneyCard
           label="Contratos ativos"
-          value={NUM.format(kpis.contratosAtivos)}
+          value={fmtInt(kpis.contratosAtivos)}
           hint="Em execução"
           icon={FileSignature}
           href="/painel/corretora/contratos?status=ativo"
@@ -172,25 +166,25 @@ export default async function InicioCorretoraPage() {
       >
         <OpChip
           label="Sacas disponíveis"
-          value={NUM.format(kpis.sacasDisponiveis)}
+          value={fmtInt(kpis.sacasDisponiveis)}
           icon={Coffee}
           href="/painel/corretora/lotes"
         />
         <OpChip
           label="Lotes ativos"
-          value={NUM.format(kpis.lotesAtivos)}
+          value={fmtInt(kpis.lotesAtivos)}
           icon={Package}
           href="/painel/corretora/lotes"
         />
         <OpChip
           label="Produtores"
-          value={NUM.format(kpis.produtoresCadastrados)}
+          value={fmtInt(kpis.produtoresCadastrados)}
           icon={Users}
           href="/painel/corretora/produtores"
         />
         <OpChip
           label="Compradores"
-          value={NUM.format(kpis.compradoresAtivos)}
+          value={fmtInt(kpis.compradoresAtivos)}
           icon={Building2}
           href="/painel/corretora/compradores"
         />
@@ -457,10 +451,8 @@ function LeadRow({ l }: { l: DashboardLead }) {
         </p>
         <p className="mt-0.5 text-caption text-neutral-600">
           {l.bag_count ? `${l.bag_count} sacas` : "—"}
-          {l.coffee_type
-            ? ` ${COFFEE_LABEL[l.coffee_type] ?? l.coffee_type}`
-            : ""}
-          {l.valor != null ? ` · ${BRL.format(l.valor)}` : ""}
+          {l.coffee_type ? ` ${coffeeLabel(l.coffee_type)}` : ""}
+          {l.valor != null ? ` · ${fmtMoney0(l.valor)}` : ""}
         </p>
         <p className="mt-0.5 inline-flex items-center gap-1 text-caption text-warning-700">
           <span aria-hidden>⏳</span>
@@ -573,7 +565,7 @@ function CotacaoCardView({ cotacao }: { cotacao: CotacaoDashboard }) {
       </CardHeader>
       <CardContent>
         <p className="text-h2 tracking-tight text-milsaca-cafezal">
-          {BRL.format(cotacao.price)}
+          {fmtMoney0(cotacao.price)}
         </p>
         <p className="mt-1 text-caption text-neutral-500">
           saca 60kg · {cotacao.source ?? "—"}

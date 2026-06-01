@@ -10,6 +10,9 @@ export type FunnelStats = {
 /**
  * Calcula taxa de conversão de leads-WhatsApp pra contratos.
  *
+ * Lib neutra compartilhada entre o painel admin (`/admin/leads`) e o painel
+ * da corretora (`/painel/corretora/leads-whatsapp`).
+ *
  * Cliques únicos = pares distintos (corretora_id, produtor_id) com
  * produtor logado. Conversão = par que tem contrato criado pela mesma
  * corretora pra mesmo produtor APÓS o primeiro click.

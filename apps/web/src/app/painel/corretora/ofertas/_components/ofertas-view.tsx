@@ -25,12 +25,7 @@ import {
   type OfertaStatus,
 } from "../_lib/oferta-meta";
 import { atualizarStatusOferta, deleteOferta } from "../_actions";
-
-const BRL = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  maximumFractionDigits: 0,
-});
+import { fmtMoney0 } from "@/lib/format";
 
 const STATUS_FILTERS: { value: string; label: string }[] = [
   { value: "", label: "Todas" },
@@ -186,7 +181,7 @@ export function OfertasView({
                     {o.lote_codigo ?? "—"}
                   </td>
                   <td className="px-5 py-3 text-right tabular-nums text-neutral-700">
-                    {BRL.format(o.preco_saca)}
+                    {fmtMoney0(o.preco_saca)}
                   </td>
                   <td className="px-5 py-3 text-right tabular-nums text-neutral-700">
                     {o.bag_count != null
@@ -194,7 +189,7 @@ export function OfertasView({
                       : "—"}
                   </td>
                   <td className="px-5 py-3 text-right font-semibold tabular-nums text-milsaca-cafezal">
-                    {total != null ? BRL.format(total) : "—"}
+                    {total != null ? fmtMoney0(total) : "—"}
                   </td>
                   <td className="px-5 py-3">
                     {o.validade_ate ? (
@@ -285,14 +280,14 @@ function OfertaCard({ o }: { o: OfertaItem }) {
         </p>
       ) : null}
       <p className="mt-2 text-h2 leading-none tabular-nums text-milsaca-cafezal">
-        {total != null ? BRL.format(total) : "—"}
+        {total != null ? fmtMoney0(total) : "—"}
       </p>
       <p className="mt-1 text-caption text-neutral-500">
         {o.lote_codigo ? (
           <span className="font-mono">{o.lote_codigo} · </span>
         ) : null}
         {o.bag_count != null ? `${o.bag_count} sc · ` : ""}
-        {BRL.format(o.preco_saca)}/sc
+        {fmtMoney0(o.preco_saca)}/sc
         {o.validade_ate && !d.urgente ? ` · vence ${d.label}` : ""}
       </p>
       <div className="mt-3 flex items-center gap-2">

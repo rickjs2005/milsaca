@@ -26,17 +26,28 @@ type Row = {
   comprador_id: string;
   lote_id: string | null;
   comprador: { name: string } | { name: string }[] | null;
-  lote: { codigo: string } | { codigo: string }[] | null;
+  lote: LoteJoin | LoteJoin[] | null;
+};
+
+type LoteJoin = {
+  codigo: string;
+  produtor_id: string | null;
+  produtor:
+    | { full_name: string | null }
+    | { full_name: string | null }[]
+    | null;
 };
 
 const SELECT = `id, preco_saca, bag_count, validade_ate, mensagem, status, created_at,
   comprador_id, lote_id,
   comprador:compradores!ofertas_comprador_comprador_id_fkey(name),
-  lote:lotes!ofertas_comprador_lote_id_fkey(codigo)`;
+  lote:lotes!ofertas_comprador_lote_id_fkey(codigo, produtor_id,
+    produtor:profiles!lotes_produtor_id_fkey(full_name))`;
 
 function mapRow(r: Row): OfertaItem {
   const comp = pickOne(r.comprador);
   const lote = pickOne(r.lote);
+  const loteProdutor = lote ? pickOne(lote.produtor) : null;
   return {
     id: r.id,
     preco_saca: Number(r.preco_saca),
@@ -49,6 +60,8 @@ function mapRow(r: Row): OfertaItem {
     comprador_nome: comp?.name ?? "—",
     lote_id: r.lote_id,
     lote_codigo: lote?.codigo ?? null,
+    produtor_id: lote?.produtor_id ?? null,
+    produtor_nome: loteProdutor?.full_name ?? null,
   };
 }
 

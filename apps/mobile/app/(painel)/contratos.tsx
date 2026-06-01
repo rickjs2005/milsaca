@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "../../src/lib/auth";
+import { coffeeLabel } from "../../src/lib/coffee";
 import { useList } from "../../src/lib/use-list";
 import {
   CONTRATO_STATUS_BADGE,
@@ -194,7 +195,7 @@ export default function ContratosScreen() {
                       className="text-xs text-milsaca-cream/80"
                       style={{ fontFamily: "Inter_500Medium" }}
                     >
-                      {c.coffee_type ?? "Café"}
+                      {coffeeLabel(c.coffee_type) ?? "Café"}
                       {c.bag_count ? ` · ${c.bag_count} sacas` : ""}
                     </Text>
                     {c.total_value ? (

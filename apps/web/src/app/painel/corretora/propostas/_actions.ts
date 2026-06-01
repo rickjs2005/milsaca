@@ -3,10 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
+import type { Json } from "@milsaca/types/database";
 import { getProfile, getUser } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
+import { notify } from "@/lib/notify";
 import { requireActiveSubscription } from "../_lib/corretora";
 import {
   PROPOSTA_STATUS_ORDER,
@@ -56,6 +58,24 @@ function parseDateTime(v: FormDataEntryValue | null): string | null {
 
 function isPropostaStatus(v: string): v is PropostaStatus {
   return (PROPOSTA_STATUS_ORDER as readonly string[]).includes(v);
+}
+
+/**
+ * Texto curto pra timeline/notificação do produtor.
+ * Ex.: "Proposta: R$ 1.450,00/saca · 100 sacas".
+ */
+function formatPropostaResumo(
+  preco_saca: number,
+  bag_count: number | null,
+): string {
+  const preco = preco_saca.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+  });
+  let s = `Proposta: R$ ${preco}/saca`;
+  if (bag_count != null) {
+    s += ` · ${bag_count.toLocaleString("pt-BR")} sacas`;
+  }
+  return s;
 }
 
 /**
@@ -145,6 +165,61 @@ export async function createProposta(formData: FormData) {
     });
     const params = new URLSearchParams({ error: friendlyPostgresError(error) });
     redirect(`${backHref}?${params.toString()}`);
+  }
+
+  // Proposta amarrada a um lead → torna visível pro produtor (achado ALTA 6):
+  // a tabela propostas é owner-only (RLS), então o produtor não a lê. Espelha
+  // createLead/updateLeadStatus: grava um lead_event (timeline) e notifica o
+  // produtor. Tudo best-effort — não derruba o sucesso da criação da proposta.
+  // (Sem lead_id, ex.: proposta direta de lote, não há timeline de produtor.)
+  if (leadId) {
+    // preco_saca já é não-nulo aqui (validado acima), mas o TS não sabe.
+    const resumo = formatPropostaResumo(preco_saca ?? 0, bag_count);
+
+    // kind "comment": é o evento que o timeline do produtor já renderiza
+    // com texto livre (payload.text). Não há kind "proposta_enviada" exibido
+    // lá, então usar "comment" garante que o produtor VEJA a proposta.
+    const { error: eventErr } = await supabase.from("lead_events").insert({
+      lead_id: leadId,
+      corretora_id: profile.corretora_id,
+      actor_id: user.id,
+      kind: "comment",
+      payload: { text: resumo } as unknown as Json,
+    });
+    if (eventErr) {
+      const log = await getReqLogger({
+        action: "createProposta",
+        corretoraId: profile.corretora_id,
+        leadId,
+      });
+      log.warn("lead_event_insert_falhou", {
+        kind: "comment",
+        code: eventErr.code,
+        err: safeError(eventErr),
+      });
+    }
+
+    // Busca o produtor do lead pra notificar (a action não tem em mãos).
+    const { data: leadRow } = await supabase
+      .from("leads")
+      .select("produtor_id")
+      .eq("id", leadId)
+      .eq("corretora_id", profile.corretora_id)
+      .maybeSingle();
+
+    if (leadRow?.produtor_id) {
+      await notify({
+        userId: leadRow.produtor_id,
+        kind: "lead",
+        title: "Nova proposta da corretora",
+        body: resumo,
+        data: {
+          lead_id: leadId,
+          corretora_id: profile.corretora_id,
+          href: `/painel/produtor/negociacoes/${leadId}`,
+        },
+      });
+    }
   }
 
   revalidateProposta({ leadId, loteId });

@@ -16,6 +16,7 @@ import { getProfile } from "@/lib/auth";
 import { listLeadTargets } from "../_lib/queries";
 import { createLead } from "../_actions";
 import { LEAD_ORIGEM_LABEL, LEAD_ORIGEM_ORDER } from "../_lib/lead-meta";
+import { COFFEE_OPTIONS } from "@/lib/coffee";
 
 export const metadata = { title: "Novo lead — Milsaca" };
 
@@ -136,8 +137,11 @@ export default async function NovoLeadPage({
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <option value="">—</option>
-                  <option value="Arábica">Arábica</option>
-                  <option value="Conillón">Conillón</option>
+                  {COFFEE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 

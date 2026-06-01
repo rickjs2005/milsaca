@@ -9,7 +9,7 @@ import { DataTable, type Column } from "@/components/data-table";
 import { KpiCard } from "@/components/kpi-card";
 import { Button } from "@/components/ui/button";
 import { fmtDateTime } from "@/lib/format";
-import { loadFunnelStats } from "./_lib/funnel";
+import { loadFunnelStats } from "@/lib/leads-funnel";
 
 export const metadata = { title: "Leads · Admin Milsaca" };
 

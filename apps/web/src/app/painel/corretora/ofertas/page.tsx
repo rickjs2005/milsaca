@@ -20,17 +20,11 @@ import {
   type OfertaStatus,
 } from "./_lib/queries";
 import { OfertasView } from "./_components/ofertas-view";
+import { fmtMoney0, fmtInt } from "@/lib/format";
 
 export const metadata = { title: "Ofertas a compradores — Painel da corretora" };
 
 type SearchParams = Promise<{ status?: string; page?: string }>;
-
-const BRL = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  maximumFractionDigits: 0,
-});
-const NUM = new Intl.NumberFormat("pt-BR");
 
 function isStatus(v: string | undefined): v is OfertaStatus {
   return (OFERTA_STATUS_ORDER as readonly string[]).includes(v ?? "");
@@ -79,21 +73,21 @@ export default async function OfertasPage({
       >
         <KpiCard
           label="Ofertado"
-          value={BRL.format(kpis.ofertado)}
+          value={fmtMoney0(kpis.ofertado)}
           icon={Store}
           tone="premium"
           hint="Em ofertas enviadas + aceitas"
         />
         <KpiCard
           label="Enviadas"
-          value={NUM.format(kpis.enviadas)}
+          value={fmtInt(kpis.enviadas)}
           icon={Send}
           tone="info"
           hint="Aguardando resposta"
         />
         <KpiCard
           label="Aceitas"
-          value={NUM.format(kpis.aceitas)}
+          value={fmtInt(kpis.aceitas)}
           icon={CheckCircle2}
           tone="success"
           hint="Prontas pra virar contrato"

@@ -14,6 +14,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { fmtMoney0, fmtInt } from "@/lib/format";
 import { Pagination } from "@/components/pagination";
 import { StatusBadge } from "@/components/status-badge";
 import { FilterSheet } from "@/components/filter-sheet";
@@ -26,12 +27,6 @@ import {
   type ContratoListItem,
   type ContratoStatus,
 } from "../_lib/contrato-meta";
-
-const BRL = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  maximumFractionDigits: 0,
-});
 
 const STATUS_FILTERS: { value: string; label: string }[] = [
   { value: "", label: "Todos" },
@@ -230,15 +225,13 @@ export function ContratosView({
                     ) : null}
                   </td>
                   <td className="px-5 py-3 text-right tabular-nums text-neutral-700">
-                    {c.bag_count != null
-                      ? c.bag_count.toLocaleString("pt-BR")
-                      : "—"}
+                    {fmtInt(c.bag_count)}
                   </td>
                   <td className="px-5 py-3 text-right font-semibold tabular-nums text-milsaca-cafezal">
-                    {c.total_value != null ? BRL.format(c.total_value) : "—"}
+                    {fmtMoney0(c.total_value)}
                   </td>
                   <td className="px-5 py-3 text-right tabular-nums text-dourado-texto">
-                    {c.comissao_total != null ? BRL.format(c.comissao_total) : "—"}
+                    {fmtMoney0(c.comissao_total)}
                   </td>
                   <td className="px-5 py-3">
                     <StatusBadge tone={CONTRATO_STATUS_TONE[c.status]}>
@@ -278,7 +271,7 @@ export function ContratosView({
                 Total ({filtered.length})
               </td>
               <td className="px-5 py-3 text-right font-bold tabular-nums text-milsaca-cafezal">
-                {BRL.format(totalSoma)}
+                {fmtMoney0(totalSoma)}
               </td>
               <td colSpan={4} />
             </tr>
@@ -297,7 +290,7 @@ export function ContratosView({
               Total ({filtered.length})
             </span>
             <span className="text-body-sm font-bold tabular-nums text-milsaca-cafezal">
-              {BRL.format(totalSoma)}
+              {fmtMoney0(totalSoma)}
             </span>
           </div>
         ) : null}
@@ -345,7 +338,7 @@ function ContratoCard({ c }: { c: ContratoListItem }) {
         </StatusBadge>
       </div>
       <p className="mt-2 text-h2 leading-none tabular-nums text-milsaca-cafezal">
-        {c.total_value != null ? BRL.format(c.total_value) : "—"}
+        {fmtMoney0(c.total_value)}
       </p>
       <p className="mt-1 text-caption text-neutral-500">
         {c.produtor_nome} → {c.comprador_nome ?? "—"}
@@ -366,7 +359,7 @@ function ContratoCard({ c }: { c: ContratoListItem }) {
         {c.signed_at ? "Assinado " : ""}
         {a.label}
         {c.comissao_total != null
-          ? ` · comissão ${BRL.format(c.comissao_total)}`
+          ? ` · comissão ${fmtMoney0(c.comissao_total)}`
           : ""}
       </p>
       <div className="mt-3 flex items-center gap-2">

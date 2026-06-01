@@ -68,6 +68,36 @@ export function fmtMoney(value: number | string | null | undefined): string {
 }
 
 /**
+ * "R$ 1.235" — moeda BR a partir de REAIS, sem casas decimais. Para KPIs,
+ * listas e dashboards (substitui os `new Intl.NumberFormat(..., {maximumFractionDigits:0})`).
+ */
+export function fmtMoney0(value: number | string | null | undefined): string {
+  if (value == null) return "—";
+  const n = typeof value === "string" ? Number(value) : value;
+  if (!Number.isFinite(n)) return "—";
+  return n.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0,
+  });
+}
+
+/** "1.235" — inteiro pt-BR sem símbolo de moeda. */
+export function fmtInt(value: number | null | undefined): string {
+  if (value == null) return "—";
+  return value.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+}
+
+/** "1.234,500" — número com 3 casas (peso/sacas no espelho de contrato). */
+export function fmtNum3(value: number | null | undefined): string {
+  if (value == null) return "—";
+  return value.toLocaleString("pt-BR", {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
+  });
+}
+
+/**
  * Preço de plano com sufixo de periodicidade.
  *
  *   formatPriceBR(19900, "monthly") → "R$ 199,00/mês"

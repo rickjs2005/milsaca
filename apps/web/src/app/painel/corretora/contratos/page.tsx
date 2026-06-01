@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { KpiCard } from "@/components/kpi-card";
 import { getProfile } from "@/lib/auth";
+import { fmtMoney0, fmtInt } from "@/lib/format";
 import { getCorretoraSubscriptionInfo } from "../_lib/corretora";
 import { isProOrAbove } from "../_lib/plan-gate";
 import { LockedHint } from "../_components/locked-hint";
@@ -21,13 +22,6 @@ import { ContratosView } from "./_components/contratos-view";
 export const metadata = { title: "Contratos — Painel da corretora" };
 
 type SearchParams = Promise<{ status?: string; page?: string }>;
-
-const BRL = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  maximumFractionDigits: 0,
-});
-const NUM = new Intl.NumberFormat("pt-BR");
 
 function isContratoStatus(v: string | undefined): v is ContratoStatus {
   return !!v && (CONTRATO_STATUS_ORDER as readonly string[]).includes(v);
@@ -64,12 +58,14 @@ export default async function ContratosCorretoraPage({
             convertido ou direto.
           </p>
         </div>
-        <Button asChild variant="primary">
-          <Link href="/painel/corretora/contratos/novo">
-            <Plus className="mr-2 h-4 w-4" />
-            Novo contrato
-          </Link>
-        </Button>
+        {isPro ? (
+          <Button asChild variant="primary">
+            <Link href="/painel/corretora/contratos/novo">
+              <Plus className="mr-2 h-4 w-4" />
+              Novo contrato
+            </Link>
+          </Button>
+        ) : null}
       </header>
 
       {!isPro ? (
@@ -85,28 +81,28 @@ export default async function ContratosCorretoraPage({
       >
         <KpiCard
           label="Em contratos ativos"
-          value={BRL.format(kpis.ativosValor)}
+          value={fmtMoney0(kpis.ativosValor)}
           icon={FileText}
           tone="premium"
           hint="Valor total em execução"
         />
         <KpiCard
           label="Comissão projetada"
-          value={BRL.format(kpis.comissaoProjetada)}
+          value={fmtMoney0(kpis.comissaoProjetada)}
           icon={Wallet}
           tone="success"
           hint="Ativos + finalizados"
         />
         <KpiCard
           label="Aguardando assinatura"
-          value={NUM.format(kpis.aguardandoAssinatura)}
+          value={fmtInt(kpis.aguardandoAssinatura)}
           icon={FileSignature}
           tone="info"
           hint="Rascunho + em análise"
         />
         <KpiCard
           label="Finalizados"
-          value={NUM.format(kpis.finalizados)}
+          value={fmtInt(kpis.finalizados)}
           icon={CheckCircle2}
           hint="Concluídos"
         />
@@ -119,10 +115,14 @@ export default async function ContratosCorretoraPage({
               icon={FileText}
               title={`Nenhum contrato${status ? " com esse status" : ""}`}
               description="Crie o primeiro a partir de um lead convertido."
-              cta={{
-                label: "Novo contrato",
-                href: "/painel/corretora/contratos/novo",
-              }}
+              cta={
+                isPro
+                  ? {
+                      label: "Novo contrato",
+                      href: "/painel/corretora/contratos/novo",
+                    }
+                  : undefined
+              }
             />
           </CardContent>
         </Card>

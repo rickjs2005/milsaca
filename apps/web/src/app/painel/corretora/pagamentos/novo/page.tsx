@@ -10,17 +10,9 @@ import { getProfile } from "@/lib/auth";
 import { requireCorretoraDono } from "../../_lib/corretora";
 import { listContratosParaPagamento } from "../_lib/queries";
 import { createPagamento } from "../_actions";
+import { fmtMoney } from "@/lib/format";
 
 export const metadata = { title: "Registrar pagamento — Painel da corretora" };
-
-function formatBRL(value: number | null) {
-  if (value == null) return "—";
-  return value.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    minimumFractionDigits: 2,
-  });
-}
 
 export default async function NovoPagamentoPage() {
   const profile = await getProfile();
@@ -95,7 +87,7 @@ export default async function NovoPagamentoPage() {
                   {contratos.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.code} · {c.produtor_nome}
-                      {c.total_value != null ? ` · ${formatBRL(c.total_value)}` : ""}
+                      {c.total_value != null ? ` · ${fmtMoney(c.total_value)}` : ""}
                     </option>
                   ))}
                 </select>

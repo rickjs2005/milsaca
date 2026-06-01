@@ -17,6 +17,7 @@ import {
   type LeadStatus,
 } from "./_lib/queries";
 import { LeadsGrid } from "./_components/leads-grid";
+import { fmtMoney0, fmtInt } from "@/lib/format";
 
 export const metadata = { title: "Central de Leads — Painel da corretora" };
 
@@ -29,13 +30,6 @@ type SearchParams = Promise<{
 function isLeadStatus(v: string | undefined): v is LeadStatus {
   return !!v && (LEAD_STATUS_ORDER as readonly string[]).includes(v);
 }
-
-const NUM = new Intl.NumberFormat("pt-BR");
-const BRL = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  maximumFractionDigits: 0,
-});
 
 async function loadLeadsKpis(corretoraId: string) {
   const supabase = await createClient();
@@ -159,28 +153,28 @@ export default async function LeadsPage({
       >
         <KpiCard
           label="Leads novos"
-          value={BRL.format(kpis.valorNovos)}
+          value={fmtMoney0(kpis.valorNovos)}
           icon={Handshake}
           tone="premium"
           hint={`${kpis.novos} aguardando contato`}
         />
         <KpiCard
           label="Em negociação"
-          value={BRL.format(kpis.valorEmNeg)}
+          value={fmtMoney0(kpis.valorEmNeg)}
           icon={TrendingUp}
           tone="info"
           hint={`${kpis.emNeg} proposta${kpis.emNeg === 1 ? "" : "s"} aberta${kpis.emNeg === 1 ? "" : "s"}`}
         />
         <KpiCard
           label="Convertidos no mês"
-          value={BRL.format(kpis.valorConv)}
+          value={fmtMoney0(kpis.valorConv)}
           icon={CheckCircle2}
           tone="success"
           hint={`${kpis.convMes} fechado${kpis.convMes === 1 ? "" : "s"}`}
         />
         <KpiCard
           label="Perdidos no mês"
-          value={NUM.format(kpis.perdMes)}
+          value={fmtInt(kpis.perdMes)}
           icon={XCircle}
           tone="danger"
           hint="Pra aprender com o motivo"

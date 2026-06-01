@@ -8,12 +8,7 @@
  */
 
 import { SPECIE_LABEL, PROCESSO_LABEL, type LoteRow } from "./lote-meta";
-
-const BRL_FULL = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  minimumFractionDigits: 2,
-});
+import { fmtMoney } from "@/lib/format";
 
 const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
@@ -66,7 +61,7 @@ export function shareLoteOnWhatsapp(
   if (cotacaoRef != null) {
     lines.push("");
     lines.push(
-      `📈 Cotação de referência da praça: ${BRL_FULL.format(cotacaoRef)}/sc`,
+      `📈 Cotação de referência da praça: ${fmtMoney(cotacaoRef)}/sc`,
     );
   }
   lines.push("");

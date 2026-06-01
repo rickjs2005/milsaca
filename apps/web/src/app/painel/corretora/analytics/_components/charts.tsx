@@ -14,6 +14,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { fmtMoney0 } from "@/lib/format";
 
 const MILSACA_VERDE = "#2D3A2E";
 const MILSACA_DOURADO = "#C9A961";
@@ -21,12 +22,6 @@ const MILSACA_CREAM_ESCURO = "#EFEADB";
 const MILSACA_ROSE = "#e11d48";
 const MILSACA_EMERALD = "#059669";
 const MILSACA_SKY = "#0284c7";
-
-const BRL = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  maximumFractionDigits: 0,
-});
 
 const tooltipStyle = {
   background: "white",
@@ -102,7 +97,7 @@ export function ComissaoAcumuladaChart({
         />
         <Tooltip
           contentStyle={tooltipStyle}
-          formatter={(v) => [BRL.format(toNumber(v)), "comissão"]}
+          formatter={(v) => [fmtMoney0(toNumber(v)), "comissão"]}
         />
         <Line
           type="monotone"
