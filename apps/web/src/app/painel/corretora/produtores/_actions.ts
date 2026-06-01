@@ -3,10 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
-import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
+import { ensureCorretora } from "../_lib/corretora";
 import {
   createProdutorContatoSchema,
   flattenZodErrors,
@@ -14,10 +14,7 @@ import {
 } from "../_lib/schemas";
 
 export async function createContato(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
 
   const parsed = createProdutorContatoSchema.safeParse(
     formDataToObject(formData),
@@ -66,10 +63,7 @@ export async function createContato(formData: FormData) {
 }
 
 export async function updateContato(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
 
   const id = String(formData.get("id") ?? "").trim();
   if (!id) redirect("/painel/corretora/produtores");
@@ -117,10 +111,7 @@ export async function updateContato(formData: FormData) {
 }
 
 export async function deleteContato(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
 
   const id = String(formData.get("id") ?? "").trim();
   if (!id) redirect("/painel/corretora/produtores");

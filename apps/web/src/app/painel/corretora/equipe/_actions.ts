@@ -3,10 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
-import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
+import { ensureCorretora } from "../_lib/corretora";
 
 const BASE = "/painel/corretora/equipe";
 
@@ -21,10 +21,7 @@ function back(params: Record<string, string>) {
  * O aceite reusa o fluxo público /convite/[token].
  */
 export async function gerarConviteEquipe(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
 
   const email =
     String(formData.get("email") ?? "").trim().toLowerCase() || null;
@@ -61,10 +58,7 @@ export async function gerarConviteEquipe(formData: FormData) {
 }
 
 export async function revogarConviteEquipe(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
 
   const token = String(formData.get("token") ?? "").trim();
   if (!token) back({});
@@ -92,10 +86,7 @@ export async function revogarConviteEquipe(formData: FormData) {
 }
 
 export async function removerOperador(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
 
   const target = String(formData.get("target") ?? "").trim();
   if (!target) back({});

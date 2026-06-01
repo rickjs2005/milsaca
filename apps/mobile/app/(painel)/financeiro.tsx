@@ -14,6 +14,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "../../src/lib/auth";
+import {
+  PAGAMENTO_STATUS_BG,
+  PAGAMENTO_STATUS_FG,
+  PAGAMENTO_STATUS_LABEL,
+} from "../../src/lib/queries";
 import { supabase } from "../../src/lib/supabase";
 
 const BRL = new Intl.NumberFormat("pt-BR", {
@@ -21,27 +26,6 @@ const BRL = new Intl.NumberFormat("pt-BR", {
   currency: "BRL",
   minimumFractionDigits: 2,
 });
-
-const STATUS_LABEL: Record<string, string> = {
-  pendente: "Pendente",
-  pago: "Pago",
-  vencido: "Vencido",
-  cancelado: "Cancelado",
-};
-
-const STATUS_BG: Record<string, string> = {
-  pendente: "rgba(224,198,138,0.25)",
-  pago: "rgba(134,239,172,0.25)",
-  vencido: "rgba(252,165,165,0.25)",
-  cancelado: "rgba(203,213,225,0.25)",
-};
-
-const STATUS_FG: Record<string, string> = {
-  pendente: "#C9A961",
-  pago: "#86efac",
-  vencido: "#fca5a5",
-  cancelado: "#cbd5e1",
-};
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
@@ -209,16 +193,16 @@ export default function FinanceiroScreen() {
                     </View>
                     <View
                       className="rounded-full px-2 py-1"
-                      style={{ backgroundColor: STATUS_BG[r.status] }}
+                      style={{ backgroundColor: PAGAMENTO_STATUS_BG[r.status] }}
                     >
                       <Text
                         style={{
-                          color: STATUS_FG[r.status],
+                          color: PAGAMENTO_STATUS_FG[r.status],
                           fontFamily: "Inter_500Medium",
                           fontSize: 10,
                         }}
                       >
-                        {STATUS_LABEL[r.status] ?? r.status}
+                        {PAGAMENTO_STATUS_LABEL[r.status] ?? r.status}
                       </Text>
                     </View>
                   </View>

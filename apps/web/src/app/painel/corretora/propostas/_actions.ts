@@ -4,12 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import type { Json } from "@milsaca/types/database";
-import { getProfile, getUser } from "@/lib/auth";
+import { getUser } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
 import { notify } from "@/lib/notify";
-import { requireActiveSubscription } from "../_lib/corretora";
+import { ensureCorretora, requireActiveSubscription } from "../_lib/corretora";
 import {
   PROPOSTA_STATUS_ORDER,
   type PropostaStatus,
@@ -105,9 +105,9 @@ function revalidateProposta(opts: {
  * Rascunho fica pra implementação futura de "salvar pra mandar depois".
  */
 export async function createProposta(formData: FormData) {
-  const profile = await getProfile();
+  const profile = await ensureCorretora();
   const user = await getUser();
-  if (!profile?.corretora_id || !user) {
+  if (!user) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
   }
   await requireActiveSubscription(
@@ -231,10 +231,7 @@ export async function createProposta(formData: FormData) {
  * Atualiza apenas o status (e respondida_em quando vira aceita/rejeitada/expirada).
  */
 export async function updatePropostaStatus(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
   await requireActiveSubscription(
     profile.corretora_id,
     "/painel/corretora/leads",
@@ -323,10 +320,7 @@ export async function updatePropostaStatus(formData: FormData) {
  * outros, mas a action revalida defensivamente.
  */
 export async function deleteProposta(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
 
   const id = String(formData.get("id") ?? "").trim();
   if (!id) redirect("/painel/corretora");

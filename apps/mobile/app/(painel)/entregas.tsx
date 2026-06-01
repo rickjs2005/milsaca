@@ -15,31 +15,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "../../src/lib/auth";
+import {
+  ENTREGA_STATUS_BG,
+  ENTREGA_STATUS_FG,
+  ENTREGA_STATUS_LABEL,
+} from "../../src/lib/queries";
 import { supabase } from "../../src/lib/supabase";
-
-const STATUS_LABEL: Record<string, string> = {
-  programada: "Programada",
-  em_transito: "Em trânsito",
-  recebida: "Recebida",
-  conferida: "Conferida",
-  cancelada: "Cancelada",
-};
-
-const STATUS_BG: Record<string, string> = {
-  programada: "rgba(224,198,138,0.25)",
-  em_transito: "rgba(125,211,252,0.25)",
-  recebida: "rgba(134,239,172,0.25)",
-  conferida: "#2D3A2E",
-  cancelada: "rgba(203,213,225,0.25)",
-};
-
-const STATUS_FG: Record<string, string> = {
-  programada: "#C9A961",
-  em_transito: "#7dd3fc",
-  recebida: "#86efac",
-  conferida: "#FAF7F0",
-  cancelada: "#cbd5e1",
-};
 
 const PENDENTE = ["programada", "em_transito"];
 
@@ -198,16 +179,16 @@ export default function EntregasScreen() {
                     </View>
                     <View
                       className="rounded-full px-2 py-1"
-                      style={{ backgroundColor: STATUS_BG[e.status] }}
+                      style={{ backgroundColor: ENTREGA_STATUS_BG[e.status] }}
                     >
                       <Text
                         style={{
-                          color: STATUS_FG[e.status],
+                          color: ENTREGA_STATUS_FG[e.status],
                           fontFamily: "Inter_500Medium",
                           fontSize: 10,
                         }}
                       >
-                        {STATUS_LABEL[e.status] ?? e.status}
+                        {ENTREGA_STATUS_LABEL[e.status] ?? e.status}
                       </Text>
                     </View>
                   </View>

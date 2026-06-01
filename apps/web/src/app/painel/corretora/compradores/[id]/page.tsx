@@ -17,7 +17,7 @@ import {
   OFERTA_STATUS_TONE,
   type OfertaStatus,
 } from "../../ofertas/_lib/oferta-meta";
-import { CompradorFormFields } from "../_form";
+import { CompradorFormFields } from "../_components/comprador-form-fields";
 import { toggleCompradorAtivo, updateComprador } from "../_actions";
 import { fmtMoney0, fmtInt } from "@/lib/format";
 

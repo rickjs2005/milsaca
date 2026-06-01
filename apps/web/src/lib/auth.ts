@@ -35,11 +35,14 @@ export async function getProfile(): Promise<Profile | null> {
   if (!user) return null;
 
   const supabase = await createClient();
+  // maybeSingle: ausência de profile (signup em andamento pelo trigger, estado
+  // transitório) não é erro — `.single()` lançaria erro do PostgREST em 0 linhas.
+  // Alinha com o fetchProfile do mobile (que já usa maybeSingle).
   const { data } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", user.id)
-    .single<Profile>();
+    .maybeSingle<Profile>();
 
   return data ?? null;
 }

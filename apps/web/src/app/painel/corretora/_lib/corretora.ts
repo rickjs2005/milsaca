@@ -1,8 +1,26 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import type { Profile } from "@milsaca/types";
+import { getProfile } from "@/lib/auth";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Guard de pertencimento à corretora para Server Actions. Busca o profile do
+ * usuário logado e, se não houver `corretora_id` vinculado, redireciona pra
+ * `/painel/escolher` com aviso. Retorna o profile com `corretora_id` já
+ * estreitado para `string` (não-nulo), eliminando os checks inline duplicados
+ * nas actions da corretora.
+ */
+export async function ensureCorretora(): Promise<
+  Profile & { corretora_id: string }
+> {
+  const profile = await getProfile();
+  if (!profile?.corretora_id) {
+    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
+  }
+  return profile as Profile & { corretora_id: string };
+}
 
 // ---------------------------------------------------------------------------
 // Papéis na corretora (dono × operador)

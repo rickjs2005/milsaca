@@ -3,12 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
-import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
 import { uuidSchema } from "../_lib/schemas";
-import { requireActiveSubscription } from "../_lib/corretora";
+import { ensureCorretora, requireActiveSubscription } from "../_lib/corretora";
 import type { OfertaStatus } from "./_lib/queries";
 
 const STATUS_VALIDOS: OfertaStatus[] = [
@@ -46,10 +45,7 @@ function revalidateAffected(extra?: string) {
 }
 
 export async function createOferta(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
   await requireActiveSubscription(
     profile.corretora_id,
     "/painel/corretora/ofertas",
@@ -129,10 +125,7 @@ export async function createOferta(formData: FormData) {
 }
 
 export async function atualizarStatusOferta(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
 
   const back = safeBack(formData.get("redirect_to"));
   const idParsed = uuidSchema.safeParse(String(formData.get("id") ?? "").trim());
@@ -167,10 +160,7 @@ export async function atualizarStatusOferta(formData: FormData) {
 }
 
 export async function deleteOferta(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
   const back = safeBack(formData.get("redirect_to"));
   const idParsed = uuidSchema.safeParse(String(formData.get("id") ?? "").trim());
   if (!idParsed.success) redirect(back);

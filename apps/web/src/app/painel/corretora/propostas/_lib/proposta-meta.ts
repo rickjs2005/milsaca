@@ -11,6 +11,8 @@
  * mexer no resto.
  */
 
+import type { StatusTone } from "@/components/status-badge";
+
 export type PropostaStatus =
   | "rascunho"
   | "enviada"
@@ -34,12 +36,24 @@ export const PROPOSTA_STATUS_LABEL: Record<PropostaStatus, string> = {
   expirada: "Expirada",
 };
 
+// Tokens semânticos de fundação (D1). Espelha OFERTA_STATUS_COLOR pros
+// estados equivalentes — proposta e oferta são fluxos gêmeos
+// (rascunho→enviada→aceita/rejeitada|recusada/expirada).
 export const PROPOSTA_STATUS_COLOR: Record<PropostaStatus, string> = {
-  rascunho: "bg-slate-200 text-slate-700",
-  enviada: "bg-sky-100 text-sky-800",
-  aceita: "bg-emerald-100 text-emerald-800",
-  rejeitada: "bg-rose-100 text-rose-800",
-  expirada: "bg-amber-100 text-amber-800",
+  rascunho: "bg-neutral-200 text-neutral-700",
+  enviada: "bg-warning-50 text-warning-700",
+  aceita: "bg-success-50 text-success-700",
+  rejeitada: "bg-danger-50 text-danger-700",
+  expirada: "bg-neutral-200 text-neutral-700",
+};
+
+// tone → StatusBadge. Mesmo mapa de OFERTA_STATUS_TONE (rejeitada ≡ recusada).
+export const PROPOSTA_STATUS_TONE: Record<PropostaStatus, StatusTone> = {
+  rascunho: "neutral",
+  enviada: "warning",
+  aceita: "success",
+  rejeitada: "danger",
+  expirada: "neutral",
 };
 
 export type PropostaRow = {

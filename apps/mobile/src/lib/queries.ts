@@ -608,6 +608,61 @@ export const CONTRATO_STATUS_BADGE: Record<
   cancelado:   { bg: "#fca5a544", text: "#9f1239" },
 };
 
+// ----------------------------------------------------------------- //
+// STATUS DE PAGAMENTO (financeiro do produtor)
+// ----------------------------------------------------------------- //
+// Mapas centralizados aqui (ao lado de LEAD/CONTRATO) em vez de inline
+// na tela. Espelha o enum `pagamento_status`: pendente/pago/vencido/cancelado.
+
+export const PAGAMENTO_STATUS_LABEL: Record<string, string> = {
+  pendente: "Pendente",
+  pago: "Pago",
+  vencido: "Vencido",
+  cancelado: "Cancelado",
+};
+
+export const PAGAMENTO_STATUS_BG: Record<string, string> = {
+  pendente: "rgba(224,198,138,0.25)",
+  pago: "rgba(134,239,172,0.25)",
+  vencido: "rgba(252,165,165,0.25)",
+  cancelado: "rgba(203,213,225,0.25)",
+};
+
+export const PAGAMENTO_STATUS_FG: Record<string, string> = {
+  pendente: "#C9A961",
+  pago: "#86efac",
+  vencido: "#fca5a5",
+  cancelado: "#cbd5e1",
+};
+
+// ----------------------------------------------------------------- //
+// STATUS DE ENTREGA (logística do produtor)
+// ----------------------------------------------------------------- //
+
+export const ENTREGA_STATUS_LABEL: Record<string, string> = {
+  programada: "Programada",
+  em_transito: "Em trânsito",
+  recebida: "Recebida",
+  conferida: "Conferida",
+  cancelada: "Cancelada",
+};
+
+export const ENTREGA_STATUS_BG: Record<string, string> = {
+  programada: "rgba(224,198,138,0.25)",
+  em_transito: "rgba(125,211,252,0.25)",
+  recebida: "rgba(134,239,172,0.25)",
+  conferida: "#2D3A2E",
+  cancelada: "rgba(203,213,225,0.25)",
+};
+
+export const ENTREGA_STATUS_FG: Record<string, string> = {
+  programada: "#C9A961",
+  em_transito: "#7dd3fc",
+  recebida: "#86efac",
+  conferida: "#FAF7F0",
+  cancelada: "#cbd5e1",
+};
+
 export interface ContratoItem {
   id: string;
   code: string;

@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
-import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
@@ -13,7 +12,7 @@ import {
   formDataToObject,
   uuidSchema,
 } from "../_lib/schemas";
-import { requireActiveSubscription } from "../_lib/corretora";
+import { ensureCorretora, requireActiveSubscription } from "../_lib/corretora";
 import type { RegimeTributario } from "./_lib/queries";
 import type { Json } from "@milsaca/types/database";
 
@@ -53,14 +52,6 @@ function buildPreferencias(formData: FormData): Json {
     volume_sacas: volume > 0 ? volume : null,
     exige_eudr: formData.get("perfil_exige_eudr") != null,
   };
-}
-
-async function ensureCorretora() {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
-  return profile as typeof profile & { corretora_id: string };
 }
 
 export async function createComprador(formData: FormData) {

@@ -5,13 +5,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import type { Json } from "@milsaca/types/database";
-import { getProfile } from "@/lib/auth";
 import { CONTRATO_VERSAO } from "@/lib/legal";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
 import { notify } from "@/lib/notify";
-import { requireActiveSubscription } from "../_lib/corretora";
+import { ensureCorretora, requireActiveSubscription } from "../_lib/corretora";
 import {
   CONTRATO_STATUS_ORDER,
   type ContratoStatus,
@@ -147,10 +146,7 @@ function revalidateContrato(id?: string) {
 }
 
 export async function createContrato(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
   await requireActiveSubscription(
     profile.corretora_id,
     "/painel/corretora/contratos",
@@ -241,10 +237,7 @@ export async function createContrato(formData: FormData) {
 }
 
 export async function updateContratoFields(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
 
   const id = String(formData.get("id") ?? "").trim();
   if (!id) redirect("/painel/corretora/contratos");
@@ -328,10 +321,7 @@ export async function updateContratoFields(formData: FormData) {
 }
 
 export async function updateContratoStatus(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
   await requireActiveSubscription(
     profile.corretora_id,
     "/painel/corretora/contratos",

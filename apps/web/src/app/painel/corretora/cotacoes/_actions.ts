@@ -3,12 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
-import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
 import { uuidSchema } from "../_lib/schemas";
-import { requireActiveSubscription } from "../_lib/corretora";
+import { ensureCorretora, requireActiveSubscription } from "../_lib/corretora";
 import type { CoffeeProcesso, CoffeeSpecie } from "@milsaca/types";
 
 const SPECIES: readonly CoffeeSpecie[] = ["arabica", "conillon"];
@@ -42,10 +41,7 @@ function revalidateAffected() {
 }
 
 export async function createCotacao(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
   await requireActiveSubscription(
     profile.corretora_id,
     "/painel/corretora/cotacoes",
@@ -103,10 +99,7 @@ export async function createCotacao(formData: FormData) {
 }
 
 export async function updateCotacao(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
   await requireActiveSubscription(
     profile.corretora_id,
     "/painel/corretora/cotacoes",
@@ -171,8 +164,7 @@ export async function updateCotacao(formData: FormData) {
 }
 
 export async function deleteCotacao(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
+  const profile = await ensureCorretora();
 
   const idParsed = uuidSchema.safeParse(String(formData.get("id") ?? "").trim());
   if (!idParsed.success) redirect("/painel/corretora/cotacoes");

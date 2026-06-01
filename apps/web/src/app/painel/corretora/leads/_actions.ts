@@ -4,12 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import type { Json } from "@milsaca/types/database";
-import { getProfile, getUser } from "@/lib/auth";
+import { getUser } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
 import { notify } from "@/lib/notify";
-import { requireActiveSubscription } from "../_lib/corretora";
+import { ensureCorretora, requireActiveSubscription } from "../_lib/corretora";
 import type { LeadStatus, LeadOrigem } from "./_lib/queries";
 // Fonte única do rótulo da corretora: LEAD_STATUS_LABEL vem de lead-meta.ts
 // (re-exportado por queries.ts). Wording masculino ("Novo/.../Perdido")
@@ -83,9 +83,9 @@ function revalidateLead(id?: string) {
 }
 
 export async function createLead(formData: FormData) {
-  const profile = await getProfile();
+  const profile = await ensureCorretora();
   const user = await getUser();
-  if (!profile?.corretora_id || !user) {
+  if (!user) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
   }
   await requireActiveSubscription(
@@ -192,9 +192,9 @@ export async function createLead(formData: FormData) {
 }
 
 export async function updateLeadFields(formData: FormData) {
-  const profile = await getProfile();
+  const profile = await ensureCorretora();
   const user = await getUser();
-  if (!profile?.corretora_id || !user) {
+  if (!user) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
   }
 
@@ -257,9 +257,9 @@ export async function updateLeadFields(formData: FormData) {
 }
 
 export async function updateLeadStatus(formData: FormData) {
-  const profile = await getProfile();
+  const profile = await ensureCorretora();
   const user = await getUser();
-  if (!profile?.corretora_id || !user) {
+  if (!user) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
   }
   await requireActiveSubscription(
@@ -375,9 +375,9 @@ export async function updateLeadStatus(formData: FormData) {
 }
 
 export async function addLeadComment(formData: FormData) {
-  const profile = await getProfile();
+  const profile = await ensureCorretora();
   const user = await getUser();
-  if (!profile?.corretora_id || !user) {
+  if (!user) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
   }
   await requireActiveSubscription(

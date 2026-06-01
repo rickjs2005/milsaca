@@ -4,12 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { createClient } from "@milsaca/db/web/server";
-import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
 import { notify } from "@/lib/notify";
-import { requireActiveSubscription } from "../_lib/corretora";
+import { ensureCorretora, requireActiveSubscription } from "../_lib/corretora";
 import type { EntregaStatus } from "./_lib/queries";
 import type { Database } from "@milsaca/types";
 
@@ -38,14 +37,6 @@ function parseInt0(v: FormDataEntryValue | null): number | null {
 function parseDate(v: FormDataEntryValue | null): string | null {
   const s = String(v ?? "").trim();
   return s || null;
-}
-
-async function ensureCorretora() {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
-  return profile as typeof profile & { corretora_id: string };
 }
 
 // Detecta violação da unique (contrato_id, sequencia) — Postgres 23505.

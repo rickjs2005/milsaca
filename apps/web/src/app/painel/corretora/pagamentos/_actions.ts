@@ -3,12 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
-import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
 import { uuidSchema } from "../_lib/schemas";
-import { isCorretoraDono, requireActiveSubscription } from "../_lib/corretora";
+import {
+  ensureCorretora,
+  isCorretoraDono,
+  requireActiveSubscription,
+} from "../_lib/corretora";
 
 const PAGAMENTOS = "/painel/corretora/pagamentos";
 const SO_DONO = encodeURIComponent(
@@ -35,10 +38,7 @@ function revalidateAffected() {
  * passa a ver "a receber" no Financeiro dele. valor_liquido = bruto - descontos.
  */
 export async function createPagamento(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
   if (!isCorretoraDono(profile)) {
     redirect(`${PAGAMENTOS}/novo?error=${SO_DONO}`);
   }
@@ -127,10 +127,7 @@ export async function createPagamento(formData: FormData) {
  * Marca um pagamento como pago (data_paga = hoje). Só registro/controle.
  */
 export async function marcarPago(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
   if (!isCorretoraDono(profile)) {
     redirect(`${PAGAMENTOS}?error=${SO_DONO}`);
   }
@@ -231,10 +228,7 @@ export async function marcarPago(formData: FormData) {
  * Cancela um registro de pagamento (status = cancelado). Não apaga histórico.
  */
 export async function cancelarPagamento(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
   if (!isCorretoraDono(profile)) {
     redirect(`${PAGAMENTOS}?error=${SO_DONO}`);
   }

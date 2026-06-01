@@ -16,6 +16,7 @@ import {
   UserCircle,
 } from "lucide-react";
 import { getProfile, getUser } from "@/lib/auth";
+import { fmtDate } from "@/lib/format";
 import { createClient } from "@milsaca/db/web/server";
 import {
   Card,
@@ -70,12 +71,6 @@ async function loadCorretora(
   return data ?? null;
 }
 
-function formatDate(iso: string | null): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
-}
-
 const PLAN_STATUS_LABEL: Record<string, string> = {
   trial: "Trial",
   active: "Ativo",
@@ -107,7 +102,7 @@ export default async function PerfilCorretoraPage({
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-cafezal">
           Perfil
         </h1>
         <p className="mt-1 text-sm text-milsaca-verde-claro">
@@ -117,13 +112,13 @@ export default async function PerfilCorretoraPage({
       </header>
 
       {sp.saved && (
-        <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-800">
+        <div className="flex items-center gap-2 rounded-md border border-success-100 bg-success-50 px-4 py-2 text-sm text-success-700">
           <CheckCircle2 className="h-4 w-4" />
           Perfil atualizado.
         </div>
       )}
       {sp.error && (
-        <div className="rounded-md border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">
+        <div className="rounded-md border border-danger-100 bg-danger-50 px-4 py-2 text-sm text-danger-700">
           {sp.error}
         </div>
       )}
@@ -369,7 +364,7 @@ export default async function PerfilCorretoraPage({
                   </p>
                   <p className="text-xs text-milsaca-verde-claro">
                     {subscription.currentPeriodEnd ?? subscription.trialEndsAt
-                      ? `Vence em ${formatDate(subscription.currentPeriodEnd ?? subscription.trialEndsAt)}`
+                      ? `Vence em ${fmtDate(subscription.currentPeriodEnd ?? subscription.trialEndsAt)}`
                       : "Gestão do plano na Assinatura"}
                   </p>
                 </div>

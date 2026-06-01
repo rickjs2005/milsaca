@@ -3,11 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
-import { getProfile } from "@/lib/auth";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
-import { requireActiveSubscription } from "../_lib/corretora";
+import { ensureCorretora, requireActiveSubscription } from "../_lib/corretora";
 import {
   createLoteSchema,
   flattenZodErrors,
@@ -21,10 +20,7 @@ function isLoteStatus(v: string): v is LoteStatus {
 }
 
 export async function createLote(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
   await requireActiveSubscription(
     profile.corretora_id,
     "/painel/corretora/lotes",
@@ -92,10 +88,7 @@ export async function createLote(formData: FormData) {
  * além da RLS (impede id de outra corretora bater por engano).
  */
 export async function updateLoteStatus(formData: FormData) {
-  const profile = await getProfile();
-  if (!profile?.corretora_id) {
-    redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
-  }
+  const profile = await ensureCorretora();
   await requireActiveSubscription(
     profile.corretora_id,
     "/painel/corretora/lotes",

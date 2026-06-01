@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/submit-button";
 import { requireRole } from "@/lib/auth";
-import { CompradorFormFields } from "../_form";
+import { CompradorFormFields } from "../_components/comprador-form-fields";
 import { createComprador } from "../_actions";
 
 export const metadata = { title: "Novo comprador — Milsaca" };

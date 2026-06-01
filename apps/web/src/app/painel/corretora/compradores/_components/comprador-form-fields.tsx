@@ -2,11 +2,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MaskedInput } from "@/components/forms/masked-input";
 import { UfSelect } from "@/components/forms/uf-select";
-import { REGIME_LABEL, type CompradorDetail } from "./_lib/queries";
+import { REGIME_LABEL, type CompradorDetail } from "../_lib/queries";
 import {
   CAFE_PREF_LABEL,
   PROCESSO_PREF_LABEL,
-} from "./_lib/comprador-meta";
+} from "../_lib/comprador-meta";
 
 type Props = {
   defaults?: Partial<CompradorDetail>;

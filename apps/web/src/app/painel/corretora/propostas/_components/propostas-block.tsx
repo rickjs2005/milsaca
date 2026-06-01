@@ -18,9 +18,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/status-badge";
 import {
-  PROPOSTA_STATUS_COLOR,
   PROPOSTA_STATUS_LABEL,
+  PROPOSTA_STATUS_TONE,
   type PropostaRow,
   type PropostaStatus,
 } from "../_lib/proposta-meta";
@@ -224,14 +225,9 @@ function PropostaItem({ proposta }: { proposta: PropostaRow }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex-1 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-[10px] font-medium",
-                PROPOSTA_STATUS_COLOR[proposta.status],
-              )}
-            >
+            <StatusBadge tone={PROPOSTA_STATUS_TONE[proposta.status]}>
               {PROPOSTA_STATUS_LABEL[proposta.status]}
-            </span>
+            </StatusBadge>
             <span className="text-lg font-semibold text-milsaca-verde">
               {fmtMoney(proposta.preco_saca)}
               <span className="ml-1 text-[10px] font-medium text-milsaca-verde-claro">

@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { coffeeLabel } from "../../src/lib/coffee";
 import { supabase } from "../../src/lib/supabase";
 
 const SUPABASE_PUBLIC_URL =
@@ -181,11 +182,7 @@ export default function LaudosScreen() {
                       className="mt-1 text-sm text-milsaca-cream"
                       style={{ fontFamily: "Inter_600SemiBold" }}
                     >
-                      {r.lote?.specie === "arabica"
-                        ? "Arábica"
-                        : r.lote?.specie === "conillon"
-                          ? "Conilón"
-                          : "—"}
+                      {coffeeLabel(r.lote?.specie) ?? "—"}
                       {r.lote?.processo ? ` · ${r.lote.processo}` : ""}
                       {r.lote?.safra ? ` · ${r.lote.safra}` : ""}
                     </Text>
