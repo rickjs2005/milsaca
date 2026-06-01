@@ -12,7 +12,15 @@
 import { detectCurrentTier, type PlanTier } from "../assinatura/_lib/plans-catalog";
 import type { SubscriptionInfo } from "./corretora";
 
-/** Tier efetivo da corretora baseado na subscription. */
+/**
+ * Tier efetivo da corretora baseado na subscription.
+ *
+ * É o tier de **exibição** (rótulo do plano): uma corretora com Premium
+ * vencido continua sendo "premium" aqui — pra ela ver na tela de Assinatura
+ * que o plano dela é Premium + CTA de renovar. NÃO use isso pra decidir se
+ * a corretora "pode usar agora" features pagas; pra isso use `isProOrAbove`/
+ * `isPremium`, que também checam se a assinatura está utilizável.
+ */
 export function getCorretoraTier(
   subscription: SubscriptionInfo | null,
 ): PlanTier {
@@ -24,7 +32,17 @@ export function getCorretoraTier(
 }
 
 /**
- * Tem o plano pago (Premium) OU é fundadora → libera tudo.
+ * Pode USAR AGORA as features do plano pago (Premium) OU é fundadora.
+ *
+ * Dois requisitos, ambos necessários:
+ *  1. tier pago ("premium") — descarta quem é Gratuito; e
+ *  2. assinatura UTILIZÁVEL (`isUsable` = effectiveStatus trial|active) —
+ *     descarta Premium expirado/past_due/canceled.
+ *
+ * Esse alinhamento com o gate do backend (`requireActiveSubscription` →
+ * `isUsable`) é o conserto do bug I5: antes a UI mostrava o CTA "Novo" pra
+ * Premium vencido (tier sozinho), mas o POST era rejeitado pelo server.
+ * Agora o CTA só aparece quando o backend também aceitaria a criação.
  *
  * Como agora só existe UM plano pago, "pro ou acima" e "premium" significam
  * a mesma coisa: qualquer tier que não seja o gratuito. O nome é mantido
@@ -33,17 +51,20 @@ export function getCorretoraTier(
 export function isProOrAbove(
   subscription: SubscriptionInfo | null,
 ): boolean {
+  if (!subscription?.isUsable) return false;
   return getCorretoraTier(subscription) === "premium";
 }
 
 /**
  * Plano pago (Premium) ou fundadora libera features de equipe / API.
  * Idêntico a `isProOrAbove` agora que só há um plano pago — mantido pra
- * compat de imports e clareza semântica nos call-sites.
+ * compat de imports e clareza semântica nos call-sites. Também exige
+ * assinatura utilizável (mesmo gate do backend).
  */
 export function isPremium(
   subscription: SubscriptionInfo | null,
 ): boolean {
+  if (!subscription?.isUsable) return false;
   return getCorretoraTier(subscription) === "premium";
 }
 

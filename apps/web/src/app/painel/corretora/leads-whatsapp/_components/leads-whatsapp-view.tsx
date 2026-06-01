@@ -12,7 +12,7 @@ import {
   SOURCE_FILTERS,
   SOURCE_META,
   type WhatsAppLeadItem,
-} from "../_lib/queries";
+} from "../_lib/meta";
 
 export function LeadsWhatsAppView({
   leads,

@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { cn } from "@/lib/utils";
+import { coffeeLabel } from "@/lib/coffee";
 import { SubmitButton } from "@/components/submit-button";
 import { requireUser } from "@/lib/auth";
 import { contraproporNegociacao } from "../_actions";
@@ -127,7 +128,7 @@ export default async function NegociacaoDetalhePage({
 
   const waUrl = buildWhatsAppInviteUrl({
     phone: lead.corretora_phone,
-    message: `Oi! Sobre a proposta da ${lead.corretora_nome}${lead.coffee_type ? ` para ${lead.coffee_type}` : ""}${lead.bag_count ? ` (${lead.bag_count} sacas)` : ""}. Podemos conversar?`,
+    message: `Oi! Sobre a proposta da ${lead.corretora_nome}${lead.coffee_type ? ` para ${coffeeLabel(lead.coffee_type)}` : ""}${lead.bag_count ? ` (${lead.bag_count} sacas)` : ""}. Podemos conversar?`,
   });
 
   return (
@@ -191,7 +192,7 @@ export default async function NegociacaoDetalhePage({
                   Café
                 </p>
                 <p className="text-body-sm font-medium text-milsaca-cafezal">
-                  {lead.coffee_type ?? "—"}
+                  {coffeeLabel(lead.coffee_type) ?? "—"}
                 </p>
               </div>
               <div>

@@ -151,6 +151,25 @@ export async function getCorretoraSubscriptionInfo(
   };
 }
 
+/**
+ * Nome de exibição da corretora (header de listas, templates de WhatsApp).
+ *
+ * Contrato: SEMPRE retorna uma string não-nula. Quando a corretora não é
+ * encontrada ou tem `name` nulo, cai no fallback `"Milsaca"` (fallback
+ * majoritário entre as cópias que esta função substituiu). Consumidores que
+ * antes recebiam `string | null` (assinatura) passam a receber `"Milsaca"`
+ * nesse caso — alinhado ao novo contrato.
+ */
+export async function getCorretoraName(corretoraId: string): Promise<string> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("corretoras")
+    .select("name")
+    .eq("id", corretoraId)
+    .maybeSingle<{ name: string | null }>();
+  return data?.name ?? "Milsaca";
+}
+
 export type CorretoraOnboarding = {
   id: string;
   name: string;

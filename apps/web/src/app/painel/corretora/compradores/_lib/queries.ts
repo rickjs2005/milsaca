@@ -1,6 +1,8 @@
 import { createClient } from "@milsaca/db/web/server";
 import type { Database } from "@milsaca/types/database";
 
+import { getCorretoraName } from "../../_lib/corretora";
+
 import {
   parsePerfilCompra,
   type CompradorListItem,
@@ -124,15 +126,8 @@ export async function listCompradores(
   });
 }
 
-export async function getCorretoraNome(corretoraId: string): Promise<string> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("corretoras")
-    .select("name")
-    .eq("id", corretoraId)
-    .maybeSingle();
-  return data?.name ?? "Sua corretora";
-}
+/** @deprecated Use `getCorretoraName` de `../../_lib/corretora`. Mantido por compat de imports. */
+export const getCorretoraNome = getCorretoraName;
 
 export type CompradorDetail = CompradorRow & {
   inscricao_estadual: string | null;

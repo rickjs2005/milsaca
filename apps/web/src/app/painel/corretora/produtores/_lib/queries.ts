@@ -1,5 +1,6 @@
 import { createClient } from "@milsaca/db/web/server";
 
+import { getCorretoraName } from "../../_lib/corretora";
 import type { ProdutorListItem } from "./produtor-meta";
 
 // Re-export pra compat de quem importa o tipo a partir de queries.
@@ -216,14 +217,5 @@ export async function getContato(corretoraId: string, contatoId: string) {
   return data;
 }
 
-export async function getCorretoraNome(
-  corretoraId: string,
-): Promise<string> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("corretoras")
-    .select("name")
-    .eq("id", corretoraId)
-    .maybeSingle();
-  return data?.name ?? "Sua corretora";
-}
+/** @deprecated Use `getCorretoraName` de `../../_lib/corretora`. Mantido por compat de imports. */
+export const getCorretoraNome = getCorretoraName;

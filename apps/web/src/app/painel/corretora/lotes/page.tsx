@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { KpiCard } from "@/components/kpi-card";
 import { getProfile } from "@/lib/auth";
-import { createClient } from "@milsaca/db/web/server";
+import { getCorretoraName } from "../_lib/corretora";
 import {
   listLotes,
   loadCotacoesRef,
@@ -41,16 +41,6 @@ function isSpecie(v: string | undefined): v is "arabica" | "conillon" {
   return v === "arabica" || v === "conillon";
 }
 
-async function loadCorretoraName(corretoraId: string): Promise<string> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("corretoras")
-    .select("name")
-    .eq("id", corretoraId)
-    .maybeSingle<{ name: string | null }>();
-  return data?.name ?? "Milsaca";
-}
-
 export default async function LotesPage({
   searchParams,
 }: {
@@ -77,7 +67,7 @@ export default async function LotesPage({
       listLotes(profile.corretora_id, { status, specie }, page),
       loadCotacoesRef(),
       loadLotesKpis(profile.corretora_id),
-      loadCorretoraName(profile.corretora_id),
+      getCorretoraName(profile.corretora_id),
     ]);
   const totalPages = Math.max(1, Math.ceil(count / LOTES_PAGE_SIZE));
 

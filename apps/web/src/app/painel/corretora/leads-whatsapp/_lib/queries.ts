@@ -1,40 +1,19 @@
 import { createClient } from "@milsaca/db/web/server";
 import { loadFunnelStats, type FunnelStats } from "@/lib/leads-funnel";
-import type { StatusTone } from "@/components/status-badge";
+import {
+  WHATSAPP_LEADS_PAGE_SIZE,
+  type WhatsAppLeadItem,
+  type WhatsAppLeadsFilter,
+} from "./meta";
 
-export const WHATSAPP_LEADS_PAGE_SIZE = 30;
-
-/** Origens de lead-WhatsApp + rótulo pt-BR e tone semântico do badge. */
-export const SOURCE_META: Record<string, { label: string; tone: StatusTone }> = {
-  catalogo_corretoras: { label: "Catálogo", tone: "success" },
-  perfil_corretora: { label: "Perfil", tone: "info" },
-  home_publica: { label: "Home", tone: "warning" },
-  outro: { label: "Outro", tone: "neutral" },
-};
-
-/** Opções de filtro de origem (inclui "Todas"). */
-export const SOURCE_FILTERS: { value: string; label: string }[] = [
-  { value: "", label: "Todas" },
-  { value: "catalogo_corretoras", label: "Catálogo" },
-  { value: "perfil_corretora", label: "Perfil" },
-  { value: "home_publica", label: "Home" },
-  { value: "outro", label: "Outro" },
-];
-
-export type WhatsAppLeadItem = {
-  id: string;
-  source: string;
-  message: string | null;
-  user_agent: string | null;
-  created_at: string;
-  produtor_id: string | null;
-  produtor_nome: string | null;
-  produtor_phone: string | null;
-};
-
-export type WhatsAppLeadsFilter = {
-  source?: string | null;
-};
+// Re-exporta a meta pura pra quem importava daqui continuar funcionando (server).
+// O CLIENT view deve importar de "./meta" diretamente (queries puxa server-only).
+export {
+  WHATSAPP_LEADS_PAGE_SIZE,
+  SOURCE_META,
+  SOURCE_FILTERS,
+} from "./meta";
+export type { WhatsAppLeadItem, WhatsAppLeadsFilter } from "./meta";
 
 export type WhatsAppLeadsSummary = {
   total: number;

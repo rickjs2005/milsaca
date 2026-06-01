@@ -16,8 +16,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getProfile } from "@/lib/auth";
-import { createClient } from "@milsaca/db/web/server";
 import {
+  getCorretoraName,
   getCorretoraSubscriptionInfo,
   requireCorretoraDono,
 } from "../_lib/corretora";
@@ -58,16 +58,6 @@ const STATUS_TONE: Record<string, string> = {
   none: "bg-milsaca-dourado/15 text-milsaca-cafezal ring-milsaca-dourado/40",
 };
 
-async function loadCorretoraName(corretoraId: string): Promise<string | null> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("corretoras")
-    .select("name")
-    .eq("id", corretoraId)
-    .maybeSingle<{ name: string | null }>();
-  return data?.name ?? null;
-}
-
 export default async function AssinaturaPage() {
   const profile = await getProfile();
   if (!profile?.corretora_id) {
@@ -77,7 +67,7 @@ export default async function AssinaturaPage() {
 
   const [subscription, corretoraName, plans] = await Promise.all([
     getCorretoraSubscriptionInfo(profile.corretora_id),
-    loadCorretoraName(profile.corretora_id),
+    getCorretoraName(profile.corretora_id),
     loadPlans(),
   ]);
 

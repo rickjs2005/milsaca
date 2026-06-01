@@ -138,6 +138,72 @@ export async function listLeads(
   return { rows: mapped, count: count ?? 0 };
 }
 
+export async function loadLeadsKpis(corretoraId: string) {
+  const supabase = await createClient();
+  const monthStart = new Date();
+  monthStart.setUTCDate(1);
+  monthStart.setUTCHours(0, 0, 0, 0);
+  const monthIso = monthStart.toISOString();
+
+  const valsFor = (status: string, sinceMonth = false) => {
+    let q = supabase
+      .from("leads")
+      .select("proposed_price, bag_count")
+      .eq("corretora_id", corretoraId)
+      .eq("status", status);
+    if (sinceMonth) q = q.gte("updated_at", monthIso);
+    return q;
+  };
+
+  const [novos, emNeg, perdMes, novosVal, emNegVal, convVal] =
+    await Promise.all([
+      supabase
+        .from("leads")
+        .select("*", { count: "exact", head: true })
+        .eq("corretora_id", corretoraId)
+        .eq("status", "novo"),
+      supabase
+        .from("leads")
+        .select("*", { count: "exact", head: true })
+        .eq("corretora_id", corretoraId)
+        .eq("status", "em_negociacao"),
+      supabase
+        .from("leads")
+        .select("*", { count: "exact", head: true })
+        .eq("corretora_id", corretoraId)
+        .eq("status", "perdido")
+        .gte("updated_at", monthIso),
+      valsFor("novo"),
+      valsFor("em_negociacao"),
+      valsFor("convertido", true),
+    ]);
+
+  const sumTotal = (data: unknown): number =>
+    (
+      (data ?? []) as Array<{
+        proposed_price: number | string | null;
+        bag_count: number | null;
+      }>
+    ).reduce(
+      (sum, r) =>
+        sum +
+        (r.proposed_price != null && r.bag_count != null
+          ? Number(r.proposed_price) * r.bag_count
+          : 0),
+      0,
+    );
+
+  return {
+    novos: novos.count ?? 0,
+    emNeg: emNeg.count ?? 0,
+    perdMes: perdMes.count ?? 0,
+    convMes: (convVal.data ?? []).length,
+    valorNovos: sumTotal(novosVal.data),
+    valorEmNeg: sumTotal(emNegVal.data),
+    valorConv: sumTotal(convVal.data),
+  };
+}
+
 export async function getLead(
   corretoraId: string,
   leadId: string,

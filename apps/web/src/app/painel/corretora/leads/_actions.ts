@@ -11,16 +11,11 @@ import { getReqLogger } from "@/lib/req-logger";
 import { notify } from "@/lib/notify";
 import { requireActiveSubscription } from "../_lib/corretora";
 import type { LeadStatus, LeadOrigem } from "./_lib/queries";
-import { LEAD_STATUS_ORDER } from "./_lib/queries";
+// Fonte única do rótulo da corretora: LEAD_STATUS_LABEL vem de lead-meta.ts
+// (re-exportado por queries.ts). Wording masculino ("Novo/.../Perdido")
+// igual à lista de leads — não redefinir localmente.
+import { LEAD_STATUS_ORDER, LEAD_STATUS_LABEL } from "./_lib/queries";
 import { LEAD_ORIGEM_ORDER } from "./_lib/lead-meta";
-
-const LEAD_STATUS_LABEL: Record<LeadStatus, string> = {
-  novo: "Nova",
-  em_negociacao: "Em negociação",
-  convertido: "Convertida",
-  perdido: "Perdida",
-  arquivado: "Arquivada",
-};
 
 function formatProposta(
   coffee_type: string | null,

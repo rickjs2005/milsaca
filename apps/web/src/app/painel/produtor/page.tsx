@@ -8,7 +8,11 @@ import {
   Handshake,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { StatusBadge, type StatusTone } from "@/components/status-badge";
+import { StatusBadge } from "@/components/status-badge";
+import {
+  LEAD_STATUS_LABEL,
+  LEAD_STATUS_TONE,
+} from "./negociacoes/_lib/lead-labels";
 import { cn } from "@/lib/utils";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile, requireUser } from "@/lib/auth";
@@ -47,7 +51,7 @@ async function loadResumo(userId: string): Promise<Resumo> {
     supabase
       .from("cotacoes")
       .select("price, reference_date")
-      .eq("coffee_type", "arabica")
+      .eq("specie", "arabica")
       .order("reference_date", { ascending: false })
       .limit(2),
     supabase.from("lotes").select("peso_sacas, status").eq("produtor_id", userId),
@@ -311,19 +315,8 @@ export default async function InicioProdutorPage() {
   );
 }
 
-const LEAD_STATUS_BADGE: Record<
-  LeadStatus,
-  { tone: StatusTone; label: string }
-> = {
-  convertido: { tone: "success", label: "Aceita" },
-  perdido: { tone: "danger", label: "Recusada" },
-  arquivado: { tone: "neutral", label: "Arquivada" },
-  em_negociacao: { tone: "premium", label: "Em negociação" },
-  novo: { tone: "neutral", label: "Nova" },
-};
-
 function PropostaCard({ p }: { p: Proposta }) {
-  const meta = LEAD_STATUS_BADGE[p.status] ?? LEAD_STATUS_BADGE.novo;
+  // Rótulo + tone da fonte única da persona produtor (negociacoes/_lib/lead-labels).
   return (
     <Card interactive>
       <CardContent className="space-y-4 p-card">
@@ -339,7 +332,9 @@ function PropostaCard({ p }: { p: Proposta }) {
               · {p.data}
             </p>
           </div>
-          <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>
+          <StatusBadge tone={LEAD_STATUS_TONE[p.status]}>
+            {LEAD_STATUS_LABEL[p.status]}
+          </StatusBadge>
         </div>
         <div className="flex items-end justify-between gap-2 rounded-md bg-milsaca-cream/60 px-3 py-2.5">
           <div>

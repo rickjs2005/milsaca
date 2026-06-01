@@ -441,6 +441,12 @@ export const LEAD_STATUS_ORDER: LeadStatus[] = [
   "arquivado",
 ];
 
+// IMPORTANTE: este wording é a persona PRODUTOR e DEVE bater palavra-por-palavra
+// com a fonte única do web em apps/web/src/app/painel/produtor/negociacoes/_lib/
+// lead-labels.ts ("Novo/Em negociação/Convertido/Recusado/Arquivado"). O mobile
+// não compartilha módulo com o web hoje, então a duplicação é intencional.
+// IDEAL FUTURO: extrair para um pacote compartilhado (ex.: @milsaca/labels)
+// consumido por web e mobile pra eliminar a duplicação.
 export const LEAD_STATUS_LABEL: Record<LeadStatus, string> = {
   novo: "Novo",
   em_negociacao: "Em negociação",

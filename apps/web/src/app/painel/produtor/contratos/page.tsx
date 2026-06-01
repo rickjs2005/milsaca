@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
 import { requireUser } from "@/lib/auth";
+import { coffeeLabel } from "@/lib/coffee";
 import {
   listMeusContratos,
   CONTRATO_STATUS_LABEL,
@@ -126,7 +127,7 @@ export default async function ContratosProdutorPage({
                 {contratos.map((c) => {
                   const waUrl = buildWhatsAppInviteUrl({
                     phone: c.corretora_phone,
-                    message: `Oi! Sobre o contrato ${c.code}${c.coffee_type ? ` de ${c.coffee_type}` : ""}${c.bag_count ? ` (${c.bag_count} sacas)` : ""}. Podemos conversar?`,
+                    message: `Oi! Sobre o contrato ${c.code}${c.coffee_type ? ` de ${coffeeLabel(c.coffee_type)}` : ""}${c.bag_count ? ` (${c.bag_count} sacas)` : ""}. Podemos conversar?`,
                   });
                   return (
                     <tr
@@ -151,7 +152,7 @@ export default async function ContratosProdutorPage({
                         )}
                       </td>
                       <td className="px-5 py-3 text-neutral-700">
-                        {c.coffee_type ?? "—"}
+                        {coffeeLabel(c.coffee_type) ?? "—"}
                       </td>
                       <td className="px-5 py-3 text-right tabular-nums text-neutral-700">
                         {c.bag_count != null

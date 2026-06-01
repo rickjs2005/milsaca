@@ -12,6 +12,7 @@ const KIND_LABEL: Record<string, string> = {
   entrega: "Entrega",
   pagamento: "Pagamento",
   cotacao: "Cotação",
+  price_alert: "Alerta de preço",
   sistema: "Sistema",
 };
 
@@ -22,6 +23,7 @@ const KIND_TONE: Record<string, StatusTone> = {
   entrega: "warning",
   pagamento: "premium",
   cotacao: "premium",
+  price_alert: "info",
   sistema: "neutral",
 };
 

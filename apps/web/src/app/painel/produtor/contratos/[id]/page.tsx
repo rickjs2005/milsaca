@@ -17,6 +17,7 @@ import {
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth";
+import { coffeeLabel } from "@/lib/coffee";
 import {
   getMeuContrato,
   CONTRATO_STATUS_LABEL,
@@ -64,7 +65,7 @@ export default async function ContratoProdutorDetalhePage({
 
   const waUrl = buildWhatsAppInviteUrl({
     phone: contrato.corretora_phone,
-    message: `Oi! Sobre o contrato ${contrato.code}${contrato.coffee_type ? ` de ${contrato.coffee_type}` : ""}${contrato.bag_count ? ` (${contrato.bag_count} sacas)` : ""}. Podemos conversar?`,
+    message: `Oi! Sobre o contrato ${contrato.code}${contrato.coffee_type ? ` de ${coffeeLabel(contrato.coffee_type)}` : ""}${contrato.bag_count ? ` (${contrato.bag_count} sacas)` : ""}. Podemos conversar?`,
   });
 
   const pricePerBag =
@@ -133,7 +134,7 @@ export default async function ContratoProdutorDetalhePage({
                   Café
                 </p>
                 <p className="font-medium text-milsaca-cafezal">
-                  {contrato.coffee_type ?? "—"}
+                  {coffeeLabel(contrato.coffee_type) ?? "—"}
                 </p>
               </div>
               <div>

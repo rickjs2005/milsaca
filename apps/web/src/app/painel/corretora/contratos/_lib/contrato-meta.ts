@@ -25,7 +25,7 @@ export const CONTRATO_STATUS_COLOR: Record<ContratoStatus, string> = {
   em_analise: "bg-warning-50 text-warning-700",
   ativo: "bg-success-50 text-success-700",
   finalizado: "bg-milsaca-cafezal text-milsaca-cream",
-  cancelado: "bg-danger-50 text-danger-700",
+  cancelado: "bg-neutral-100 text-neutral-700",
 };
 
 export const CONTRATO_STATUS_TONE: Record<ContratoStatus, StatusTone> = {
@@ -33,7 +33,7 @@ export const CONTRATO_STATUS_TONE: Record<ContratoStatus, StatusTone> = {
   em_analise: "warning",
   ativo: "success",
   finalizado: "premium",
-  cancelado: "danger",
+  cancelado: "neutral",
 };
 
 export type ContratoListItem = {

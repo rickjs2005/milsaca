@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/format";
+import { coffeeLabel } from "@/lib/coffee";
 import { requireUser } from "@/lib/auth";
 import {
   listMinhasNegociacoes,
@@ -49,7 +50,7 @@ function totalOf(it: NegociacaoListItem): number | null {
 
 function shortMessage(item: NegociacaoListItem) {
   const head = [`Oi! Sobre a proposta da ${item.corretora_nome}`];
-  if (item.coffee_type) head[0] += ` para ${item.coffee_type}`;
+  if (item.coffee_type) head[0] += ` para ${coffeeLabel(item.coffee_type)}`;
   if (item.bag_count) head[0] += ` (${item.bag_count} sacas)`;
   const parts = [head[0]];
   if (item.proposed_price != null) {
@@ -263,7 +264,7 @@ function NegociacaoCard({ it }: { it: NegociacaoListItem }) {
             {it.proposed_price != null
               ? ` · ${BRL0.format(it.proposed_price)}/saca`
               : ""}
-            {it.coffee_type ? ` · ${it.coffee_type}` : ""}
+            {it.coffee_type ? ` · ${coffeeLabel(it.coffee_type)}` : ""}
           </p>
         </div>
 

@@ -24,7 +24,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { StatusBadge } from "@/components/status-badge";
+import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { IndicadoresLive } from "@/components/indicadores-live";
 import { cn } from "@/lib/utils";
 import type { LeadStatus } from "@milsaca/types";
@@ -38,6 +38,7 @@ import {
   type CotacaoDashboard,
   type DashboardLead,
 } from "./_lib/dashboard";
+import { LEAD_STATUS_LABEL } from "./leads/_lib/lead-meta";
 import { getCorretoraSubscriptionInfo } from "./_lib/corretora";
 import { isProOrAbove } from "./_lib/plan-gate";
 import { AutomationCard } from "./_components/automation-card";
@@ -682,18 +683,20 @@ function EntregasMiniCard({
   );
 }
 
+// Tone visual do dashboard (mantido inline; difere de LEAD_STATUS_TONE só no
+// "novo" = info aqui). O RÓTULO vem da fonte única (leads/_lib/lead-meta.ts).
+const LEAD_STATUS_BADGE_TONE: Record<LeadStatus, StatusTone> = {
+  novo: "info",
+  em_negociacao: "premium",
+  convertido: "success",
+  perdido: "danger",
+  arquivado: "neutral",
+};
+
 function LeadStatusBadge({ status }: { status: LeadStatus }) {
-  if (status === "convertido") {
-    return <StatusBadge tone="success">Convertido</StatusBadge>;
-  }
-  if (status === "perdido") {
-    return <StatusBadge tone="danger">Perdido</StatusBadge>;
-  }
-  if (status === "arquivado") {
-    return <StatusBadge tone="neutral">Arquivado</StatusBadge>;
-  }
-  if (status === "em_negociacao") {
-    return <StatusBadge tone="premium">Em negociação</StatusBadge>;
-  }
-  return <StatusBadge tone="info">Novo</StatusBadge>;
+  return (
+    <StatusBadge tone={LEAD_STATUS_BADGE_TONE[status]}>
+      {LEAD_STATUS_LABEL[status]}
+    </StatusBadge>
+  );
 }
