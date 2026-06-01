@@ -25,25 +25,23 @@ export async function searchAdmin(q: string): Promise<CommandResult[]> {
   const supabase = await createClient();
   const like = `%${term}%`;
 
-  const [{ data: corretoras }, { data: produtoresRaw }] = await Promise.all([
+  const [{ data: corretoras }, { data: produtores }] = await Promise.all([
     supabase
       .from("corretoras")
       .select("id, name, slug, city, state")
       .or(`name.ilike.${like},slug.ilike.${like}`)
       .limit(6),
+    // `profiles` não tem coluna `email` (o email do usuário vive em auth.users) —
+    // selecionar/filtrar por `email` fazia o Postgrest falhar e a busca de
+    // produtor voltava sempre vazia. Buscamos por nome OU telefone (WhatsApp-first),
+    // colunas reais da tabela.
     supabase
       .from("profiles")
-      .select("id, full_name, email")
-      .or(`full_name.ilike.${like},email.ilike.${like}`)
+      .select("id, full_name, phone")
+      .or(`full_name.ilike.${like},phone.ilike.${like}`)
       .contains("roles", ["produtor"])
       .limit(6),
   ]);
-
-  // `profiles` não tem coluna `email` nos tipos gerados; o select acima usa
-  // colunas adicionais resolvidas em runtime, então tipamos o resultado à mão.
-  const produtores = produtoresRaw as unknown as
-    | { id: string; full_name: string | null; email: string | null }[]
-    | null;
 
   const results: CommandResult[] = [];
 
@@ -60,8 +58,8 @@ export async function searchAdmin(q: string): Promise<CommandResult[]> {
   for (const p of produtores ?? []) {
     results.push({
       kind: "produtor",
-      title: p.full_name ?? p.email ?? "Produtor sem nome",
-      subtitle: p.email ?? undefined,
+      title: p.full_name ?? "Produtor sem nome",
+      subtitle: p.phone ?? undefined,
       href: `/admin/produtores/${p.id}`,
     });
   }
