@@ -5,6 +5,7 @@ import {
   Truck,
   Wallet,
   Users,
+  UserPlus,
   Building2,
   TrendingUp,
   BarChart3,
@@ -58,6 +59,11 @@ const GROUPS: Group[] = [
     title: "Cadastros",
     items: [
       { href: "/painel/corretora/produtores", label: "Produtores", icon: Users },
+      {
+        href: "/painel/corretora/convidar",
+        label: "Convidar produtores",
+        icon: UserPlus,
+      },
       {
         href: "/painel/corretora/compradores",
         label: "Compradores",

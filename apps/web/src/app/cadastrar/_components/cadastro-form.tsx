@@ -34,12 +34,15 @@ export function CadastroForm({
   defaults,
   founder,
   error,
+  refCorretora,
 }: {
   action: (formData: FormData) => void;
   initialRole: Role;
   defaults: Defaults;
   founder: Founder;
   error: string | null;
+  /** id da corretora indicadora (link /indicacao/{slug}); vira favorita no signup. */
+  refCorretora?: string;
 }) {
   const [role, setRole] = useState<Role>(initialRole);
   const corretoraClosed = role === "corretora" && !founder.accepting;
@@ -67,6 +70,9 @@ export function CadastroForm({
           />
         </div>
         <input type="hidden" name="role" value={role} />
+        {refCorretora ? (
+          <input type="hidden" name="ref" value={refCorretora} />
+        ) : null}
       </fieldset>
 
       {corretoraClosed ? (

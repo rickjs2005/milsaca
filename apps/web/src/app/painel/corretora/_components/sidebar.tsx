@@ -18,6 +18,7 @@ import {
   Store,
   Building2,
   BarChart3,
+  UserPlus,
   MessageCircle,
   Sparkles,
   type LucideIcon,
@@ -99,6 +100,11 @@ const NAV_GROUPS: NavGroup[] = [
         href: "/painel/corretora/produtores",
         label: "Produtores",
         icon: Users,
+      },
+      {
+        href: "/painel/corretora/convidar",
+        label: "Convidar produtores",
+        icon: UserPlus,
       },
       {
         href: "/painel/corretora/compradores",

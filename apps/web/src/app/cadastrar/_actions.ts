@@ -42,6 +42,13 @@ export async function signUp(formData: FormData) {
   const roleRaw = String(formData.get("role") ?? "produtor");
   const role: RoleChoice = roleRaw === "corretora" ? "corretora" : "produtor";
 
+  // Indicação por corretora: SLUG da corretora que indicou (link
+  // /indicacao/{slug}). Só vale pra produtor; o trigger handle_new_user resolve
+  // o slug e a favorita no signup.
+  const refRaw = clean(formData.get("ref"));
+  const refCorretora =
+    refRaw && /^[a-z0-9-]{1,80}$/.test(refRaw) ? refRaw : null;
+
   // Programa de fundadoras: se o cadastro de corretora está fechado ou as
   // vagas acabaram, manda pra lista de espera em vez de criar conta pendente.
   if (role === "corretora") {
@@ -68,6 +75,7 @@ export async function signUp(formData: FormData) {
   );
 
   const params = new URLSearchParams({ role });
+  if (refCorretora) params.set("ref", refCorretora);
   if (email) params.set("email", email);
   if (fullName) params.set("full_name", fullName);
   if (corretoraName) params.set("corretora_name", corretoraName);
@@ -166,6 +174,10 @@ export async function signUp(formData: FormData) {
     full_name: fullName,
     role,
   };
+  // Indicação só faz sentido pra produtor (corretora não favorita corretora).
+  if (role === "produtor" && refCorretora) {
+    metadata.ref_corretora = refCorretora;
+  }
   if (role === "corretora") {
     metadata.corretora_name = corretoraName;
     metadata.corretora_cnpj = corretoraCnpj;

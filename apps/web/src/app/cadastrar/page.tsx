@@ -14,6 +14,7 @@ type SearchParams = Promise<{
   corretora_uf?: string;
   corretora_whatsapp?: string;
   error?: string;
+  ref?: string;
 }>;
 
 export const metadata = { title: "Criar conta — Milsaca" };
@@ -60,6 +61,7 @@ export default async function CadastrarPage({
                 total: founder.total,
               }}
               error={sp.error ?? null}
+              refCorretora={sp.ref}
             />
 
             <p className="mt-4 text-center text-caption text-neutral-600">
