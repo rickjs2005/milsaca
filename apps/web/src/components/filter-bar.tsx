@@ -4,6 +4,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 export type FilterOption = {
   /** Valor que vai pra URL. Vazio "" representa "Todos". */
@@ -51,28 +52,26 @@ export function FilterBar({
   const sp = useSearchParams();
   const [, startTransition] = useTransition();
 
-  const [search, setSearch] = useState(sp.get(searchParam) ?? "");
+  const currentSearch = sp.get(searchParam) ?? "";
+  const [search, setSearch] = useState(currentSearch);
+  const debouncedSearch = useDebouncedValue(search, 350);
 
   // Sincroniza quando URL muda externamente
   useEffect(() => {
-    setSearch(sp.get(searchParam) ?? "");
-  }, [sp, searchParam]);
+    setSearch(currentSearch);
+  }, [currentSearch]);
 
-  // Debounce na busca
+  // Escreve a busca (já debounced) na URL
   useEffect(() => {
-    const current = sp.get(searchParam) ?? "";
-    if (search === current) return;
-    const t = setTimeout(() => {
-      const next = new URLSearchParams(sp.toString());
-      if (search.trim()) next.set(searchParam, search.trim());
-      else next.delete(searchParam);
-      next.delete("page"); // reset paginação ao buscar
-      startTransition(() => {
-        router.replace(`${pathname}?${next.toString()}`, { scroll: false });
-      });
-    }, 350);
-    return () => clearTimeout(t);
-  }, [search, sp, pathname, router, searchParam]);
+    if (debouncedSearch === currentSearch) return;
+    const next = new URLSearchParams(sp.toString());
+    if (debouncedSearch.trim()) next.set(searchParam, debouncedSearch.trim());
+    else next.delete(searchParam);
+    next.delete("page"); // reset paginação ao buscar
+    startTransition(() => {
+      router.replace(`${pathname}?${next.toString()}`, { scroll: false });
+    });
+  }, [debouncedSearch, currentSearch, sp, pathname, router, searchParam]);
 
   function setFilter(param: string, value: string) {
     const next = new URLSearchParams(sp.toString());

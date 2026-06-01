@@ -3,7 +3,7 @@
 // quando ativo/finalizado.
 
 import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Linking,
@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "../../src/lib/auth";
+import { useList } from "../../src/lib/use-list";
 import {
   CONTRATO_STATUS_BADGE,
   CONTRATO_STATUS_LABEL,
@@ -52,24 +53,15 @@ function fmtDate(iso: string | null) {
 export default function ContratosScreen() {
   const { profile } = useAuth();
   const [filter, setFilter] = useState<ContratoStatus | "all">("all");
-  const [items, setItems] = useState<ContratoItem[] | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const load = useCallback(async () => {
+  const {
+    data: items,
+    refreshing,
+    onRefresh,
+  } = useList<ContratoItem[]>(async () => {
     if (!profile) return;
     const filterArg = filter === "all" ? {} : { status: filter };
-    setItems(await listMeusContratos(profile.id, filterArg));
+    return listMeusContratos(profile.id, filterArg);
   }, [filter, profile]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
-  }, [load]);
 
   const openWhatsApp = (item: ContratoItem) => {
     const msg = `Olá! Sobre o contrato ${item.code} — gostaria de conversar.`;

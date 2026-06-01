@@ -2,7 +2,7 @@
 
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useList } from "../../src/lib/use-list";
 import {
   ActivityIndicator,
   Pressable,
@@ -64,36 +64,25 @@ function fmtRelative(iso: string): string {
 }
 
 export default function NotificacoesScreen() {
-  const [items, setItems] = useState<Row[] | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setError(null);
-    try {
+  const {
+    data: items,
+    error,
+    refreshing,
+    reload,
+    onRefresh,
+  } = useList<Row[]>(
+    async () => {
       const { data, error: err } = await supabase
         .from("notifications")
         .select("id, kind, title, body, read_at, created_at")
         .order("created_at", { ascending: false })
         .limit(50);
       if (err) throw err;
-      setItems((data ?? []) as Row[]);
-    } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Erro ao carregar notificações",
-      );
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
-  }, [load]);
+      return (data ?? []) as Row[];
+    },
+    [],
+    "Erro ao carregar notificações",
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-milsaca-verde" edges={["top"]}>
@@ -136,7 +125,7 @@ export default function NotificacoesScreen() {
               {error}
             </Text>
             <Pressable
-              onPress={load}
+              onPress={reload}
               className="mt-4 rounded-2xl bg-milsaca-dourado px-5 py-3 active:opacity-80"
             >
               <Text

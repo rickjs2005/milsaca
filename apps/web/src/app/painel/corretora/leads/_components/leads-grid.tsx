@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useUrlFilter } from "@/hooks/use-url-filter";
+import { useLocalSearchSort } from "@/hooks/use-local-search-sort";
+import { useState } from "react";
 import { Inbox, Search, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Pagination } from "@/components/pagination";
@@ -57,63 +59,48 @@ export function LeadsGrid({
   page: number;
   totalPages: number;
 }) {
-  const pathname = usePathname();
-  const params = useSearchParams();
   const router = useRouter();
-  const [query, setQuery] = useState("");
+  const { pathname, filterHref, pageHref } = useUrlFilter();
   const [urgencia, setUrgencia] = useState<"" | Urgencia>("");
-  const [sort, setSort] = useState<SortKey>("recentes");
   const [sheetOpen, setSheetOpen] = useState(false);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const list = leads.filter((l) => {
-      if (urgencia && nextActionFor(l).urgencia !== urgencia) return false;
-      if (!q) return true;
-      return [
+  const { query, setQuery, sort, setSort, filtered } = useLocalSearchSort<
+    LeadListItem,
+    SortKey
+  >(
+    leads,
+    {
+      initialSort: "recentes",
+      searchFields: (l) => [
         l.produtor_nome,
-        l.coffee_type ?? "",
-        l.city ?? "",
-        l.state ?? "",
-        l.produtor_phone ?? "",
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(q);
-    });
-    return [...list].sort((a, b) => {
-      switch (sort) {
-        case "valor":
-          return totalOf(b) - totalOf(a);
-        case "quente":
-          return (
-            URG_RANK[nextActionFor(b).urgencia] -
-            URG_RANK[nextActionFor(a).urgencia]
-          );
-        case "frio":
-          return +new Date(a.updated_at) - +new Date(b.updated_at);
-        default:
-          return +new Date(b.created_at) - +new Date(a.created_at);
-      }
-    });
-  }, [leads, urgencia, query, sort]);
+        l.coffee_type,
+        l.city,
+        l.state,
+        l.produtor_phone,
+      ],
+      filter: (l) => {
+        if (urgencia && nextActionFor(l).urgencia !== urgencia) return false;
+        return true;
+      },
+      compare: (a, b, sortKey) => {
+        switch (sortKey) {
+          case "valor":
+            return totalOf(b) - totalOf(a);
+          case "quente":
+            return (
+              URG_RANK[nextActionFor(b).urgencia] -
+              URG_RANK[nextActionFor(a).urgencia]
+            );
+          case "frio":
+            return +new Date(a.updated_at) - +new Date(b.updated_at);
+          default:
+            return +new Date(b.created_at) - +new Date(a.created_at);
+        }
+      },
+    },
+    [urgencia],
+  );
 
-  function statusHref(value: string): string {
-    const next = new URLSearchParams(params.toString());
-    if (value) next.set("status", value);
-    else next.delete("status");
-    next.delete("page");
-    const qs = next.toString();
-    return qs ? `${pathname}?${qs}` : pathname;
-  }
-
-  function pageHref(p: number): string {
-    const next = new URLSearchParams(params.toString());
-    if (p > 1) next.set("page", String(p));
-    else next.delete("page");
-    const qs = next.toString();
-    return qs ? `${pathname}?${qs}` : pathname;
-  }
+  const statusHref = (value: string) => filterHref("status", value);
 
   const activeFilters = (current.status ? 1 : 0) + (urgencia ? 1 : 0);
 

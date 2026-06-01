@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -49,6 +49,37 @@ const PROCESSO_OPTS: { value: Processo | null; label: string }[] = [
   { value: "fermentacao_induzida", label: "Fermentação" },
 ];
 
+/**
+ * Estado do formulário agrupado num reducer pra reduzir a dispersão de
+ * vários useState. Só os campos editáveis pelo usuário vivem aqui; os
+ * dados assíncronos/UI (corretoras, loading, submit, erro) seguem em useState.
+ */
+type FormState = {
+  corretoraId: string | null;
+  specie: Specie;
+  processo: Processo | null;
+  sacasStr: string;
+  precoStr: string;
+  observacoes: string;
+};
+
+type FormAction =
+  // Atualiza um campo específico de forma type-safe (o value casa com o tipo do field)
+  | { [K in keyof FormState]: { type: "set"; field: K; value: FormState[K] } }[keyof FormState]
+  // Auto-seleciona a corretora só se ainda não houver uma escolhida (sem ler estado externo)
+  | { type: "autoSelectCorretora"; value: string };
+
+function formReducer(state: FormState, action: FormAction): FormState {
+  switch (action.type) {
+    case "set":
+      return { ...state, [action.field]: action.value };
+    case "autoSelectCorretora":
+      return state.corretoraId
+        ? state
+        : { ...state, corretoraId: action.value };
+  }
+}
+
 function parsePreco(v: string): number | null {
   const cleaned = v.trim().replace(/\./g, "").replace(",", ".");
   if (!cleaned) return null;
@@ -69,15 +100,17 @@ export default function OfertarScreen() {
 
   const [corretoras, setCorretoras] = useState<CorretoraPicker[]>([]);
   const [loadingCorretoras, setLoadingCorretoras] = useState(true);
-  const [corretoraId, setCorretoraId] = useState<string | null>(
-    params.corretora ?? null,
-  );
 
-  const [specie, setSpecie] = useState<Specie>("arabica");
-  const [processo, setProcesso] = useState<Processo | null>(null);
-  const [sacasStr, setSacasStr] = useState("");
-  const [precoStr, setPrecoStr] = useState("");
-  const [observacoes, setObservacoes] = useState("");
+  const [form, dispatch] = useReducer(formReducer, {
+    corretoraId: params.corretora ?? null,
+    specie: "arabica",
+    processo: null,
+    sacasStr: "",
+    precoStr: "",
+    observacoes: "",
+  });
+  const { corretoraId, specie, processo, sacasStr, precoStr, observacoes } =
+    form;
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,15 +122,16 @@ export default function OfertarScreen() {
       if (!active) return;
       setCorretoras(items);
       setLoadingCorretoras(false);
-      // Auto-seleciona se só tiver 1 favorita ou nenhuma seleção prévia
-      if (!corretoraId && items.length === 1 && items[0]) {
-        setCorretoraId(items[0].id);
+      // Auto-seleciona se só tiver 1 corretora e ainda não houver seleção prévia.
+      // A regra de "só se vazio" vive no reducer (autoSelectCorretora), então não
+      // dependemos de corretoraId aqui — evita stale closure e exhaustive-deps.
+      if (items.length === 1 && items[0]) {
+        dispatch({ type: "autoSelectCorretora", value: items[0].id });
       }
     });
     return () => {
       active = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id]);
 
   const corretoraSelecionada = useMemo(
@@ -209,7 +243,13 @@ export default function OfertarScreen() {
                 {corretoras.slice(0, 8).map((c) => (
                   <Pressable
                     key={c.id}
-                    onPress={() => setCorretoraId(c.id)}
+                    onPress={() =>
+                      dispatch({
+                        type: "set",
+                        field: "corretoraId",
+                        value: c.id,
+                      })
+                    }
                     className={
                       corretoraId === c.id
                         ? "rounded-2xl border-2 border-milsaca-dourado bg-milsaca-verde-claro p-4 active:opacity-80"
@@ -281,7 +321,9 @@ export default function OfertarScreen() {
               {SPECIE_OPTS.map((opt) => (
                 <Pressable
                   key={opt.value}
-                  onPress={() => setSpecie(opt.value)}
+                  onPress={() =>
+                    dispatch({ type: "set", field: "specie", value: opt.value })
+                  }
                   className={
                     specie === opt.value
                       ? "flex-1 rounded-2xl border-2 border-milsaca-dourado bg-milsaca-verde-claro py-3 active:opacity-80"
@@ -311,7 +353,13 @@ export default function OfertarScreen() {
               {PROCESSO_OPTS.map((opt) => (
                 <Pressable
                   key={opt.label}
-                  onPress={() => setProcesso(opt.value)}
+                  onPress={() =>
+                    dispatch({
+                      type: "set",
+                      field: "processo",
+                      value: opt.value,
+                    })
+                  }
                   className={
                     processo === opt.value
                       ? "rounded-full border-2 border-milsaca-dourado bg-milsaca-verde-claro px-3 py-2 active:opacity-80"
@@ -334,7 +382,9 @@ export default function OfertarScreen() {
             <Field
               label="SACAS (60 KG) *"
               value={sacasStr}
-              onChange={setSacasStr}
+              onChange={(value) =>
+                dispatch({ type: "set", field: "sacasStr", value })
+              }
               placeholder="100"
               keyboardType="number-pad"
               editable={!submitting}
@@ -342,7 +392,9 @@ export default function OfertarScreen() {
             <Field
               label="PREÇO ALVO POR SACA (OPCIONAL)"
               value={precoStr}
-              onChange={setPrecoStr}
+              onChange={(value) =>
+                dispatch({ type: "set", field: "precoStr", value })
+              }
               placeholder="1.850,00"
               keyboardType="decimal-pad"
               editable={!submitting}
@@ -357,7 +409,9 @@ export default function OfertarScreen() {
               </Text>
               <TextInput
                 value={observacoes}
-                onChangeText={setObservacoes}
+                onChangeText={(value) =>
+                  dispatch({ type: "set", field: "observacoes", value })
+                }
                 placeholder="Ex: safra 2024, fazenda no Caparaó, peneira 17/18..."
                 placeholderTextColor="rgba(250,247,240,0.35)"
                 multiline

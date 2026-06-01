@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { CheckCircle2, FileText, MoreHorizontal, Search, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useUrlFilter } from "@/hooks/use-url-filter";
+import { useLocalSearchSort } from "@/hooks/use-local-search-sort";
 import { Pagination } from "@/components/pagination";
 import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { FilterSheet } from "@/components/filter-sheet";
@@ -76,47 +78,26 @@ export function PagamentosView({
   page: number;
   totalPages: number;
 }) {
-  const pathname = usePathname();
-  const params = useSearchParams();
   const router = useRouter();
-  const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<SortKey>("previsto");
-  const [sheetOpen, setSheetOpen] = useState(false);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const list = itens.filter((p) => {
-      if (!q) return true;
-      return [p.produtor_nome, p.contrato_code ?? ""]
-        .join(" ")
-        .toLowerCase()
-        .includes(q);
-    });
-    return [...list].sort((a, b) => {
-      if (sort === "recente")
+  const { pathname, filterHref, pageHref } = useUrlFilter();
+  const { query, setQuery, sort, setSort, filtered } = useLocalSearchSort<
+    PagamentoItem,
+    SortKey
+  >(itens, {
+    initialSort: "previsto",
+    searchFields: (p) => [p.produtor_nome, p.contrato_code],
+    compare: (a, b, sortKey) => {
+      if (sortKey === "recente")
         return +new Date(b.created_at) - +new Date(a.created_at);
       // previsto asc — vencidos/mais próximos primeiro; sem data por último
       const da = a.data_prevista ? +new Date(a.data_prevista) : Infinity;
       const db = b.data_prevista ? +new Date(b.data_prevista) : Infinity;
       return da - db;
-    });
-  }, [itens, query, sort]);
+    },
+  });
+  const [sheetOpen, setSheetOpen] = useState(false);
 
-  function statusHref(value: string): string {
-    const next = new URLSearchParams(params.toString());
-    if (value) next.set("status", value);
-    else next.delete("status");
-    next.delete("page");
-    const qs = next.toString();
-    return qs ? `${pathname}?${qs}` : pathname;
-  }
-  function pageHref(p: number): string {
-    const next = new URLSearchParams(params.toString());
-    if (p > 1) next.set("page", String(p));
-    else next.delete("page");
-    const qs = next.toString();
-    return qs ? `${pathname}?${qs}` : pathname;
-  }
+  const statusHref = (value: string) => filterHref("status", value);
 
   const selectClass =
     "h-10 rounded-md border border-neutral-200 bg-white px-3 text-body-sm text-milsaca-cafezal outline-none transition-colors hover:border-milsaca-dourado focus-visible:ring-2 focus-visible:ring-ring/40";

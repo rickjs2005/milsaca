@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useUrlFilter } from "@/hooks/use-url-filter";
+import { useLocalSearchSort } from "@/hooks/use-local-search-sort";
 import { useMemo, useState } from "react";
 import { Package, Search, SlidersHorizontal, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -65,11 +67,8 @@ export function LotesGrid({
   page: number;
   totalPages: number;
 }) {
-  const pathname = usePathname();
-  const params = useSearchParams();
   const router = useRouter();
-  const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<SortKey>("valor");
+  const { pathname, filterHref, pageHref } = useUrlFilter();
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const totalOf = (l: LoteRow): number => {
@@ -97,57 +96,46 @@ export function LotesGrid({
     };
   }, [lotes]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const list = lotes.filter((l) => {
-      if (current.safra && l.safra !== current.safra) return false;
-      if (current.tipo && l.ultimo_tipo !== current.tipo) return false;
-      if (current.peneira && l.ultimo_peneira !== current.peneira) return false;
-      if (current.regiao && l.city !== current.regiao) return false;
-      if (!q) return true;
-      return [
+  const { query, setQuery, sort, setSort, filtered } = useLocalSearchSort<
+    LoteRow,
+    SortKey
+  >(
+    lotes,
+    {
+      initialSort: "valor",
+      searchFields: (l) => [
         l.codigo,
         l.produtor_nome,
-        l.fazenda ?? "",
-        l.city ?? "",
-        l.state ?? "",
-        l.safra ?? "",
-        l.ultimo_tipo ?? "",
+        l.fazenda,
+        l.city,
+        l.state,
+        l.safra,
+        l.ultimo_tipo,
         SPECIE_LABEL[l.specie],
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(q);
-    });
-    return [...list].sort((a, b) => {
-      switch (sort) {
-        case "recente":
-          return +new Date(b.created_at) - +new Date(a.created_at);
-        case "safra":
-          return (b.safra ?? "").localeCompare(a.safra ?? "");
-        default:
-          return totalOf(b) - totalOf(a);
-      }
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lotes, query, current, sort, cotacoesBySpecie]);
+      ],
+      filter: (l) => {
+        if (current.safra && l.safra !== current.safra) return false;
+        if (current.tipo && l.ultimo_tipo !== current.tipo) return false;
+        if (current.peneira && l.ultimo_peneira !== current.peneira)
+          return false;
+        if (current.regiao && l.city !== current.regiao) return false;
+        return true;
+      },
+      compare: (a, b, sortKey) => {
+        switch (sortKey) {
+          case "recente":
+            return +new Date(b.created_at) - +new Date(a.created_at);
+          case "safra":
+            return (b.safra ?? "").localeCompare(a.safra ?? "");
+          default:
+            return totalOf(b) - totalOf(a);
+        }
+      },
+    },
+    [current, cotacoesBySpecie],
+  );
 
-  function buildHref(key: FilterKey, value: string): string {
-    const next = new URLSearchParams(params.toString());
-    if (value) next.set(key, value);
-    else next.delete(key);
-    next.delete("page");
-    const qs = next.toString();
-    return qs ? `${pathname}?${qs}` : pathname;
-  }
-
-  function pageHref(p: number): string {
-    const next = new URLSearchParams(params.toString());
-    if (p > 1) next.set("page", String(p));
-    else next.delete("page");
-    const qs = next.toString();
-    return qs ? `${pathname}?${qs}` : pathname;
-  }
+  const buildHref = (key: FilterKey, value: string) => filterHref(key, value);
 
   // Chips de filtros ativos (secundários — status fica nas pills).
   const activeChips: { key: FilterKey; label: string }[] = [];

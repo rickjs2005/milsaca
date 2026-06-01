@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { useLocalSearchSort } from "@/hooks/use-local-search-sort";
 import { ArrowRight, MessageCircle, Search, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/status-badge";
@@ -51,52 +52,52 @@ export function ProdutoresView({
   corretoraNome: string;
   siteUrl: string;
 }) {
-  const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<ProdutorSortKey>("negocios");
   const [tipo, setTipo] = useState<TipoFilter>("");
   const [sheetOpen, setSheetOpen] = useState(false);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const list = items.filter((p) => {
-      if (tipo === "plataforma" && !p.na_plataforma) return false;
-      if (tipo === "contato" && p.na_plataforma) return false;
-      if (!q) return true;
-      return [
+  const { query, setQuery, sort, setSort, filtered } = useLocalSearchSort<
+    ProdutorListItem,
+    ProdutorSortKey
+  >(
+    items,
+    {
+      initialSort: "negocios",
+      searchFields: (p) => [
         p.full_name,
-        p.fazenda_nome ?? "",
-        p.city ?? "",
-        p.state ?? "",
-        p.email ?? "",
-        p.phone ?? "",
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(q);
-    });
-
-    return [...list].sort((a, b) => {
-      if (sort === "nome") {
-        return a.full_name.localeCompare(b.full_name, "pt-BR");
-      }
-      if (sort === "recente") {
-        if (a.last_activity && b.last_activity) {
-          return b.last_activity.localeCompare(a.last_activity);
+        p.fazenda_nome,
+        p.city,
+        p.state,
+        p.email,
+        p.phone,
+      ],
+      filter: (p) => {
+        if (tipo === "plataforma" && !p.na_plataforma) return false;
+        if (tipo === "contato" && p.na_plataforma) return false;
+        return true;
+      },
+      compare: (a, b, sortKey) => {
+        if (sortKey === "nome") {
+          return a.full_name.localeCompare(b.full_name, "pt-BR");
         }
-        if (a.last_activity) return -1;
-        if (b.last_activity) return 1;
+        if (sortKey === "recente") {
+          if (a.last_activity && b.last_activity) {
+            return b.last_activity.localeCompare(a.last_activity);
+          }
+          if (a.last_activity) return -1;
+          if (b.last_activity) return 1;
+          return a.full_name.localeCompare(b.full_name, "pt-BR");
+        }
+        // negocios
+        if (b.valor_movimentado !== a.valor_movimentado) {
+          return b.valor_movimentado - a.valor_movimentado;
+        }
+        if (b.qtd_contratos !== a.qtd_contratos) {
+          return b.qtd_contratos - a.qtd_contratos;
+        }
         return a.full_name.localeCompare(b.full_name, "pt-BR");
-      }
-      // negocios
-      if (b.valor_movimentado !== a.valor_movimentado) {
-        return b.valor_movimentado - a.valor_movimentado;
-      }
-      if (b.qtd_contratos !== a.qtd_contratos) {
-        return b.qtd_contratos - a.qtd_contratos;
-      }
-      return a.full_name.localeCompare(b.full_name, "pt-BR");
-    });
-  }, [items, query, sort, tipo]);
+      },
+    },
+    [tipo],
+  );
 
   const count = filtered.length;
   const noun = count === 1 ? "produtor" : "produtores";

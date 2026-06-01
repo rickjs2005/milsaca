@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useUrlFilter } from "@/hooks/use-url-filter";
+import { useLocalSearchSort } from "@/hooks/use-local-search-sort";
+import { useState } from "react";
 import { FileText, MoreHorizontal, Search, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Pagination } from "@/components/pagination";
@@ -53,48 +55,28 @@ export function OfertasView({
   page: number;
   totalPages: number;
 }) {
-  const pathname = usePathname();
-  const params = useSearchParams();
   const router = useRouter();
-  const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<SortKey>("validade");
-  const [sheetOpen, setSheetOpen] = useState(false);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const list = ofertas.filter((o) => {
-      if (!q) return true;
-      return [o.comprador_nome, o.lote_codigo ?? ""]
-        .join(" ")
-        .toLowerCase()
-        .includes(q);
-    });
-    return [...list].sort((a, b) => {
-      if (sort === "valor") return (ofertaTotal(b) ?? 0) - (ofertaTotal(a) ?? 0);
-      if (sort === "recente")
+  const { pathname, filterHref, pageHref } = useUrlFilter();
+  const { query, setQuery, sort, setSort, filtered } = useLocalSearchSort<
+    OfertaItem,
+    SortKey
+  >(ofertas, {
+    initialSort: "validade",
+    searchFields: (o) => [o.comprador_nome, o.lote_codigo],
+    compare: (a, b, sortKey) => {
+      if (sortKey === "valor")
+        return (ofertaTotal(b) ?? 0) - (ofertaTotal(a) ?? 0);
+      if (sortKey === "recente")
         return +new Date(b.created_at) - +new Date(a.created_at);
       // validade asc — expira antes primeiro; sem data vai pro fim
       const da = a.validade_ate ? +new Date(a.validade_ate) : Infinity;
       const db = b.validade_ate ? +new Date(b.validade_ate) : Infinity;
       return da - db;
-    });
-  }, [ofertas, query, sort]);
+    },
+  });
+  const [sheetOpen, setSheetOpen] = useState(false);
 
-  function statusHref(value: string): string {
-    const next = new URLSearchParams(params.toString());
-    if (value) next.set("status", value);
-    else next.delete("status");
-    next.delete("page");
-    const qs = next.toString();
-    return qs ? `${pathname}?${qs}` : pathname;
-  }
-  function pageHref(p: number): string {
-    const next = new URLSearchParams(params.toString());
-    if (p > 1) next.set("page", String(p));
-    else next.delete("page");
-    const qs = next.toString();
-    return qs ? `${pathname}?${qs}` : pathname;
-  }
+  const statusHref = (value: string) => filterHref("status", value);
 
   const selectClass =
     "h-10 rounded-md border border-neutral-200 bg-white px-3 text-body-sm text-milsaca-cafezal outline-none transition-colors hover:border-milsaca-dourado focus-visible:ring-2 focus-visible:ring-ring/40";

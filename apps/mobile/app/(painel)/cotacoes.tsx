@@ -4,7 +4,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
 import { router } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -25,6 +25,7 @@ import {
   type ProdutorCotacoesMobile,
 } from "../../src/lib/queries";
 import { buildWhatsAppUrl } from "../../src/lib/whatsapp";
+import { useList } from "../../src/lib/use-list";
 import type { CoffeeSpecie } from "@milsaca/types";
 
 const BRL = new Intl.NumberFormat("pt-BR", {
@@ -86,31 +87,17 @@ function timeAgo(iso: string): string {
 export default function CotacoesScreen() {
   const { profile } = useAuth();
   const produtorNome = profile?.full_name ?? null;
-  const [data, setData] = useState<ProdutorCotacoesMobile | null>(null);
   const [filter, setFilter] = useState<CoffeeSpecie | "all">("all");
-  const [refreshing, setRefreshing] = useState(false);
-
-  const load = useCallback(async () => {
-    if (!profile?.id) return;
-    const next = await loadProdutorCotacoesMobile(
-      profile.id,
-      filter === "all" ? {} : { specie: filter },
-    );
-    setData(next);
-  }, [filter, profile?.id]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    try {
-      await load();
-    } finally {
-      setRefreshing(false);
-    }
-  }, [load]);
+  const { data, refreshing, onRefresh } = useList<ProdutorCotacoesMobile>(
+    async () => {
+      if (!profile?.id) return;
+      return loadProdutorCotacoesMobile(
+        profile.id,
+        filter === "all" ? {} : { specie: filter },
+      );
+    },
+    [filter, profile?.id],
+  );
 
   if (!data) {
     return (

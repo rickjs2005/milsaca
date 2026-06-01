@@ -2,7 +2,7 @@
 // Lista com filtros pill por status + botão WhatsApp por card.
 
 import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Linking,
@@ -26,6 +26,7 @@ import {
   type PropostaParaProdutor,
 } from "../../src/lib/queries";
 import { buildWhatsAppUrl } from "../../src/lib/whatsapp";
+import { useList } from "../../src/lib/use-list";
 import type { LeadStatus } from "@milsaca/types";
 
 const BRL = new Intl.NumberFormat("pt-BR", {
@@ -45,33 +46,22 @@ const FILTERS: { value: LeadStatus | "all"; label: string }[] = [
 export default function NegociacoesScreen() {
   const { profile } = useAuth();
   const [filter, setFilter] = useState<LeadStatus | "all">("all");
-  const [items, setItems] = useState<LeadItem[] | null>(null);
-  const [propostas, setPropostas] = useState<PropostaParaProdutor[] | null>(
-    null,
-  );
   const [respondendoId, setRespondendoId] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const load = useCallback(async () => {
+  const { data, refreshing, onRefresh, setData } = useList<{
+    leads: LeadItem[];
+    propostas: PropostaParaProdutor[];
+  }>(async () => {
     if (!profile) return;
     const filterArg = filter === "all" ? {} : { status: filter };
-    const [leads, props] = await Promise.all([
+    const [leads, propostas] = await Promise.all([
       listMinhasNegociacoes(profile.id, filterArg),
       listMinhasPropostas(profile.id, { onlyPending: true }),
     ]);
-    setItems(leads);
-    setPropostas(props);
+    return { leads, propostas };
   }, [filter, profile]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
-  }, [load]);
+  const items = data?.leads ?? null;
+  const propostas = data?.propostas ?? null;
 
   const onResponder = async (
     propostaId: string,
@@ -86,8 +76,13 @@ export default function NegociacoesScreen() {
       return;
     }
     // Remove a proposta respondida da lista pendente (optimistic)
-    setPropostas((prev) =>
-      prev ? prev.filter((p) => p.id !== propostaId) : prev,
+    setData((prev) =>
+      prev
+        ? {
+            ...prev,
+            propostas: prev.propostas.filter((p) => p.id !== propostaId),
+          }
+        : prev,
     );
   };
 

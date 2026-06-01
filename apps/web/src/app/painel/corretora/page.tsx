@@ -27,7 +27,6 @@ import {
 import { StatusBadge } from "@/components/status-badge";
 import { IndicadoresLive } from "@/components/indicadores-live";
 import { cn } from "@/lib/utils";
-import { timeAgo } from "@/lib/format";
 import type { LeadStatus } from "@milsaca/types";
 import { getProfile } from "@/lib/auth";
 import { listEntregasHojeEAtrasadas } from "./entregas/_lib/queries";

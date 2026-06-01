@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useUrlFilter } from "@/hooks/use-url-filter";
+import { useLocalSearchSort } from "@/hooks/use-local-search-sort";
+import { useState } from "react";
 import {
   ArrowRight,
   MoreHorizontal,
@@ -111,47 +113,26 @@ export function EntregasView({
   page: number;
   totalPages: number;
 }) {
-  const pathname = usePathname();
-  const params = useSearchParams();
   const router = useRouter();
-  const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<SortKey>("prevista");
-  const [sheetOpen, setSheetOpen] = useState(false);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const list = entregas.filter((e) => {
-      if (!q) return true;
-      return [e.contrato_code, e.produtor_nome]
-        .join(" ")
-        .toLowerCase()
-        .includes(q);
-    });
-    return [...list].sort((a, b) => {
-      if (sort === "recente")
+  const { pathname, filterHref, pageHref } = useUrlFilter();
+  const { query, setQuery, sort, setSort, filtered } = useLocalSearchSort<
+    EntregaListItem,
+    SortKey
+  >(entregas, {
+    initialSort: "prevista",
+    searchFields: (e) => [e.contrato_code, e.produtor_nome],
+    compare: (a, b, sortKey) => {
+      if (sortKey === "recente")
         return +new Date(b.created_at) - +new Date(a.created_at);
       // prevista asc — sem data por último
       const da = a.data_prevista ? +new Date(a.data_prevista) : Infinity;
       const db = b.data_prevista ? +new Date(b.data_prevista) : Infinity;
       return da - db;
-    });
-  }, [entregas, query, sort]);
+    },
+  });
+  const [sheetOpen, setSheetOpen] = useState(false);
 
-  function statusHref(value: string): string {
-    const next = new URLSearchParams(params.toString());
-    if (value) next.set("status", value);
-    else next.delete("status");
-    next.delete("page");
-    const qs = next.toString();
-    return qs ? `${pathname}?${qs}` : pathname;
-  }
-  function pageHref(p: number): string {
-    const next = new URLSearchParams(params.toString());
-    if (p > 1) next.set("page", String(p));
-    else next.delete("page");
-    const qs = next.toString();
-    return qs ? `${pathname}?${qs}` : pathname;
-  }
+  const statusHref = (value: string) => filterHref("status", value);
 
   const selectClass =
     "h-10 rounded-md border border-neutral-200 bg-white px-3 text-body-sm text-milsaca-cafezal outline-none transition-colors hover:border-milsaca-dourado focus-visible:ring-2 focus-visible:ring-ring/40";

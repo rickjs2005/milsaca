@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useLocalSearchSort } from "@/hooks/use-local-search-sort";
 import {
   AlertTriangle,
   ArrowRight,
@@ -39,42 +40,43 @@ export function CompradoresView({
   items: CompradorListItem[];
   corretoraNome: string;
 }) {
-  const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<CompradorSortKey>("comprado");
   const [tipo, setTipo] = useState("");
   const [status, setStatus] = useState<StatusFilter>("");
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const nowMs = useMemo(() => Date.now(), []);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const list = items.filter((c) => {
-      if (tipo && c.tipo !== tipo) return false;
-      if (status === "ativo" && !c.ativo) return false;
-      if (status === "inativo" && c.ativo) return false;
-      if (!q) return true;
-      return [c.name, c.trade_name ?? "", c.cnpj ?? "", c.city ?? "", c.state ?? ""]
-        .join(" ")
-        .toLowerCase()
-        .includes(q);
-    });
-
-    return [...list].sort((a, b) => {
-      if (sort === "nome") return a.name.localeCompare(b.name, "pt-BR");
-      if (sort === "recente") {
-        const la = a.last_compra ?? "";
-        const lb = b.last_compra ?? "";
-        if (la !== lb) return lb.localeCompare(la);
+  const { query, setQuery, sort, setSort, filtered } = useLocalSearchSort<
+    CompradorListItem,
+    CompradorSortKey
+  >(
+    items,
+    {
+      initialSort: "comprado",
+      searchFields: (c) => [c.name, c.trade_name, c.cnpj, c.city, c.state],
+      filter: (c) => {
+        if (tipo && c.tipo !== tipo) return false;
+        if (status === "ativo" && !c.ativo) return false;
+        if (status === "inativo" && c.ativo) return false;
+        return true;
+      },
+      compare: (a, b, sortKey) => {
+        if (sortKey === "nome") return a.name.localeCompare(b.name, "pt-BR");
+        if (sortKey === "recente") {
+          const la = a.last_compra ?? "";
+          const lb = b.last_compra ?? "";
+          if (la !== lb) return lb.localeCompare(la);
+          return a.name.localeCompare(b.name, "pt-BR");
+        }
+        // comprado (default)
+        if (b.valor_comprado !== a.valor_comprado) {
+          return b.valor_comprado - a.valor_comprado;
+        }
         return a.name.localeCompare(b.name, "pt-BR");
-      }
-      // comprado (default)
-      if (b.valor_comprado !== a.valor_comprado) {
-        return b.valor_comprado - a.valor_comprado;
-      }
-      return a.name.localeCompare(b.name, "pt-BR");
-    });
-  }, [items, query, sort, tipo, status]);
+      },
+    },
+    [tipo, status],
+  );
 
   const count = filtered.length;
   const noun = count === 1 ? "comprador" : "compradores";

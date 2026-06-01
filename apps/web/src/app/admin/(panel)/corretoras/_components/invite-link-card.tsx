@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { Check, Copy, ExternalLink, MessageCircle } from "lucide-react";
+import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 
 /**
  * Card mostrado após gerar um convite. Recebe a URL pronta e oferece
@@ -16,16 +16,10 @@ export function InviteLinkCard({
   corretoraName: string;
   whatsappPrefill?: string;
 }) {
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard(2500);
 
-  const onCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(inviteUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      // ignore — alguns browsers bloqueiam clipboard sem HTTPS
-    }
+  const onCopy = () => {
+    void copy(inviteUrl);
   };
 
   const waText = encodeURIComponent(

@@ -6,7 +6,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as Linking from "expo-linking";
-import { useCallback, useEffect, useState } from "react";
+import { useList } from "../../src/lib/use-list";
 import {
   ActivityIndicator,
   Pressable,
@@ -47,58 +47,41 @@ interface Snapshot {
 
 export default function InicioScreen() {
   const { profile, signOut } = useAuth();
-  const [snap, setSnap] = useState<Snapshot | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
+  const {
+    data: snap,
+    error,
+    refreshing,
+    reload,
+    onRefresh,
+  } = useList<Snapshot>(async () => {
     if (!profile) return;
-    setError(null);
-    try {
-      const cotacoes = await listCotacoes();
-      const cotacao = cotacoes[0] ?? null;
+    const cotacoes = await listCotacoes();
+    const cotacao = cotacoes[0] ?? null;
 
-      // Corretora "casa" do produtor (pra botão "Falar Corretora")
-      let corretoraCasa: Snapshot["corretoraCasa"] = null;
-      if (profile.corretora_id) {
-        const { data } = await supabase
-          .from("corretoras")
-          .select("name, phone")
-          .eq("id", profile.corretora_id)
-          .maybeSingle();
-        if (data) corretoraCasa = data as Snapshot["corretoraCasa"];
-      }
-
-      const [leads, contratos] = await Promise.all([
-        listMinhasNegociacoes(profile.id),
-        listMeusContratos(profile.id),
-      ]);
-      setSnap({
-        cotacao,
-        leadsAbertos: leads.filter((l) =>
-          ["novo", "em_negociacao"].includes(l.status),
-        ),
-        contratosAtivos: contratos.filter((c) => c.status === "ativo"),
-        corretoraCasa,
-      });
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Não conseguimos carregar os dados.",
-      );
+    // Corretora "casa" do produtor (pra botão "Falar Corretora")
+    let corretoraCasa: Snapshot["corretoraCasa"] = null;
+    if (profile.corretora_id) {
+      const { data } = await supabase
+        .from("corretoras")
+        .select("name, phone")
+        .eq("id", profile.corretora_id)
+        .maybeSingle();
+      if (data) corretoraCasa = data as Snapshot["corretoraCasa"];
     }
+
+    const [leads, contratos] = await Promise.all([
+      listMinhasNegociacoes(profile.id),
+      listMeusContratos(profile.id),
+    ]);
+    return {
+      cotacao,
+      leadsAbertos: leads.filter((l) =>
+        ["novo", "em_negociacao"].includes(l.status),
+      ),
+      contratosAtivos: contratos.filter((c) => c.status === "ativo"),
+      corretoraCasa,
+    };
   }, [profile]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
-  }, [load]);
 
   return (
     <SafeAreaView className="flex-1 bg-milsaca-verde" edges={["top"]}>
@@ -300,7 +283,7 @@ export default function InicioScreen() {
               {error}
             </Text>
             <Pressable
-              onPress={load}
+              onPress={reload}
               className="mt-4 rounded-2xl bg-milsaca-dourado px-5 py-3 active:opacity-80"
             >
               <Text

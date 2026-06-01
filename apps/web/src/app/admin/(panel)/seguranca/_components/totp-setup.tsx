@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useReducer, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { createClient } from "@milsaca/db/web/client";
@@ -8,7 +8,84 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type Phase = "idle" | "enrolling" | "qr" | "verifying" | "done" | "error";
+/**
+ * Estado discriminado pela `phase`. Modelar assim garante que os dados do
+ * enrollment (`factorId`/`qr`/`secret`) só existem nas fases em que fazem
+ * sentido — impede estados inconsistentes (ex.: phase "qr" sem qr).
+ */
+type SetupState =
+  | { phase: "idle"; error: string | null }
+  | { phase: "enrolling" }
+  | { phase: "error"; error: string }
+  | { phase: "qr"; factorId: string; qr: string; secret: string; error: string | null }
+  | { phase: "verifying"; factorId: string; qr: string; secret: string }
+  | { phase: "done" };
+
+type Phase = SetupState["phase"];
+
+/**
+ * Actions semânticas que representam cada transição da máquina de estados.
+ */
+type SetupAction =
+  | { type: "START" }
+  | { type: "START_FAIL"; error: string }
+  | { type: "START_OK"; factorId: string; qr: string; secret: string }
+  | { type: "VERIFY" }
+  | { type: "CHALLENGE_FAIL"; error: string }
+  | { type: "VERIFY_FAIL"; error: string }
+  | { type: "VERIFY_OK" }
+  | { type: "RESET" };
+
+const initialState: SetupState = { phase: "idle", error: null };
+
+function reducer(state: SetupState, action: SetupAction): SetupState {
+  switch (action.type) {
+    case "START":
+      return { phase: "enrolling" };
+    case "START_FAIL":
+      return { phase: "error", error: action.error };
+    case "START_OK":
+      return {
+        phase: "qr",
+        factorId: action.factorId,
+        qr: action.qr,
+        secret: action.secret,
+        error: null,
+      };
+    case "VERIFY":
+      // Só faz sentido a partir da fase "qr"; mantém os dados do enrollment.
+      if (state.phase !== "qr") return state;
+      return {
+        phase: "verifying",
+        factorId: state.factorId,
+        qr: state.qr,
+        secret: state.secret,
+      };
+    case "CHALLENGE_FAIL":
+      return { phase: "error", error: action.error };
+    case "VERIFY_FAIL":
+      // Volta pra "qr" preservando os dados do enrollment, com a mensagem de erro.
+      if (state.phase !== "verifying") return state;
+      return {
+        phase: "qr",
+        factorId: state.factorId,
+        qr: state.qr,
+        secret: state.secret,
+        error: action.error,
+      };
+    case "VERIFY_OK":
+      return { phase: "done" };
+    case "RESET":
+      // Preserva o comportamento original: cancelar não limpava `error`,
+      // então uma mensagem anterior (ex.: "Código inválido") seguia visível.
+      return {
+        phase: "idle",
+        error: "error" in state ? state.error : null,
+      };
+    default:
+      return state;
+  }
+}
 
 /**
  * Componente client que orquestra o enrollment de TOTP via Supabase MFA.
@@ -22,42 +99,41 @@ type Phase = "idle" | "enrolling" | "qr" | "verifying" | "done" | "error";
  */
 export function TotpSetup() {
   const router = useRouter();
-  const [phase, setPhase] = useState<Phase>("idle");
-  const [error, setError] = useState<string | null>(null);
-  const [factorId, setFactorId] = useState<string | null>(null);
-  const [qr, setQr] = useState<string | null>(null);
-  const [secret, setSecret] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(reducer, initialState);
+  // `code` permanece como useState: é o input controlado do campo de 6 dígitos.
   const [code, setCode] = useState("");
 
   async function start() {
-    setError(null);
-    setPhase("enrolling");
+    dispatch({ type: "START" });
     const supabase = createClient();
     const { data, error } = await supabase.auth.mfa.enroll({
       factorType: "totp",
       friendlyName: `Milsaca Admin (${new Date().toLocaleDateString("pt-BR")})`,
     });
     if (error || !data) {
-      setError(error?.message ?? "Falha ao iniciar setup");
-      setPhase("error");
+      dispatch({ type: "START_FAIL", error: error?.message ?? "Falha ao iniciar setup" });
       return;
     }
-    setFactorId(data.id);
-    setQr(data.totp.qr_code);
-    setSecret(data.totp.secret);
-    setPhase("qr");
+    dispatch({
+      type: "START_OK",
+      factorId: data.id,
+      qr: data.totp.qr_code,
+      secret: data.totp.secret,
+    });
   }
 
   async function confirm() {
-    if (!factorId) return;
-    setError(null);
-    setPhase("verifying");
+    if (state.phase !== "qr") return;
+    const factorId = state.factorId;
+    dispatch({ type: "VERIFY" });
     const supabase = createClient();
     const { data: challengeData, error: challengeError } =
       await supabase.auth.mfa.challenge({ factorId });
     if (challengeError || !challengeData) {
-      setError(challengeError?.message ?? "Falha ao desafiar");
-      setPhase("error");
+      dispatch({
+        type: "CHALLENGE_FAIL",
+        error: challengeError?.message ?? "Falha ao desafiar",
+      });
       return;
     }
     const { error: verifyError } = await supabase.auth.mfa.verify({
@@ -66,30 +142,30 @@ export function TotpSetup() {
       code: code.trim(),
     });
     if (verifyError) {
-      setError("Código inválido. Tente de novo.");
-      setPhase("qr");
+      dispatch({ type: "VERIFY_FAIL", error: "Código inválido. Tente de novo." });
       return;
     }
-    setPhase("done");
+    dispatch({ type: "VERIFY_OK" });
     router.refresh();
   }
 
   async function cancelUnverified() {
+    const factorId = "factorId" in state ? state.factorId : null;
     if (!factorId) {
-      setPhase("idle");
+      dispatch({ type: "RESET" });
       return;
     }
     const supabase = createClient();
     await supabase.auth.mfa.unenroll({ factorId });
-    setPhase("idle");
-    setFactorId(null);
-    setQr(null);
-    setSecret(null);
+    dispatch({ type: "RESET" });
     setCode("");
     router.refresh();
   }
 
+  const phase: Phase = state.phase;
+
   if (phase === "idle" || phase === "enrolling") {
+    const error = state.phase === "idle" ? state.error : null;
     return (
       <div className="space-y-3">
         <p className="text-sm text-slate-600">
@@ -118,6 +194,11 @@ export function TotpSetup() {
       </div>
     );
   }
+
+  // Demais fases (qr / verifying / error / done) renderizam a tela do QR.
+  const qr = "qr" in state ? state.qr : null;
+  const secret = "secret" in state ? state.secret : null;
+  const error = "error" in state ? state.error : null;
 
   return (
     <div className="space-y-5">

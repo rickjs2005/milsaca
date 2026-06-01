@@ -4,7 +4,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as Linking from "expo-linking";
-import { useCallback, useEffect, useState } from "react";
+import { useList } from "../../src/lib/use-list";
 import {
   ActivityIndicator,
   Pressable,
@@ -64,13 +64,14 @@ function fmtDate(iso: string): string {
 }
 
 export default function LaudosScreen() {
-  const [items, setItems] = useState<LaudoRow[] | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setError(null);
-    try {
+  const {
+    data: items,
+    error,
+    refreshing,
+    reload,
+    onRefresh,
+  } = useList<LaudoRow[]>(
+    async () => {
       const { data, error: err } = await supabase
         .from("classificacoes_cob")
         .select(
@@ -82,27 +83,16 @@ export default function LaudosScreen() {
         .order("created_at", { ascending: false })
         .limit(50);
       if (err) throw err;
-      const rows = ((data ?? []) as Raw[]).map((r) => ({
+      return ((data ?? []) as Raw[]).map((r) => ({
         ...r,
         pva: r.pva != null ? Number(r.pva) : null,
         lote: pickOne(r.lote),
         corretora: pickOne(r.corretora),
       }));
-      setItems(rows);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao carregar laudos");
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
-  }, [load]);
+    },
+    [],
+    "Erro ao carregar laudos",
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-milsaca-verde" edges={["top"]}>
@@ -147,7 +137,7 @@ export default function LaudosScreen() {
               {error}
             </Text>
             <Pressable
-              onPress={load}
+              onPress={reload}
               className="mt-4 rounded-2xl bg-milsaca-dourado px-5 py-3 active:opacity-80"
             >
               <Text

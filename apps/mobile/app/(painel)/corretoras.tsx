@@ -5,7 +5,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
 import { router } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -23,6 +23,7 @@ import {
   type CorretoraVitrineItem,
 } from "../../src/lib/queries";
 import { buildWhatsAppUrl } from "../../src/lib/whatsapp";
+import { useList } from "../../src/lib/use-list";
 
 type FilterKey = "all" | "favoritas" | "verificadas";
 
@@ -34,36 +35,23 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 
 export default function CorretorasScreen() {
   const { profile } = useAuth();
-  const [lista, setLista] = useState<CorretoraVitrineItem[] | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterKey>("all");
   const [busyId, setBusyId] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    if (!profile) return;
-    setError(null);
-    try {
-      const rows = await listCorretorasParaProdutor(profile.id);
-      setLista(rows);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Não conseguimos carregar as corretoras.",
-      );
-    }
-  }, [profile]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
-  }, [load]);
+  const {
+    data: lista,
+    error,
+    refreshing,
+    reload,
+    onRefresh,
+    setData: setLista,
+  } = useList<CorretoraVitrineItem[]>(
+    async () => {
+      if (!profile) return;
+      return listCorretorasParaProdutor(profile.id);
+    },
+    [profile],
+    "Não conseguimos carregar as corretoras.",
+  );
 
   const onToggleFavorita = useCallback(
     async (c: CorretoraVitrineItem) => {
@@ -96,7 +84,7 @@ export default function CorretorasScreen() {
         );
       }
     },
-    [profile, busyId],
+    [profile, busyId, setLista],
   );
 
   const filtered = (lista ?? []).filter((c) => {
@@ -202,7 +190,7 @@ export default function CorretorasScreen() {
               {error}
             </Text>
             <Pressable
-              onPress={load}
+              onPress={reload}
               className="mt-4 rounded-2xl bg-milsaca-dourado px-5 py-3 active:opacity-80"
             >
               <Text

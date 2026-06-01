@@ -2,7 +2,7 @@
 
 import { Command } from "cmdk";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   Building2,
   Cpu,
@@ -29,6 +29,7 @@ import {
   searchAdmin,
   type CommandResult,
 } from "./command-palette-search";
+import { useDebouncedCallback } from "@/hooks/use-debounced-value";
 
 type StaticAction = {
   group: string;
@@ -104,7 +105,18 @@ export function CommandPalette() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CommandResult[]>([]);
   const [isPending, startTransition] = useTransition();
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Dispara a busca no banco com debounce de 250ms; só a última digitação roda.
+  const runSearch = useDebouncedCallback((q: string) => {
+    startTransition(async () => {
+      try {
+        const r = await searchAdmin(q);
+        setResults(r);
+      } catch {
+        setResults([]);
+      }
+    });
+  }, 250);
 
   // Atalho global Cmd+K / Ctrl+K
   useEffect(() => {
@@ -131,28 +143,14 @@ export function CommandPalette() {
   // Debounced search
   useEffect(() => {
     if (!open) return;
-    if (debounceRef.current) clearTimeout(debounceRef.current);
 
     const q = query.trim();
     if (q.length < 2) {
       setResults([]);
       return;
     }
-    debounceRef.current = setTimeout(() => {
-      startTransition(async () => {
-        try {
-          const r = await searchAdmin(q);
-          setResults(r);
-        } catch {
-          setResults([]);
-        }
-      });
-    }, 250);
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [query, open]);
+    runSearch(q);
+  }, [query, open, runSearch]);
 
   // Reset ao abrir/fechar
   useEffect(() => {

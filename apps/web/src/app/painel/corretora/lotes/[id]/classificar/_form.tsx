@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useReducer, useState, useTransition } from "react";
 import { AlertTriangle, CheckCircle2, Coffee } from "lucide-react";
 import {
   calcularLaudo,
@@ -106,33 +106,94 @@ function n(v: string): number {
   return Number.isFinite(x) && x >= 0 ? x : 0;
 }
 
+// ===== Estado único do laudo (useReducer) =====
+type LaudoForm = {
+  defeitos: DefeitoForm;
+  brocadosPorDefeito: 2 | 3 | 4 | 5;
+  bebida: string;
+  classe: string;
+  aspecto: string;
+  torra: string;
+  peneiras: Record<string, string>;
+  umidade: string;
+  impurezasPct: string;
+  pvaPretos: string;
+  pvaVerdes: string;
+  pvaArdidos: string;
+  observacoes: string;
+};
+
+function peneirasIniciais(): Record<string, string> {
+  const x: Record<string, string> = {};
+  for (const p of PENEIRAS_PADRAO) x[p] = "";
+  return x;
+}
+
+const LAUDO_INICIAL: LaudoForm = {
+  defeitos: DEFEITOS_INICIAIS,
+  brocadosPorDefeito: 3,
+  bebida: "",
+  classe: "",
+  aspecto: "",
+  torra: "",
+  peneiras: peneirasIniciais(),
+  umidade: "",
+  impurezasPct: "",
+  pvaPretos: "",
+  pvaVerdes: "",
+  pvaArdidos: "",
+  observacoes: "",
+};
+
+type LaudoAction =
+  // Action genérica de campo (type-safe via generics)
+  | { [K in keyof LaudoForm]: { type: "set"; field: K; value: LaudoForm[K] } }[keyof LaudoForm]
+  // Update composto de um defeito intrínseco
+  | { type: "setDefeito"; key: keyof DefeitoForm; value: string }
+  // Update composto de uma peneira
+  | { type: "setPeneira"; key: string; value: string };
+
+function laudoReducer(state: LaudoForm, action: LaudoAction): LaudoForm {
+  switch (action.type) {
+    case "set":
+      return { ...state, [action.field]: action.value };
+    case "setDefeito":
+      return {
+        ...state,
+        defeitos: {
+          ...state.defeitos,
+          [action.key]: action.value.replace(/[^0-9]/g, ""),
+        },
+      };
+    case "setPeneira":
+      return {
+        ...state,
+        peneiras: { ...state.peneiras, [action.key]: action.value },
+      };
+    default:
+      return state;
+  }
+}
+
 export function ClassificarForm({ loteId, specie }: Props) {
   const bebidaOpts = specie === "arabica" ? BEBIDAS_ARABICA : BEBIDAS_CONILLON;
 
-  const [defeitos, setDefeitos] = useState<DefeitoForm>(DEFEITOS_INICIAIS);
-  const [brocadosPorDefeito, setBrocadosPorDefeito] = useState<2 | 3 | 4 | 5>(
-    3,
-  );
-
-  const [bebida, setBebida] = useState<string>("");
-  const [classe, setClasse] = useState<string>("");
-  const [aspecto, setAspecto] = useState<string>("");
-  const [torra, setTorra] = useState<string>("");
-
-  const [peneiras, setPeneiras] = useState<Record<string, string>>(() => {
-    const x: Record<string, string> = {};
-    for (const p of PENEIRAS_PADRAO) x[p] = "";
-    return x;
-  });
-
-  const [umidade, setUmidade] = useState<string>("");
-  const [impurezasPct, setImpurezasPct] = useState<string>("");
-
-  const [pvaPretos, setPvaPretos] = useState("");
-  const [pvaVerdes, setPvaVerdes] = useState("");
-  const [pvaArdidos, setPvaArdidos] = useState("");
-
-  const [observacoes, setObservacoes] = useState<string>("");
+  const [form, dispatch] = useReducer(laudoReducer, LAUDO_INICIAL);
+  const {
+    defeitos,
+    brocadosPorDefeito,
+    bebida,
+    classe,
+    aspecto,
+    torra,
+    peneiras,
+    umidade,
+    impurezasPct,
+    pvaPretos,
+    pvaVerdes,
+    pvaArdidos,
+    observacoes,
+  } = form;
 
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -174,7 +235,7 @@ export function ClassificarForm({ loteId, specie }: Props) {
   }, [peneiras]);
 
   function setDefeito(key: keyof DefeitoForm, value: string) {
-    setDefeitos((d) => ({ ...d, [key]: value.replace(/[^0-9]/g, "") }));
+    dispatch({ type: "setDefeito", key, value });
   }
 
   function handleSubmit() {
@@ -305,9 +366,11 @@ export function ClassificarForm({ loteId, specie }: Props) {
                 <select
                   value={brocadosPorDefeito}
                   onChange={(e) =>
-                    setBrocadosPorDefeito(
-                      Number(e.target.value) as 2 | 3 | 4 | 5,
-                    )
+                    dispatch({
+                      type: "set",
+                      field: "brocadosPorDefeito",
+                      value: Number(e.target.value) as 2 | 3 | 4 | 5,
+                    })
                   }
                   className="rounded-md border border-input bg-background px-2 text-sm"
                   title="Quantos brocados equivalem a 1 defeito"
@@ -344,19 +407,19 @@ export function ClassificarForm({ loteId, specie }: Props) {
             <SelectField
               label="Bebida"
               value={bebida}
-              onChange={setBebida}
+              onChange={(v) => dispatch({ type: "set", field: "bebida", value: v })}
               options={bebidaOpts as readonly (readonly [string, string])[]}
             />
             <SelectField
               label="Classe (cor)"
               value={classe}
-              onChange={setClasse}
+              onChange={(v) => dispatch({ type: "set", field: "classe", value: v })}
               options={CLASSES}
             />
             <SelectField
               label="Aspecto"
               value={aspecto}
-              onChange={setAspecto}
+              onChange={(v) => dispatch({ type: "set", field: "aspecto", value: v })}
               options={ASPECTOS}
             />
             <div className="space-y-1">
@@ -366,7 +429,9 @@ export function ClassificarForm({ loteId, specie }: Props) {
               <Input
                 id="torra"
                 value={torra}
-                onChange={(e) => setTorra(e.target.value)}
+                onChange={(e) =>
+                  dispatch({ type: "set", field: "torra", value: e.target.value })
+                }
                 placeholder="ex.: Boa / Fina"
               />
             </div>
@@ -394,7 +459,11 @@ export function ClassificarForm({ loteId, specie }: Props) {
                     inputMode="decimal"
                     value={peneiras[p] ?? ""}
                     onChange={(e) =>
-                      setPeneiras((s) => ({ ...s, [p]: e.target.value }))
+                      dispatch({
+                        type: "setPeneira",
+                        key: p,
+                        value: e.target.value,
+                      })
                     }
                     placeholder="—"
                     className="h-8 text-sm"
@@ -441,7 +510,9 @@ export function ClassificarForm({ loteId, specie }: Props) {
                 type="text"
                 inputMode="decimal"
                 value={umidade}
-                onChange={(e) => setUmidade(e.target.value)}
+                onChange={(e) =>
+                  dispatch({ type: "set", field: "umidade", value: e.target.value })
+                }
                 placeholder="11,2"
               />
             </div>
@@ -451,7 +522,13 @@ export function ClassificarForm({ loteId, specie }: Props) {
                 type="text"
                 inputMode="decimal"
                 value={impurezasPct}
-                onChange={(e) => setImpurezasPct(e.target.value)}
+                onChange={(e) =>
+                  dispatch({
+                    type: "set",
+                    field: "impurezasPct",
+                    value: e.target.value,
+                  })
+                }
                 placeholder="0,5"
               />
             </div>
@@ -465,7 +542,11 @@ export function ClassificarForm({ loteId, specie }: Props) {
                   inputMode="numeric"
                   value={pvaPretos}
                   onChange={(e) =>
-                    setPvaPretos(e.target.value.replace(/[^0-9]/g, ""))
+                    dispatch({
+                      type: "set",
+                      field: "pvaPretos",
+                      value: e.target.value.replace(/[^0-9]/g, ""),
+                    })
                   }
                   placeholder="Pretos"
                 />
@@ -474,7 +555,11 @@ export function ClassificarForm({ loteId, specie }: Props) {
                   inputMode="numeric"
                   value={pvaVerdes}
                   onChange={(e) =>
-                    setPvaVerdes(e.target.value.replace(/[^0-9]/g, ""))
+                    dispatch({
+                      type: "set",
+                      field: "pvaVerdes",
+                      value: e.target.value.replace(/[^0-9]/g, ""),
+                    })
                   }
                   placeholder="Verdes"
                 />
@@ -483,7 +568,11 @@ export function ClassificarForm({ loteId, specie }: Props) {
                   inputMode="numeric"
                   value={pvaArdidos}
                   onChange={(e) =>
-                    setPvaArdidos(e.target.value.replace(/[^0-9]/g, ""))
+                    dispatch({
+                      type: "set",
+                      field: "pvaArdidos",
+                      value: e.target.value.replace(/[^0-9]/g, ""),
+                    })
                   }
                   placeholder="Ardidos"
                 />
@@ -503,7 +592,13 @@ export function ClassificarForm({ loteId, specie }: Props) {
           <CardContent>
             <textarea
               value={observacoes}
-              onChange={(e) => setObservacoes(e.target.value)}
+              onChange={(e) =>
+                dispatch({
+                  type: "set",
+                  field: "observacoes",
+                  value: e.target.value,
+                })
+              }
               rows={3}
               className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               placeholder="Ex.: amostra cega #4, prova feita por 3 árbitros."

@@ -3,7 +3,7 @@
 
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useList } from "../../src/lib/use-list";
 import {
   ActivityIndicator,
   Pressable,
@@ -71,14 +71,15 @@ function pickOne<T>(v: T | T[] | null | undefined): T | null {
 
 export default function EntregasScreen() {
   const { profile } = useAuth();
-  const [items, setItems] = useState<Row[] | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    if (!profile) return;
-    setError(null);
-    try {
+  const {
+    data: items,
+    error,
+    refreshing,
+    reload,
+    onRefresh,
+  } = useList<Row[]>(
+    async () => {
+      if (!profile) return;
       const { data, error: err } = await supabase
         .from("entregas")
         .select(
@@ -90,21 +91,11 @@ export default function EntregasScreen() {
         .order("data_prevista", { ascending: false, nullsFirst: false })
         .limit(100);
       if (err) throw err;
-      setItems((data ?? []) as Row[]);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao carregar entregas");
-    }
-  }, [profile]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
-  }, [load]);
+      return (data ?? []) as Row[];
+    },
+    [profile],
+    "Erro ao carregar entregas",
+  );
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -149,7 +140,7 @@ export default function EntregasScreen() {
               {error}
             </Text>
             <Pressable
-              onPress={load}
+              onPress={reload}
               className="mt-4 rounded-2xl bg-milsaca-dourado px-5 py-3 active:opacity-80"
             >
               <Text

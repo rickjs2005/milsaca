@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useUrlFilter } from "@/hooks/use-url-filter";
+import { useLocalSearchSort } from "@/hooks/use-local-search-sort";
+import { useState } from "react";
 import {
   MoreHorizontal,
   Pencil,
@@ -112,45 +114,30 @@ export function CotacoesView({
   cotacoes: CotacaoRow[];
   current: CotacoesFilter;
 }) {
-  const pathname = usePathname();
-  const params = useSearchParams();
   const router = useRouter();
-  const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<SortKey>("recente");
-  const [sheetOpen, setSheetOpen] = useState(false);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const list = cotacoes.filter((c) => {
-      if (!q) return true;
-      return [
-        cotacaoLabel(c),
-        c.region ?? "",
-        c.source ?? "",
-        c.process ? PROCESS_LABEL[c.process] : "",
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(q);
-    });
-    return [...list].sort((a, b) => {
-      if (sort === "maior") return b.price - a.price;
-      if (sort === "menor") return a.price - b.price;
+  const { pathname, filterHref } = useUrlFilter();
+  const { query, setQuery, sort, setSort, filtered } = useLocalSearchSort<
+    CotacaoRow,
+    SortKey
+  >(cotacoes, {
+    initialSort: "recente",
+    searchFields: (c) => [
+      cotacaoLabel(c),
+      c.region,
+      c.source,
+      c.process ? PROCESS_LABEL[c.process] : null,
+    ],
+    compare: (a, b, sortKey) => {
+      if (sortKey === "maior") return b.price - a.price;
+      if (sortKey === "menor") return a.price - b.price;
       // recente — por data de referência, desempate por criação
       const byDate = b.reference_date.localeCompare(a.reference_date);
       return byDate !== 0 ? byDate : b.created_at.localeCompare(a.created_at);
-    });
-  }, [cotacoes, query, sort]);
+    },
+  });
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const activeFilters = (current.specie ? 1 : 0) + (current.process ? 1 : 0);
-
-  function filterHref(key: "specie" | "process", value: string): string {
-    const next = new URLSearchParams(params.toString());
-    if (value) next.set(key, value);
-    else next.delete(key);
-    const qs = next.toString();
-    return qs ? `${pathname}?${qs}` : pathname;
-  }
 
   const selectClass =
     "h-10 rounded-md border border-neutral-200 bg-white px-3 text-body-sm text-milsaca-cafezal outline-none transition-colors hover:border-milsaca-dourado focus-visible:ring-2 focus-visible:ring-ring/40";

@@ -3,7 +3,7 @@
 // Equivalente ao componente <IndicadoresLive /> do web em apps/web/src/components.
 
 import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useEffect, useState } from "react";
+import { useList } from "../lib/use-list";
 import { ActivityIndicator, Text, View } from "react-native";
 
 import { supabase } from "../lib/supabase";
@@ -107,12 +107,8 @@ function fmtAge(iso: string): string {
 }
 
 export function IndicadoresLive() {
-  const [quotes, setQuotes] = useState<Map<string, MarketQuote> | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setError(null);
-    try {
+  const { data: quotes, error } = useList<Map<string, MarketQuote>>(
+    async () => {
       const { data, error: err } = await supabase
         .from("market_quotes")
         .select(
@@ -123,17 +119,11 @@ export function IndicadoresLive() {
       for (const r of (data ?? []) as MarketQuote[]) {
         map.set(`${r.source}/${r.symbol}`, r);
       }
-      setQuotes(map);
-    } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Erro ao carregar indicadores",
-      );
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+      return map;
+    },
+    [],
+    "Erro ao carregar indicadores",
+  );
 
   if (error) {
     return (
