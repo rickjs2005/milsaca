@@ -1,6 +1,11 @@
 import { createClient } from "@milsaca/db/web/server";
 import type { Database } from "@milsaca/types/database";
 
+import type { CompradorListItem } from "./comprador-meta";
+
+// Re-export pra compat de quem importa o tipo a partir de queries.
+export type { CompradorListItem } from "./comprador-meta";
+
 export type RegimeTributario =
   Database["public"]["Enums"]["regime_tributario"];
 
@@ -24,18 +29,105 @@ export type CompradorRow = {
   created_at: string;
 };
 
+/**
+ * Lista compradores da carteira com densidade financeira agregada: contratos
+ * (qtd + fechados), valor comprado (soma de total_value dos fechados) e
+ * recência da última compra. Uma query de compradores + uma de contratos,
+ * agregadas em memória (carteira é pequena; cap 500).
+ */
 export async function listCompradores(
   corretoraId: string,
-): Promise<CompradorRow[]> {
+): Promise<CompradorListItem[]> {
+  const supabase = await createClient();
+  const [compRes, ctRes] = await Promise.all([
+    supabase
+      .from("compradores")
+      .select(
+        "id, name, trade_name, cnpj, city, state, tipo, ativo, contact_phone",
+      )
+      .eq("corretora_id", corretoraId)
+      .limit(500),
+    supabase
+      .from("contratos")
+      .select("comprador_id, status, total_value, created_at")
+      .eq("corretora_id", corretoraId)
+      .not("comprador_id", "is", null),
+  ]);
+
+  type CompRow = {
+    id: string;
+    name: string;
+    trade_name: string | null;
+    cnpj: string | null;
+    city: string | null;
+    state: string | null;
+    tipo: string | null;
+    ativo: boolean;
+    contact_phone: string | null;
+  };
+  type CtRow = {
+    comprador_id: string | null;
+    status: string;
+    total_value: number | string | null;
+    created_at: string;
+  };
+
+  const agg = new Map<
+    string,
+    { qtd: number; fechados: number; valor: number; last: string | null }
+  >();
+  for (const r of (ctRes.data ?? []) as CtRow[]) {
+    if (!r.comprador_id) continue;
+    const a =
+      agg.get(r.comprador_id) ??
+      { qtd: 0, fechados: 0, valor: 0, last: null as string | null };
+    a.qtd += 1;
+    if (r.status === "ativo" || r.status === "finalizado") {
+      a.fechados += 1;
+      a.valor += Number(r.total_value ?? 0);
+      if (!a.last || r.created_at > a.last) a.last = r.created_at;
+    }
+    agg.set(r.comprador_id, a);
+  }
+
+  const items: CompradorListItem[] = ((compRes.data ?? []) as CompRow[]).map(
+    (c) => {
+      const a = agg.get(c.id);
+      return {
+        id: c.id,
+        name: c.name,
+        trade_name: c.trade_name,
+        cnpj: c.cnpj,
+        city: c.city,
+        state: c.state,
+        tipo: c.tipo,
+        ativo: c.ativo,
+        contact_phone: c.contact_phone,
+        qtd_contratos: a?.qtd ?? 0,
+        qtd_fechados: a?.fechados ?? 0,
+        valor_comprado: a?.valor ?? 0,
+        last_compra: a?.last ?? null,
+      };
+    },
+  );
+
+  // Fallback estável (a ordenação interativa vive na view): valor desc, nome.
+  return items.sort((x, y) => {
+    if (y.valor_comprado !== x.valor_comprado) {
+      return y.valor_comprado - x.valor_comprado;
+    }
+    return x.name.localeCompare(y.name, "pt-BR");
+  });
+}
+
+export async function getCorretoraNome(corretoraId: string): Promise<string> {
   const supabase = await createClient();
   const { data } = await supabase
-    .from("compradores")
-    .select("id, name, trade_name, cnpj, city, state, tipo, ativo, created_at")
-    .eq("corretora_id", corretoraId)
-    .order("ativo", { ascending: false })
-    .order("name", { ascending: true })
-    .limit(500);
-  return (data ?? []) as CompradorRow[];
+    .from("corretoras")
+    .select("name")
+    .eq("id", corretoraId)
+    .maybeSingle();
+  return data?.name ?? "Sua corretora";
 }
 
 export type CompradorDetail = CompradorRow & {
