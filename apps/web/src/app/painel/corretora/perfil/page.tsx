@@ -30,7 +30,10 @@ import { MaskedInput } from "@/components/forms/masked-input";
 import { SubmitButton } from "@/components/submit-button";
 import { updatePerfilCorretora } from "./_actions";
 import { CopyLinkButton } from "./_components/copy-link-button";
-import { getCorretoraSubscriptionInfo } from "../_lib/corretora";
+import {
+  getCorretoraSubscriptionInfo,
+  isCorretoraDono,
+} from "../_lib/corretora";
 
 export const metadata = { title: "Perfil — Painel da corretora" };
 
@@ -94,6 +97,7 @@ export default async function PerfilCorretoraPage({
   const subscription = profile.corretora_id
     ? await getCorretoraSubscriptionInfo(profile.corretora_id)
     : null;
+  const isDono = isCorretoraDono(profile);
 
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
@@ -344,65 +348,41 @@ export default async function PerfilCorretoraPage({
       </Card>
 
       {/* ============================================================ */}
-      {/* Bloco 5 — Plano atual                                          */}
+      {/* Bloco 5 — Plano (RESUMO; o detalhe e as ações vivem na          */}
+      {/* tela de Assinatura — fonte única, sem duplicar o bloco)         */}
       {/* ============================================================ */}
       <Card className="border-milsaca-cream-escuro shadow-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Sparkles className="h-4 w-4 text-milsaca-dourado" />
-            Plano atual
-          </CardTitle>
-          <CardDescription>
-            Status da assinatura da sua corretora.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 p-card text-sm">
           {subscription ? (
             <>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Field
-                  label="Plano"
-                  value={subscription.planName ?? "Sem plano"}
-                />
-                <Field
-                  label="Status"
-                  value={
-                    PLAN_STATUS_LABEL[subscription.effectiveStatus] ??
-                    subscription.effectiveStatus
-                  }
-                />
-                <Field
-                  label="Vence em"
-                  value={formatDate(
-                    subscription.currentPeriodEnd ?? subscription.trialEndsAt,
-                  )}
-                />
-                <Field
-                  label="Dias até vencer"
-                  value={
-                    subscription.daysUntilExpiry != null
-                      ? `${subscription.daysUntilExpiry}`
-                      : "—"
-                  }
-                />
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-milsaca-dourado/15 text-milsaca-cafezal ring-1 ring-inset ring-milsaca-dourado/40">
+                  <Sparkles className="h-4 w-4" />
+                </span>
+                <div>
+                  <p className="font-semibold text-milsaca-verde">
+                    Plano {subscription.planName ?? "Sem plano"}
+                    <span className="ml-2 text-xs font-normal text-milsaca-verde-claro">
+                      {PLAN_STATUS_LABEL[subscription.effectiveStatus] ??
+                        subscription.effectiveStatus}
+                    </span>
+                  </p>
+                  <p className="text-xs text-milsaca-verde-claro">
+                    {subscription.currentPeriodEnd ?? subscription.trialEndsAt
+                      ? `Vence em ${formatDate(subscription.currentPeriodEnd ?? subscription.trialEndsAt)}`
+                      : "Gestão do plano na Assinatura"}
+                  </p>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2 pt-1">
+              {isDono ? (
                 <Link
                   href="/painel/corretora/assinatura"
-                  className="inline-flex h-9 items-center gap-1.5 rounded-md bg-milsaca-dourado px-3 text-xs font-semibold text-milsaca-cafezal shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_18px_-6px_rgba(201,169,97,0.45)] transition-colors hover:brightness-105"
+                  className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-milsaca-cafezal px-3 text-xs font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-cafezal hover:text-milsaca-cream"
                 >
-                  Ver planos
+                  Ver assinatura
+                  <ExternalLink className="h-3 w-3" />
                 </Link>
-                <a
-                  href="https://wa.me/5533999999999?text=Olá! Quero conversar sobre meu plano no Milsaca."
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex h-9 items-center gap-1.5 rounded-md border border-milsaca-cream-escuro px-3 text-xs font-semibold text-milsaca-verde-claro transition-colors hover:text-milsaca-verde"
-                >
-                  <MessageCircle className="h-3.5 w-3.5" />
-                  Falar no WhatsApp
-                </a>
-              </div>
+              ) : null}
             </>
           ) : (
             <p className="text-muted-foreground">
