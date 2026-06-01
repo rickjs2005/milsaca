@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       app_admins: {
@@ -232,7 +207,53 @@ export type Database = {
             referencedRelation: "lotes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "classificacoes_cob_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "lotes_publicos"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      coffee_types: {
+        Row: {
+          active: boolean
+          created_at: string
+          default_unit: string
+          id: string
+          name: string
+          notes: string | null
+          process: string | null
+          slug: string
+          species: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          default_unit?: string
+          id?: string
+          name: string
+          notes?: string | null
+          process?: string | null
+          slug: string
+          species: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          default_unit?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          process?: string | null
+          slug?: string
+          species?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       compradores: {
         Row: {
@@ -324,9 +345,9 @@ export type Database = {
           code: string
           coffee_type: string | null
           comissao_pct: number | null
-          content_hash: string | null
           comissao_total: number | null
           comprador_id: string | null
+          content_hash: string | null
           corretora_id: string
           created_at: string
           id: string
@@ -343,8 +364,8 @@ export type Database = {
           coffee_type?: string | null
           comissao_pct?: number | null
           comissao_total?: number | null
-          content_hash?: string | null
           comprador_id?: string | null
+          content_hash?: string | null
           corretora_id: string
           created_at?: string
           id?: string
@@ -361,8 +382,8 @@ export type Database = {
           coffee_type?: string | null
           comissao_pct?: number | null
           comissao_total?: number | null
-          content_hash?: string | null
           comprador_id?: string | null
+          content_hash?: string | null
           corretora_id?: string
           created_at?: string
           id?: string
@@ -410,6 +431,106 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      corretora_invites: {
+        Row: {
+          corretora_id: string
+          created_at: string
+          created_by: string
+          email: string | null
+          expires_at: string
+          token: string
+          used_at: string | null
+          used_by_user_id: string | null
+        }
+        Insert: {
+          corretora_id: string
+          created_at?: string
+          created_by: string
+          email?: string | null
+          expires_at?: string
+          token?: string
+          used_at?: string | null
+          used_by_user_id?: string | null
+        }
+        Update: {
+          corretora_id?: string
+          created_at?: string
+          created_by?: string
+          email?: string | null
+          expires_at?: string
+          token?: string
+          used_at?: string | null
+          used_by_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "corretora_invites_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corretora_invites_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corretora_invites_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      corretora_waitlist: {
+        Row: {
+          city: string | null
+          created_at: string
+          email: string | null
+          id: string
+          invited_at: string | null
+          message: string | null
+          name: string
+          notes: string | null
+          state: string | null
+          status: string
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          invited_at?: string | null
+          message?: string | null
+          name: string
+          notes?: string | null
+          state?: string | null
+          status?: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          invited_at?: string | null
+          message?: string | null
+          name?: string
+          notes?: string | null
+          state?: string | null
+          status?: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
       }
       corretoras: {
         Row: {
@@ -489,90 +610,69 @@ export type Database = {
         }
         Relationships: []
       }
-      corretora_waitlist: {
-        Row: {
-          city: string | null
-          created_at: string
-          email: string | null
-          id: string
-          invited_at: string | null
-          message: string | null
-          name: string
-          notes: string | null
-          state: string | null
-          status: string
-          updated_at: string
-          whatsapp: string | null
-        }
-        Insert: {
-          city?: string | null
-          created_at?: string
-          email?: string | null
-          id?: string
-          invited_at?: string | null
-          message?: string | null
-          name: string
-          notes?: string | null
-          state?: string | null
-          status?: string
-          updated_at?: string
-          whatsapp?: string | null
-        }
-        Update: {
-          city?: string | null
-          created_at?: string
-          email?: string | null
-          id?: string
-          invited_at?: string | null
-          message?: string | null
-          name?: string
-          notes?: string | null
-          state?: string | null
-          status?: string
-          updated_at?: string
-          whatsapp?: string | null
-        }
-        Relationships: []
-      }
       cotacoes: {
         Row: {
           coffee_type: string
           corretora_id: string
           created_at: string
+          currency: string
           id: string
+          is_manual: boolean
           payload: Json
           price: number
           process: Database["public"]["Enums"]["coffee_processo"] | null
+          product_id: string | null
           reference_date: string
           region: string | null
+          region_id: string | null
           source: string | null
+          source_id: string | null
           specie: Database["public"]["Enums"]["coffee_specie"] | null
+          status: string
+          unit: string
+          valid_until: string | null
         }
         Insert: {
           coffee_type: string
           corretora_id: string
           created_at?: string
+          currency?: string
           id?: string
+          is_manual?: boolean
           payload?: Json
           price: number
           process?: Database["public"]["Enums"]["coffee_processo"] | null
+          product_id?: string | null
           reference_date: string
           region?: string | null
+          region_id?: string | null
           source?: string | null
+          source_id?: string | null
           specie?: Database["public"]["Enums"]["coffee_specie"] | null
+          status?: string
+          unit?: string
+          valid_until?: string | null
         }
         Update: {
           coffee_type?: string
           corretora_id?: string
           created_at?: string
+          currency?: string
           id?: string
+          is_manual?: boolean
           payload?: Json
           price?: number
           process?: Database["public"]["Enums"]["coffee_processo"] | null
+          product_id?: string | null
           reference_date?: string
           region?: string | null
+          region_id?: string | null
           source?: string | null
+          source_id?: string | null
           specie?: Database["public"]["Enums"]["coffee_specie"] | null
+          status?: string
+          unit?: string
+          valid_until?: string | null
         }
         Relationships: [
           {
@@ -580,7 +680,35 @@ export type Database = {
             columns: ["corretora_id"]
             isOneToOne: false
             referencedRelation: "corretoras"
-            referencedColumnName: "id"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotacoes_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotacoes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "coffee_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotacoes_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "pracas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotacoes_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "quote_sources"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -722,6 +850,42 @@ export type Database = {
           },
         ]
       }
+      lead_distribution_rules: {
+        Row: {
+          action: string
+          active: boolean
+          conditions: Json
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          priority: number
+          updated_at: string
+        }
+        Insert: {
+          action?: string
+          active?: boolean
+          conditions?: Json
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          priority?: number
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          active?: boolean
+          conditions?: Json
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          priority?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lead_events: {
         Row: {
           actor_id: string | null
@@ -781,6 +945,59 @@ export type Database = {
           },
         ]
       }
+      lead_waitlist: {
+        Row: {
+          contact: string | null
+          created_at: string
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          notes: string | null
+          payload: Json
+          region: string | null
+          source: string
+          specie: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          contact?: string | null
+          created_at?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          notes?: string | null
+          payload?: Json
+          region?: string | null
+          source: string
+          specie?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          contact?: string | null
+          created_at?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          notes?: string | null
+          payload?: Json
+          region?: string | null
+          source?: string
+          specie?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_waitlist_handled_by_fkey"
+            columns: ["handled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           bag_count: number | null
@@ -790,6 +1007,7 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          origem: Database["public"]["Enums"]["lead_origem"] | null
           produtor_id: string | null
           proposed_price: number | null
           status: Database["public"]["Enums"]["lead_status"]
@@ -803,6 +1021,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          origem?: Database["public"]["Enums"]["lead_origem"] | null
           produtor_id?: string | null
           proposed_price?: number | null
           status?: Database["public"]["Enums"]["lead_status"]
@@ -816,6 +1035,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          origem?: Database["public"]["Enums"]["lead_origem"] | null
           produtor_id?: string | null
           proposed_price?: number | null
           status?: Database["public"]["Enums"]["lead_status"]
@@ -1011,6 +1231,185 @@ export type Database = {
         }
         Relationships: []
       }
+      message_dispatches: {
+        Row: {
+          attempts: number
+          channel: string
+          corretora_id: string | null
+          created_at: string
+          error: string | null
+          id: string
+          lead_id: string | null
+          payload: Json
+          profile_id: string | null
+          recipient: string
+          scheduled_at: string | null
+          sent_at: string | null
+          status: string
+          template_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          channel: string
+          corretora_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          lead_id?: string | null
+          payload?: Json
+          profile_id?: string | null
+          recipient: string
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
+          template_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          channel?: string
+          corretora_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          lead_id?: string | null
+          payload?: Json
+          profile_id?: string | null
+          recipient?: string
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_dispatches_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_dispatches_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_dispatches_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_dispatches_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "notification_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moderation_reports: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          reason: string
+          reporter_id: string | null
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          target_id: string
+          target_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason: string
+          reporter_id?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          target_id: string
+          target_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason?: string
+          reporter_id?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          target_id?: string
+          target_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_reports_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_templates: {
+        Row: {
+          active: boolean
+          body: string
+          channel: string
+          created_at: string
+          id: string
+          kind: string
+          name: string
+          subject: string | null
+          updated_at: string
+          variables: Json
+        }
+        Insert: {
+          active?: boolean
+          body: string
+          channel: string
+          created_at?: string
+          id?: string
+          kind: string
+          name: string
+          subject?: string | null
+          updated_at?: string
+          variables?: Json
+        }
+        Update: {
+          active?: boolean
+          body?: string
+          channel?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string
+          subject?: string | null
+          updated_at?: string
+          variables?: Json
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -1048,6 +1447,94 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ofertas_comprador: {
+        Row: {
+          bag_count: number | null
+          comprador_id: string
+          corretora_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          lote_id: string | null
+          mensagem: string | null
+          preco_saca: number
+          status: Database["public"]["Enums"]["oferta_status"]
+          updated_at: string
+          validade_ate: string | null
+        }
+        Insert: {
+          bag_count?: number | null
+          comprador_id: string
+          corretora_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lote_id?: string | null
+          mensagem?: string | null
+          preco_saca: number
+          status?: Database["public"]["Enums"]["oferta_status"]
+          updated_at?: string
+          validade_ate?: string | null
+        }
+        Update: {
+          bag_count?: number | null
+          comprador_id?: string
+          corretora_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lote_id?: string | null
+          mensagem?: string | null
+          preco_saca?: number
+          status?: Database["public"]["Enums"]["oferta_status"]
+          updated_at?: string
+          validade_ate?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ofertas_comprador_comprador_id_fkey"
+            columns: ["comprador_id"]
+            isOneToOne: false
+            referencedRelation: "compradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ofertas_comprador_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ofertas_comprador_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ofertas_comprador_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ofertas_comprador_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ofertas_comprador_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "lotes_publicos"
             referencedColumns: ["id"]
           },
         ]
@@ -1090,6 +1577,144 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      platform_settings: {
+        Row: {
+          description: string | null
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pracas: {
+        Row: {
+          active: boolean
+          city: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          region_group: string | null
+          slug: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          city?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          region_group?: string | null
+          slug: string
+          state: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          city?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          region_group?: string | null
+          slug?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      price_alerts: {
+        Row: {
+          active: boolean
+          channel: string
+          condition: string
+          created_at: string
+          id: string
+          last_triggered_at: string | null
+          notes: string | null
+          product_id: string
+          produtor_id: string
+          region_id: string | null
+          target_price: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          channel?: string
+          condition: string
+          created_at?: string
+          id?: string
+          last_triggered_at?: string | null
+          notes?: string | null
+          product_id: string
+          produtor_id: string
+          region_id?: string | null
+          target_price: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          channel?: string
+          condition?: string
+          created_at?: string
+          id?: string
+          last_triggered_at?: string | null
+          notes?: string | null
+          product_id?: string
+          produtor_id?: string
+          region_id?: string | null
+          target_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "coffee_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_alerts_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_alerts_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "pracas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       produtor_contatos: {
         Row: {
@@ -1428,6 +2053,148 @@ export type Database = {
           },
         ]
       }
+      propostas: {
+        Row: {
+          bag_count: number | null
+          corretora_id: string
+          created_at: string
+          created_by: string | null
+          enviada_em: string | null
+          id: string
+          lead_id: string | null
+          lote_id: string | null
+          mensagem: string | null
+          preco_saca: number
+          respondida_em: string | null
+          status: Database["public"]["Enums"]["proposta_status"]
+          updated_at: string
+          validade_ate: string | null
+        }
+        Insert: {
+          bag_count?: number | null
+          corretora_id: string
+          created_at?: string
+          created_by?: string | null
+          enviada_em?: string | null
+          id?: string
+          lead_id?: string | null
+          lote_id?: string | null
+          mensagem?: string | null
+          preco_saca: number
+          respondida_em?: string | null
+          status?: Database["public"]["Enums"]["proposta_status"]
+          updated_at?: string
+          validade_ate?: string | null
+        }
+        Update: {
+          bag_count?: number | null
+          corretora_id?: string
+          created_at?: string
+          created_by?: string | null
+          enviada_em?: string | null
+          id?: string
+          lead_id?: string | null
+          lote_id?: string | null
+          mensagem?: string | null
+          preco_saca?: number
+          respondida_em?: string | null
+          status?: Database["public"]["Enums"]["proposta_status"]
+          updated_at?: string
+          validade_ate?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "propostas_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "propostas_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "propostas_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "propostas_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "propostas_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "propostas_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "lotes_publicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_sources: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          last_error_at: string | null
+          last_error_message: string | null
+          last_success_at: string | null
+          name: string
+          notes: string | null
+          provider: string | null
+          slug: string
+          type: string
+          update_frequency: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          last_error_at?: string | null
+          last_error_message?: string | null
+          last_success_at?: string | null
+          name: string
+          notes?: string | null
+          provider?: string | null
+          slug: string
+          type: string
+          update_frequency?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          last_error_at?: string | null
+          last_error_message?: string | null
+          last_success_at?: string | null
+          name?: string
+          notes?: string | null
+          provider?: string | null
+          slug?: string
+          type?: string
+          update_frequency?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rate_limits: {
         Row: {
           hits: number
@@ -1512,6 +2279,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_events: {
+        Row: {
+          attempts: number
+          created_at: string
+          error: string | null
+          id: string
+          kind: string
+          payload: Json
+          processed_at: string | null
+          scheduled_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          kind: string
+          payload?: Json
+          processed_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          kind?: string
+          payload?: Json
+          processed_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+        }
+        Relationships: []
       }
       whatsapp_leads: {
         Row: {
@@ -1633,11 +2436,125 @@ export type Database = {
         }
         Relationships: []
       }
+      lotes_publicos: {
+        Row: {
+          altitude_m: number | null
+          certificacoes: Json | null
+          classificacao_bebida: string | null
+          classificacao_bica_corrida: boolean | null
+          classificacao_fora_de_tipo: boolean | null
+          classificacao_peneira: string | null
+          classificacao_pontuacao: number | null
+          classificacao_tipo: string | null
+          codigo: string | null
+          corretora_city: string | null
+          corretora_descricao: string | null
+          corretora_id: string | null
+          corretora_logo_url: string | null
+          corretora_name: string | null
+          corretora_slug: string | null
+          corretora_state: string | null
+          corretora_verified: boolean | null
+          created_at: string | null
+          descricao: string | null
+          foto_capa_url: string | null
+          id: string | null
+          indicacao_geografica: string | null
+          peso_kg: number | null
+          peso_sacas: number | null
+          processo: Database["public"]["Enums"]["coffee_processo"] | null
+          produtor_city: string | null
+          produtor_id: string | null
+          produtor_state: string | null
+          safra: string | null
+          specie: Database["public"]["Enums"]["coffee_specie"] | null
+          status: Database["public"]["Enums"]["lote_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lotes_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lotes_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lotes_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      unified_quotes: {
+        Row: {
+          corretora_id: string | null
+          corretora_name: string | null
+          currency: string | null
+          id: string | null
+          id_raw_uuid: string | null
+          price: number | null
+          product_id: string | null
+          product_label: string | null
+          quote_date: string | null
+          region_id: string | null
+          region_label: string | null
+          source_slug: string | null
+          source_type: string | null
+          source_url: string | null
+          unit: string | null
+          updated_at: string | null
+          variation_pct: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      anonimizar_titular: { Args: { p_user_id: string }; Returns: undefined }
+      approve_corretora: {
+        Args: {
+          p_city: string
+          p_cnpj: string
+          p_name: string
+          p_profile_id: string
+          p_slug: string
+          p_state: string
+        }
+        Returns: {
+          corretora_id: string
+          error_msg: string
+          success: boolean
+        }[]
+      }
       check_and_increment_rate: {
         Args: { p_key: string; p_limit: number; p_window_seconds: number }
         Returns: Json
+      }
+      check_price_targets: { Args: never; Returns: number }
+      check_queue_failures: { Args: never; Returns: number }
+      cleanup_old_notifications: { Args: never; Returns: number }
+      consume_corretora_invite: {
+        Args: { consuming_user_id: string; invite_token: string }
+        Returns: {
+          corretora_id: string
+          error_msg: string
+          success: boolean
+        }[]
+      }
+      contrapropor_lead: {
+        Args: { p_lead_id: string; p_mensagem?: string; p_preco_saca: number }
+        Returns: {
+          error_msg: string
+          success: boolean
+        }[]
       }
       current_corretora: { Args: never; Returns: string }
       current_role: {
@@ -1648,46 +2565,44 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"][]
       }
-      founder_program_status: { Args: never; Returns: Json }
-      get_laudo_publico: { Args: { p_id: string }; Returns: Json }
-      log_audit: {
+      expire_subscriptions: { Args: never; Returns: number }
+      expire_trials: { Args: never; Returns: number }
+      fn_log_system_event: {
         Args: {
-          p_action: string
-          p_entity: string
-          p_entity_id: string
+          p_error?: string
+          p_kind: string
           p_payload?: Json
+          p_status: string
         }
-        Returns: undefined
+        Returns: string
       }
-      approve_corretora: {
-        Args: {
-          p_city: string
-          p_cnpj: string
-          p_name: string
-          p_profile_id: string
-          p_slug: string
-          p_state: string
-        }
-        Returns: { corretora_id: string; error_msg: string; success: boolean }[]
-      }
-      mark_subscription_paid: { Args: { p_id: string }; Returns: string }
-      contrapropor_lead: {
-        Args: { p_lead_id: string; p_mensagem?: string; p_preco_saca: number }
-        Returns: { error_msg: string; success: boolean }[]
-      }
-      list_corretora_operadores: {
-        Args: never
+      founder_program_status: { Args: never; Returns: Json }
+      gerar_convite_corretora_self: {
+        Args: { p_email?: string }
         Returns: {
-          corretora_role:
-            | Database["public"]["Enums"]["corretora_member_role"]
-            | null
-          full_name: string
-          id: string
-          is_self: boolean
-          phone: string
-          status: Database["public"]["Enums"]["profile_status"]
+          error_msg: string
+          token: string
         }[]
       }
+      get_contrato_publico: { Args: { p_id: string }; Returns: Json }
+      get_corretora_invite: {
+        Args: { invite_token: string }
+        Returns: {
+          corretora_id: string
+          corretora_name: string
+          corretora_slug: string
+          email: string
+          expires_at: string
+          invalid_reason: string
+          is_valid: boolean
+          token: string
+        }[]
+      }
+      get_laudo_publico: { Args: { p_id: string }; Returns: Json }
+      get_quotes_mode: { Args: never; Returns: string }
+      is_admin: { Args: never; Returns: boolean }
+      is_app_admin: { Args: never; Returns: boolean }
+      is_corretora: { Args: never; Returns: boolean }
       is_corretora_dono: { Args: never; Returns: boolean }
       list_convites_corretora_self: {
         Args: never
@@ -1698,22 +2613,86 @@ export type Database = {
           token: string
         }[]
       }
-      gerar_convite_corretora_self: {
-        Args: { p_email?: string }
-        Returns: { error_msg: string; token: string }[]
+      list_corretora_operadores: {
+        Args: never
+        Returns: {
+          corretora_role: Database["public"]["Enums"]["corretora_member_role"]
+          full_name: string
+          id: string
+          is_self: boolean
+          phone: string
+          status: Database["public"]["Enums"]["profile_status"]
+        }[]
+      }
+      list_pending_corretora_signups: {
+        Args: never
+        Returns: {
+          corretora_city: string
+          corretora_cnpj: string
+          corretora_name: string
+          corretora_uf: string
+          corretora_whatsapp: string
+          email: string
+          full_name: string
+          profile_id: string
+          signup_at: string
+        }[]
+      }
+      log_audit: {
+        Args: {
+          p_action: string
+          p_entity: string
+          p_entity_id: string
+          p_payload?: Json
+        }
+        Returns: undefined
+      }
+      mark_stale_cotacoes: { Args: never; Returns: number }
+      mark_subscription_paid: { Args: { p_id: string }; Returns: string }
+      mask_doc: { Args: { p_doc: string }; Returns: string }
+      mask_nome: { Args: { p_nome: string }; Returns: string }
+      nudge_delivery_late: { Args: never; Returns: number }
+      nudge_stale_leads: { Args: never; Returns: number }
+      nudge_trial_ending: { Args: never; Returns: number }
+      pick_eligible_corretora: {
+        Args: { p_region?: string; p_specie?: string }
+        Returns: string
+      }
+      process_pending_dispatches: { Args: never; Returns: number }
+      remover_operador_corretora: {
+        Args: { p_target: string }
+        Returns: {
+          error_msg: string
+          success: boolean
+        }[]
+      }
+      reprocess_system_event: {
+        Args: { p_event_id: string }
+        Returns: undefined
       }
       revogar_convite_corretora_self: {
         Args: { p_token: string }
         Returns: undefined
       }
-      remover_operador_corretora: {
-        Args: { p_target: string }
-        Returns: { error_msg: string; success: boolean }[]
+      subscription_effective_status: {
+        Args: { sub: Database["public"]["Tables"]["subscriptions"]["Row"] }
+        Returns: Database["public"]["Enums"]["subscription_status"]
       }
-      get_contrato_publico: { Args: { p_id: string }; Returns: Json }
-      anonimizar_titular: { Args: { p_user_id: string }; Returns: undefined }
-      get_quotes_mode: { Args: never; Returns: string }
-      check_queue_failures: { Args: never; Returns: number }
+      v1_criar_oferta_produtor: {
+        Args: {
+          p_bag_count?: number
+          p_corretora_id: string
+          p_observacoes?: string
+          p_preco_alvo?: number
+          p_processo?: string
+          p_specie: string
+        }
+        Returns: {
+          error_msg: string
+          lead_id: string
+          success: boolean
+        }[]
+      }
       v1_listar_propostas_produtor: {
         Args: { p_only_pending?: boolean }
         Returns: {
@@ -1729,45 +2708,20 @@ export type Database = {
           mensagem: string
           preco_saca: number
           respondida_em: string
-          status: "rascunho" | "enviada" | "aceita" | "rejeitada" | "expirada"
+          status: Database["public"]["Enums"]["proposta_status"]
           validade_ate: string
         }[]
       }
       v1_responder_proposta: {
         Args: { p_proposta_id: string; p_resposta: string }
-        Returns: { error_msg: string; success: boolean }[]
-      }
-      v1_criar_oferta_produtor: {
-        Args: {
-          p_bag_count?: number
-          p_corretora_id: string
-          p_observacoes?: string
-          p_preco_alvo?: number
-          p_processo?: string
-          p_specie: string
-        }
-        Returns: { error_msg: string; lead_id: string; success: boolean }[]
-      }
-      is_admin: { Args: never; Returns: boolean }
-      is_app_admin: { Args: never; Returns: boolean }
-      is_corretora: { Args: never; Returns: boolean }
-      list_pending_corretora_signups: {
-        Args: never
         Returns: {
-          corretora_city: string
-          corretora_cnpj: string
-          corretora_name: string
-          corretora_uf: string
-          corretora_whatsapp: string
-          email: string
-          full_name: string
-          profile_id: string
-          signup_at: string
+          error_msg: string
+          success: boolean
         }[]
       }
-      subscription_effective_status: {
-        Args: { sub: Database["public"]["Tables"]["subscriptions"]["Row"] }
-        Returns: Database["public"]["Enums"]["subscription_status"]
+      validate_whatsapp_lead: {
+        Args: { p_lead_id: string }
+        Returns: undefined
       }
     }
     Enums: {
@@ -1780,19 +2734,20 @@ export type Database = {
         | "despolpado"
         | "fermentacao_induzida"
       coffee_specie: "arabica" | "conillon"
-      corretora_member_role: "dono" | "operador"
       contrato_status:
         | "rascunho"
         | "em_analise"
         | "ativo"
         | "finalizado"
         | "cancelado"
+      corretora_member_role: "dono" | "operador"
       entrega_status:
         | "programada"
         | "em_transito"
         | "recebida"
         | "conferida"
         | "cancelada"
+      lead_origem: "whatsapp" | "formulario" | "vitrine" | "manual"
       lead_status:
         | "novo"
         | "em_negociacao"
@@ -1820,10 +2775,18 @@ export type Database = {
         | "sistema"
         | "entrega"
         | "pagamento"
+        | "price_alert"
+      oferta_status: "rascunho" | "enviada" | "aceita" | "recusada" | "expirada"
       pagamento_status: "pendente" | "pago" | "vencido" | "cancelado"
       produtor_specie: "arabica" | "conilon" | "ambos"
       produtor_status: "sombra" | "ativo" | "pendente" | "bloqueado"
       profile_status: "ativo" | "pendente" | "bloqueado"
+      proposta_status:
+        | "rascunho"
+        | "enviada"
+        | "aceita"
+        | "rejeitada"
+        | "expirada"
       regiao_cafeeira:
         | "zona_da_mata"
         | "sul_de_minas"
@@ -1853,456 +2816,6 @@ export type Database = {
         | "perfil_corretora"
         | "home_publica"
         | "outro"
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-  storage: {
-    Tables: {
-      buckets: {
-        Row: {
-          allowed_mime_types: string[] | null
-          avif_autodetection: boolean | null
-          created_at: string | null
-          file_size_limit: number | null
-          id: string
-          name: string
-          owner: string | null
-          owner_id: string | null
-          public: boolean | null
-          type: Database["storage"]["Enums"]["buckettype"]
-          updated_at: string | null
-        }
-        Insert: {
-          allowed_mime_types?: string[] | null
-          avif_autodetection?: boolean | null
-          created_at?: string | null
-          file_size_limit?: number | null
-          id: string
-          name: string
-          owner?: string | null
-          owner_id?: string | null
-          public?: boolean | null
-          type?: Database["storage"]["Enums"]["buckettype"]
-          updated_at?: string | null
-        }
-        Update: {
-          allowed_mime_types?: string[] | null
-          avif_autodetection?: boolean | null
-          created_at?: string | null
-          file_size_limit?: number | null
-          id?: string
-          name?: string
-          owner?: string | null
-          owner_id?: string | null
-          public?: boolean | null
-          type?: Database["storage"]["Enums"]["buckettype"]
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      buckets_analytics: {
-        Row: {
-          created_at: string
-          deleted_at: string | null
-          format: string
-          id: string
-          name: string
-          type: Database["storage"]["Enums"]["buckettype"]
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          deleted_at?: string | null
-          format?: string
-          id?: string
-          name: string
-          type?: Database["storage"]["Enums"]["buckettype"]
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          deleted_at?: string | null
-          format?: string
-          id?: string
-          name?: string
-          type?: Database["storage"]["Enums"]["buckettype"]
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      buckets_vectors: {
-        Row: {
-          created_at: string
-          id: string
-          type: Database["storage"]["Enums"]["buckettype"]
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id: string
-          type?: Database["storage"]["Enums"]["buckettype"]
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          type?: Database["storage"]["Enums"]["buckettype"]
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      migrations: {
-        Row: {
-          executed_at: string | null
-          hash: string
-          id: number
-          name: string
-        }
-        Insert: {
-          executed_at?: string | null
-          hash: string
-          id: number
-          name: string
-        }
-        Update: {
-          executed_at?: string | null
-          hash?: string
-          id?: number
-          name?: string
-        }
-        Relationships: []
-      }
-      objects: {
-        Row: {
-          bucket_id: string | null
-          created_at: string | null
-          id: string
-          last_accessed_at: string | null
-          metadata: Json | null
-          name: string | null
-          owner: string | null
-          owner_id: string | null
-          path_tokens: string[] | null
-          updated_at: string | null
-          user_metadata: Json | null
-          version: string | null
-        }
-        Insert: {
-          bucket_id?: string | null
-          created_at?: string | null
-          id?: string
-          last_accessed_at?: string | null
-          metadata?: Json | null
-          name?: string | null
-          owner?: string | null
-          owner_id?: string | null
-          path_tokens?: string[] | null
-          updated_at?: string | null
-          user_metadata?: Json | null
-          version?: string | null
-        }
-        Update: {
-          bucket_id?: string | null
-          created_at?: string | null
-          id?: string
-          last_accessed_at?: string | null
-          metadata?: Json | null
-          name?: string | null
-          owner?: string | null
-          owner_id?: string | null
-          path_tokens?: string[] | null
-          updated_at?: string | null
-          user_metadata?: Json | null
-          version?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "objects_bucketId_fkey"
-            columns: ["bucket_id"]
-            isOneToOne: false
-            referencedRelation: "buckets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      s3_multipart_uploads: {
-        Row: {
-          bucket_id: string
-          created_at: string
-          id: string
-          in_progress_size: number
-          key: string
-          metadata: Json | null
-          owner_id: string | null
-          upload_signature: string
-          user_metadata: Json | null
-          version: string
-        }
-        Insert: {
-          bucket_id: string
-          created_at?: string
-          id: string
-          in_progress_size?: number
-          key: string
-          metadata?: Json | null
-          owner_id?: string | null
-          upload_signature: string
-          user_metadata?: Json | null
-          version: string
-        }
-        Update: {
-          bucket_id?: string
-          created_at?: string
-          id?: string
-          in_progress_size?: number
-          key?: string
-          metadata?: Json | null
-          owner_id?: string | null
-          upload_signature?: string
-          user_metadata?: Json | null
-          version?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "s3_multipart_uploads_bucket_id_fkey"
-            columns: ["bucket_id"]
-            isOneToOne: false
-            referencedRelation: "buckets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      s3_multipart_uploads_parts: {
-        Row: {
-          bucket_id: string
-          created_at: string
-          etag: string
-          id: string
-          key: string
-          owner_id: string | null
-          part_number: number
-          size: number
-          upload_id: string
-          version: string
-        }
-        Insert: {
-          bucket_id: string
-          created_at?: string
-          etag: string
-          id?: string
-          key: string
-          owner_id?: string | null
-          part_number: number
-          size?: number
-          upload_id: string
-          version: string
-        }
-        Update: {
-          bucket_id?: string
-          created_at?: string
-          etag?: string
-          id?: string
-          key?: string
-          owner_id?: string | null
-          part_number?: number
-          size?: number
-          upload_id?: string
-          version?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "s3_multipart_uploads_parts_bucket_id_fkey"
-            columns: ["bucket_id"]
-            isOneToOne: false
-            referencedRelation: "buckets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "s3_multipart_uploads_parts_upload_id_fkey"
-            columns: ["upload_id"]
-            isOneToOne: false
-            referencedRelation: "s3_multipart_uploads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      vector_indexes: {
-        Row: {
-          bucket_id: string
-          created_at: string
-          data_type: string
-          dimension: number
-          distance_metric: string
-          id: string
-          metadata_configuration: Json | null
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          bucket_id: string
-          created_at?: string
-          data_type: string
-          dimension: number
-          distance_metric: string
-          id?: string
-          metadata_configuration?: Json | null
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          bucket_id?: string
-          created_at?: string
-          data_type?: string
-          dimension?: number
-          distance_metric?: string
-          id?: string
-          metadata_configuration?: Json | null
-          name?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "vector_indexes_bucket_id_fkey"
-            columns: ["bucket_id"]
-            isOneToOne: false
-            referencedRelation: "buckets_vectors"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      allow_any_operation: {
-        Args: { expected_operations: string[] }
-        Returns: boolean
-      }
-      allow_only_operation: {
-        Args: { expected_operation: string }
-        Returns: boolean
-      }
-      can_insert_object: {
-        Args: { bucketid: string; metadata: Json; name: string; owner: string }
-        Returns: undefined
-      }
-      extension: { Args: { name: string }; Returns: string }
-      filename: { Args: { name: string }; Returns: string }
-      foldername: { Args: { name: string }; Returns: string[] }
-      get_common_prefix: {
-        Args: { p_delimiter: string; p_key: string; p_prefix: string }
-        Returns: string
-      }
-      get_size_by_bucket: {
-        Args: never
-        Returns: {
-          bucket_id: string
-          size: number
-        }[]
-      }
-      list_multipart_uploads_with_delimiter: {
-        Args: {
-          bucket_id: string
-          delimiter_param: string
-          max_keys?: number
-          next_key_token?: string
-          next_upload_token?: string
-          prefix_param: string
-        }
-        Returns: {
-          created_at: string
-          id: string
-          key: string
-        }[]
-      }
-      list_objects_with_delimiter: {
-        Args: {
-          _bucket_id: string
-          delimiter_param: string
-          max_keys?: number
-          next_token?: string
-          prefix_param: string
-          sort_order?: string
-          start_after?: string
-        }
-        Returns: {
-          created_at: string
-          id: string
-          last_accessed_at: string
-          metadata: Json
-          name: string
-          updated_at: string
-        }[]
-      }
-      operation: { Args: never; Returns: string }
-      search: {
-        Args: {
-          bucketname: string
-          levels?: number
-          limits?: number
-          offsets?: number
-          prefix: string
-          search?: string
-          sortcolumn?: string
-          sortorder?: string
-        }
-        Returns: {
-          created_at: string
-          id: string
-          last_accessed_at: string
-          metadata: Json
-          name: string
-          updated_at: string
-        }[]
-      }
-      search_by_timestamp: {
-        Args: {
-          p_bucket_id: string
-          p_level: number
-          p_limit: number
-          p_prefix: string
-          p_sort_column: string
-          p_sort_column_after: string
-          p_sort_order: string
-          p_start_after: string
-        }
-        Returns: {
-          created_at: string
-          id: string
-          key: string
-          last_accessed_at: string
-          metadata: Json
-          name: string
-          updated_at: string
-        }[]
-      }
-      search_v2: {
-        Args: {
-          bucket_name: string
-          levels?: number
-          limits?: number
-          prefix: string
-          sort_column?: string
-          sort_column_after?: string
-          sort_order?: string
-          start_after?: string
-        }
-        Returns: {
-          created_at: string
-          id: string
-          key: string
-          last_accessed_at: string
-          metadata: Json
-          name: string
-          updated_at: string
-        }[]
-      }
-    }
-    Enums: {
-      buckettype: "STANDARD" | "ANALYTICS" | "VECTOR"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2428,9 +2941,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       billing_period: ["monthly", "yearly"],
@@ -2450,6 +2960,7 @@ export const Constants = {
         "finalizado",
         "cancelado",
       ],
+      corretora_member_role: ["dono", "operador"],
       entrega_status: [
         "programada",
         "em_transito",
@@ -2457,6 +2968,7 @@ export const Constants = {
         "conferida",
         "cancelada",
       ],
+      lead_origem: ["whatsapp", "formulario", "vitrine", "manual"],
       lead_status: [
         "novo",
         "em_negociacao",
@@ -2487,11 +2999,20 @@ export const Constants = {
         "sistema",
         "entrega",
         "pagamento",
+        "price_alert",
       ],
+      oferta_status: ["rascunho", "enviada", "aceita", "recusada", "expirada"],
       pagamento_status: ["pendente", "pago", "vencido", "cancelado"],
       produtor_specie: ["arabica", "conilon", "ambos"],
       produtor_status: ["sombra", "ativo", "pendente", "bloqueado"],
       profile_status: ["ativo", "pendente", "bloqueado"],
+      proposta_status: [
+        "rascunho",
+        "enviada",
+        "aceita",
+        "rejeitada",
+        "expirada",
+      ],
       regiao_cafeeira: [
         "zona_da_mata",
         "sul_de_minas",
@@ -2525,11 +3046,6 @@ export const Constants = {
         "home_publica",
         "outro",
       ],
-    },
-  },
-  storage: {
-    Enums: {
-      buckettype: ["STANDARD", "ANALYTICS", "VECTOR"],
     },
   },
 } as const

@@ -143,7 +143,8 @@ export async function createProposta(formData: FormData) {
     corretora_id: profile.corretora_id,
     lead_id: leadId,
     lote_id: loteId,
-    preco_saca,
+    // validado acima: preco_saca == null vira erro e redireciona
+    preco_saca: preco_saca!,
     bag_count,
     mensagem,
     validade_ate,

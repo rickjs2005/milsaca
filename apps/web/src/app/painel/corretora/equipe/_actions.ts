@@ -31,7 +31,7 @@ export async function gerarConviteEquipe(formData: FormData) {
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("gerar_convite_corretora_self", {
-    p_email: email,
+    p_email: email ?? undefined,
   });
 
   if (error) {

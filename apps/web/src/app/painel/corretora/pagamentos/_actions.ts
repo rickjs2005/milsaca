@@ -73,7 +73,8 @@ export async function createPagamento(formData: FormData) {
   const { data: contrato } = await supabase
     .from("contratos")
     .select("id, produtor_id")
-    .eq("id", contratoParsed.data)
+    // validado acima (redirect on !success)
+    .eq("id", contratoParsed.data!)
     .eq("corretora_id", profile.corretora_id)
     .maybeSingle<{ id: string; produtor_id: string }>();
   if (!contrato) {

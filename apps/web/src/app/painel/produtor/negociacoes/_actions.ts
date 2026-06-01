@@ -33,7 +33,7 @@ export async function contraproporNegociacao(formData: FormData) {
   const { data, error } = await supabase.rpc("contrapropor_lead", {
     p_lead_id: leadId,
     p_preco_saca: preco,
-    p_mensagem: mensagem,
+    p_mensagem: mensagem ?? undefined,
   });
   const row = Array.isArray(data) ? data[0] : data;
 

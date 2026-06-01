@@ -7,13 +7,14 @@ import { createClient } from "@milsaca/db/web/server";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { getReqLogger } from "@/lib/req-logger";
 import { safeError } from "@/lib/logger";
+import type { Json } from "@milsaca/types/database";
 
 const VALID_ACTIONS = ["match", "skip", "fallback_support"] as const;
 type RuleAction = (typeof VALID_ACTIONS)[number];
 
 function parseConditions(raw: string | null): {
   ok: boolean;
-  value: object | null;
+  value: Json | null;
   error?: string;
 } {
   const s = (raw ?? "").trim();
@@ -23,7 +24,7 @@ function parseConditions(raw: string | null): {
     if (typeof v !== "object" || Array.isArray(v) || v === null) {
       return { ok: false, value: null, error: "Conditions precisa ser um objeto JSON {}." };
     }
-    return { ok: true, value: v as object };
+    return { ok: true, value: v as Json };
   } catch {
     return { ok: false, value: null, error: "JSON inválido em conditions." };
   }

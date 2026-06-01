@@ -15,6 +15,7 @@ import {
 } from "../_lib/schemas";
 import { requireActiveSubscription } from "../_lib/corretora";
 import type { RegimeTributario } from "./_lib/queries";
+import type { Json } from "@milsaca/types/database";
 
 const REGIMES: RegimeTributario[] = [
   "simples_nacional",
@@ -35,7 +36,7 @@ function regime(v: FormDataEntryValue | null): RegimeTributario | null {
  * Monta o "Perfil de compra" (matching) a partir do form. Guardado no JSONB
  * `compradores.preferencias` — sem schema novo. Ver `comprador-meta.PerfilCompra`.
  */
-function buildPreferencias(formData: FormData): Record<string, unknown> {
+function buildPreferencias(formData: FormData): Json {
   const str = (k: string) => {
     const t = String(formData.get(k) ?? "").trim();
     return t || null;

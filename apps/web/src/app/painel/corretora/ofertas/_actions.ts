@@ -101,7 +101,8 @@ export async function createOferta(formData: FormData) {
 
   const { error } = await supabase.from("ofertas_comprador").insert({
     corretora_id: profile.corretora_id,
-    comprador_id: compradorParsed.data,
+    // validado acima (redirect on !success), logo data é definido
+    comprador_id: compradorParsed.data!,
     lote_id: loteId,
     preco_saca: preco as number,
     bag_count: bagCount,

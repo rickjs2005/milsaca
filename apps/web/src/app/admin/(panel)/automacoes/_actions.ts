@@ -7,12 +7,15 @@ import { createClient } from "@milsaca/db/web/server";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
+import type { Database } from "@milsaca/types";
+
+type RpcFn = keyof Database["public"]["Functions"];
 
 /**
  * Maps job kind → SQL function name. Adicione aqui ao criar novo job.
  * Apenas jobs com função SQL plugada aparecem com botão "Rodar agora".
  */
-const RUNNABLE: Record<string, string> = {
+const RUNNABLE: Record<string, RpcFn> = {
   "cron.expire-trials.run": "expire_trials",
   "cron.expire-subscriptions.run": "expire_subscriptions",
   "cron.nudge-trial-ending.run": "nudge_trial_ending",

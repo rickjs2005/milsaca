@@ -25,7 +25,7 @@ export async function searchAdmin(q: string): Promise<CommandResult[]> {
   const supabase = await createClient();
   const like = `%${term}%`;
 
-  const [{ data: corretoras }, { data: produtores }] = await Promise.all([
+  const [{ data: corretoras }, { data: produtoresRaw }] = await Promise.all([
     supabase
       .from("corretoras")
       .select("id, name, slug, city, state")
@@ -38,6 +38,12 @@ export async function searchAdmin(q: string): Promise<CommandResult[]> {
       .contains("roles", ["produtor"])
       .limit(6),
   ]);
+
+  // `profiles` não tem coluna `email` nos tipos gerados; o select acima usa
+  // colunas adicionais resolvidas em runtime, então tipamos o resultado à mão.
+  const produtores = produtoresRaw as unknown as
+    | { id: string; full_name: string | null; email: string | null }[]
+    | null;
 
   const results: CommandResult[] = [];
 

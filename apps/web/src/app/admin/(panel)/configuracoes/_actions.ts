@@ -7,6 +7,7 @@ import { createClient } from "@milsaca/db/web/server";
 import { friendlyPostgresError } from "@/app/admin/(panel)/_lib/errors";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
+import type { Json } from "@milsaca/types/database";
 import {
   SETTING_SECTIONS,
   SETTING_TYPES,
@@ -24,7 +25,7 @@ export async function updateSettings(formData: FormData) {
   const user = await requireAppAdmin();
 
   const allKeys = SETTING_SECTIONS.flatMap((s) => s.keys);
-  const updates: { key: SettingKey; value: unknown }[] = [];
+  const updates: { key: SettingKey; value: Json }[] = [];
 
   for (const key of allKeys) {
     const type = SETTING_TYPES[key];

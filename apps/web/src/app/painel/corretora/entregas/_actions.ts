@@ -11,6 +11,9 @@ import { getReqLogger } from "@/lib/req-logger";
 import { notify } from "@/lib/notify";
 import { requireActiveSubscription } from "../_lib/corretora";
 import type { EntregaStatus } from "./_lib/queries";
+import type { Database } from "@milsaca/types";
+
+type EntregaInsert = Database["public"]["Tables"]["entregas"]["Insert"];
 
 const ENTREGA_STATUS_LABEL: Record<EntregaStatus, string> = {
   programada: "programada",
@@ -82,7 +85,11 @@ async function insertEntregaWithSequence(
 
     const { data: novo, error } = await supabase
       .from("entregas")
-      .insert({ ...base, contrato_id: contratoId, sequencia: nextSeq })
+      .insert({
+        ...base,
+        contrato_id: contratoId,
+        sequencia: nextSeq,
+      } as EntregaInsert)
       .select("id")
       .single();
 
