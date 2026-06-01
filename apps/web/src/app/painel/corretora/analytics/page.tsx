@@ -1,6 +1,6 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  BarChart3,
   Building2,
   CheckCircle2,
   Coffee,
@@ -20,20 +20,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { KpiCard } from "@/components/kpi-card";
+import { ResponsiveTable } from "@/components/responsive-table";
 import { getProfile } from "@/lib/auth";
 import { getCorretoraSubscriptionInfo } from "../_lib/corretora";
 import { isProOrAbove } from "../_lib/plan-gate";
 import { LockedHint } from "../_components/locked-hint";
-import {
-  loadAnalyticsExtras,
-  loadAnalyticsKpis,
-  loadComissaoAcumulada,
-  loadFunilLeads,
-  loadLeadsPorMes,
-  loadMixCafe,
-  loadOrigemLeads,
-  loadTopCompradores,
-} from "./_lib/queries";
+import { loadAnalytics, type TopComprador } from "./_lib/queries";
+import { parsePeriod } from "./_lib/period";
+import { PeriodSelector } from "./_components/period-selector";
 import {
   ComissaoAcumuladaChart,
   FunilLeadsChart,
@@ -48,298 +42,319 @@ const BRL = new Intl.NumberFormat("pt-BR", {
   currency: "BRL",
   maximumFractionDigits: 0,
 });
-
 const NUM = new Intl.NumberFormat("pt-BR");
 
-export default async function AnalyticsPage() {
+const LEADS = "/painel/corretora/leads";
+const CONTRATOS = "/painel/corretora/contratos";
+
+type SearchParams = Promise<{ periodo?: string }>;
+
+export default async function AnalyticsPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const profile = await getProfile();
   if (!profile?.corretora_id) {
     redirect("/painel/escolher?error=Sem%20corretora%20vinculada");
   }
-
   const corretoraId = profile.corretora_id;
-  const [
-    kpis,
-    extras,
-    leadsMes,
-    funil,
-    comissaoMes,
-    mix,
-    topCompradores,
-    origem,
-    subscription,
-  ] = await Promise.all([
-    loadAnalyticsKpis(corretoraId),
-    loadAnalyticsExtras(corretoraId),
-    loadLeadsPorMes(corretoraId),
-    loadFunilLeads(corretoraId),
-    loadComissaoAcumulada(corretoraId),
-    loadMixCafe(corretoraId),
-    loadTopCompradores(corretoraId, 5),
-    loadOrigemLeads(corretoraId),
+  const period = parsePeriod((await searchParams).periodo);
+  const nowMs = Date.now();
+
+  const [data, subscription] = await Promise.all([
+    loadAnalytics(corretoraId, period, nowMs),
     getCorretoraSubscriptionInfo(corretoraId),
   ]);
-
   const isPro = isProOrAbove(subscription);
-
-  const ehVazio =
-    funil.every((f) => f.count === 0) &&
-    leadsMes.every((m) => m.valor === 0) &&
-    comissaoMes.every((m) => m.valor === 0);
+  const { flow, snapshot } = data;
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
-          <BarChart3 className="h-7 w-7" />
-          Analytics
-        </h1>
-        <p className="mt-1 text-sm text-milsaca-verde-claro">
-          Como a operação está convertendo — leads, propostas, sacas e comissão.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-h1 text-milsaca-cafezal">Analytics</h1>
+          <p className="mt-1 text-body-sm text-neutral-600">
+            Como a operação está convertendo — leads, propostas, sacas e
+            comissão. Período: <strong>{data.periodLabel}</strong>.
+          </p>
+        </div>
+        <PeriodSelector value={period} />
       </header>
 
       {!isPro ? (
         <LockedHint
           feature="analytics"
-          description="Veja taxa de conversão, mix de café, top compradores e tendências mensais. Disponível no plano Corretora Pro."
+          description="Veja taxa de conversão, mix de café, top compradores e tendências mensais. Disponível no plano Premium."
         />
       ) : null}
 
-      {ehVazio ? (
-        <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
-          <CardContent className="py-10 text-center text-sm text-milsaca-verde-claro">
+      {data.isEmpty ? (
+        <Card tone="muted" className="border-dashed">
+          <CardContent className="py-10 text-center text-body-sm text-neutral-500">
             Sem dados ainda. Cadastre leads, contratos e entregas pra começar a
             ver as métricas.
           </CardContent>
         </Card>
       ) : (
         <>
-          {/* KPIs principais (premium) */}
+          {/* KPIs de fluxo (período + delta + drill-down) */}
           <section
-            aria-label="Indicadores principais"
-            className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+            aria-label="Indicadores do período"
+            className="grid grid-cols-2 gap-4 xl:grid-cols-4"
           >
-            <KpiCard
-              label="Leads novos no mês"
-              value={NUM.format(extras.leadsNovosMes)}
-              icon={Handshake}
-              tone="premium"
-              hint="Criados a partir do dia 1"
-            />
-            <KpiCard
-              label="Convertidos no mês"
-              value={NUM.format(extras.convertidosMes)}
-              icon={CheckCircle2}
-              tone="premium"
-              hint="Fechamentos no mês corrente"
-            />
-            <KpiCard
-              label="Taxa de conversão"
-              value={`${kpis.conversaoPct.toFixed(1)}%`}
-              icon={Percent}
-              tone="premium"
-              hint="Convertidos / total de leads"
-            />
-            <KpiCard
-              label="Comissão no ano"
-              value={BRL.format(kpis.comissaoAcumuladaAno)}
-              icon={Wallet}
-              tone="premium"
-              hint="Contratos ativos + finalizados"
-            />
+            <KpiLink href={LEADS}>
+              <KpiCard
+                label="Leads novos"
+                value={NUM.format(flow.leadsNovos.value)}
+                icon={Handshake}
+                tone="premium"
+                delta={flow.leadsNovos.delta}
+              />
+            </KpiLink>
+            <KpiLink href={`${LEADS}?status=convertido`}>
+              <KpiCard
+                label="Convertidos"
+                value={NUM.format(flow.convertidos.value)}
+                icon={CheckCircle2}
+                tone="premium"
+                delta={flow.convertidos.delta}
+              />
+            </KpiLink>
+            <KpiLink href={LEADS}>
+              <KpiCard
+                label="Taxa de conversão"
+                value={`${flow.conversaoPct.value.toFixed(1)}%`}
+                icon={Percent}
+                tone="premium"
+                delta={flow.conversaoPct.delta}
+                hint="Convertidos / leads novos no período"
+              />
+            </KpiLink>
+            <KpiLink href={CONTRATOS}>
+              <KpiCard
+                label="Comissão"
+                value={BRL.format(flow.comissao.value)}
+                icon={Wallet}
+                tone="premium"
+                delta={flow.comissao.delta}
+                hint="Contratos assinados no período"
+              />
+            </KpiLink>
           </section>
 
-          {/* KPIs secundários */}
+          {/* KPIs de estado (snapshot — sem período/delta) */}
           <section
-            aria-label="Indicadores complementares"
-            className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+            aria-label="Estado atual"
+            className="grid grid-cols-2 gap-4 xl:grid-cols-4"
           >
+            <KpiLink href={CONTRATOS}>
+              <KpiCard
+                label="Sacas vendidas"
+                value={NUM.format(flow.sacasVendidas.value)}
+                icon={ShoppingBag}
+                tone="success"
+                delta={flow.sacasVendidas.delta}
+                hint="Em contratos do período"
+              />
+            </KpiLink>
             <KpiCard
               label="Sacas em negociação"
-              value={NUM.format(extras.sacasEmNegociacao)}
+              value={NUM.format(snapshot.sacasEmNegociacao)}
               icon={Package}
               tone="info"
-              hint="Em leads abertos"
+              hint="Em leads abertos agora"
             />
-            <KpiCard
-              label="Sacas vendidas no mês"
-              value={NUM.format(extras.sacasVendidasMes)}
-              icon={ShoppingBag}
-              tone="success"
-              hint="Em contratos assinados no mês"
-            />
-            <KpiCard
-              label="Produtores ativos"
-              value={NUM.format(extras.produtoresAtivos)}
-              icon={Users}
-              hint="Com leads, lotes ou contratos"
-            />
-            <KpiCard
-              label="Compradores ativos"
-              value={NUM.format(extras.compradoresAtivos)}
-              icon={Building2}
-              hint="Cadastrados como ativos"
-            />
+            <KpiLink href="/painel/corretora/produtores">
+              <KpiCard
+                label="Produtores ativos"
+                value={NUM.format(snapshot.produtoresAtivos)}
+                icon={Users}
+                hint="Com leads, lotes ou contratos"
+              />
+            </KpiLink>
+            <KpiLink href="/painel/corretora/compradores">
+              <KpiCard
+                label="Compradores ativos"
+                value={NUM.format(snapshot.compradoresAtivos)}
+                icon={Building2}
+                hint="Cadastrados como ativos"
+              />
+            </KpiLink>
           </section>
 
           {/* Charts */}
           <section className="grid gap-4 lg:grid-cols-2">
-            <ChartCard title="Leads por mês" description="últimos 6 meses">
-              <LeadsPorMesChart data={leadsMes} />
+            <ChartCard
+              title="Leads por mês"
+              description={
+                data.primeiroMesComDado
+                  ? `tendência (6m) · dados a partir de ${data.primeiroMesComDado}`
+                  : "tendência dos últimos 6 meses"
+              }
+            >
+              <LeadsPorMesChart data={data.trendLeads} />
             </ChartCard>
 
             <ChartCard
               title="Funil de leads"
-              description="distribuição por status"
+              description={`distribuição por status · ${data.periodLabel.toLowerCase()}`}
             >
-              <FunilLeadsChart data={funil} />
+              <FunilLeadsChart data={data.funil} />
             </ChartCard>
 
             <ChartCard
               title="Comissão acumulada"
-              description="últimos 12 meses"
+              description="soma acumulada nos últimos 12 meses (só sobe)"
             >
-              <ComissaoAcumuladaChart data={comissaoMes} />
+              <ComissaoAcumuladaChart data={data.trendComissao} />
             </ChartCard>
 
             <ChartCard
               title="Mix de café"
-              description="sacas em contratos ativos/finalizados"
+              description={`sacas em contratos · ${data.periodLabel.toLowerCase()}`}
             >
-              {mix.length === 0 ? (
-                <p className="py-12 text-center text-xs text-milsaca-verde-claro">
-                  Sem contratos com café atribuído ainda.
+              {data.mix.length === 0 ? (
+                <p className="py-12 text-center text-caption text-neutral-500">
+                  Sem contratos com café atribuído no período.
                 </p>
               ) : (
-                <MixCafeChart data={mix} />
+                <MixCafeChart data={data.mix} />
               )}
             </ChartCard>
           </section>
 
           {/* Origem dos leads */}
           <section className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
-              Origem dos leads
+            <h2 className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
+              Origem dos leads · {data.periodLabel.toLowerCase()}
             </h2>
-            <Card className="border-milsaca-cream-escuro">
-              <CardContent className="space-y-4 p-5">
-                {origem ? (
+            <Card>
+              <CardContent className="space-y-4 p-card">
+                {data.origem ? (
                   <>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <OrigemRow
-                        label="WhatsApp"
-                        count={origem.whatsapp}
-                        total={origem.total}
-                        tone="whatsapp"
-                      />
-                      <OrigemRow
-                        label="Formulário público"
-                        count={origem.formulario}
-                        total={origem.total}
-                        tone="sky"
-                      />
-                      <OrigemRow
-                        label="Vitrine Milsaca"
-                        count={origem.vitrine}
-                        total={origem.total}
-                        tone="dourado"
-                      />
-                      <OrigemRow
-                        label="Cadastro manual"
-                        count={origem.manual}
-                        total={origem.total}
-                        tone="slate"
-                      />
+                      <OrigemRow label="WhatsApp" count={data.origem.whatsapp} total={data.origem.total} tone="whatsapp" />
+                      <OrigemRow label="Formulário público" count={data.origem.formulario} total={data.origem.total} tone="sky" />
+                      <OrigemRow label="Vitrine Milsaca" count={data.origem.vitrine} total={data.origem.total} tone="dourado" />
+                      <OrigemRow label="Cadastro manual" count={data.origem.manual} total={data.origem.total} tone="slate" />
                     </div>
-                    {origem.semOrigem > 0 ? (
-                      <p className="flex items-start gap-2 rounded-md border border-milsaca-cream-escuro bg-milsaca-cream/50 px-3 py-2 text-[11px] text-milsaca-verde-claro">
-                        <Info className="mt-0.5 h-3 w-3 shrink-0 text-milsaca-verde-claro" />
-                        {origem.semOrigem}{" "}
-                        {origem.semOrigem === 1 ? "lead legado" : "leads legados"}{" "}
+                    {data.origem.semOrigem > 0 ? (
+                      <p className="flex items-start gap-2 rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-caption text-neutral-500">
+                        <Info className="mt-0.5 h-3 w-3 shrink-0" />
+                        {data.origem.semOrigem}{" "}
+                        {data.origem.semOrigem === 1 ? "lead legado" : "leads legados"}{" "}
                         sem origem informada (cadastrados antes do rastreio por
                         canal).
                       </p>
                     ) : null}
                   </>
                 ) : (
-                  <p className="py-4 text-center text-sm text-milsaca-verde-claro">
-                    Sem leads suficientes pra calcular a origem ainda.
+                  <p className="py-4 text-center text-body-sm text-neutral-500">
+                    Nenhum lead novo no período pra calcular a origem.
                   </p>
                 )}
               </CardContent>
             </Card>
           </section>
 
-          {/* Ticket médio + contratos ativos (linha discreta) */}
-          <section className="grid gap-4 sm:grid-cols-2">
+          {/* Ticket médio + contratos ativos */}
+          <section className="grid grid-cols-2 gap-4">
             <KpiCard
               label="Ticket médio"
-              value={BRL.format(kpis.ticketMedio)}
+              value={BRL.format(snapshot.ticketMedio)}
               hint="por contrato ativo/finalizado"
               icon={Wallet}
             />
-            <KpiCard
-              label="Contratos ativos"
-              value={NUM.format(kpis.totalContratosAtivos)}
-              hint="em execução agora"
-              icon={Handshake}
-            />
+            <KpiLink href={CONTRATOS}>
+              <KpiCard
+                label="Contratos ativos"
+                value={NUM.format(snapshot.contratosAtivos)}
+                hint="em execução agora"
+                icon={Handshake}
+              />
+            </KpiLink>
           </section>
 
           {/* Top compradores */}
           <section className="space-y-3">
-            <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
+            <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-500">
               <Coffee className="h-4 w-4" />
-              Top compradores
+              Top compradores · {data.periodLabel.toLowerCase()}
             </h2>
-            {topCompradores.length === 0 ? (
-              <Card className="border-dashed border-milsaca-cream-escuro bg-transparent">
-                <CardContent className="py-6 text-center text-sm text-milsaca-verde-claro">
-                  Nenhum contrato com comprador vinculado ainda.
+            {data.topCompradores.length === 0 ? (
+              <Card tone="muted" className="border-dashed">
+                <CardContent className="py-6 text-center text-body-sm text-neutral-500">
+                  Nenhum contrato com comprador vinculado no período.
                 </CardContent>
               </Card>
             ) : (
-              <Card className="border-milsaca-cream-escuro">
-                <CardContent className="overflow-x-auto p-0">
-                  <table className="w-full text-sm">
-                    <thead className="bg-milsaca-cream-escuro/30 text-left text-xs uppercase tracking-wider text-milsaca-verde-claro">
-                      <tr>
-                        <th className="px-5 py-3">Comprador</th>
-                        <th className="px-5 py-3">Contratos</th>
-                        <th className="px-5 py-3">Volume total</th>
-                        <th className="px-5 py-3 text-right">Comissão</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {topCompradores.map((c) => (
-                        <tr
-                          key={c.id}
-                          className="border-t border-milsaca-cream-escuro"
-                        >
-                          <td className="px-5 py-3 font-medium text-milsaca-verde">
-                            {c.name}
-                          </td>
-                          <td className="px-5 py-3 text-milsaca-verde-claro">
-                            {c.contratos}
-                          </td>
-                          <td className="px-5 py-3 text-milsaca-verde-claro">
-                            {BRL.format(c.total)}
-                          </td>
-                          <td className="px-5 py-3 text-right font-semibold text-milsaca-verde">
-                            {BRL.format(c.comissao)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </CardContent>
-              </Card>
+              <ResponsiveTable<TopComprador>
+                columns={[
+                  { key: "comprador", label: "Comprador", align: "left" },
+                  { key: "contratos", label: "Contratos", align: "right" },
+                  { key: "volume", label: "Volume total", align: "right" },
+                  { key: "comissao", label: "Comissão", align: "right" },
+                ]}
+                rows={data.topCompradores}
+                keyFor={(c) => c.id}
+                renderRow={(c) => (
+                  <>
+                    <td className="px-5 py-3">
+                      <Link
+                        href={`/painel/corretora/compradores/${c.id}`}
+                        className="font-medium text-milsaca-cafezal hover:underline"
+                      >
+                        {c.name}
+                      </Link>
+                    </td>
+                    <td className="px-5 py-3 text-right text-neutral-600">
+                      {c.contratos}
+                    </td>
+                    <td className="px-5 py-3 text-right tabular-nums text-neutral-600">
+                      {BRL.format(c.total)}
+                    </td>
+                    <td className="px-5 py-3 text-right font-semibold tabular-nums text-milsaca-cafezal">
+                      {BRL.format(c.comissao)}
+                    </td>
+                  </>
+                )}
+                renderCard={(c) => (
+                  <Link
+                    href={`/painel/corretora/compradores/${c.id}`}
+                    className="block rounded-card border border-neutral-200 bg-white p-card shadow-card transition-colors hover:border-milsaca-dourado"
+                  >
+                    <p className="font-medium text-milsaca-cafezal">{c.name}</p>
+                    <p className="mt-1 text-caption text-neutral-500">
+                      {c.contratos}{" "}
+                      {c.contratos === 1 ? "contrato" : "contratos"} ·{" "}
+                      {BRL.format(c.total)} em volume
+                    </p>
+                    <p className="mt-2 text-h3 tabular-nums text-milsaca-cafezal">
+                      {BRL.format(c.comissao)}
+                      <span className="ml-1 text-caption font-normal text-neutral-400">
+                        comissão
+                      </span>
+                    </p>
+                  </Link>
+                )}
+              />
             )}
           </section>
         </>
       )}
     </div>
+  );
+}
+
+function KpiLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="block rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    >
+      {children}
+    </Link>
   );
 }
 
@@ -353,10 +368,10 @@ function ChartCard({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="border-milsaca-cream-escuro shadow-card">
+    <Card className="shadow-card">
       <CardHeader className="pb-2">
-        <CardTitle className="text-base text-milsaca-verde">{title}</CardTitle>
-        <CardDescription className="text-xs text-milsaca-verde-claro">
+        <CardTitle className="text-h3 text-milsaca-cafezal">{title}</CardTitle>
+        <CardDescription className="text-caption text-neutral-500">
           {description}
         </CardDescription>
       </CardHeader>
@@ -379,19 +394,19 @@ function OrigemRow({
   const pct = total > 0 ? (count / total) * 100 : 0;
   const barColor: Record<typeof tone, string> = {
     whatsapp: "bg-[#25D366]",
-    sky: "bg-sky-500",
+    sky: "bg-info-500",
     dourado: "bg-milsaca-dourado",
-    slate: "bg-slate-400",
+    slate: "bg-neutral-400",
   };
   return (
     <div className="space-y-1.5">
-      <div className="flex items-baseline justify-between text-xs text-milsaca-verde">
+      <div className="flex items-baseline justify-between text-caption text-milsaca-cafezal">
         <span className="font-medium">{label}</span>
-        <span className="font-mono text-milsaca-verde-claro">
+        <span className="font-mono text-neutral-500">
           {count} · {pct.toFixed(0)}%
         </span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-milsaca-cream-escuro">
+      <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
         <div
           className={`h-full ${barColor[tone]} transition-all`}
           style={{ width: `${pct}%` }}
@@ -400,3 +415,4 @@ function OrigemRow({
     </div>
   );
 }
+

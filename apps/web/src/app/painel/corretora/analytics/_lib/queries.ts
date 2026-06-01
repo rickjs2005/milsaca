@@ -1,21 +1,20 @@
 // Queries de analytics da corretora.
-// Estratégia: pegar registros do período (12-24 meses no máximo) e agregar
-// em memória. PostgREST do Supabase não expõe agregações SQL diretas;
-// pra volumes baixos (centenas de leads/contratos) isso é OK e mais simples
-// que criar RPC functions por gráfico.
+// Estratégia: buscar os registros da corretora (leads + contratos, volumes
+// baixos no piloto) e agregar TUDO em memória num único loader. Isso mantém a
+// consistência num lugar só e deixa o período (janela) recalcular cada métrica
+// sem espalhar a lógica de data por várias funções.
 
 import { createClient } from "@milsaca/db/web/server";
 import type { LeadStatus, ContratoStatus } from "@milsaca/types";
+import {
+  computeDelta,
+  resolveRange,
+  type DeltaInfo,
+  type Period,
+} from "./period";
 
 const MONTHS_LEADS = 6;
 const MONTHS_COMISSAO = 12;
-
-export type AnalyticsKpis = {
-  ticketMedio: number;
-  conversaoPct: number;
-  totalContratosAtivos: number;
-  comissaoAcumuladaAno: number;
-};
 
 export type SerieMensal = {
   mes: string; // "Jan", "Fev"...
@@ -43,6 +42,45 @@ export type TopComprador = {
   comissao: number;
 };
 
+export type OrigemLeads = {
+  whatsapp: number;
+  formulario: number;
+  vitrine: number;
+  manual: number;
+  semOrigem: number;
+  total: number;
+};
+
+export type Metric = { value: number; delta: DeltaInfo };
+
+export type AnalyticsData = {
+  periodLabel: string;
+  prevLabel: string;
+  /** Primeiro mês com dado (pra avisar "dados a partir de X"). */
+  primeiroMesComDado: string | null;
+  flow: {
+    leadsNovos: Metric;
+    convertidos: Metric;
+    conversaoPct: Metric;
+    comissao: Metric;
+    sacasVendidas: Metric;
+  };
+  snapshot: {
+    sacasEmNegociacao: number;
+    produtoresAtivos: number;
+    compradoresAtivos: number;
+    contratosAtivos: number;
+    ticketMedio: number;
+  };
+  funil: FunilItem[];
+  origem: OrigemLeads | null;
+  mix: MixItem[];
+  topCompradores: TopComprador[];
+  trendLeads: SerieMensal[];
+  trendComissao: SerieMensal[];
+  isEmpty: boolean;
+};
+
 const STATUS_LABEL: Record<LeadStatus, string> = {
   novo: "Novo",
   em_negociacao: "Em negociação",
@@ -50,6 +88,14 @@ const STATUS_LABEL: Record<LeadStatus, string> = {
   perdido: "Perdido",
   arquivado: "Arquivado",
 };
+
+const FUNIL_ORDER: LeadStatus[] = [
+  "novo",
+  "em_negociacao",
+  "convertido",
+  "perdido",
+  "arquivado",
+];
 
 const SPECIE_LABEL: Record<string, string> = {
   arabica: "Arábica",
@@ -76,9 +122,9 @@ function monthIsoFromDate(d: Date): string {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
-function buildEmptyMonthSeries(months: number): SerieMensal[] {
+function buildEmptyMonthSeries(months: number, nowMs: number): SerieMensal[] {
   const out: SerieMensal[] = [];
-  const today = new Date();
+  const today = new Date(nowMs);
   for (let i = months - 1; i >= 0; i--) {
     const d = new Date(
       Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - i, 1),
@@ -92,265 +138,109 @@ function buildEmptyMonthSeries(months: number): SerieMensal[] {
   return out;
 }
 
-export async function loadAnalyticsKpis(
-  corretoraId: string,
-): Promise<AnalyticsKpis> {
-  const supabase = await createClient();
-  const yearStart = new Date();
-  yearStart.setUTCMonth(0, 1);
-  yearStart.setUTCHours(0, 0, 0, 0);
+function inWindow(iso: string | null, start: Date, end: Date): boolean {
+  if (!iso) return false;
+  const t = new Date(iso).getTime();
+  return t >= start.getTime() && t < end.getTime();
+}
 
-  const [leadsAll, contratos] = await Promise.all([
-    supabase
-      .from("leads")
-      .select("status", { count: "exact" })
-      .eq("corretora_id", corretoraId),
-    supabase
-      .from("contratos")
-      .select("status, total_value, comissao_total, signed_at")
-      .eq("corretora_id", corretoraId),
-  ]);
+// ---------------------------------------------------------------------------
+// Tipos crus (linhas lidas do banco)
+// ---------------------------------------------------------------------------
 
-  const leadsRows = (leadsAll.data ?? []) as { status: LeadStatus }[];
-  const total = leadsRows.length;
-  const convertidos = leadsRows.filter((l) => l.status === "convertido").length;
-  const conversaoPct = total > 0 ? (convertidos / total) * 100 : 0;
+type LeadRow = {
+  status: LeadStatus;
+  created_at: string;
+  updated_at: string | null;
+  bag_count: number | null;
+  origem: string | null;
+  produtor_id: string | null;
+};
 
-  const contratosRows = (contratos.data ?? []) as {
-    status: ContratoStatus;
-    total_value: number | string | null;
-    comissao_total: number | string | null;
-    signed_at: string | null;
-  }[];
+type ContratoRow = {
+  status: ContratoStatus;
+  total_value: number | string | null;
+  comissao_total: number | string | null;
+  bag_count: number | null;
+  coffee_type: string | null;
+  signed_at: string | null;
+  produtor_id: string | null;
+  comprador_id: string | null;
+  comprador: { id: string; name: string } | { id: string; name: string }[] | null;
+};
 
-  const ativosOuFinalizados = contratosRows.filter(
-    (c) => c.status === "ativo" || c.status === "finalizado",
-  );
-  const totalContratosAtivos = contratosRows.filter(
-    (c) => c.status === "ativo",
-  ).length;
+function num(v: number | string | null | undefined): number {
+  return v != null ? Number(v) : 0;
+}
 
-  const somaValores = ativosOuFinalizados.reduce(
-    (sum, c) => sum + (c.total_value != null ? Number(c.total_value) : 0),
-    0,
-  );
-  const ticketMedio =
-    ativosOuFinalizados.length > 0
-      ? somaValores / ativosOuFinalizados.length
-      : 0;
+// ---------------------------------------------------------------------------
+// Métricas de fluxo de uma janela [start, end)
+// ---------------------------------------------------------------------------
 
-  const comissaoAcumuladaAno = contratosRows
-    .filter(
-      (c) =>
-        (c.status === "ativo" || c.status === "finalizado") &&
-        c.signed_at &&
-        new Date(c.signed_at) >= yearStart,
-    )
-    .reduce(
-      (sum, c) =>
-        sum + (c.comissao_total != null ? Number(c.comissao_total) : 0),
-      0,
-    );
+type FlowRaw = {
+  leadsNovos: number;
+  convertidos: number;
+  conversaoPct: number;
+  comissao: number;
+  sacasVendidas: number;
+};
 
+function flowFor(
+  leads: LeadRow[],
+  contratos: ContratoRow[],
+  start: Date,
+  end: Date,
+): FlowRaw {
+  let leadsNovos = 0;
+  let convertidos = 0;
+  for (const l of leads) {
+    if (inWindow(l.created_at, start, end)) leadsNovos += 1;
+    if (l.status === "convertido" && inWindow(l.updated_at, start, end)) {
+      convertidos += 1;
+    }
+  }
+  let comissao = 0;
+  let sacasVendidas = 0;
+  for (const c of contratos) {
+    if (c.status !== "ativo" && c.status !== "finalizado") continue;
+    if (!inWindow(c.signed_at, start, end)) continue;
+    comissao += num(c.comissao_total);
+    sacasVendidas += c.bag_count ?? 0;
+  }
   return {
-    ticketMedio,
-    conversaoPct,
-    totalContratosAtivos,
-    comissaoAcumuladaAno,
+    leadsNovos,
+    convertidos,
+    conversaoPct: leadsNovos > 0 ? (convertidos / leadsNovos) * 100 : 0,
+    comissao,
+    sacasVendidas,
   };
 }
 
-export async function loadLeadsPorMes(
+// ---------------------------------------------------------------------------
+// Loader único
+// ---------------------------------------------------------------------------
+
+export async function loadAnalytics(
   corretoraId: string,
-): Promise<SerieMensal[]> {
+  period: Period,
+  nowMs: number,
+): Promise<AnalyticsData> {
   const supabase = await createClient();
-  const since = new Date();
-  since.setUTCMonth(since.getUTCMonth() - MONTHS_LEADS + 1, 1);
-  since.setUTCHours(0, 0, 0, 0);
+  const range = resolveRange(period, nowMs);
 
-  const { data } = await supabase
-    .from("leads")
-    .select("created_at")
-    .eq("corretora_id", corretoraId)
-    .gte("created_at", since.toISOString());
-
-  const rows = (data ?? []) as { created_at: string }[];
-  const series = buildEmptyMonthSeries(MONTHS_LEADS);
-  const indexByIso = new Map(series.map((s, i) => [s.mesIso, i]));
-
-  for (const r of rows) {
-    const iso = monthIsoFromDate(new Date(r.created_at));
-    const idx = indexByIso.get(iso);
-    if (idx != null) {
-      const item = series[idx];
-      if (item) item.valor++;
-    }
-  }
-  return series;
-}
-
-export async function loadFunilLeads(
-  corretoraId: string,
-): Promise<FunilItem[]> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("leads")
-    .select("status")
-    .eq("corretora_id", corretoraId);
-
-  const rows = (data ?? []) as { status: LeadStatus }[];
-  const order: LeadStatus[] = [
-    "novo",
-    "em_negociacao",
-    "convertido",
-    "perdido",
-    "arquivado",
-  ];
-  return order.map((s) => ({
-    status: s,
-    label: STATUS_LABEL[s],
-    count: rows.filter((r) => r.status === s).length,
-  }));
-}
-
-export async function loadComissaoAcumulada(
-  corretoraId: string,
-): Promise<SerieMensal[]> {
-  const supabase = await createClient();
-  const since = new Date();
-  since.setUTCMonth(since.getUTCMonth() - MONTHS_COMISSAO + 1, 1);
-  since.setUTCHours(0, 0, 0, 0);
-
-  const { data } = await supabase
-    .from("contratos")
-    .select("comissao_total, signed_at, status")
-    .eq("corretora_id", corretoraId)
-    .in("status", ["ativo", "finalizado"])
-    .gte("signed_at", since.toISOString());
-
-  const rows = (data ?? []) as {
-    comissao_total: number | string | null;
-    signed_at: string | null;
-  }[];
-
-  const series = buildEmptyMonthSeries(MONTHS_COMISSAO);
-  const indexByIso = new Map(series.map((s, i) => [s.mesIso, i]));
-
-  for (const r of rows) {
-    if (!r.signed_at || r.comissao_total == null) continue;
-    const iso = monthIsoFromDate(new Date(r.signed_at));
-    const idx = indexByIso.get(iso);
-    if (idx != null) {
-      const item = series[idx];
-      if (item) item.valor += Number(r.comissao_total);
-    }
-  }
-  return series;
-}
-
-export async function loadMixCafe(corretoraId: string): Promise<MixItem[]> {
-  const supabase = await createClient();
-  // contratos têm coffee_type texto livre; preferir lotes pelo enum specie
-  // pois é mais limpo. Fallback: agrupar pelo prefixo do coffee_type.
-  const { data } = await supabase
-    .from("contratos")
-    .select("coffee_type, bag_count, status")
-    .eq("corretora_id", corretoraId)
-    .in("status", ["ativo", "finalizado"]);
-
-  const rows = (data ?? []) as {
-    coffee_type: string | null;
-    bag_count: number | null;
-  }[];
-
-  const acc: Record<string, number> = { arabica: 0, conillon: 0 };
-  for (const r of rows) {
-    const t = (r.coffee_type ?? "").toLowerCase();
-    const sacas = r.bag_count ?? 0;
-    if (t.includes("arab")) acc.arabica = (acc.arabica ?? 0) + sacas;
-    else if (t.includes("coni")) acc.conillon = (acc.conillon ?? 0) + sacas;
-  }
-
-  return [
-    { specie: "arabica", label: SPECIE_LABEL.arabica ?? "Arábica", sacas: acc.arabica ?? 0 },
-    {
-      specie: "conillon",
-      label: SPECIE_LABEL.conillon ?? "Conillón",
-      sacas: acc.conillon ?? 0,
-    },
-  ].filter((m) => m.sacas > 0);
-}
-
-/**
- * Métricas extras pedidas no briefing comercial.
- *  - leadsNovosMes / convertidosMes: contagens do mês corrente
- *  - sacasEmNegociacao: soma de bag_count nos leads em_negociacao
- *  - sacasVendidasMes: soma de bag_count nos contratos com signed_at no mês
- *  - produtoresAtivos: distinct produtor_id em (leads + lotes + contratos)
- *  - compradoresAtivos: compradores com flag ativo=true
- */
-export type AnalyticsExtras = {
-  leadsNovosMes: number;
-  convertidosMes: number;
-  sacasEmNegociacao: number;
-  sacasVendidasMes: number;
-  produtoresAtivos: number;
-  compradoresAtivos: number;
-};
-
-export async function loadAnalyticsExtras(
-  corretoraId: string,
-): Promise<AnalyticsExtras> {
-  const supabase = await createClient();
-  const monthStart = new Date();
-  monthStart.setUTCDate(1);
-  monthStart.setUTCHours(0, 0, 0, 0);
-  const monthIso = monthStart.toISOString();
-
-  const [
-    novosMes,
-    convertidosMes,
-    leadsEmNeg,
-    contratosMes,
-    leadProdutorIds,
-    loteProdutorIds,
-    contratoProdutorIds,
-    compradoresAtivos,
-  ] = await Promise.all([
+  const [leadsRes, contratosRes, lotesRes, compradoresRes] = await Promise.all([
     supabase
       .from("leads")
-      .select("*", { count: "exact", head: true })
-      .eq("corretora_id", corretoraId)
-      .gte("created_at", monthIso),
-    supabase
-      .from("leads")
-      .select("*", { count: "exact", head: true })
-      .eq("corretora_id", corretoraId)
-      .eq("status", "convertido")
-      .gte("updated_at", monthIso),
-    supabase
-      .from("leads")
-      .select("bag_count")
-      .eq("corretora_id", corretoraId)
-      .eq("status", "em_negociacao"),
+      .select("status, created_at, updated_at, bag_count, origem, produtor_id")
+      .eq("corretora_id", corretoraId),
     supabase
       .from("contratos")
-      .select("bag_count, signed_at")
-      .eq("corretora_id", corretoraId)
-      .in("status", ["ativo", "finalizado"])
-      .gte("signed_at", monthIso),
-    supabase
-      .from("leads")
-      .select("produtor_id")
-      .eq("corretora_id", corretoraId)
-      .not("produtor_id", "is", null),
+      .select(
+        "status, total_value, comissao_total, bag_count, coffee_type, signed_at, produtor_id, comprador_id, comprador:compradores!contratos_comprador_id_fkey(id, name)",
+      )
+      .eq("corretora_id", corretoraId),
     supabase
       .from("lotes")
-      .select("produtor_id")
-      .eq("corretora_id", corretoraId)
-      .not("produtor_id", "is", null),
-    supabase
-      .from("contratos")
       .select("produtor_id")
       .eq("corretora_id", corretoraId)
       .not("produtor_id", "is", null),
@@ -361,123 +251,174 @@ export async function loadAnalyticsExtras(
       .eq("ativo", true),
   ]);
 
-  const sacasEmNeg = (
-    (leadsEmNeg.data ?? []) as { bag_count: number | null }[]
-  ).reduce((sum, r) => sum + (r.bag_count ?? 0), 0);
+  const leads = (leadsRes.data ?? []) as LeadRow[];
+  const contratos = (contratosRes.data ?? []) as ContratoRow[];
 
-  const sacasVendidasMes = (
-    (contratosMes.data ?? []) as {
-      bag_count: number | null;
-      signed_at: string | null;
-    }[]
-  ).reduce((sum, r) => sum + (r.bag_count ?? 0), 0);
+  // --- Fluxo (atual vs anterior) → deltas
+  const curr = flowFor(leads, contratos, range.start, range.end);
+  const prev = flowFor(leads, contratos, range.prevStart, range.prevEnd);
+
+  const flow = {
+    leadsNovos: {
+      value: curr.leadsNovos,
+      delta: computeDelta(curr.leadsNovos, prev.leadsNovos, range.prevLabel),
+    },
+    convertidos: {
+      value: curr.convertidos,
+      delta: computeDelta(curr.convertidos, prev.convertidos, range.prevLabel),
+    },
+    conversaoPct: {
+      value: curr.conversaoPct,
+      delta: computeDelta(curr.conversaoPct, prev.conversaoPct, range.prevLabel),
+    },
+    comissao: {
+      value: curr.comissao,
+      delta: computeDelta(curr.comissao, prev.comissao, range.prevLabel),
+    },
+    sacasVendidas: {
+      value: curr.sacasVendidas,
+      delta: computeDelta(curr.sacasVendidas, prev.sacasVendidas, range.prevLabel),
+    },
+  };
+
+  // --- Snapshot (estado atual; não usa período)
+  const sacasEmNegociacao = leads
+    .filter((l) => l.status === "em_negociacao")
+    .reduce((s, l) => s + (l.bag_count ?? 0), 0);
 
   const produtoresUnicos = new Set<string>();
-  for (const row of [
-    ...(leadProdutorIds.data ?? []),
-    ...(loteProdutorIds.data ?? []),
-    ...(contratoProdutorIds.data ?? []),
-  ] as { produtor_id: string | null }[]) {
-    if (row.produtor_id) produtoresUnicos.add(row.produtor_id);
+  for (const l of leads) if (l.produtor_id) produtoresUnicos.add(l.produtor_id);
+  for (const c of contratos)
+    if (c.produtor_id) produtoresUnicos.add(c.produtor_id);
+  for (const r of (lotesRes.data ?? []) as { produtor_id: string | null }[]) {
+    if (r.produtor_id) produtoresUnicos.add(r.produtor_id);
   }
+
+  const ativosOuFinal = contratos.filter(
+    (c) => c.status === "ativo" || c.status === "finalizado",
+  );
+  const ticketMedio =
+    ativosOuFinal.length > 0
+      ? ativosOuFinal.reduce((s, c) => s + num(c.total_value), 0) /
+        ativosOuFinal.length
+      : 0;
+
+  const snapshot = {
+    sacasEmNegociacao,
+    produtoresAtivos: produtoresUnicos.size,
+    compradoresAtivos: compradoresRes.count ?? 0,
+    contratosAtivos: contratos.filter((c) => c.status === "ativo").length,
+    ticketMedio,
+  };
+
+  // --- Funil (escopado ao período: leads criados na janela)
+  const leadsNaJanela = leads.filter((l) =>
+    inWindow(l.created_at, range.start, range.end),
+  );
+  const funil: FunilItem[] = FUNIL_ORDER.map((s) => ({
+    status: s,
+    label: STATUS_LABEL[s],
+    count: leadsNaJanela.filter((l) => l.status === s).length,
+  }));
+
+  // --- Origem (escopada ao período)
+  let origem: OrigemLeads | null = null;
+  if (leadsNaJanela.length > 0) {
+    const acc = { whatsapp: 0, formulario: 0, vitrine: 0, manual: 0, semOrigem: 0 };
+    for (const l of leadsNaJanela) {
+      if (l.origem === "whatsapp") acc.whatsapp++;
+      else if (l.origem === "formulario") acc.formulario++;
+      else if (l.origem === "vitrine") acc.vitrine++;
+      else if (l.origem === "manual") acc.manual++;
+      else acc.semOrigem++;
+    }
+    origem = { ...acc, total: leadsNaJanela.length };
+  }
+
+  // --- Contratos fechados na janela (mix + top compradores)
+  const contratosJanela = contratos.filter(
+    (c) =>
+      (c.status === "ativo" || c.status === "finalizado") &&
+      inWindow(c.signed_at, range.start, range.end),
+  );
+
+  const mixAcc: Record<string, number> = { arabica: 0, conillon: 0 };
+  for (const c of contratosJanela) {
+    const t = (c.coffee_type ?? "").toLowerCase();
+    const sacas = c.bag_count ?? 0;
+    if (t.includes("arab")) mixAcc.arabica = (mixAcc.arabica ?? 0) + sacas;
+    else if (t.includes("coni")) mixAcc.conillon = (mixAcc.conillon ?? 0) + sacas;
+  }
+  const mix: MixItem[] = [
+    { specie: "arabica", label: SPECIE_LABEL.arabica ?? "Arábica", sacas: mixAcc.arabica ?? 0 },
+    { specie: "conillon", label: SPECIE_LABEL.conillon ?? "Conillón", sacas: mixAcc.conillon ?? 0 },
+  ].filter((m) => m.sacas > 0);
+
+  const topMap = new Map<string, TopComprador>();
+  for (const c of contratosJanela) {
+    const cp = Array.isArray(c.comprador) ? c.comprador[0] : c.comprador;
+    if (!cp) continue;
+    const ex =
+      topMap.get(cp.id) ??
+      { id: cp.id, name: cp.name, contratos: 0, total: 0, comissao: 0 };
+    ex.contratos += 1;
+    ex.total += num(c.total_value);
+    ex.comissao += num(c.comissao_total);
+    topMap.set(cp.id, ex);
+  }
+  const topCompradores = Array.from(topMap.values())
+    .sort((a, b) => b.comissao - a.comissao)
+    .slice(0, 5);
+
+  // --- Tendências (janelas trailing fixas, NÃO usam o período)
+  const trendLeads = buildEmptyMonthSeries(MONTHS_LEADS, nowMs);
+  const idxLeads = new Map(trendLeads.map((s, i) => [s.mesIso, i]));
+  for (const l of leads) {
+    const idx = idxLeads.get(monthIsoFromDate(new Date(l.created_at)));
+    if (idx != null) {
+      const item = trendLeads[idx];
+      if (item) item.valor += 1;
+    }
+  }
+
+  // Comissão: mensal → acumulada (running sum). Só sobe ou fica plana.
+  const trendComissao = buildEmptyMonthSeries(MONTHS_COMISSAO, nowMs);
+  const idxCom = new Map(trendComissao.map((s, i) => [s.mesIso, i]));
+  for (const c of contratos) {
+    if (c.status !== "ativo" && c.status !== "finalizado") continue;
+    if (!c.signed_at) continue;
+    const idx = idxCom.get(monthIsoFromDate(new Date(c.signed_at)));
+    if (idx != null) {
+      const item = trendComissao[idx];
+      if (item) item.valor += num(c.comissao_total);
+    }
+  }
+  let acc = 0;
+  for (const s of trendComissao) {
+    acc += s.valor;
+    s.valor = acc;
+  }
+
+  // Primeiro mês com dado real na tendência (pra nota "dados a partir de X").
+  const primeiroMesComDado = trendLeads.find((s) => s.valor > 0)?.mes ?? null;
+
+  const isEmpty =
+    leads.length === 0 &&
+    contratos.length === 0 &&
+    snapshot.compradoresAtivos === 0;
 
   return {
-    leadsNovosMes: novosMes.count ?? 0,
-    convertidosMes: convertidosMes.count ?? 0,
-    sacasEmNegociacao: sacasEmNeg,
-    sacasVendidasMes,
-    produtoresAtivos: produtoresUnicos.size,
-    compradoresAtivos: compradoresAtivos.count ?? 0,
+    periodLabel: range.label,
+    prevLabel: range.prevLabel,
+    primeiroMesComDado,
+    flow,
+    snapshot,
+    funil,
+    origem,
+    mix,
+    topCompradores,
+    trendLeads,
+    trendComissao,
+    isEmpty,
   };
-}
-
-/**
- * Distribuição de leads por canal de origem (whatsapp / formulario /
- * vitrine / manual). Lê direto de `leads.origem` (enum criado na Fase 9d).
- * Leads legados sem origem entram em "Não informada".
- *
- * Retorna `null` se a corretora não tem leads ainda.
- */
-export type OrigemLeads = {
-  whatsapp: number;
-  formulario: number;
-  vitrine: number;
-  manual: number;
-  semOrigem: number;
-  total: number;
-};
-
-export async function loadOrigemLeads(
-  corretoraId: string,
-): Promise<OrigemLeads | null> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("leads")
-    .select("origem")
-    .eq("corretora_id", corretoraId);
-
-  const rows = (data ?? []) as { origem: string | null }[];
-  if (rows.length === 0) return null;
-
-  const acc = {
-    whatsapp: 0,
-    formulario: 0,
-    vitrine: 0,
-    manual: 0,
-    semOrigem: 0,
-  };
-  for (const r of rows) {
-    if (r.origem === "whatsapp") acc.whatsapp++;
-    else if (r.origem === "formulario") acc.formulario++;
-    else if (r.origem === "vitrine") acc.vitrine++;
-    else if (r.origem === "manual") acc.manual++;
-    else acc.semOrigem++;
-  }
-  return { ...acc, total: rows.length };
-}
-
-export async function loadTopCompradores(
-  corretoraId: string,
-  limit = 5,
-): Promise<TopComprador[]> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("contratos")
-    .select(
-      "comprador_id, total_value, comissao_total, status, comprador:compradores!contratos_comprador_id_fkey(id, name)",
-    )
-    .eq("corretora_id", corretoraId)
-    .in("status", ["ativo", "finalizado"])
-    .not("comprador_id", "is", null);
-
-  const rows = (data ?? []) as Array<{
-    comprador_id: string;
-    total_value: number | string | null;
-    comissao_total: number | string | null;
-    comprador:
-      | { id: string; name: string }
-      | { id: string; name: string }[]
-      | null;
-  }>;
-
-  const map = new Map<string, TopComprador>();
-  for (const r of rows) {
-    const c = Array.isArray(r.comprador) ? r.comprador[0] : r.comprador;
-    if (!c) continue;
-    const existing = map.get(c.id) ?? {
-      id: c.id,
-      name: c.name,
-      contratos: 0,
-      total: 0,
-      comissao: 0,
-    };
-    existing.contratos++;
-    existing.total += r.total_value != null ? Number(r.total_value) : 0;
-    existing.comissao +=
-      r.comissao_total != null ? Number(r.comissao_total) : 0;
-    map.set(c.id, existing);
-  }
-  return Array.from(map.values())
-    .sort((a, b) => b.comissao - a.comissao)
-    .slice(0, limit);
 }
