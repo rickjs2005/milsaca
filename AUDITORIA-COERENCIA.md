@@ -9,6 +9,42 @@
 - **shared** — `packages/types` (database.ts gerado), `packages/db` (clients ssr/supabase-js), `packages/cob`, `packages/config-tailwind`.
 - **backend** — edge functions Deno (`sync-cotacoes`, `send-dispatch`); 73 migrations. (Sem `server.js`/`app.js` — convenção não aplicável a esta stack.)
 
+## ✅ Status de resolução (atualizado 2026-06-01)
+
+**Todos os achados 🔴 e 🟡 resolvidos e no `main`; backlog 🔵 zerado salvo 4 itens adiados com motivo.**
+Verificação em cada lote: web `type-check`/`lint` (0 warnings)/12 testes do logger/`next build`; mobile `type-check`/`lint`. Não validado em runtime atrás de auth.
+
+| Achado | Status | Commit |
+|---|---|---|
+| 🔴 C1 — KPI cotação do produtor vazio | ✅ corrigido (lê por `specie`) | `3e215bb` |
+| 🟡 I2 — `cancelado` do contrato vermelho→cinza | ✅ | `3e215bb` |
+| 🟡 I3 — `coffeeLabel()` no web do produtor | ✅ | `3e215bb` |
+| 🟡 I5 — gate Premium expirado (isProOrAbove exige assinatura utilizável) | ✅ | `3e215bb` |
+| 🟡 I7 — `lead_status` labels por persona (fonte única) | ✅ | `3e215bb` |
+| 🟡 I8 — `loadLeadsKpis` no `_lib` + `getCorretoraName` único | ✅ | `3e215bb` |
+| 🟡 I1 — tabela de contratos | ⏸️ **decisão:** mantida (`tabela↔cards` = padrão do kit; regra "sem tabela" aplicada à superfície pública `/verificar`, já conforme) | — |
+| 🟡 I4 — `database.ts` defasado | ✅ regen completo via MCP (15 tabelas + `price_alert`) + fallout de tipos | `72244a5` |
+| 🔵 #1/#2/#10/#11 — status/coffeeLabel mobile | ✅ | `92e5719` |
+| 🔵 #4 — `compradores/_form` → `_components` | ✅ | `92e5719` |
+| 🔵 #5 — perfil `fmtDate` + tokens | ✅ | `92e5719` |
+| 🔵 #7 — `ensureCorretora()` único | ✅ | `92e5719` |
+| 🔵 #8 — `getProfile()` `.maybeSingle()` | ✅ | `92e5719` |
+| 🔵 #12 — `proposta-meta` tokens + TONE | ✅ | `92e5719` |
+| **bônus** — bug do command-palette (busca produtor por email inexistente) | ✅ revelado pela regen do I4; agora busca por nome/telefone | `9612b26` |
+
+**⏸️ Adiados com motivo (não bloqueiam release):**
+- **#3 grafia `conilon`/`conillon` no schema** — mexer em enum Postgres é arriscado; código já normaliza via `coffee.ts`. Consolidar exige migration cuidadosa.
+- **#9 fonte serifada do certificado** — decisão de design (todos os outros elementos do certificado já conformes); precisa do dono confirmar se serifa é requisito ou atualizar o contrato pra Inter.
+- **#13 migração total de tokens no mobile** — o CLAUDE.md declara a aplicação de tokens nas telas como "fase D2+"; é dívida planejada, não acidental.
+- **#6 defesa-em-profundidade do produtor** — RLS já cobre; o padrão misto (uns refazem `.eq(produtor_id)`, outros confiam na RLS) é ambíguo, deixado como está.
+- **Convenções emergentes a documentar:** esqueleto de tela mobile; tema claro da `cotacoes` mobile; perspectiva corretora×produtor de `lead_status`.
+
+Histórico de commits da auditoria: `e04a343` (A) · `d2ccd98` (B+C) · `3e215bb` (correções) · `72244a5` (I4) · `9612b26` (command-palette) · `92e5719` (higiene).
+
+---
+
+> O diagnóstico original abaixo fica preservado como registro. Os achados marcados ✅ acima já não refletem o estado atual do código.
+
 ## Resumo executivo
 
 O projeto está **coerente na fundação**: enums de status batem entre DB ↔ tipos ↔ duas UIs; tenancy `corretora_id` uniforme; clients Supabase centralizados em `@milsaca/db`; dono×operador e RLS consistentes; documento oficial (laudo PDF, certificado de contrato) com SHA-256 + QR. As correções A/B/C anteriores se confirmaram aplicadas.
