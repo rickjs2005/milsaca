@@ -283,4 +283,4 @@ Tudo versionado **no repo** (acessível a quem tem o código):
 - `docs/milsaca/deploy-*.md` — Vercel, EAS, CI/CD
 - `docs/milsaca/observabilidade-sentry-posthog.md`, `backup-retencao.md`, `checklist-smoke-producao.md`
 - `docs/milsaca/gaps-produto-por-persona.md` — lacunas de produto por persona
-- `docs/auditoria-*.md` — auditorias de bugs, pré-lançamento, responsividade
+- `docs/milsaca/auditoria-responsividade.md` — auditoria de responsividade
