@@ -99,11 +99,31 @@ export async function updateLoteStatus(formData: FormData) {
   if (!id || !isLoteStatus(next)) redirect("/painel/corretora/lotes");
 
   const supabase = await createClient();
-  const { error } = await supabase
+
+  // Lote VENDIDO é terminal: o café já foi negociado/entregue. Não volta pra
+  // rascunho/classificado etc. (o re-fluxo de classificação entre os outros
+  // estados segue livre). Compare-and-set evita corrida.
+  const { data: atual } = await supabase
+    .from("lotes")
+    .select("status")
+    .eq("id", id)
+    .eq("corretora_id", profile.corretora_id)
+    .maybeSingle<{ status: LoteStatus }>();
+  if (!atual) redirect("/painel/corretora/lotes");
+  if (atual.status === "vendido") {
+    const params = new URLSearchParams({
+      error: "Lote vendido não muda de status — o café já foi negociado.",
+    });
+    redirect(`/painel/corretora/lotes?${params.toString()}`);
+  }
+
+  const { data: updated, error } = await supabase
     .from("lotes")
     .update({ status: next as LoteStatus })
     .eq("id", id)
-    .eq("corretora_id", profile.corretora_id);
+    .eq("corretora_id", profile.corretora_id)
+    .eq("status", atual.status)
+    .select("id");
 
   if (error) {
     const log = await getReqLogger({
@@ -120,6 +140,11 @@ export async function updateLoteStatus(formData: FormData) {
       error: friendlyPostgresError(error),
     });
     redirect(`/painel/corretora/lotes?${params.toString()}`);
+  }
+  if (!updated || updated.length === 0) {
+    redirect(
+      `/painel/corretora/lotes?error=${encodeURIComponent("O lote já foi atualizado por outra ação. Recarregue.")}`,
+    );
   }
 
   revalidatePath("/painel/corretora/lotes");
