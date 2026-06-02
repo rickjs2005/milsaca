@@ -29,6 +29,7 @@ import {
   getContrato,
   CONTRATO_STATUS_LABEL,
   CONTRATO_STATUS_COLOR,
+  CONTRATO_TRANSICOES,
   type ContratoStatus,
 } from "../_lib/queries";
 import {
@@ -479,7 +480,11 @@ export default async function ContratoDetalhePage({
               <input type="hidden" name="id" value={contrato.id} />
               <div className="flex flex-col gap-2">
                 {STATUS_BUTTONS.filter(
-                  (b) => b.value !== contrato.status && b.value !== "cancelado",
+                  (b) =>
+                    b.value !== "cancelado" &&
+                    (CONTRATO_TRANSICOES[contrato.status] ?? []).includes(
+                      b.value,
+                    ),
                 ).map((b) => (
                   <button
                     key={b.value}
@@ -492,7 +497,9 @@ export default async function ContratoDetalhePage({
                     {b.label}
                   </button>
                 ))}
-                {contrato.status !== "rascunho" && (
+                {(CONTRATO_TRANSICOES[contrato.status] ?? []).includes(
+                  "rascunho",
+                ) && (
                   <button
                     type="submit"
                     name="status"
@@ -502,9 +509,17 @@ export default async function ContratoDetalhePage({
                     Voltar para Rascunho
                   </button>
                 )}
+                {(CONTRATO_TRANSICOES[contrato.status] ?? []).length === 0 && (
+                  <p className="text-sm italic text-neutral-500">
+                    Contrato {CONTRATO_STATUS_LABEL[contrato.status].toLowerCase()} —
+                    estado final, sem mais transições.
+                  </p>
+                )}
               </div>
             </form>
-            {contrato.status !== "cancelado" && (
+            {(CONTRATO_TRANSICOES[contrato.status] ?? []).includes(
+              "cancelado",
+            ) && (
               <form action={updateContratoStatus} className="mt-2">
                 <input type="hidden" name="id" value={contrato.id} />
                 <input type="hidden" name="status" value="cancelado" />

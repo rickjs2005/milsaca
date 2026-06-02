@@ -54,6 +54,25 @@ export type ContratoListItem = {
   lead_id: string | null;
 };
 
+// Máquina de estados do contrato. Assinado (ativo) NÃO volta pra rascunho/
+// análise — preserva o content_hash congelado na assinatura. `finalizado`
+// só pode ser cancelado; `cancelado` é terminal. Fonte única: usada pela
+// server action (guard) e pela UI (mostra só transições válidas).
+export const CONTRATO_TRANSICOES: Record<ContratoStatus, ContratoStatus[]> = {
+  rascunho: ["em_analise", "ativo", "cancelado"],
+  em_analise: ["rascunho", "ativo", "cancelado"],
+  ativo: ["finalizado", "cancelado"],
+  finalizado: ["cancelado"],
+  cancelado: [],
+};
+
+export function podeTransicionarContrato(
+  from: ContratoStatus,
+  to: ContratoStatus,
+): boolean {
+  return from === to || (CONTRATO_TRANSICOES[from] ?? []).includes(to);
+}
+
 /** Contrato com documento verificável publicamente (assinado/ativo). */
 export function contratoVerificavel(status: ContratoStatus): boolean {
   return status === "ativo" || status === "finalizado";

@@ -6,6 +6,8 @@ export {
   CONTRATO_STATUS_ORDER,
   CONTRATO_STATUS_LABEL,
   CONTRATO_STATUS_COLOR,
+  CONTRATO_TRANSICOES,
+  podeTransicionarContrato,
 } from "./contrato-meta";
 export type { ContratoStatus, ContratoListItem } from "./contrato-meta";
 

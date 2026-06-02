@@ -13,6 +13,7 @@ import { notify } from "@/lib/notify";
 import { ensureCorretora, requireActiveSubscription } from "../_lib/corretora";
 import {
   CONTRATO_STATUS_ORDER,
+  CONTRATO_TRANSICOES,
   type ContratoStatus,
   nextContratoCode,
 } from "./_lib/queries";
@@ -378,6 +379,28 @@ export async function updateContratoStatus(formData: FormData) {
     }>();
 
   if (!current) redirect("/painel/corretora/contratos");
+
+  // Guard de transição: bloqueia saltos incoerentes (ex.: rascunho ->
+  // finalizado) e reverter um contrato assinado (ativo -> rascunho), o que
+  // brigaria com o content_hash congelado.
+  if (current.status !== next) {
+    const permitidas = CONTRATO_TRANSICOES[current.status] ?? [];
+    if (!permitidas.includes(next)) {
+      const log = await getReqLogger({
+        action: "updateContratoStatus",
+        corretoraId: profile.corretora_id,
+        contratoId: id,
+      });
+      log.warn("contrato_transicao_invalida", {
+        from: current.status,
+        to: next,
+      });
+      const params = new URLSearchParams({
+        error: `Transição inválida: de "${CONTRATO_STATUS_LABEL[current.status]}" não dá pra ir para "${CONTRATO_STATUS_LABEL[next]}".`,
+      });
+      redirect(`/painel/corretora/contratos/${id}?${params.toString()}`);
+    }
+  }
 
   // Guard de conservação de sacas (achado-raiz da auditoria): não dá pra
   // FINALIZAR um contrato deixando sacas sem entrega registrada. Soma as
