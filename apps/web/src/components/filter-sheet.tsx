@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 
-export type FilterOption = { value: string; label: string };
+type FilterOption = { value: string; label: string };
 
 export type FilterGroup = {
   key: string;

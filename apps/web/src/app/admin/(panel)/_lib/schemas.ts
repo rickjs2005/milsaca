@@ -61,7 +61,7 @@ const REGIAO_VALUES = [
   "outras",
 ] as const;
 
-export const regiaoSchema = z.enum(REGIAO_VALUES);
+const regiaoSchema = z.enum(REGIAO_VALUES);
 
 // Coordenada decimal opcional (-180..180 pra lng, -90..90 pra lat).
 // Aceita "-20,2587" e "-20.2587". Vazio vira null.
@@ -112,8 +112,6 @@ export const corretoraSchema = z.object({
   lng: coord("Longitude", -180, 180),
 });
 
-export type CorretoraInput = z.infer<typeof corretoraSchema>;
-
 // =================================================================
 // Plano
 // =================================================================
@@ -126,8 +124,6 @@ export const planSchema = z.object({
   features: z.array(z.string().trim().min(1).max(200)).max(20).default([]),
   active: z.boolean().default(true),
 });
-
-export type PlanInput = z.infer<typeof planSchema>;
 
 // =================================================================
 // Aprovação de corretora

@@ -5,7 +5,6 @@ import type { ContratoStatus, ContratoListItem } from "./contrato-meta";
 export {
   CONTRATO_STATUS_ORDER,
   CONTRATO_STATUS_LABEL,
-  CONTRATO_STATUS_TONE,
   CONTRATO_STATUS_COLOR,
 } from "./contrato-meta";
 export type { ContratoStatus, ContratoListItem } from "./contrato-meta";

@@ -28,14 +28,6 @@ export const LEAD_STATUS_LABEL: Record<LeadStatus, string> = {
   arquivado: "Arquivado",
 };
 
-export const LEAD_STATUS_COLOR: Record<LeadStatus, string> = {
-  novo: "bg-milsaca-dourado/20 text-milsaca-verde",
-  em_negociacao: "bg-sky-100 text-sky-800",
-  convertido: "bg-emerald-100 text-emerald-800",
-  perdido: "bg-rose-100 text-rose-800",
-  arquivado: "bg-slate-200 text-slate-700",
-};
-
 // Tone semântico (fundação D1) — usado pelo <StatusBadge> nos cards.
 export const LEAD_STATUS_TONE: Record<LeadStatus, StatusTone> = {
   novo: "premium",
@@ -74,13 +66,6 @@ export const LEAD_ORIGEM_LABEL: Record<LeadOrigem, string> = {
   formulario: "Formulário público",
   vitrine: "Vitrine Milsaca",
   manual: "Cadastro manual",
-};
-
-export const LEAD_ORIGEM_COLOR: Record<LeadOrigem, string> = {
-  whatsapp: "bg-[#25D366]/15 text-[#1ebe5d] ring-[#25D366]/40",
-  formulario: "bg-sky-100 text-sky-800 ring-sky-200",
-  vitrine: "bg-milsaca-dourado/15 text-milsaca-cafezal ring-milsaca-dourado/40",
-  manual: "bg-slate-100 text-slate-700 ring-slate-200",
 };
 
 export type LeadListItem = {

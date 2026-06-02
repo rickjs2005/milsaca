@@ -26,12 +26,3 @@ export const REGIOES_CAFEEIRAS: { value: RegiaoCafeeira; label: string }[] = [
 export const REGIAO_LABEL: Record<RegiaoCafeeira, string> = Object.fromEntries(
   REGIOES_CAFEEIRAS.map((r) => [r.value, r.label]),
 ) as Record<RegiaoCafeeira, string>;
-
-const VALID = new Set<string>(REGIOES_CAFEEIRAS.map((r) => r.value));
-
-export function parseRegioesFromForm(formData: FormData): RegiaoCafeeira[] {
-  return formData
-    .getAll("regioes_atendimento")
-    .map((v) => String(v))
-    .filter((v): v is RegiaoCafeeira => VALID.has(v));
-}

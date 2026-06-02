@@ -68,7 +68,7 @@ function hashIp(ip: string | null): string {
   return ip.split(".").slice(0, 2).join(".") || "no-ip";
 }
 
-export function extractIp(req: NextRequest | Request): string | null {
+function extractIp(req: NextRequest | Request): string | null {
   const headers = req.headers;
   const xff = headers.get("x-forwarded-for");
   if (xff) return xff.split(",")[0]?.trim() ?? null;

@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import type { Profile, UserRole } from "@milsaca/types";
@@ -109,18 +108,6 @@ export async function requireAppAdmin() {
       encodeURIComponent("Esta conta não tem acesso ao admin."));
   }
   return user;
-}
-
-/**
- * Lê o cookie de modo ativo (qual painel o user escolheu usar agora).
- */
-export async function getActiveRole(): Promise<UserRole | null> {
-  const store = await cookies();
-  const value = store.get(ACTIVE_ROLE_COOKIE)?.value;
-  if (value === "produtor" || value === "corretora") {
-    return value;
-  }
-  return null;
 }
 
 /**

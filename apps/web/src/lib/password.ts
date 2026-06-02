@@ -6,7 +6,7 @@
  *
  * Obs.: HIBP (senhas vazadas) exige Supabase Pro — ainda não habilitado.
  */
-export const MIN_PASSWORD = 8;
+const MIN_PASSWORD = 8;
 
 /**
  * Retorna uma mensagem de erro em pt-BR se a senha for fraca, ou `null` se ok.

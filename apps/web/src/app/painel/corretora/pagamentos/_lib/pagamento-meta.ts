@@ -17,14 +17,6 @@ export const PAGAMENTO_STATUS_LABEL: Record<PagamentoStatus, string> = {
   cancelado: "Cancelado",
 };
 
-// Tokens semânticos (migrado do dourado/emerald/rose/slate legado).
-export const PAGAMENTO_STATUS_COLOR: Record<PagamentoStatus, string> = {
-  pendente: "bg-warning-50 text-warning-700",
-  pago: "bg-success-50 text-success-700",
-  vencido: "bg-danger-50 text-danger-700",
-  cancelado: "bg-neutral-200 text-neutral-700",
-};
-
 // Tone semântico (fundação D1) — usado pelo <StatusBadge> nas listagens.
 export const PAGAMENTO_STATUS_TONE: Record<PagamentoStatus, StatusTone> = {
   pendente: "warning",

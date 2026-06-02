@@ -5,7 +5,6 @@ import type { OfertaStatus, OfertaItem } from "./oferta-meta";
 export {
   OFERTA_STATUS_ORDER,
   OFERTA_STATUS_LABEL,
-  OFERTA_STATUS_TONE,
   OFERTA_STATUS_COLOR,
 } from "./oferta-meta";
 export type { OfertaStatus, OfertaItem } from "./oferta-meta";

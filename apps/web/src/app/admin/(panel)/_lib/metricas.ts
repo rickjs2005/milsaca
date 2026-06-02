@@ -1,6 +1,6 @@
 import { createClient } from "@milsaca/db/web/server";
 
-export type SubStatus = "trial" | "active" | "past_due" | "canceled" | "expired";
+type SubStatus = "trial" | "active" | "past_due" | "canceled" | "expired";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -149,7 +149,7 @@ export async function loadDashboardMetrics(): Promise<DashboardMetrics> {
 // "formatBRL" usado por 14 arquivos que já importavam daqui.
 export { fmtBRL as formatBRL } from "@/lib/format";
 
-export type MonthBucket = {
+type MonthBucket = {
   ym: string; // "2026-05"
   label: string; // "Mai/26"
   value: number;

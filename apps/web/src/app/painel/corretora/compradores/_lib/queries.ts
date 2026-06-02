@@ -23,7 +23,7 @@ export const REGIME_LABEL: Record<RegimeTributario, string> = {
   isento: "Isento",
 };
 
-export type CompradorRow = {
+type CompradorRow = {
   id: string;
   name: string;
   trade_name: string | null;
@@ -165,7 +165,7 @@ export async function getComprador(
 // Histórico do comprador: ofertas + contratos + stats (CRM de verdade)
 // ---------------------------------------------------------------------------
 
-export type CompradorOferta = {
+type CompradorOferta = {
   id: string;
   lote_codigo: string | null;
   preco_saca: number;
@@ -175,7 +175,7 @@ export type CompradorOferta = {
   total: number | null;
 };
 
-export type CompradorContrato = {
+type CompradorContrato = {
   id: string;
   code: string;
   status: string;

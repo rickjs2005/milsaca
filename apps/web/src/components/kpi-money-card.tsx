@@ -11,7 +11,7 @@ type Tone = "default" | "premium" | "info" | "warning" | "danger" | "success";
  * - `compact = false` (padrão): BRL cheio sem casas decimais. Ex.: "R$ 634.000".
  * - `compact = true`: notação curta pra valores grandes. Ex.: "R$ 634 mil", "R$ 1,2 mi".
  */
-export function formatBRLValue(value: number, compact?: boolean): string {
+function formatBRLValue(value: number, compact?: boolean): string {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",

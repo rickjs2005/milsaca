@@ -101,24 +101,6 @@ export async function listEntregas(
   };
 }
 
-/**
- * Conta entregas em atraso (pendentes com data_prevista passada) —
- * global, independente de filtro/paginação. Pro alerta do topo da lista.
- */
-export async function countEntregasAtrasadas(
-  corretoraId: string,
-): Promise<number> {
-  const supabase = await createClient();
-  const today = todayISO();
-  const { count } = await supabase
-    .from("entregas")
-    .select("*", { count: "exact", head: true })
-    .eq("corretora_id", corretoraId)
-    .in("status", PENDENTE_STATUS)
-    .lt("data_prevista", today);
-  return count ?? 0;
-}
-
 export type EntregasKpis = {
   programadas: number;
   emTransito: number;

@@ -24,17 +24,16 @@ export type PlanTier = "gratuito" | "premium";
  * banco, que é a fonte do card via `loadPlans`). Centralizar isso mata o drift
  * "Premium vs Pro / R$100 vs R$99" que aparecia hardcoded em vários lugares.
  */
-export const FREE_NAME = "Gratuito";
+const FREE_NAME = "Gratuito";
 export const PREMIUM_NAME = "Premium";
 export const PREMIUM_PRICE_LABEL = "R$ 100";
-export const PREMIUM_PRICE_MONTHLY = 100;
 /** Frase curta reutilizável: "Premium (R$ 100/mês, 1º mês grátis)". */
 export const PREMIUM_PITCH = `${PREMIUM_NAME} (${PREMIUM_PRICE_LABEL}/mês, 1º mês grátis)`;
 /** Ancoragem de valor — preço vs. o que a corretora ganha. Honesto e estático. */
-export const PREMIUM_VALUE_ANCHOR =
+const PREMIUM_VALUE_ANCHOR =
   "Menos que a comissão de um único contrato fechado.";
 
-export type PlanFeature = {
+type PlanFeature = {
   /** Texto curto da funcionalidade. */
   label: string;
   /** Se aparece como ✓ (incluído) ou — (não incluído nesse tier). */

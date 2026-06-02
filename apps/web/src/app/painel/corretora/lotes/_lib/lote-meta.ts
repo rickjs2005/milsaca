@@ -29,16 +29,6 @@ export const LOTE_STATUS_LABEL: Record<LoteStatus, string> = {
   arquivado: "Arquivado",
 };
 
-export const LOTE_STATUS_COLOR: Record<LoteStatus, string> = {
-  rascunho: "bg-slate-200 text-slate-700",
-  aguardando_classificacao: "bg-milsaca-dourado/20 text-milsaca-verde",
-  classificado: "bg-emerald-100 text-emerald-800",
-  fora_de_tipo: "bg-rose-100 text-rose-800",
-  rebeneficiar: "bg-amber-100 text-amber-800",
-  vendido: "bg-milsaca-verde text-milsaca-cream",
-  arquivado: "bg-slate-200 text-slate-700",
-};
-
 // Tone semântico (fundação D1) — usado pelo <StatusBadge> nos cards.
 export const LOTE_STATUS_TONE: Record<LoteStatus, StatusTone> = {
   rascunho: "neutral",
@@ -49,14 +39,6 @@ export const LOTE_STATUS_TONE: Record<LoteStatus, StatusTone> = {
   vendido: "premium",
   arquivado: "neutral",
 };
-
-/** Status que indicam "lote pode ser negociado". */
-export const LOTE_STATUS_ACTIVE: LoteStatus[] = [
-  "aguardando_classificacao",
-  "classificado",
-  "fora_de_tipo",
-  "rebeneficiar",
-];
 
 export const SPECIE_LABEL: Record<"arabica" | "conillon", string> = {
   arabica: "Arábica",

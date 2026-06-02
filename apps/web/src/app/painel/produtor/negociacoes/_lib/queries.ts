@@ -4,10 +4,7 @@ import { createClient } from "@milsaca/db/web/server";
 // (módulo puro, sem deps server). Re-exportado aqui pra clients que já
 // importam de queries.ts — não redefinir os mapas localmente.
 export {
-  LEAD_STATUS_ORDER,
   LEAD_STATUS_LABEL,
-  LEAD_STATUS_COLOR,
-  LEAD_STATUS_TONE,
 } from "./lead-labels";
 export type { LeadStatus } from "./lead-labels";
 

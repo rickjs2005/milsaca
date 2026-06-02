@@ -12,11 +12,3 @@ export const ESPECIALIDADES_OPCOES: string[] = [
   "Microlote",
   "Certificado",
 ];
-
-const VALID = new Set(ESPECIALIDADES_OPCOES);
-
-/** Mantém só valores conhecidos, na ordem canônica, sem duplicar. */
-export function sanitizeEspecialidades(values: string[]): string[] {
-  const set = new Set(values.filter((v) => VALID.has(v)));
-  return ESPECIALIDADES_OPCOES.filter((o) => set.has(o));
-}

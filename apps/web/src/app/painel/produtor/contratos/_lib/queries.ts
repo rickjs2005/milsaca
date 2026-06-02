@@ -20,14 +20,6 @@ export const CONTRATO_STATUS_LABEL: Record<ContratoStatus, string> = {
   cancelado: "Cancelado",
 };
 
-export const CONTRATO_STATUS_COLOR: Record<ContratoStatus, string> = {
-  rascunho: "bg-slate-200 text-slate-700",
-  em_analise: "bg-milsaca-dourado/20 text-milsaca-verde",
-  ativo: "bg-emerald-100 text-emerald-800",
-  finalizado: "bg-milsaca-verde text-milsaca-cream",
-  cancelado: "bg-rose-100 text-rose-800",
-};
-
 // Tone semântico (fundação D1) — usado pelo <StatusBadge> nas listagens.
 export const CONTRATO_STATUS_TONE: Record<ContratoStatus, StatusTone> = {
   rascunho: "neutral",

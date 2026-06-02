@@ -5,7 +5,6 @@ import { createClient } from "@milsaca/db/web/server";
 export {
   LEAD_STATUS_ORDER,
   LEAD_STATUS_LABEL,
-  LEAD_STATUS_COLOR,
 } from "./lead-meta";
 export type {
   LeadStatus,

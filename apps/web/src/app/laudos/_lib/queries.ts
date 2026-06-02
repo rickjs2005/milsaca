@@ -4,7 +4,7 @@ import { createPublicClient } from "@milsaca/db/web/public";
 import type { CoffeeProcesso, CoffeeSpecie } from "@milsaca/types";
 import type { DefeitosCrus } from "@milsaca/cob";
 
-export type LaudoPublicoLote = {
+type LaudoPublicoLote = {
   codigo: string;
   specie: CoffeeSpecie;
   processo: CoffeeProcesso | null;
@@ -12,7 +12,7 @@ export type LaudoPublicoLote = {
   peso_sacas: number | null;
 };
 
-export type LaudoPublicoCorretora = {
+type LaudoPublicoCorretora = {
   name: string;
   slug: string;
   city: string | null;

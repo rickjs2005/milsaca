@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type Crumb = {
+type Crumb = {
   label: string;
   /** Sem href = item atual (renderiza como texto). */
   href?: string;

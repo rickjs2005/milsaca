@@ -13,7 +13,6 @@ import {
   normalizeCpfOrCnpj,
   normalizePhoneBR,
   normalizeUF,
-  UFS,
 } from "./brasil";
 
 /**
@@ -177,9 +176,3 @@ export const cepOptionalSchema = z
   .refine((v) => v === null || isValidCEP(v), {
     message: "CEP inválido. Use 8 dígitos.",
   });
-
-// =================================================================
-// Re-export pra conveniência
-// =================================================================
-
-export { UFS };

@@ -45,7 +45,7 @@ export type CompradorListItem = {
 // Tipo de comprador (segmento) — cor por segmento pro matching visual
 // ---------------------------------------------------------------------------
 
-export const TIPO_LABEL: Record<string, string> = {
+const TIPO_LABEL: Record<string, string> = {
   industria: "Indústria",
   exportador: "Exportador",
   trading: "Trading",
@@ -155,7 +155,7 @@ export function compraRecencia(
 // ---------------------------------------------------------------------------
 
 /** Normaliza telefone BR pra wa.me (E.164 sem +). null se implausível. */
-export function normalizePhoneBR(raw: string | null | undefined): string | null {
+function normalizePhoneBR(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const digits = raw.replace(/\D+/g, "");
   if (!digits) return null;
@@ -219,7 +219,7 @@ export const PROCESSO_PREF_LABEL: Record<string, string> = {
   fermentado: "Fermentado",
 };
 
-export const PERFIL_VAZIO: PerfilCompra = {
+const PERFIL_VAZIO: PerfilCompra = {
   cafe: null,
   peneira: null,
   processo: null,

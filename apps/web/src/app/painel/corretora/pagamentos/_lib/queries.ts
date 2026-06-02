@@ -8,11 +8,6 @@ import {
 // Re-export da meta pura — clients importam de "./pagamento-meta" direto.
 export {
   PAGAMENTO_STATUS_ORDER,
-  PAGAMENTO_STATUS_LABEL,
-  PAGAMENTO_STATUS_COLOR,
-  PAGAMENTO_STATUS_TONE,
-  isPagamentoAberto,
-  nextPaymentAction,
 } from "./pagamento-meta";
 export type { PagamentoStatus, PagamentoItem } from "./pagamento-meta";
 

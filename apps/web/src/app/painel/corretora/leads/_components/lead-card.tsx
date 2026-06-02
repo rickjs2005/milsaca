@@ -17,7 +17,6 @@ import { updateLeadStatus } from "../_actions";
 import {
   LEAD_STATUS_LABEL,
   LEAD_STATUS_TONE,
-  LEAD_STATUS_ORDER,
   LEAD_ORIGEM_LABEL,
   LEAD_ORIGEM_TONE,
   type LeadListItem,
@@ -209,5 +208,3 @@ export function LeadCard({
     </Card>
   );
 }
-
-export const ALL_LEAD_STATUSES = LEAD_STATUS_ORDER;

@@ -21,7 +21,7 @@ import {
   onlyDigits,
 } from "@/lib/brasil";
 
-export type MaskType = "cpf" | "cnpj" | "cpf-cnpj" | "phone" | "cep";
+type MaskType = "cpf" | "cnpj" | "cpf-cnpj" | "phone" | "cep";
 
 const META: Record<
   MaskType,

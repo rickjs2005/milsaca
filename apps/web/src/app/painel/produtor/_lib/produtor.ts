@@ -5,20 +5,13 @@ import { createClient } from "@milsaca/db/web/server";
 import type { Database } from "@milsaca/types/database";
 
 export type ProdutorSpecie = Database["public"]["Enums"]["produtor_specie"];
-export type ProdutorStatus = Database["public"]["Enums"]["produtor_status"];
+type ProdutorStatus = Database["public"]["Enums"]["produtor_status"];
 export type CanalPreferido = Database["public"]["Enums"]["canal_preferido"];
 
 export const SPECIE_LABEL: Record<ProdutorSpecie, string> = {
   arabica: "Arábica",
   conilon: "Conilón",
   ambos: "Ambos",
-};
-
-export const STATUS_LABEL: Record<ProdutorStatus, string> = {
-  sombra: "Sombra (sem conta)",
-  ativo: "Ativo",
-  pendente: "Pendente",
-  bloqueado: "Bloqueado",
 };
 
 export const CANAL_LABEL: Record<CanalPreferido, string> = {
@@ -117,17 +110,3 @@ export function needsOnboarding(
   return false;
 }
 
-// Mascara CPF/CNPJ pra exibição pública (laudos, espelhos).
-// CPF:  XXX.***.***-XX           (mostra 3 primeiros + DV)
-// CNPJ: XX.***.***/***X-XX       (mostra 2 primeiros + 1 dígito da filial + DV)
-export function maskDoc(raw: string | null): string | null {
-  if (!raw) return null;
-  const digits = raw.replace(/\D/g, "");
-  if (digits.length === 11) {
-    return `${digits.slice(0, 3)}.***.***-${digits.slice(9)}`;
-  }
-  if (digits.length === 14) {
-    return `${digits.slice(0, 2)}.***.***/***${digits.slice(11, 12)}-${digits.slice(12)}`;
-  }
-  return "***";
-}

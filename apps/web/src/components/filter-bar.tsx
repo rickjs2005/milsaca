@@ -6,7 +6,7 @@ import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
-export type FilterOption = {
+type FilterOption = {
   /** Valor que vai pra URL. Vazio "" representa "Todos". */
   value: string;
   label: string;
@@ -14,7 +14,7 @@ export type FilterOption = {
   count?: number;
 };
 
-export type FilterDef = {
+type FilterDef = {
   /** Nome do query param na URL. */
   param: string;
   label: string;

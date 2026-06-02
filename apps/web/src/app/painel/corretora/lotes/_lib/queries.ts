@@ -4,13 +4,8 @@ import type { Lote } from "@milsaca/types";
 // Re-exports dos metadados puros — pra clients antigos que importam de queries.
 export {
   LOTE_STATUS_ORDER,
-  LOTE_STATUS_LABEL,
-  LOTE_STATUS_COLOR,
-  LOTE_STATUS_ACTIVE,
-  SPECIE_LABEL,
-  PROCESSO_LABEL,
 } from "./lote-meta";
-export type { LoteStatus, LoteRow, ProdutorOption } from "./lote-meta";
+export type { LoteRow, ProdutorOption } from "./lote-meta";
 
 import type { LoteRow, ProdutorOption } from "./lote-meta";
 

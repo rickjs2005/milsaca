@@ -10,8 +10,6 @@ import {
 // O CLIENT view deve importar de "./meta" diretamente (queries puxa server-only).
 export {
   WHATSAPP_LEADS_PAGE_SIZE,
-  SOURCE_META,
-  SOURCE_FILTERS,
 } from "./meta";
 export type { WhatsAppLeadItem, WhatsAppLeadsFilter } from "./meta";
 

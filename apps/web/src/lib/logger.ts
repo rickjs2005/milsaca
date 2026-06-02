@@ -181,4 +181,4 @@ function createLogger(bindings: LogFields = {}): Logger {
 
 export const logger: Logger = createLogger();
 
-export type { LogLevel, LogFields, Logger };
+export type { LogFields, Logger };

@@ -20,9 +20,9 @@ export const PERIOD_LABEL: Record<Period, string> = {
   "12m": "12 meses",
 };
 
-export const PERIOD_DEFAULT: Period = "este_mes";
+const PERIOD_DEFAULT: Period = "este_mes";
 
-export function isPeriod(v: unknown): v is Period {
+function isPeriod(v: unknown): v is Period {
   return typeof v === "string" && (PERIODS as string[]).includes(v);
 }
 

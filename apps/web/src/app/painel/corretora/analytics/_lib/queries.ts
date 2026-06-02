@@ -16,19 +16,19 @@ import {
 const MONTHS_LEADS = 6;
 const MONTHS_COMISSAO = 12;
 
-export type SerieMensal = {
+type SerieMensal = {
   mes: string; // "Jan", "Fev"...
   mesIso: string; // "2026-01"
   valor: number;
 };
 
-export type FunilItem = {
+type FunilItem = {
   status: LeadStatus;
   label: string;
   count: number;
 };
 
-export type MixItem = {
+type MixItem = {
   specie: string;
   label: string;
   sacas: number;
@@ -42,7 +42,7 @@ export type TopComprador = {
   comissao: number;
 };
 
-export type OrigemLeads = {
+type OrigemLeads = {
   whatsapp: number;
   formulario: number;
   vitrine: number;
@@ -51,7 +51,7 @@ export type OrigemLeads = {
   total: number;
 };
 
-export type Metric = { value: number; delta: DeltaInfo };
+type Metric = { value: number; delta: DeltaInfo };
 
 export type AnalyticsData = {
   periodLabel: string;

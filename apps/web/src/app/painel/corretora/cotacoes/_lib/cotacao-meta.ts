@@ -46,9 +46,7 @@ export const PROCESS_LABEL: Record<CoffeeProcesso, string> = {
   fermentacao_induzida: "Fermentação induzida",
 };
 
-export const SPECIE_ORDER: readonly CoffeeSpecie[] = ["arabica", "conillon"];
-
-export const PROCESS_ORDER: readonly CoffeeProcesso[] = [
+const PROCESS_ORDER: readonly CoffeeProcesso[] = [
   "natural",
   "cereja_descascado",
   "cd_desmucilado",

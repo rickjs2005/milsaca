@@ -15,7 +15,7 @@ const SITE_URL = (
 ).replace(/\/$/, "");
 
 /** URL pública absoluta do lote — apontável pra qualquer um sem login. */
-export function publicLoteUrl(loteId: string): string {
+function publicLoteUrl(loteId: string): string {
   return `${SITE_URL}/lote/${loteId}`;
 }
 

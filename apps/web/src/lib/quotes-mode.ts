@@ -21,7 +21,7 @@
 
 import { createClient } from "@milsaca/db/web/server";
 
-export type QuotesMode = "real" | "demo";
+type QuotesMode = "real" | "demo";
 
 function normalize(raw: string | null | undefined): QuotesMode {
   return raw === "demo" ? "demo" : "real";
@@ -30,7 +30,7 @@ function normalize(raw: string | null | undefined): QuotesMode {
 /**
  * Modo a partir das env vars apenas (síncrono). Default `real`.
  */
-export function quotesMode(): QuotesMode {
+function quotesMode(): QuotesMode {
   return normalize(
     process.env.QUOTES_MODE ?? process.env.NEXT_PUBLIC_QUOTES_MODE ?? "real",
   );
@@ -41,7 +41,7 @@ export function quotesMode(): QuotesMode {
  * pública `get_quotes_mode`); se a RPC falhar ou vier vazia, cai pro
  * valor de env e, por fim, `real`. Nunca lança.
  */
-export async function quotesModeAsync(): Promise<QuotesMode> {
+async function quotesModeAsync(): Promise<QuotesMode> {
   try {
     const supabase = await createClient();
     // RPC pública (platform_settings tem RLS admin-only).
@@ -55,26 +55,9 @@ export async function quotesModeAsync(): Promise<QuotesMode> {
   return quotesMode();
 }
 
-export function isDemoMode(): boolean {
-  return quotesMode() === "demo";
-}
-
 /**
  * Versão async do gate de demo, lendo a flag do banco.
  */
 export async function isDemoModeAsync(): Promise<boolean> {
   return (await quotesModeAsync()) === "demo";
-}
-
-/**
- * Lança erro se for chamada em modo real. Use em scripts de seed/mock
- * pra impedir execução acidental em produção. Síncrono (env-only) de
- * propósito: scripts não devem depender de conexão com o banco.
- */
-export function assertDemoMode(context: string): void {
-  if (quotesMode() !== "demo") {
-    throw new Error(
-      `${context} requer QUOTES_MODE=demo. Modo atual = ${quotesMode()}. Recusando execução pra não poluir banco real.`,
-    );
-  }
 }

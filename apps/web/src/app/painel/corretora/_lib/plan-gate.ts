@@ -21,7 +21,7 @@ import type { SubscriptionInfo } from "./corretora";
  * a corretora "pode usar agora" features pagas; pra isso use `isProOrAbove`/
  * `isPremium`, que também checam se a assinatura está utilizável.
  */
-export function getCorretoraTier(
+function getCorretoraTier(
   subscription: SubscriptionInfo | null,
 ): PlanTier {
   if (!subscription) return "gratuito";
@@ -49,19 +49,6 @@ export function getCorretoraTier(
  * pra não quebrar os call-sites (analytics, contratos, entregas, dashboard).
  */
 export function isProOrAbove(
-  subscription: SubscriptionInfo | null,
-): boolean {
-  if (!subscription?.isUsable) return false;
-  return getCorretoraTier(subscription) === "premium";
-}
-
-/**
- * Plano pago (Premium) ou fundadora libera features de equipe / API.
- * Idêntico a `isProOrAbove` agora que só há um plano pago — mantido pra
- * compat de imports e clareza semântica nos call-sites. Também exige
- * assinatura utilizável (mesmo gate do backend).
- */
-export function isPremium(
   subscription: SubscriptionInfo | null,
 ): boolean {
   if (!subscription?.isUsable) return false;

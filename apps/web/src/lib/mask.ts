@@ -52,22 +52,3 @@ export function formatCpfCnpj(value: string | null | undefined): string {
   return value;
 }
 
-/**
- * Máscara visual pra CPF/CNPJ em listagem — mostra só os 3 primeiros e
- * 2 últimos dígitos. Use quando o admin não precisa do número completo
- * pra identificar (ex: lista de produtores cruzada com nome).
- *
- *   CPF  "12345678901"   → "123.x.x-01"  (estilo "123.***.***-01")
- *   CNPJ "12345678000190" → mascarado nos 8 dígitos centrais
- */
-export function maskCpfCnpj(value: string | null | undefined): string {
-  if (!value) return "—";
-  const d = onlyDigits(value);
-  if (d.length === 11) {
-    return `${d.slice(0, 3)}.***.***-${d.slice(9)}`;
-  }
-  if (d.length === 14) {
-    return `${d.slice(0, 2)}.***.***/****-${d.slice(12)}`;
-  }
-  return value;
-}

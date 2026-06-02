@@ -1,13 +1,13 @@
 import { unstable_cache } from "next/cache";
 import { createPublicClient } from "@milsaca/db/web/public";
 
-export type ContratoPublicoCorretora = {
+type ContratoPublicoCorretora = {
   name: string;
   city: string | null;
   state: string | null;
 };
 
-export type ContratoPublicoParte = {
+type ContratoPublicoParte = {
   nome: string;
   doc: string | null;
   city: string | null;

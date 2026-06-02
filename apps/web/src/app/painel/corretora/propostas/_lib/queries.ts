@@ -1,9 +1,8 @@
 import { createClient } from "@milsaca/db/web/server";
-import type { PropostaRow, PropostaStatus } from "./proposta-meta";
+import type { PropostaRow } from "./proposta-meta";
 
 export type {
   PropostaRow,
-  PropostaStatus,
 } from "./proposta-meta";
 
 const SELECT_FIELDS = `
@@ -49,50 +48,3 @@ export async function listPropostasDoLote(
   return ((data ?? []) as PropostaRow[]).map(toPropostaRow);
 }
 
-/**
- * KPIs agregadas pra dashboard ou bloco de propostas.
- */
-export type PropostasKpis = {
-  rascunho: number;
-  enviadas: number;
-  aceitas: number;
-  rejeitadas: number;
-  expiradas: number;
-  pendentes: number; // enviadas - sem resposta
-  total: number;
-};
-
-export async function loadPropostasKpis(
-  corretoraId: string,
-): Promise<PropostasKpis> {
-  const empty: PropostasKpis = {
-    rascunho: 0,
-    enviadas: 0,
-    aceitas: 0,
-    rejeitadas: 0,
-    expiradas: 0,
-    pendentes: 0,
-    total: 0,
-  };
-  if (!corretoraId) return empty;
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("propostas")
-    .select("status")
-    .eq("corretora_id", corretoraId);
-
-  const rows = (data ?? []) as { status: PropostaStatus }[];
-  if (rows.length === 0) return empty;
-
-  const acc: PropostasKpis = { ...empty, total: rows.length };
-  for (const r of rows) {
-    if (r.status === "rascunho") acc.rascunho++;
-    else if (r.status === "enviada") {
-      acc.enviadas++;
-      acc.pendentes++;
-    } else if (r.status === "aceita") acc.aceitas++;
-    else if (r.status === "rejeitada") acc.rejeitadas++;
-    else if (r.status === "expirada") acc.expiradas++;
-  }
-  return acc;
-}
