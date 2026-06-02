@@ -5,13 +5,17 @@
 // no banco (via net.http_post). Lê o despacho, renderiza o template,
 // envia via provider (WhatsApp Cloud / Resend) e UPDATEa o status.
 //
-// Sem providers ainda — retorna 501 not_implemented. Quando contratar:
-//   1. Setar SEND_DISPATCH_SECRET (deve casar com dispatch_worker_secret
-//      em platform_settings).
-//   2. Setar WHATSAPP_PROVIDER_TOKEN / RESEND_API_KEY.
-//   3. Implementar `sendWhatsApp` e `sendEmail` abaixo.
-//   4. Deploy: `supabase functions deploy send-dispatch --no-verify-jwt`.
-//      (não verify_jwt porque o caller é o próprio banco, não usuário)
+// Os providers JÁ ESTÃO IMPLEMENTADOS (WhatsApp Cloud API + Resend). É
+// plug-and-play: sem os secrets de provider, sendWhatsApp/sendEmail lançam
+// `*_not_implemented` (erro ESPERADO — mantém o modo stub do banco). Com os
+// secrets, enviam de verdade. Pra ligar:
+//   1. SEND_DISPATCH_SECRET (deve casar com platform_settings.dispatch_worker_secret).
+//   2. WhatsApp: WHATSAPP_PROVIDER_TOKEN + WHATSAPP_PHONE_ID (opcional WHATSAPP_API_VERSION).
+//   3. Email: RESEND_API_KEY + RESEND_FROM (remetente de domínio verificado).
+//   4. Deploy: `supabase functions deploy send-dispatch --no-verify-jwt`
+//      (não verify_jwt porque o caller é o próprio banco, não usuário).
+//   5. Em /admin/configuracoes: dispatch_worker_url + dispatch_worker_secret
+//      (sai do modo stub no cron process_pending_dispatches).
 //
 // Convenção da função:
 //   - Sucesso → UPDATE status='sent', sent_at=now()
@@ -28,6 +32,37 @@ import { log, safeError } from "../_shared/log.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const SEND_DISPATCH_SECRET = Deno.env.get("SEND_DISPATCH_SECRET") ?? "";
+
+// Providers — preenchidos via secrets quando contratar. Vazio = modo stub.
+const WHATSAPP_TOKEN = Deno.env.get("WHATSAPP_PROVIDER_TOKEN") ?? "";
+const WHATSAPP_PHONE_ID = Deno.env.get("WHATSAPP_PHONE_ID") ?? "";
+const WHATSAPP_API_VERSION = Deno.env.get("WHATSAPP_API_VERSION") ?? "v21.0";
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
+const RESEND_FROM =
+  Deno.env.get("RESEND_FROM") ?? "Milsaca <nao-responda@milsaca.app>";
+
+// POST JSON com timeout (evita worker pendurado num provider lento).
+async function postJson(
+  url: string,
+  headers: Record<string, string>,
+  payload: unknown,
+  timeoutMs = 10_000,
+): Promise<{ ok: boolean; status: number; text: string }> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify(payload),
+      signal: ctrl.signal,
+    });
+    const text = await res.text();
+    return { ok: res.ok, status: res.status, text };
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 // Observabilidade: só inicializa se o secret SENTRY_DSN existir. No-op sem DSN.
 const SENTRY_DSN = Deno.env.get("SENTRY_DSN");
@@ -76,13 +111,27 @@ const EXPECTED_ERRORS = new Set([
 // -----------------------------------------------------------------
 
 async function sendWhatsApp(recipient: string, body: string): Promise<void> {
-  // TODO: implementar com Meta Cloud API.
-  // POST https://graph.facebook.com/v18.0/{PHONE_ID}/messages
-  // headers: Authorization Bearer WHATSAPP_PROVIDER_TOKEN
-  // body: { messaging_product: "whatsapp", to: recipient, type: "text", text: { body } }
-  void recipient;
-  void body;
-  throw new Error("whatsapp_provider_not_implemented");
+  // Sem provider configurado: erro ESPERADO (allowlist) — mantém o modo stub.
+  if (!WHATSAPP_TOKEN || !WHATSAPP_PHONE_ID) {
+    throw new Error("whatsapp_provider_not_implemented");
+  }
+  // Meta Cloud API aceita E.164 só com dígitos (DDI+DDD+número).
+  const to = recipient.replace(/\D/g, "");
+  if (!to) throw new Error("whatsapp_recipient_invalido");
+
+  const { ok, status, text } = await postJson(
+    `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${WHATSAPP_PHONE_ID}/messages`,
+    { Authorization: `Bearer ${WHATSAPP_TOKEN}` },
+    {
+      messaging_product: "whatsapp",
+      to,
+      type: "text",
+      text: { preview_url: false, body },
+    },
+  );
+  if (!ok) {
+    throw new Error(`whatsapp_send_falhou_${status}: ${text.slice(0, 300)}`);
+  }
 }
 
 async function sendEmail(
@@ -90,14 +139,25 @@ async function sendEmail(
   subject: string,
   body: string,
 ): Promise<void> {
-  // TODO: implementar com Resend.
-  // POST https://api.resend.com/emails
-  // headers: Authorization Bearer RESEND_API_KEY
-  // body: { from, to: recipient, subject, html: body }
-  void recipient;
-  void subject;
-  void body;
-  throw new Error("email_provider_not_implemented");
+  // Sem provider configurado: erro ESPERADO (allowlist) — mantém o modo stub.
+  if (!RESEND_API_KEY) {
+    throw new Error("email_provider_not_implemented");
+  }
+  const { ok, status, text } = await postJson(
+    "https://api.resend.com/emails",
+    { Authorization: `Bearer ${RESEND_API_KEY}` },
+    {
+      from: RESEND_FROM,
+      to: recipient,
+      subject,
+      // Templates são texto; preserva quebras de linha no HTML.
+      html: body.replace(/\n/g, "<br>"),
+      text: body,
+    },
+  );
+  if (!ok) {
+    throw new Error(`email_send_falhou_${status}: ${text.slice(0, 300)}`);
+  }
 }
 
 // -----------------------------------------------------------------
