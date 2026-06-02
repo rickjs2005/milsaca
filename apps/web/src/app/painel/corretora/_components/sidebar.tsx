@@ -88,7 +88,7 @@ const NAV_GROUPS: NavGroup[] = [
       },
       {
         href: "/painel/corretora/pagamentos",
-        label: "Pagamentos",
+        label: "Repasses",
         icon: Wallet,
         ownerOnly: true,
       },

@@ -35,8 +35,11 @@ export function MarcarPagoButton({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [hasFile, setHasFile] = useState(false);
 
+  // Sem encType no <form>: com Server Action (action=função), o React define o
+  // multipart/form-data automaticamente ao detectar o input de arquivo —
+  // declarar encType explícito é erro de runtime no React 19.
   return (
-    <form action={marcarPago} encType="multipart/form-data">
+    <form action={marcarPago}>
       <input type="hidden" name="id" value={id} />
 
       <Button
@@ -51,7 +54,7 @@ export function MarcarPagoButton({
         onClick={() => dialogRef.current?.showModal()}
       >
         <CheckCircle2 className="h-3.5 w-3.5" />
-        Marcar pago
+        Marcar repasse feito
       </Button>
 
       <dialog
@@ -62,16 +65,16 @@ export function MarcarPagoButton({
         }}
       >
         <div className="w-[min(440px,92vw)] space-y-4 p-6">
-          <h2 className="text-h3 text-milsaca-cafezal">Confirmar pagamento</h2>
+          <h2 className="text-h3 text-milsaca-cafezal">Confirmar repasse</h2>
           <p className="text-body-sm text-neutral-600">
-            Confirmar pagamento de{" "}
+            Confirmar repasse de{" "}
             <strong className="text-milsaca-cafezal">
               {BRL.format(valorLiquido)}
             </strong>{" "}
             (líquido) a <strong className="text-milsaca-cafezal">{produtorNome}</strong>?
           </p>
           <p className="rounded-md bg-neutral-50 px-3 py-2 text-caption text-neutral-500">
-            A Milsaca não movimenta dinheiro. Você pagou direto ao produtor —
+            A Milsaca não movimenta dinheiro. Você repassou direto ao produtor —
             aqui é só o registro. Anexe o comprovante (foto ou PDF do PIX).
           </p>
 
@@ -105,7 +108,7 @@ export function MarcarPagoButton({
               className="gap-1.5"
             >
               <CheckCircle2 className="h-4 w-4" />
-              Confirmar pagamento
+              Confirmar repasse
             </SubmitButton>
           </div>
         </div>

@@ -78,7 +78,7 @@ export default function FinanceiroScreen() {
       return (data ?? []) as Row[];
     },
     [profile],
-    "Erro ao carregar pagamentos",
+    "Erro ao carregar repasses",
   );
 
   const totals = (items ?? []).reduce(
@@ -162,7 +162,7 @@ export default function FinanceiroScreen() {
               style={{ fontFamily: "Inter_400Regular" }}
             >
               Sem repasses por aqui. Quando uma entrega for conferida e a
-              corretora lançar o pagamento, aparece nesta tela.
+              corretora lançar o repasse, aparece nesta tela.
             </Text>
           </View>
         ) : (
@@ -188,7 +188,7 @@ export default function FinanceiroScreen() {
                         style={{ fontFamily: "Inter_400Regular" }}
                       >
                         Prevista {fmtDate(r.data_prevista)}
-                        {r.data_paga ? ` · Paga ${fmtDate(r.data_paga)}` : ""}
+                        {r.data_paga ? ` · Recebido ${fmtDate(r.data_paga)}` : ""}
                       </Text>
                     </View>
                     <View

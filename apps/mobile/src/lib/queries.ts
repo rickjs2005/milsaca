@@ -522,8 +522,8 @@ export const CONTRATO_STATUS_BADGE: Record<
 // na tela. Espelha o enum `pagamento_status`: pendente/pago/vencido/cancelado.
 
 export const PAGAMENTO_STATUS_LABEL: Record<string, string> = {
-  pendente: "Pendente",
-  pago: "Pago",
+  pendente: "A receber",
+  pago: "Recebido",
   vencido: "Vencido",
   cancelado: "Cancelado",
 };

@@ -48,7 +48,7 @@ function fmtDate(iso: string | null): string {
 /** Semáforo de vencimento — só pra pagamentos em aberto. */
 function prazo(p: PagamentoItem): { label: string; tone: StatusTone } {
   if (p.status === "pago")
-    return { label: `pago ${fmtDate(p.data_paga)}`, tone: "success" };
+    return { label: `repassado ${fmtDate(p.data_paga)}`, tone: "success" };
   if (p.status === "cancelado") return { label: "—", tone: "neutral" };
   if (!p.data_prevista) return { label: "sem data", tone: "neutral" };
   const d = deadlineStatus(p.data_prevista);
@@ -147,7 +147,7 @@ export function PagamentosView({
         </div>
         <span className="whitespace-nowrap text-caption text-neutral-500">
           <strong className="text-milsaca-cafezal">{filtered.length}</strong>{" "}
-          {filtered.length === 1 ? "pagamento" : "pagamentos"}
+          {filtered.length === 1 ? "repasse" : "repasses"}
         </span>
       </div>
 
@@ -168,7 +168,7 @@ export function PagamentosView({
         </button>
         <span className="text-caption text-neutral-500">
           <strong className="text-milsaca-cafezal">{filtered.length}</strong>{" "}
-          {filtered.length === 1 ? "pagamento" : "pagamentos"}
+          {filtered.length === 1 ? "repasse" : "repasses"}
         </span>
       </div>
 
@@ -264,7 +264,7 @@ export function PagamentosView({
           },
         ]}
         resultCount={filtered.length}
-        resultNoun={filtered.length === 1 ? "pagamento" : "pagamentos"}
+        resultNoun={filtered.length === 1 ? "repasse" : "repasses"}
         onClear={() => {
           router.push(pathname);
           setSheetOpen(false);
@@ -377,17 +377,17 @@ function PagamentoAcoes({
               <ConfirmSubmit
                 variant="ghost"
                 className="h-auto w-full justify-start px-2 py-1.5 text-caption text-danger-700 hover:bg-danger-50"
-                confirmTitle="Cancelar pagamento?"
+                confirmTitle="Cancelar repasse?"
                 confirmMessage={
                   <p>
                     O registro fica como cancelado (não some do histórico) e o
                     produtor deixa de ver este valor a receber.
                   </p>
                 }
-                confirmButtonLabel="Cancelar pagamento"
+                confirmButtonLabel="Cancelar repasse"
                 pendingLabel="Cancelando..."
               >
-                Cancelar pagamento
+                Cancelar repasse
               </ConfirmSubmit>
             </form>
           </div>

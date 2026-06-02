@@ -22,8 +22,8 @@ const BRL = new Intl.NumberFormat("pt-BR", {
 });
 
 const STATUS_LABEL: Record<string, string> = {
-  pendente: "Pendente",
-  pago: "Pago",
+  pendente: "A receber",
+  pago: "Recebido",
   vencido: "Vencido",
   cancelado: "Cancelado",
 };
@@ -154,7 +154,7 @@ export default async function FinanceiroPage() {
             <EmptyState
               icon={Wallet}
               title="Sem repasses por aqui ainda"
-              description="Quando uma entrega for conferida e a corretora lançar o pagamento, ele aparece nesta página."
+              description="Quando uma entrega for conferida e a corretora lançar o repasse, ele aparece nesta página."
             />
           </CardContent>
         </Card>
@@ -179,7 +179,7 @@ export default async function FinanceiroPage() {
                       </div>
                       <p className="mt-1 text-caption text-neutral-600">
                         Prevista {fmtDate(r.data_prevista)}
-                        {r.data_paga ? ` · Paga ${fmtDate(r.data_paga)}` : ""}
+                        {r.data_paga ? ` · Recebido ${fmtDate(r.data_paga)}` : ""}
                       </p>
                     </div>
                     <StatusBadge tone={STATUS_TONE[r.status] ?? "neutral"}>

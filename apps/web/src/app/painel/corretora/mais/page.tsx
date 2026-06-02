@@ -49,7 +49,7 @@ const GROUPS: Group[] = [
       { href: "/painel/corretora/entregas", label: "Entregas", icon: Truck },
       {
         href: "/painel/corretora/pagamentos",
-        label: "Pagamentos",
+        label: "Repasses",
         icon: Wallet,
         ownerOnly: true,
       },

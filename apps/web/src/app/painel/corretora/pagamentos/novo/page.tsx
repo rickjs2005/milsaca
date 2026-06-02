@@ -12,7 +12,7 @@ import { listContratosParaPagamento } from "../_lib/queries";
 import { createPagamento } from "../_actions";
 import { fmtMoney } from "@/lib/format";
 
-export const metadata = { title: "Registrar pagamento — Painel da corretora" };
+export const metadata = { title: "Registrar repasse — Painel da corretora" };
 
 export default async function NovoPagamentoPage() {
   const profile = await getProfile();
@@ -30,13 +30,13 @@ export default async function NovoPagamentoPage() {
           className="inline-flex items-center gap-1 text-sm text-milsaca-verde-claro hover:text-milsaca-verde"
         >
           <ArrowLeft className="h-4 w-4" />
-          Voltar para Pagamentos
+          Voltar para Repasses
         </Link>
       </div>
 
       <header>
         <h1 className="text-2xl font-semibold tracking-tight text-milsaca-verde sm:text-3xl">
-          Registrar pagamento
+          Registrar repasse
         </h1>
         <p className="text-sm text-milsaca-verde-claro">
           Vincule a um contrato — o produtor é definido por ele. Líquido = bruto
@@ -54,7 +54,7 @@ export default async function NovoPagamentoPage() {
               Nenhum contrato ainda.
             </p>
             <p className="text-xs text-milsaca-verde-claro">
-              O pagamento é registrado a partir de um contrato. Crie um primeiro.
+              O repasse é registrado a partir de um contrato. Crie um primeiro.
             </p>
             <Button
               asChild
@@ -130,7 +130,7 @@ export default async function NovoPagamentoPage() {
                   rows={3}
                   maxLength={500}
                   className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  placeholder="Ex.: pagamento à vista após conferência da entrega"
+                  placeholder="Ex.: repasse à vista após conferência da entrega"
                 />
               </div>
 
@@ -138,7 +138,7 @@ export default async function NovoPagamentoPage() {
                 pendingLabel="Registrando..."
                 className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
               >
-                Registrar pagamento
+                Registrar repasse
               </SubmitButton>
             </form>
           </CardContent>

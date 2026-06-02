@@ -18,7 +18,7 @@ import {
 import { PagamentosView } from "./_components/pagamentos-view";
 import { fmtMoney } from "@/lib/format";
 
-export const metadata = { title: "Pagamentos — Painel da corretora" };
+export const metadata = { title: "Repasses — Painel da corretora" };
 
 type SearchParams = Promise<{ status?: string; page?: string }>;
 
@@ -61,32 +61,32 @@ export default async function PagamentosPage({
     <div className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-h1 text-milsaca-cafezal">Pagamentos ao produtor</h1>
+          <h1 className="text-h1 text-milsaca-cafezal">Repasses ao produtor</h1>
           <p className="mt-1 max-w-2xl text-body-sm text-neutral-600">
-            Controle do repasse — registre o que deve e marque como pago.
+            Controle do repasse — registre o que deve e marque como repassado.
           </p>
         </div>
         <Button asChild variant="primary">
           <Link href="/painel/corretora/pagamentos/novo">
             <Plus className="mr-2 h-4 w-4" />
-            Registrar pagamento
+            Registrar repasse
           </Link>
         </Button>
       </header>
 
       <section
-        aria-label="Indicadores de pagamentos"
+        aria-label="Indicadores de repasses"
         className="grid grid-cols-2 gap-4 lg:grid-cols-3"
       >
         <KpiCard
-          label="A pagar (líquido)"
+          label="A repassar (líquido)"
           value={fmtMoney(kpis.aPagar)}
           icon={Wallet}
           tone="warning"
           hint="Pendente + vencido"
         />
         <KpiCard
-          label="Já pago (líquido)"
+          label="Já repassado (líquido)"
           value={fmtMoney(kpis.pago)}
           icon={CheckCircle2}
           tone="success"
@@ -105,7 +105,7 @@ export default async function PagamentosPage({
       <div className="flex items-start gap-2 rounded-md border border-info-100 bg-info-50 px-4 py-3 text-body-sm text-info-700">
         <Info className="mt-0.5 h-4 w-4 shrink-0" />
         <p>
-          A Milsaca <strong>não movimenta dinheiro</strong>. O pagamento é feito
+          A Milsaca <strong>não movimenta dinheiro</strong>. O repasse é feito
           direto com o produtor — aqui é só o controle. O produtor acompanha o
           status no Financeiro dele.
         </p>
@@ -116,10 +116,10 @@ export default async function PagamentosPage({
           <CardContent className="p-card">
             <EmptyState
               icon={Wallet}
-              title={`Nenhum pagamento${status ? " com esse status" : ""}`}
+              title={`Nenhum repasse${status ? " com esse status" : ""}`}
               description="Registre o repasse de um contrato para acompanhar aqui."
               cta={{
-                label: "Registrar pagamento",
+                label: "Registrar repasse",
                 href: "/painel/corretora/pagamentos/novo",
               }}
             />

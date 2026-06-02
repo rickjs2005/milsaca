@@ -11,8 +11,8 @@ export const PAGAMENTO_STATUS_ORDER: PagamentoStatus[] = [
 ];
 
 export const PAGAMENTO_STATUS_LABEL: Record<PagamentoStatus, string> = {
-  pendente: "A pagar",
-  pago: "Pago",
+  pendente: "A repassar",
+  pago: "Repassado",
   vencido: "Vencido",
   cancelado: "Cancelado",
 };
@@ -61,7 +61,7 @@ export function nextPaymentAction(p: {
   status: PagamentoStatus;
   comprovante_url: string | null;
 }): PagamentoAction {
-  if (isPagamentoAberto(p.status)) return { kind: "pay", label: "Marcar pago" };
+  if (isPagamentoAberto(p.status)) return { kind: "pay", label: "Marcar repasse feito" };
   if (p.status === "pago" && p.comprovante_url)
     return { kind: "view-comprovante", label: "Ver comprovante" };
   return { kind: "none" };
