@@ -112,12 +112,15 @@ export function primaryLeadAction(lead: LeadListItem): PrimaryAction {
         toStatus: "em_negociacao",
       };
     case "em_negociacao":
+      // Conversão acontece ao GERAR o contrato (que marca o lead convertido).
+      // Não há mais "Marcar convertido" manual — evita lead convertido sem contrato.
       return {
-        type: "advance",
-        label: "Marcar convertido",
-        toStatus: "convertido",
+        type: "link",
+        label: "Gerar contrato",
+        href: `/painel/corretora/contratos/novo?lead=${lead.id}`,
       };
     case "convertido":
+      // Legado: convertido sem contrato ainda permite gerar o contrato.
       return {
         type: "link",
         label: "Gerar contrato",

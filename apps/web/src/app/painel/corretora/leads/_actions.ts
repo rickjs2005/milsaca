@@ -315,6 +315,16 @@ export async function updateLeadStatus(formData: FormData) {
     redirect(`/painel/corretora/leads/${id}?${params.toString()}`);
   }
 
+  // Conversão não é manual: o lead vira convertido só quando o contrato é
+  // gerado (createContrato). Bloqueia setar convertido por aqui — assim não
+  // nasce lead convertido sem contrato.
+  if (next === "convertido") {
+    const params = new URLSearchParams({
+      error: "O lead vira convertido ao gerar o contrato — use “Gerar contrato”.",
+    });
+    redirect(`/painel/corretora/leads/${id}?${params.toString()}`);
+  }
+
   if (current.status === next) {
     // sem mudança real, mas se houver comentário registra como comment
     if (comment) {

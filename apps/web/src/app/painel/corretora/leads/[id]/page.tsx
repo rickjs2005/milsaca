@@ -131,13 +131,15 @@ const DOT_TONE_CLASS: Record<StatusTone, string> = {
 };
 
 // Botões de mudança de status → variant do Button (cores semânticas, não cruas).
+// "Convertido" NÃO entra aqui: a conversão acontece ao gerar o contrato
+// (botão "Criar contrato" no topo), nunca manualmente — assim não existe
+// lead convertido sem contrato.
 const STATUS_BUTTONS: {
   value: LeadStatus;
   label: string;
   variant: "primary" | "success" | "danger" | "secondary";
 }[] = [
   { value: "em_negociacao", label: "Em negociação", variant: "primary" },
-  { value: "convertido", label: "Convertido", variant: "success" },
   { value: "perdido", label: "Perdido", variant: "danger" },
   { value: "arquivado", label: "Arquivar", variant: "secondary" },
 ];
