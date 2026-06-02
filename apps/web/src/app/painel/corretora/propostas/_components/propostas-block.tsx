@@ -72,11 +72,14 @@ export function PropostasBlock({
   loteId,
   /** Sacas sugeridas pra pré-preencher o form (opcional). */
   defaultBagCount,
+  /** Lead/lote já fechado (ex.: lead convertido): só leitura, sem nova proposta. */
+  locked = false,
 }: {
   propostas: PropostaRow[];
   leadId?: string;
   loteId?: string;
   defaultBagCount?: number | null;
+  locked?: boolean;
 }) {
   return (
     <Card className="border-milsaca-cream-escuro shadow-card">
@@ -96,7 +99,13 @@ export function PropostasBlock({
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* --- Form: nova proposta --- */}
+        {/* --- Form: nova proposta (escondido quando fechado) --- */}
+        {locked ? (
+          <div className="rounded-lg border border-milsaca-cream-escuro bg-milsaca-cream/40 px-4 py-3 text-xs text-milsaca-verde-claro">
+            Negócio fechado — o lead virou contrato. Não dá pra enviar nova
+            proposta; o histórico abaixo fica como registro.
+          </div>
+        ) : (
         <form
           action={createProposta}
           id="nova-proposta"
@@ -182,6 +191,7 @@ export function PropostasBlock({
             </Button>
           </div>
         </form>
+        )}
 
         {/* --- Lista de propostas existentes --- */}
         {propostas.length === 0 ? (
@@ -191,7 +201,7 @@ export function PropostasBlock({
         ) : (
           <ul className="space-y-3">
             {propostas.map((p) => (
-              <PropostaItem key={p.id} proposta={p} />
+              <PropostaItem key={p.id} proposta={p} locked={locked} />
             ))}
           </ul>
         )}
@@ -200,7 +210,13 @@ export function PropostasBlock({
   );
 }
 
-function PropostaItem({ proposta }: { proposta: PropostaRow }) {
+function PropostaItem({
+  proposta,
+  locked = false,
+}: {
+  proposta: PropostaRow;
+  locked?: boolean;
+}) {
   const isTerminal =
     proposta.status === "aceita" ||
     proposta.status === "rejeitada" ||
@@ -270,8 +286,8 @@ function PropostaItem({ proposta }: { proposta: PropostaRow }) {
           </div>
         </div>
 
-        {/* Botões de transição */}
-        {!isTerminal ? (
+        {/* Botões de transição (escondidos quando o lead/lote está fechado) */}
+        {!isTerminal && !locked ? (
           <div className="flex shrink-0 flex-wrap gap-2">
             <StatusButton
               id={proposta.id}

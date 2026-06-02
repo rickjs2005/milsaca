@@ -359,6 +359,7 @@ export default async function LeadDetalhePage({
             propostas={propostas}
             leadId={lead.id}
             defaultBagCount={lead.bag_count}
+            locked={terminal}
           />
 
           <Card>

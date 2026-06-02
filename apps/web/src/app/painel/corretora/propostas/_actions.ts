@@ -139,6 +139,23 @@ export async function createProposta(formData: FormData) {
   }
 
   const supabase = await createClient();
+
+  // Lead convertido (já virou contrato) é terminal: não dá pra enviar proposta
+  // nova num negócio fechado. Trava no servidor (a UI também esconde o form).
+  if (leadId) {
+    const { data: leadRow } = await supabase
+      .from("leads")
+      .select("status")
+      .eq("id", leadId)
+      .eq("corretora_id", profile.corretora_id)
+      .maybeSingle<{ status: string }>();
+    if (leadRow?.status === "convertido") {
+      redirect(
+        `${backHref}?error=${encodeURIComponent("Lead convertido (já virou contrato) — não dá pra enviar nova proposta.")}`,
+      );
+    }
+  }
+
   const { error } = await supabase.from("propostas").insert({
     corretora_id: profile.corretora_id,
     lead_id: leadId,
