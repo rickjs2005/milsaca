@@ -336,28 +336,31 @@ function OfertaAcoes({ o }: { o: OfertaItem }) {
         </Button>
       ) : null}
 
-      {/* Menu ⋯ — ação destrutiva fora do clique fácil */}
-      <details className="group relative">
-        <summary className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-milsaca-cafezal [&::-webkit-details-marker]:hidden">
-          <MoreHorizontal className="h-4 w-4" />
-        </summary>
-        <div className="absolute right-0 z-20 mt-1 w-44 rounded-md border border-neutral-200 bg-white p-1 shadow-elevated">
-          <form action={deleteOferta}>
-            <input type="hidden" name="id" value={o.id} />
-            <ConfirmSubmit
-              variant="ghost"
-              size="sm"
-              className="h-auto w-full justify-start px-2 py-1.5 text-caption text-danger-700 hover:bg-danger-50"
-              confirmTitle="Remover oferta?"
-              confirmMessage={<p>A oferta sai do histórico.</p>}
-              confirmButtonLabel="Remover"
-              pendingLabel="Removendo..."
-            >
-              Remover oferta
-            </ConfirmSubmit>
-          </form>
-        </div>
-      </details>
+      {/* Menu ⋯ — ação destrutiva fora do clique fácil. Oferta aceita virou
+          negócio: não pode ser removida (espelha o guard no servidor). */}
+      {o.status !== "aceita" ? (
+        <details className="group relative">
+          <summary className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-milsaca-cafezal [&::-webkit-details-marker]:hidden">
+            <MoreHorizontal className="h-4 w-4" />
+          </summary>
+          <div className="absolute right-0 z-20 mt-1 w-44 rounded-md border border-neutral-200 bg-white p-1 shadow-elevated">
+            <form action={deleteOferta}>
+              <input type="hidden" name="id" value={o.id} />
+              <ConfirmSubmit
+                variant="ghost"
+                size="sm"
+                className="h-auto w-full justify-start px-2 py-1.5 text-caption text-danger-700 hover:bg-danger-50"
+                confirmTitle="Remover oferta?"
+                confirmMessage={<p>A oferta sai do histórico.</p>}
+                confirmButtonLabel="Remover"
+                pendingLabel="Removendo..."
+              >
+                Remover oferta
+              </ConfirmSubmit>
+            </form>
+          </div>
+        </details>
+      ) : null}
     </>
   );
 }

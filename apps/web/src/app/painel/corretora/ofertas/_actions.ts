@@ -17,6 +17,16 @@ const STATUS_VALIDOS: OfertaStatus[] = [
   "expirada",
 ];
 
+// Máquina de estados da oferta ao comprador. Só `enviada` responde; uma vez
+// aceita/recusada/expirada é TERMINAL (aceita vira base de contrato).
+const OFERTA_TRANSICOES: Record<OfertaStatus, OfertaStatus[]> = {
+  rascunho: ["enviada"],
+  enviada: ["aceita", "recusada", "expirada"],
+  aceita: [],
+  recusada: [],
+  expirada: [],
+};
+
 function parseBRL(v: FormDataEntryValue | null): number | null {
   if (v == null) return null;
   const s = String(v).trim().replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
@@ -135,11 +145,33 @@ export async function atualizarStatusOferta(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase
+
+  // Guard de transição + compare-and-set: só transiciona a partir de 'enviada'
+  // e só se o status no banco ainda for o lido (evita reverter oferta terminal
+  // ou corrida com outra ação).
+  const { data: atual } = await supabase
+    .from("ofertas_comprador")
+    .select("status")
+    .eq("id", idParsed.data)
+    .eq("corretora_id", profile.corretora_id)
+    .maybeSingle<{ status: OfertaStatus }>();
+  if (!atual) redirect(back);
+  if (atual.status === status) {
+    redirect(`${back}?saved=${encodeURIComponent("Status da oferta atualizado.")}`);
+  }
+  if (!(OFERTA_TRANSICOES[atual.status] ?? []).includes(status)) {
+    redirect(
+      `${back}?error=${encodeURIComponent(`Oferta ${atual.status} não pode mudar para ${status}.`)}`,
+    );
+  }
+
+  const { data: updated, error } = await supabase
     .from("ofertas_comprador")
     .update({ status })
     .eq("id", idParsed.data)
-    .eq("corretora_id", profile.corretora_id);
+    .eq("corretora_id", profile.corretora_id)
+    .eq("status", atual.status)
+    .select("id");
 
   if (error) {
     const log = await getReqLogger({
@@ -154,6 +186,11 @@ export async function atualizarStatusOferta(formData: FormData) {
     });
     redirect(`${back}?error=${encodeURIComponent(friendlyPostgresError(error))}`);
   }
+  if (!updated || updated.length === 0) {
+    redirect(
+      `${back}?error=${encodeURIComponent("Essa oferta já foi atualizada por outra ação. Recarregue.")}`,
+    );
+  }
 
   revalidateAffected();
   redirect(`${back}?saved=${encodeURIComponent("Status da oferta atualizado.")}`);
@@ -166,6 +203,22 @@ export async function deleteOferta(formData: FormData) {
   if (!idParsed.success) redirect(back);
 
   const supabase = await createClient();
+
+  // Não apaga oferta ACEITA — ela é a base de um negócio/contrato. Remover
+  // deixaria o contrato órfão. Recusada/expirada/enviada podem ser limpas.
+  const { data: atual } = await supabase
+    .from("ofertas_comprador")
+    .select("status")
+    .eq("id", idParsed.data)
+    .eq("corretora_id", profile.corretora_id)
+    .maybeSingle<{ status: OfertaStatus }>();
+  if (!atual) redirect(back);
+  if (atual.status === "aceita") {
+    redirect(
+      `${back}?error=${encodeURIComponent("Oferta aceita não pode ser removida — ela virou negócio.")}`,
+    );
+  }
+
   const { error } = await supabase
     .from("ofertas_comprador")
     .delete()
