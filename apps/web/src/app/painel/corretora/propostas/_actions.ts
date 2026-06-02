@@ -328,6 +328,30 @@ export async function updatePropostaStatus(formData: FormData) {
     );
   }
 
+  // Aceite move o lead 'novo' -> 'em_negociacao' (negociação ativa). A conversão
+  // de verdade é só ao gerar o contrato — não pula pra convertido aqui.
+  // Best-effort: nunca derruba o sucesso da resposta da proposta.
+  if (next === "aceita" && c.lead_id) {
+    const { error: leadErr } = await supabase
+      .from("leads")
+      .update({ status: "em_negociacao" })
+      .eq("id", c.lead_id)
+      .eq("corretora_id", profile.corretora_id)
+      .eq("status", "novo");
+    const user = await getUser();
+    if (!leadErr && user) {
+      await supabase.from("lead_events").insert({
+        lead_id: c.lead_id,
+        corretora_id: profile.corretora_id,
+        actor_id: user.id,
+        kind: "comment",
+        payload: {
+          text: "Proposta aceita — negociação em andamento.",
+        } as unknown as Json,
+      });
+    }
+  }
+
   revalidateProposta({ leadId: c.lead_id, loteId: c.lote_id });
   redirect(`${backHref}?saved=Status%20da%20proposta%20atualizado`);
 }
