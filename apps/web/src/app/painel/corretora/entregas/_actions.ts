@@ -22,6 +22,20 @@ const ENTREGA_STATUS_LABEL: Record<EntregaStatus, string> = {
   cancelada: "cancelada",
 };
 
+// Máquina de estados da entrega. `conferida` e `cancelada` são TERMINAIS
+// (lista vazia) — não dá pra reverter nem pular pra elas de forma incoerente
+// (ex.: cancelada -> conferida). Audit: transição sem guard.
+const ENTREGA_TRANSICOES: Record<EntregaStatus, EntregaStatus[]> = {
+  programada: ["em_transito", "recebida", "cancelada"],
+  em_transito: ["programada", "recebida", "cancelada"],
+  recebida: ["em_transito", "conferida", "cancelada"],
+  conferida: [],
+  cancelada: [],
+};
+
+// Estados terminais: a entrega não muda mais nem pode ser editada.
+const ENTREGA_TERMINAL: EntregaStatus[] = ["conferida", "cancelada"];
+
 function parseNum(v: FormDataEntryValue | null): number | null {
   const s = String(v ?? "").trim();
   if (!s) return null;
@@ -283,6 +297,28 @@ export async function updateEntregaStatus(formData: FormData) {
 
   if (!current) return;
 
+  // Guard de transição: não sai de estado terminal (conferida/cancelada) nem
+  // faz salto incoerente (ex.: cancelada -> conferida).
+  if (current.status !== status) {
+    const permitidas = ENTREGA_TRANSICOES[current.status] ?? [];
+    if (!permitidas.includes(status)) {
+      const log = await getReqLogger({
+        action: "updateEntregaStatus",
+        corretoraId: profile.corretora_id,
+        entregaId: id,
+      });
+      log.warn("entrega_transicao_invalida", {
+        from: current.status,
+        to: status,
+      });
+      redirect(
+        `/painel/corretora/entregas/${id}?error=${encodeURIComponent(
+          `Transição inválida: de "${ENTREGA_STATUS_LABEL[current.status]}" não dá pra ir para "${ENTREGA_STATUS_LABEL[status]}".`,
+        )}`,
+      );
+    }
+  }
+
   const patch: {
     status: EntregaStatus;
     data_realizada?: string;
@@ -338,6 +374,23 @@ export async function updateEntregaFields(formData: FormData) {
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
   if (!id) return;
+
+  // Entrega conferida/cancelada é o registro oficial (romaneio) — travar
+  // edição de campos depois, senão diverge do que foi conferido.
+  const { data: atual } = await supabase
+    .from("entregas")
+    .select("status")
+    .eq("corretora_id", profile.corretora_id)
+    .eq("id", id)
+    .maybeSingle<{ status: EntregaStatus }>();
+  if (!atual) return;
+  if (ENTREGA_TERMINAL.includes(atual.status)) {
+    redirect(
+      `/painel/corretora/entregas/${id}?error=${encodeURIComponent(
+        `Entrega ${ENTREGA_STATUS_LABEL[atual.status]} não pode ser editada.`,
+      )}`,
+    );
+  }
 
   const bruto = parseNum(formData.get("peso_bruto_kg"));
   const tara = parseNum(formData.get("peso_tara_kg"));
