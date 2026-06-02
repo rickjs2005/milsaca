@@ -142,10 +142,6 @@ export async function createPagamento(formData: FormData) {
       href: "/painel/produtor/financeiro",
     },
   });
-  await supabase.rpc("notify_repasse_whatsapp", {
-    p_pagamento_id: novoPag.id,
-    p_evento: "criado",
-  });
 
   revalidateAffected();
   redirect(
@@ -295,10 +291,6 @@ export async function marcarPago(formData: FormData) {
       },
     });
   }
-  await supabase.rpc("notify_repasse_whatsapp", {
-    p_pagamento_id: pagamentoId,
-    p_evento: "pago",
-  });
 
   revalidateAffected();
   redirect(

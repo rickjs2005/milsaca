@@ -2642,6 +2642,10 @@ export type Database = {
         Args: { p_evento: string; p_pagamento_id: string };
         Returns: undefined;
       };
+      enqueue_notification_whatsapp: {
+        Args: { p_mensagem: string; p_user_id: string };
+        Returns: undefined;
+      };
       current_corretora: { Args: never; Returns: string };
       current_role: {
         Args: never;
