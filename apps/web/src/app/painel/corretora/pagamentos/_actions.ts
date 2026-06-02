@@ -7,11 +7,18 @@ import { friendlyPostgresError } from "@/lib/postgres-error";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
 import { uuidSchema } from "../_lib/schemas";
+import { notify } from "@/lib/notify";
 import {
   ensureCorretora,
   isCorretoraDono,
   requireActiveSubscription,
 } from "../_lib/corretora";
+
+const BRL = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  minimumFractionDigits: 2,
+});
 
 const PAGAMENTOS = "/painel/corretora/pagamentos";
 const SO_DONO = encodeURIComponent(
@@ -84,37 +91,61 @@ export async function createPagamento(formData: FormData) {
   const bruto = valorBruto as number;
   const liquido = bruto - descontos;
 
-  const { error } = await supabase.from("produtor_pagamentos").insert({
-    corretora_id: profile.corretora_id,
-    produtor_id: contrato.produtor_id,
-    contrato_id: contrato.id,
-    valor_bruto: bruto,
-    valor_liquido: liquido,
-    descontos: descontos > 0 ? { total: descontos } : {},
-    status: "pendente",
-    data_prevista: dataPrevista,
-    observacoes,
-  });
+  const { data: novoPag, error } = await supabase
+    .from("produtor_pagamentos")
+    .insert({
+      corretora_id: profile.corretora_id,
+      produtor_id: contrato.produtor_id,
+      contrato_id: contrato.id,
+      valor_bruto: bruto,
+      valor_liquido: liquido,
+      descontos: descontos > 0 ? { total: descontos } : {},
+      status: "pendente",
+      data_prevista: dataPrevista,
+      observacoes,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
+  if (error || !novoPag) {
     const log = await getReqLogger({
       action: "createPagamento",
       corretoraId: profile.corretora_id,
       contratoId: contrato.id,
     });
     log.error("pagamento_insert_falhou", {
-      code: error.code,
-      err: safeError(error),
+      code: error?.code,
+      err: error ? safeError(error) : { message: "insert sem retorno" },
     });
     // 23505 = violação do índice unique parcial produtor_pagamentos_contrato_unico:
     // já existe um pagamento não-cancelado para este contrato (achado 6.1).
-    if (error.code === "23505") {
+    if (error?.code === "23505") {
       redirect(
         `${back}?error=${encodeURIComponent("Já existe um repasse ativo para este contrato.")}`,
       );
     }
-    redirect(`${back}?error=${encodeURIComponent(friendlyPostgresError(error))}`);
+    redirect(
+      `${back}?error=${encodeURIComponent(friendlyPostgresError(error))}`,
+    );
   }
+
+  // Avisa o produtor: sininho in-app + WhatsApp automático (best-effort — o
+  // WhatsApp depende do provider do send-dispatch; sem ele, fica enfileirado).
+  await notify({
+    userId: contrato.produtor_id,
+    kind: "pagamento",
+    title: "Repasse a receber",
+    body: `A corretora registrou um repasse de ${BRL.format(liquido)} a receber.`,
+    data: {
+      pagamento_id: novoPag.id,
+      contrato_id: contrato.id,
+      href: "/painel/produtor/financeiro",
+    },
+  });
+  await supabase.rpc("notify_repasse_whatsapp", {
+    p_pagamento_id: novoPag.id,
+    p_evento: "criado",
+  });
 
   revalidateAffected();
   redirect(
@@ -143,10 +174,14 @@ export async function marcarPago(formData: FormData) {
   // um cancelado. Checa ANTES do upload pra não sobrescrever o arquivo à toa.
   const { data: atual } = await supabase
     .from("produtor_pagamentos")
-    .select("status")
+    .select("status, produtor_id, valor_liquido")
     .eq("id", pagamentoId)
     .eq("corretora_id", profile.corretora_id)
-    .maybeSingle<{ status: string }>();
+    .maybeSingle<{
+      status: string;
+      produtor_id: string;
+      valor_liquido: number | string;
+    }>();
   if (!atual) redirect("/painel/corretora/pagamentos");
   if (atual.status !== "pendente" && atual.status !== "vencido") {
     redirect(
@@ -245,6 +280,25 @@ export async function marcarPago(formData: FormData) {
       `/painel/corretora/pagamentos?error=${encodeURIComponent("Este repasse já foi atualizado por outra ação. Recarregue a página.")}`,
     );
   }
+
+  // Avisa o produtor que o dinheiro foi pago: sininho in-app + WhatsApp
+  // automático (best-effort — WhatsApp depende do provider do send-dispatch).
+  if (atual?.produtor_id) {
+    await notify({
+      userId: atual.produtor_id,
+      kind: "pagamento",
+      title: "Repasse confirmado",
+      body: `Seu repasse de ${BRL.format(Number(atual.valor_liquido))} foi confirmado pela corretora.`,
+      data: {
+        pagamento_id: pagamentoId,
+        href: "/painel/produtor/financeiro",
+      },
+    });
+  }
+  await supabase.rpc("notify_repasse_whatsapp", {
+    p_pagamento_id: pagamentoId,
+    p_evento: "pago",
+  });
 
   revalidateAffected();
   redirect(

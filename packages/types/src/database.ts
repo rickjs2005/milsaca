@@ -2638,6 +2638,10 @@ export type Database = {
           success: boolean;
         }[];
       };
+      notify_repasse_whatsapp: {
+        Args: { p_evento: string; p_pagamento_id: string };
+        Returns: undefined;
+      };
       current_corretora: { Args: never; Returns: string };
       current_role: {
         Args: never;
