@@ -275,6 +275,8 @@ Edge functions (cotações, dispatch) são deployadas via Supabase CLI; secrets 
 
 Tudo versionado **no repo** (acessível a quem tem o código):
 
+- **[`CONTRIBUTING.md`](CONTRIBUTING.md)** — processo de contribuição: fluxo, padrões, receitas (migration, server action, tela), testes, commits/PR, Definition of Done.
+- **[`docs/ARQUITETURA.md`](docs/ARQUITETURA.md)** — como o sistema funciona por dentro: camadas, modelo de dados (38 tabelas), RLS multi-tenant, auth, cache, domínio do café, edge functions/cron.
 - **`CLAUDE.md`** — convenções canônicas: stack obrigatória, design tokens completos, regras de auth, o que NÃO fazer. **Leitura obrigatória.**
 - `docs/README-MILSACA.md` — resumo do projeto
 - `docs/milsaca/convencao-migrations.md` — como criar migrations
