@@ -54,6 +54,41 @@ export async function getProdutorIdDoLote(
   return data?.produtor_id ?? null;
 }
 
+export type LoteParaContrato = {
+  id: string;
+  codigo: string;
+  peso_sacas: number | null;
+};
+
+/**
+ * Lotes 'classificado' (disponíveis) de um produtor — pra escolher o lote ao
+ * gerar o contrato (vincula lote->contrato e marca o lote vendido). Só café
+ * pronto pra vender entra na lista.
+ */
+export async function listLotesClassificadosDoProdutor(
+  corretoraId: string,
+  produtorId: string,
+): Promise<LoteParaContrato[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("lotes")
+    .select("id, codigo, peso_sacas")
+    .eq("corretora_id", corretoraId)
+    .eq("produtor_id", produtorId)
+    .eq("status", "classificado")
+    .order("created_at", { ascending: false })
+    .limit(50);
+  return ((data ?? []) as Array<{
+    id: string;
+    codigo: string;
+    peso_sacas: number | string | null;
+  }>).map((l) => ({
+    id: l.id,
+    codigo: l.codigo,
+    peso_sacas: l.peso_sacas != null ? Number(l.peso_sacas) : null,
+  }));
+}
+
 export const CONTRATOS_PAGE_SIZE = 20;
 
 export async function listContratos(

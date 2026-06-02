@@ -17,6 +17,7 @@ import {
   listProdutoresReais,
   getLeadForContrato,
   getProdutorIdDoLote,
+  listLotesClassificadosDoProdutor,
   nextContratoCode,
 } from "../_lib/queries";
 import { createContrato } from "../_actions";
@@ -83,6 +84,18 @@ export default async function NovoContratoPage({
           ? await getProdutorIdDoLote(profile.corretora_id, sp.lote_id)
           : null))
       : null;
+  // Produtor conhecido (lead ou oferta) → oferece escolher o lote dele pra
+  // vincular ao contrato. No atalho de oferta o lote já vem fixo (sp.lote_id),
+  // então só buscamos a lista no caminho do lead/manual.
+  const knownProdutorId = lead?.produtor_id ?? ofertaProdutorId ?? null;
+  const lotesProdutor =
+    knownProdutorId && !sp.lote_id
+      ? await listLotesClassificadosDoProdutor(
+          profile.corretora_id,
+          knownProdutorId,
+        )
+      : [];
+
   const prefComprador = sp.comprador_id ?? "";
   const prefBag = sp.bag_count ?? "";
   const prefPreco = sp.preco ? Number(sp.preco) : null;
@@ -213,6 +226,29 @@ export default async function NovoContratoPage({
                   ))}
                 </select>
               </div>
+
+              {lotesProdutor.length > 0 && (
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="lote_id">Lote (opcional)</Label>
+                  <select
+                    id="lote_id"
+                    name="lote_id"
+                    defaultValue=""
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="">— sem lote vinculado —</option>
+                    {lotesProdutor.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.codigo}
+                        {l.peso_sacas != null ? ` · ${l.peso_sacas} sc` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-milsaca-verde-claro">
+                    Vincular o lote marca ele como vendido ao criar o contrato.
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="code">Código do contrato *</Label>
