@@ -191,6 +191,9 @@ export default async function NovoContratoPage({
               {lead && (
                 <input type="hidden" name="lead_id" value={lead.id} />
               )}
+              {sp.lote_id && (
+                <input type="hidden" name="lote_id" value={sp.lote_id} />
+              )}
 
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="produtor_id">Produtor *</Label>

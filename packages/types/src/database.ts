@@ -352,6 +352,7 @@ export type Database = {
           created_at: string;
           id: string;
           lead_id: string | null;
+          lote_id: string | null;
           produtor_id: string;
           signed_at: string | null;
           status: Database["public"]["Enums"]["contrato_status"];
@@ -370,6 +371,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           lead_id?: string | null;
+          lote_id?: string | null;
           produtor_id: string;
           signed_at?: string | null;
           status?: Database["public"]["Enums"]["contrato_status"];
@@ -388,6 +390,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           lead_id?: string | null;
+          lote_id?: string | null;
           produtor_id?: string;
           signed_at?: string | null;
           status?: Database["public"]["Enums"]["contrato_status"];
@@ -421,6 +424,13 @@ export type Database = {
             columns: ["lead_id"];
             isOneToOne: false;
             referencedRelation: "leads";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "contratos_lote_id_fkey";
+            columns: ["lote_id"];
+            isOneToOne: false;
+            referencedRelation: "lotes";
             referencedColumns: ["id"];
           },
           {

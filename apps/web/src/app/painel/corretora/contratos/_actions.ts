@@ -155,6 +155,7 @@ export async function createContrato(formData: FormData) {
 
   const produtor_id = clean(formData.get("produtor_id"));
   const lead_id = clean(formData.get("lead_id"));
+  const lote_id_raw = clean(formData.get("lote_id"));
   const comprador_id = clean(formData.get("comprador_id"));
   const coffee_type = clean(formData.get("coffee_type"));
   const bag_count = parseInteger(formData.get("bag_count"));
@@ -175,6 +176,21 @@ export async function createContrato(formData: FormData) {
   const code = code_input ?? (await nextContratoCode(profile.corretora_id));
 
   const supabase = await createClient();
+
+  // Defesa em profundidade: só vincula lote desta corretora (a FK não garante
+  // posse). Se vier lote de outro tenant, ignora o vínculo (não derruba o
+  // contrato — o documento em si é válido).
+  let lote_id: string | null = null;
+  if (lote_id_raw) {
+    const { data: loteOwn } = await supabase
+      .from("lotes")
+      .select("id")
+      .eq("id", lote_id_raw)
+      .eq("corretora_id", profile.corretora_id)
+      .maybeSingle<{ id: string }>();
+    lote_id = loteOwn?.id ?? null;
+  }
+
   const { data, error } = await supabase
     .from("contratos")
     .insert({
@@ -182,6 +198,7 @@ export async function createContrato(formData: FormData) {
       produtor_id: produtor_id as string,
       comprador_id,
       lead_id,
+      lote_id,
       code,
       status: "rascunho",
       coffee_type,
@@ -256,6 +273,31 @@ export async function createContrato(formData: FormData) {
     }
     revalidatePath("/painel/corretora/leads");
     revalidatePath(`/painel/corretora/leads/${lead_id}`);
+  }
+
+  // Amarra lote -> contrato: gerar contrato a partir de um lote marca o lote
+  // VENDIDO (não dá pra propor de novo no mesmo café). Best-effort; não mexe
+  // em lote já vendido/arquivado.
+  if (lote_id) {
+    const { error: loteErr } = await supabase
+      .from("lotes")
+      .update({ status: "vendido" })
+      .eq("id", lote_id)
+      .eq("corretora_id", profile.corretora_id)
+      .not("status", "in", "(vendido,arquivado)");
+    if (loteErr) {
+      const log = await getReqLogger({
+        action: "createContrato",
+        corretoraId: profile.corretora_id,
+      });
+      log.warn("lote_vendido_falhou", {
+        loteId: lote_id,
+        code: loteErr.code,
+        err: safeError(loteErr),
+      });
+    }
+    revalidatePath("/painel/corretora/lotes");
+    revalidatePath(`/painel/corretora/lotes/${lote_id}`);
   }
 
   revalidateContrato(data.id);
