@@ -120,7 +120,7 @@ export function safeError(err: unknown): LogFields {
 const MAX_DEPTH = 4;
 
 /** Redação recursiva: mascara chaves sensíveis, scrub de strings, serializa Error. */
-export function sanitize(
+function sanitize(
   value: unknown,
   depth = 0,
   seen = new WeakSet<object>(),
@@ -179,4 +179,4 @@ export const logger: Logger = {
   error: (msg, fields) => emit("error", msg, fields),
 };
 
-export type { LogLevel, LogFields, Logger };
+export type { LogFields, Logger };

@@ -7,20 +7,15 @@
 // usa `coffeeLabel()`. As funções são tolerantes a valores legados em label
 // ("Arábica"/"Conillón") pra não quebrar dado antigo que escape da migração.
 
-export const COFFEE_SLUGS = ["arabica", "conillon"] as const;
-export type CoffeeSlug = (typeof COFFEE_SLUGS)[number];
+type CoffeeSlug = "arabica" | "conillon";
 
 const SLUG_TO_LABEL: Record<CoffeeSlug, string> = {
   arabica: "Arábica",
   conillon: "Conillón",
 };
 
-/** Opções pra picker de café (value = slug canônico, label = exibição). */
-export const COFFEE_OPTIONS: { value: CoffeeSlug; label: string }[] =
-  COFFEE_SLUGS.map((value) => ({ value, label: SLUG_TO_LABEL[value] }));
-
 /** Normaliza slug OU label legado → slug canônico; `null` se não reconhecer. */
-export function coffeeSlug(value: string | null | undefined): CoffeeSlug | null {
+function coffeeSlug(value: string | null | undefined): CoffeeSlug | null {
   if (!value) return null;
   const v = value.trim().toLowerCase();
   if (v === "arabica" || v.startsWith("aráb") || v.startsWith("arab")) {

@@ -2,7 +2,7 @@
 // apps/web/src/app/painel/corretora/produtores/_lib/whatsapp.ts.
 // Mantém a normalização BR (+55 se 10/11 dígitos puros).
 
-export function normalizePhoneBR(raw: string | null | undefined): string | null {
+function normalizePhoneBR(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const digits = raw.replace(/\D/g, "");
   if (!digits) return null;

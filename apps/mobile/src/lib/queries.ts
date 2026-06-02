@@ -123,61 +123,6 @@ export async function listCotacoes(
   }));
 }
 
-export function agruparCotacoes(
-  rows: CotacaoRow[],
-  serieMax = 10,
-): CotacaoCard[] {
-  const groups = new Map<string, CotacaoRow[]>();
-  for (const r of rows) {
-    const k = groupKey(r);
-    const arr = groups.get(k) ?? [];
-    arr.push(r);
-    groups.set(k, arr);
-  }
-
-  const cards: CotacaoCard[] = [];
-  for (const [k, list] of groups) {
-    list.sort((a, b) => {
-      const c = b.reference_date.localeCompare(a.reference_date);
-      return c !== 0 ? c : b.created_at.localeCompare(a.created_at);
-    });
-    const [current, previous] = list;
-    if (!current) continue;
-    const variacao =
-      previous && previous.price > 0
-        ? ((current.price - previous.price) / previous.price) * 100
-        : null;
-    const series = list
-      .slice(0, serieMax)
-      .map((r) => r.price)
-      .reverse();
-    cards.push({
-      key: k,
-      specie: current.specie,
-      process: current.process,
-      coffee_type: current.coffee_type,
-      region: current.region,
-      current_price: current.price,
-      current_date: current.reference_date,
-      variacao_pct: variacao,
-      source: current.source,
-      series,
-    });
-  }
-
-  cards.sort((a, b) => {
-    const sa = a.specie ?? a.coffee_type;
-    const sb = b.specie ?? b.coffee_type;
-    if (sa !== sb) return sa.localeCompare(sb);
-    const pa = a.process ?? "";
-    const pb = b.process ?? "";
-    if (pa !== pb) return pa.localeCompare(pb);
-    return (a.region ?? "").localeCompare(b.region ?? "");
-  });
-
-  return cards;
-}
-
 // Bloco B — Carrega cotações organizadas em 3 seções pra produtor.
 
 const MARKET_INDICATORS_MOBILE = [
@@ -539,44 +484,6 @@ export async function listMinhasNegociacoes(
   });
 }
 
-export async function listLeadsDaCorretora(
-  corretoraId: string,
-  filter: { status?: LeadStatus } = {},
-): Promise<LeadItem[]> {
-  let q = supabase
-    .from("leads")
-    .select(
-      `id, status, coffee_type, bag_count, proposed_price, notes,
-       created_at, updated_at, corretora_id,
-       corretora:corretoras!leads_corretora_id_fkey(id, name, phone, city)`,
-    )
-    .eq("corretora_id", corretoraId)
-    .order("updated_at", { ascending: false })
-    .limit(200);
-  if (filter.status) q = q.eq("status", filter.status);
-
-  const { data } = await q;
-  const rows = (data ?? []) as LeadRow[];
-  return rows.map((r): LeadItem => {
-    const cor = pickOne(r.corretora);
-    return {
-      id: r.id,
-      status: r.status,
-      coffee_type: r.coffee_type,
-      bag_count: r.bag_count,
-      proposed_price:
-        r.proposed_price != null ? Number(r.proposed_price) : null,
-      notes: r.notes,
-      created_at: r.created_at,
-      updated_at: r.updated_at,
-      corretora_id: r.corretora_id,
-      corretora_nome: cor?.name ?? "—",
-      corretora_phone: cor?.phone ?? null,
-      corretora_city: cor?.city ?? null,
-    };
-  });
-}
-
 // ----------------------------------------------------------------- //
 // CONTRATOS
 // ----------------------------------------------------------------- //
@@ -708,44 +615,6 @@ export async function listMeusContratos(
        corretora:corretoras!contratos_corretora_id_fkey(id, name, phone, city)`,
     )
     .eq("produtor_id", produtorId)
-    .order("updated_at", { ascending: false })
-    .limit(200);
-  if (filter.status) q = q.eq("status", filter.status);
-
-  const { data } = await q;
-  const rows = (data ?? []) as ContratoRow[];
-  return rows.map((r): ContratoItem => {
-    const cor = pickOne(r.corretora);
-    return {
-      id: r.id,
-      code: r.code,
-      status: r.status,
-      coffee_type: r.coffee_type,
-      bag_count: r.bag_count,
-      total_value: r.total_value != null ? Number(r.total_value) : null,
-      signed_at: r.signed_at,
-      created_at: r.created_at,
-      updated_at: r.updated_at,
-      corretora_id: r.corretora_id,
-      corretora_nome: cor?.name ?? "—",
-      corretora_phone: cor?.phone ?? null,
-      corretora_city: cor?.city ?? null,
-    };
-  });
-}
-
-export async function listContratosDaCorretora(
-  corretoraId: string,
-  filter: { status?: ContratoStatus } = {},
-): Promise<ContratoItem[]> {
-  let q = supabase
-    .from("contratos")
-    .select(
-      `id, code, status, coffee_type, bag_count, total_value, signed_at,
-       created_at, updated_at, corretora_id,
-       corretora:corretoras!contratos_corretora_id_fkey(id, name, phone, city)`,
-    )
-    .eq("corretora_id", corretoraId)
     .order("updated_at", { ascending: false })
     .limit(200);
   if (filter.status) q = q.eq("status", filter.status);
@@ -951,7 +820,7 @@ export async function toggleFavoritoCorretora(
 // produtor (auth.uid()) leia propostas dos próprios leads e mude
 // status de "enviada" pra "aceita"|"rejeitada".
 
-export type PropostaStatusProdutor =
+type PropostaStatusProdutor =
   | "rascunho"
   | "enviada"
   | "aceita"
