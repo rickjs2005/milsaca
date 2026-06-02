@@ -15,7 +15,7 @@ import {
 
 const PAGAMENTOS = "/painel/corretora/pagamentos";
 const SO_DONO = encodeURIComponent(
-  "Só o dono da corretora pode registrar e confirmar pagamentos.",
+  "Só o dono da corretora pode registrar e confirmar repasses.",
 );
 
 function parseBRL(v: FormDataEntryValue | null): number | null {
@@ -110,7 +110,7 @@ export async function createPagamento(formData: FormData) {
     // já existe um pagamento não-cancelado para este contrato (achado 6.1).
     if (error.code === "23505") {
       redirect(
-        `${back}?error=${encodeURIComponent("Já existe um pagamento ativo para este contrato.")}`,
+        `${back}?error=${encodeURIComponent("Já existe um repasse ativo para este contrato.")}`,
       );
     }
     redirect(`${back}?error=${encodeURIComponent(friendlyPostgresError(error))}`);
@@ -119,7 +119,7 @@ export async function createPagamento(formData: FormData) {
   revalidateAffected();
   redirect(
     "/painel/corretora/pagamentos?saved=" +
-      encodeURIComponent("Pagamento registrado."),
+      encodeURIComponent("Repasse registrado."),
   );
 }
 
@@ -137,6 +137,26 @@ export async function marcarPago(formData: FormData) {
   const pagamentoId = idParsed.data;
 
   const supabase = await createClient();
+
+  // Compare-and-set: só repasse EM ABERTO (pendente/vencido) pode ser marcado.
+  // Evita re-marcar um já feito (sobrescrevendo comprovante/data) ou ressuscitar
+  // um cancelado. Checa ANTES do upload pra não sobrescrever o arquivo à toa.
+  const { data: atual } = await supabase
+    .from("produtor_pagamentos")
+    .select("status")
+    .eq("id", pagamentoId)
+    .eq("corretora_id", profile.corretora_id)
+    .maybeSingle<{ status: string }>();
+  if (!atual) redirect("/painel/corretora/pagamentos");
+  if (atual.status !== "pendente" && atual.status !== "vencido") {
+    redirect(
+      `/painel/corretora/pagamentos?error=${encodeURIComponent(
+        atual.status === "pago"
+          ? "Este repasse já está marcado como feito."
+          : "Este repasse foi cancelado — não dá pra marcar como feito.",
+      )}`,
+    );
+  }
 
   // Comprovante: pode vir como ARQUIVO (campo "comprovante") ou, por
   // retrocompatibilidade, como texto livre (campo "comprovante_url").
@@ -188,11 +208,13 @@ export async function marcarPago(formData: FormData) {
   // crítica e irreversível na prática (o produtor passa a ver "pago").
   if (!comprovante) {
     redirect(
-      `/painel/corretora/pagamentos?error=${encodeURIComponent("Anexe o comprovante para marcar como pago.")}`,
+      `/painel/corretora/pagamentos?error=${encodeURIComponent("Anexe o comprovante para marcar o repasse como feito.")}`,
     );
   }
 
-  const { error } = await supabase
+  // O .in("status", ...) é o compare-and-set de fato: se entre o check acima e
+  // aqui o status mudou (corrida), nenhuma linha é atualizada.
+  const { data: updated, error } = await supabase
     .from("produtor_pagamentos")
     .update({
       status: "pago",
@@ -200,7 +222,9 @@ export async function marcarPago(formData: FormData) {
       comprovante_url: comprovante,
     })
     .eq("id", pagamentoId)
-    .eq("corretora_id", profile.corretora_id);
+    .eq("corretora_id", profile.corretora_id)
+    .in("status", ["pendente", "vencido"])
+    .select("id");
 
   if (error) {
     const log = await getReqLogger({
@@ -216,11 +240,16 @@ export async function marcarPago(formData: FormData) {
       `/painel/corretora/pagamentos?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
+  if (!updated || updated.length === 0) {
+    redirect(
+      `/painel/corretora/pagamentos?error=${encodeURIComponent("Este repasse já foi atualizado por outra ação. Recarregue a página.")}`,
+    );
+  }
 
   revalidateAffected();
   redirect(
     "/painel/corretora/pagamentos?saved=" +
-      encodeURIComponent("Pagamento marcado como pago."),
+      encodeURIComponent("Repasse marcado como feito."),
   );
 }
 
@@ -237,11 +266,15 @@ export async function cancelarPagamento(formData: FormData) {
   if (!idParsed.success) redirect("/painel/corretora/pagamentos");
 
   const supabase = await createClient();
-  const { error } = await supabase
+  // Só cancela repasse EM ABERTO: não faz sentido cancelar um já feito
+  // (tem comprovante) — e o .in evita isso de forma atômica.
+  const { data: updated, error } = await supabase
     .from("produtor_pagamentos")
     .update({ status: "cancelado" })
     .eq("id", idParsed.data)
-    .eq("corretora_id", profile.corretora_id);
+    .eq("corretora_id", profile.corretora_id)
+    .in("status", ["pendente", "vencido"])
+    .select("id");
 
   if (error) {
     const log = await getReqLogger({
@@ -257,10 +290,15 @@ export async function cancelarPagamento(formData: FormData) {
       `/painel/corretora/pagamentos?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
   }
+  if (!updated || updated.length === 0) {
+    redirect(
+      `/painel/corretora/pagamentos?error=${encodeURIComponent("Só dá pra cancelar um repasse em aberto.")}`,
+    );
+  }
 
   revalidateAffected();
   redirect(
     "/painel/corretora/pagamentos?saved=" +
-      encodeURIComponent("Pagamento cancelado."),
+      encodeURIComponent("Repasse cancelado."),
   );
 }
