@@ -207,6 +207,23 @@ export async function updateLeadFields(formData: FormData) {
   const notes = clean(formData.get("notes"));
 
   const supabase = await createClient();
+
+  // Lead convertido (já virou contrato) é read-only: editar quantidade/preço
+  // aqui divergiria do contrato congelado. Trava no servidor.
+  const { data: atual } = await supabase
+    .from("leads")
+    .select("status")
+    .eq("id", id)
+    .eq("corretora_id", profile.corretora_id)
+    .maybeSingle<{ status: LeadStatus }>();
+  if (!atual) redirect("/painel/corretora/leads");
+  if (atual.status === "convertido") {
+    const params = new URLSearchParams({
+      error: "Lead convertido não pode ser editado — ele já virou contrato.",
+    });
+    redirect(`/painel/corretora/leads/${id}?${params.toString()}`);
+  }
+
   const { error } = await supabase
     .from("leads")
     .update({ coffee_type, bag_count, proposed_price, notes })
@@ -281,6 +298,23 @@ export async function updateLeadStatus(formData: FormData) {
     .maybeSingle();
 
   if (!current) redirect("/painel/corretora/leads");
+
+  // Lead convertido é TERMINAL: virou contrato, não pode voltar pra
+  // novo/negociação/perdido/arquivado. Trava no servidor (não só na UI).
+  if (current.status === "convertido") {
+    const log = await getReqLogger({
+      action: "updateLeadStatus",
+      corretoraId: profile.corretora_id,
+      leadId: id,
+    });
+    log.warn("lead_convertido_transicao_bloqueada", { to: next });
+    const params = new URLSearchParams({
+      error:
+        "Lead convertido não muda de status — ele já virou negócio fechado. Gerencie pelo contrato.",
+    });
+    redirect(`/painel/corretora/leads/${id}?${params.toString()}`);
+  }
+
   if (current.status === next) {
     // sem mudança real, mas se houver comentário registra como comment
     if (comment) {

@@ -57,10 +57,16 @@ const ACTIONS: Record<LeadStatus, (lead: LeadListItem) => NextAction> = {
       urgencia: "morno",
     };
   },
-  convertido: () => ({
-    label: "Converter em contrato",
-    urgencia: "morno",
-  }),
+  convertido: (lead) =>
+    lead.contrato_id
+      ? {
+          label: "Negócio fechado — acompanhe pelo contrato",
+          urgencia: "frio",
+        }
+      : {
+          label: "Gerar o contrato deste negócio",
+          urgencia: "morno",
+        },
   perdido: () => ({
     label: "Arquivar ou reabrir conforme contexto",
     urgencia: "frio",
@@ -89,6 +95,15 @@ export type PrimaryAction =
   | null;
 
 export function primaryLeadAction(lead: LeadListItem): PrimaryAction {
+  // Já existe contrato gerado deste lead: negócio fechado, não dá pra
+  // "gerar de novo" nem avançar status — a ação vira só VER o contrato.
+  if (lead.contrato_id) {
+    return {
+      type: "link",
+      label: "Ver contrato",
+      href: `/painel/corretora/contratos/${lead.contrato_id}`,
+    };
+  }
   switch (lead.status) {
     case "novo":
       return {

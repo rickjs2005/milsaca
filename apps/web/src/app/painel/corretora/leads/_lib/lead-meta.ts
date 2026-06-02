@@ -84,6 +84,8 @@ export type LeadListItem = {
   produtor_phone: string | null;
   city: string | null;
   state: string | null;
+  /** Contrato gerado a partir deste lead (se houver) — lead vira terminal. */
+  contrato_id: string | null;
 };
 
 export type LeadEvent = {

@@ -74,6 +74,8 @@ type LeadRow = {
         state: string | null;
       }[]
     | null;
+  // Contrato(s) gerado(s) a partir deste lead (FK contratos.lead_id).
+  contratos: { id: string } | { id: string }[] | null;
 };
 
 function pickOne<T>(v: T | T[] | null | undefined): T | null {
@@ -97,7 +99,8 @@ export async function listLeads(
       `id, status, origem, coffee_type, bag_count, proposed_price, notes, created_at, updated_at,
        produtor_id, contato_id,
        produtor:profiles!leads_produtor_id_fkey(id, full_name, phone, produtores(city, state)),
-       contato:produtor_contatos!leads_contato_id_fkey(id, full_name, phone, city, state)`,
+       contato:produtor_contatos!leads_contato_id_fkey(id, full_name, phone, city, state),
+       contratos:contratos!contratos_lead_id_fkey(id)`,
       { count: "exact" },
     )
     .eq("corretora_id", corretoraId)
@@ -131,6 +134,7 @@ export async function listLeads(
       produtor_phone: prod?.phone ?? cont?.phone ?? null,
       city: prodExt?.city ?? cont?.city ?? null,
       state: prodExt?.state ?? cont?.state ?? null,
+      contrato_id: pickOne(r.contratos)?.id ?? null,
     };
   });
 
@@ -214,7 +218,8 @@ export async function getLead(
       `id, status, origem, coffee_type, bag_count, proposed_price, notes, created_at, updated_at,
        produtor_id, contato_id,
        produtor:profiles!leads_produtor_id_fkey(id, full_name, phone, produtores(city, state)),
-       contato:produtor_contatos!leads_contato_id_fkey(id, full_name, phone, city, state)`,
+       contato:produtor_contatos!leads_contato_id_fkey(id, full_name, phone, city, state),
+       contratos:contratos!contratos_lead_id_fkey(id)`,
     )
     .eq("corretora_id", corretoraId)
     .eq("id", leadId)
@@ -276,6 +281,7 @@ export async function getLead(
     produtor_phone: prod?.phone ?? cont?.phone ?? null,
     city: prodExt?.city ?? cont?.city ?? null,
     state: prodExt?.state ?? cont?.state ?? null,
+    contrato_id: pickOne(r.contratos)?.id ?? null,
     events,
   };
 }

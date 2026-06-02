@@ -159,6 +159,10 @@ export default async function LeadDetalhePage({
   const lead = await getLead(profile.corretora_id, id);
   if (!lead) notFound();
 
+  // Lead convertido = negócio fechado (virou contrato): terminal e read-only.
+  // Trava edição de campos e mudança de status na UI (o servidor também trava).
+  const terminal = lead.status === "convertido";
+
   const propostas = await listPropostasDoLead(profile.corretora_id, lead.id);
 
   const waUrl = buildWhatsAppInviteUrl({
@@ -207,14 +211,21 @@ export default async function LeadDetalhePage({
               </a>
             </Button>
           )}
-          {lead.produtor_kind === "produtor" && (
+          {lead.contrato_id ? (
+            <Button asChild variant="primary">
+              <Link href={`/painel/corretora/contratos/${lead.contrato_id}`}>
+                <FileText className="mr-2 h-4 w-4" />
+                Ver contrato
+              </Link>
+            </Button>
+          ) : lead.produtor_kind === "produtor" ? (
             <Button asChild variant="primary">
               <Link href={`/painel/corretora/contratos/novo?lead=${lead.id}`}>
                 <FileText className="mr-2 h-4 w-4" />
                 Criar contrato
               </Link>
             </Button>
-          )}
+          ) : null}
         </div>
       </header>
 
@@ -253,6 +264,7 @@ export default async function LeadDetalhePage({
                     id="coffee_type"
                     name="coffee_type"
                     defaultValue={lead.coffee_type ?? ""}
+                    disabled={terminal}
                   >
                     <option value="">—</option>
                     {COFFEE_OPTIONS.map((o) => (
@@ -272,6 +284,7 @@ export default async function LeadDetalhePage({
                     step="1"
                     min="0"
                     defaultValue={lead.bag_count ?? ""}
+                    disabled={terminal}
                   />
                 </div>
 
@@ -284,6 +297,7 @@ export default async function LeadDetalhePage({
                     name="proposed_price"
                     type="text"
                     inputMode="decimal"
+                    disabled={terminal}
                     defaultValue={
                       lead.proposed_price != null
                         ? lead.proposed_price
@@ -303,7 +317,8 @@ export default async function LeadDetalhePage({
                     name="notes"
                     rows={3}
                     defaultValue={lead.notes ?? ""}
-                    className="flex w-full rounded-md border border-neutral-200 bg-background px-3 py-2 text-body-sm text-neutral-900 ring-offset-background placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    disabled={terminal}
+                    className="flex w-full rounded-md border border-neutral-200 bg-background px-3 py-2 text-body-sm text-neutral-900 ring-offset-background placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                   />
                 </div>
 
@@ -326,9 +341,15 @@ export default async function LeadDetalhePage({
                 </div>
 
                 <div className="flex justify-end sm:col-span-2">
-                  <Button type="submit" variant="primary">
-                    Salvar alterações
-                  </Button>
+                  {terminal ? (
+                    <p className="text-caption italic text-neutral-500">
+                      Lead convertido — dados travados (já viraram contrato).
+                    </p>
+                  ) : (
+                    <Button type="submit" variant="primary">
+                      Salvar alterações
+                    </Button>
+                  )}
                 </div>
               </form>
             </CardContent>
@@ -348,6 +369,24 @@ export default async function LeadDetalhePage({
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {terminal ? (
+                <div className="flex flex-col items-start gap-3 rounded-md border border-success-100 bg-success-50 px-4 py-3 text-body-sm text-success-700">
+                  <p>
+                    Negócio fechado — este lead virou contrato e não muda mais
+                    de status.
+                  </p>
+                  {lead.contrato_id ? (
+                    <Button asChild variant="primary" size="sm">
+                      <Link
+                        href={`/painel/corretora/contratos/${lead.contrato_id}`}
+                      >
+                        <FileText className="mr-1.5 h-3.5 w-3.5" />
+                        Ver contrato
+                      </Link>
+                    </Button>
+                  ) : null}
+                </div>
+              ) : (
               <form action={updateLeadStatus} className="space-y-4">
                 <input type="hidden" name="id" value={lead.id} />
 
@@ -391,6 +430,7 @@ export default async function LeadDetalhePage({
                   )}
                 </div>
               </form>
+              )}
             </CardContent>
           </Card>
         </div>

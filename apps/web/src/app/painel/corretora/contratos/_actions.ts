@@ -232,6 +232,31 @@ export async function createContrato(formData: FormData) {
     },
   });
 
+  // Amarra lead -> contrato: gerar contrato a partir de um lead CONVERTE o
+  // lead (que passa a ser terminal). Best-effort — não derruba a criação do
+  // contrato se falhar; o `neq` evita re-evento se já estava convertido.
+  if (lead_id) {
+    const { error: leadErr } = await supabase
+      .from("leads")
+      .update({ status: "convertido" })
+      .eq("id", lead_id)
+      .eq("corretora_id", profile.corretora_id)
+      .neq("status", "convertido");
+    if (leadErr) {
+      const log = await getReqLogger({
+        action: "createContrato",
+        corretoraId: profile.corretora_id,
+      });
+      log.warn("lead_convertido_falhou", {
+        leadId: lead_id,
+        code: leadErr.code,
+        err: safeError(leadErr),
+      });
+    }
+    revalidatePath("/painel/corretora/leads");
+    revalidatePath(`/painel/corretora/leads/${lead_id}`);
+  }
+
   revalidateContrato(data.id);
   redirect(`/painel/corretora/contratos/${data.id}`);
 }
