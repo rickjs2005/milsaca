@@ -27,6 +27,10 @@ export function friendlyPostgresError(
   const code = "code" in error ? error.code : undefined;
   const msg = String(error.message ?? "");
 
+  // Regras de negócio levantadas pelas nossas triggers/funções: a mensagem já
+  // é pt-BR voltada ao usuário, então passa direto (não é texto cru do Postgres).
+  if (/^Saldo de sacas/i.test(msg)) return msg;
+
   // Unicidade violada
   if (code === "23505") {
     if (/cnpj/i.test(msg)) return "Já existe registro com este CNPJ.";

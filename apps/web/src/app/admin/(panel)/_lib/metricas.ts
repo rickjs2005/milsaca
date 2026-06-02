@@ -12,6 +12,11 @@ export type DashboardMetrics = {
   contratosTotal: number;
   pendentesCount: number;
   laudosTotal: number;
+  // Conservação de sacas (reconciliação)
+  sacasAEntregar: number; // pendentes em contratos ATIVOS (pipeline normal)
+  contratosFinalizadosPendentes: number; // ANOMALIA: finalizado com saldo aberto
+  sacasResiduais: number; // sacas "sumidas" em contratos finalizados
+  contratosExcedente: number; // ANOMALIA: entregue > contratado
   // Assinaturas
   mrrCents: number;
   activeSubs: number;
@@ -52,12 +57,19 @@ export async function loadDashboardMetrics(): Promise<DashboardMetrics> {
     { count: novosLaudos30d },
     { data: activeSubsRows },
     { data: cotacaoMaisRecente },
+    { data: contratosSaldoRows },
+    { data: entregasSaldoRows },
   ] = await Promise.all([
     supabase.from("corretoras").select("*", { count: "exact", head: true }),
     supabase.from("produtores").select("*", { count: "exact", head: true }),
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("leads").select("*", { count: "exact", head: true }),
-    supabase.from("contratos").select("*", { count: "exact", head: true }),
+    // Só contratos "reais" (assinados/concluídos) — rascunho/em_análise/cancelado
+    // não são volume de negócio (achado: KPI que mente).
+    supabase
+      .from("contratos")
+      .select("*", { count: "exact", head: true })
+      .in("status", ["ativo", "finalizado"]),
     supabase
       .from("profiles")
       .select("*", { count: "exact", head: true })
@@ -91,6 +103,7 @@ export async function loadDashboardMetrics(): Promise<DashboardMetrics> {
     supabase
       .from("contratos")
       .select("*", { count: "exact", head: true })
+      .in("status", ["ativo", "finalizado"])
       .gte("created_at", ago30d),
     supabase
       .from("whatsapp_leads")
@@ -110,7 +123,56 @@ export async function loadDashboardMetrics(): Promise<DashboardMetrics> {
       .order("fetched_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    // Conservação de sacas: contratos reais + suas entregas não-canceladas.
+    // Agregamos em JS (escala-piloto) pra não depender da view nos tipos
+    // gerados (ver feedback_supabase_gen_types_lixo).
+    supabase
+      .from("contratos")
+      .select("id, status, bag_count")
+      .in("status", ["ativo", "finalizado"]),
+    supabase
+      .from("entregas")
+      .select("contrato_id, bag_count, status")
+      .neq("status", "cancelada"),
   ]);
+
+  // Reconciliação de sacas por contrato (identidade contratado = entregue +
+  // em_transito + pendente). "registrado" = soma das entregas não-canceladas.
+  type ContratoSaldoRow = {
+    id: string;
+    status: string;
+    bag_count: number | null;
+  };
+  type EntregaSaldoRow = { contrato_id: string; bag_count: number | null };
+  const registradoPorContrato = new Map<string, number>();
+  for (const e of (entregasSaldoRows ?? []) as EntregaSaldoRow[]) {
+    registradoPorContrato.set(
+      e.contrato_id,
+      (registradoPorContrato.get(e.contrato_id) ?? 0) + (e.bag_count ?? 0),
+    );
+  }
+  let sacasAEntregar = 0;
+  let contratosFinalizadosPendentes = 0;
+  let sacasResiduais = 0;
+  let contratosExcedente = 0;
+  for (const c of (contratosSaldoRows ?? []) as ContratoSaldoRow[]) {
+    const contratado = c.bag_count ?? 0;
+    if (contratado <= 0) continue;
+    const registrado = registradoPorContrato.get(c.id) ?? 0;
+    const pendente = contratado - registrado;
+    if (pendente > 0) {
+      if (c.status === "finalizado") {
+        // Finalizado com saldo aberto = as sacas que "sumiam" (anomalia).
+        contratosFinalizadosPendentes += 1;
+        sacasResiduais += pendente;
+      } else {
+        // Ativo: pendente é pipeline normal (ainda a entregar).
+        sacasAEntregar += pendente;
+      }
+    } else if (pendente < 0) {
+      contratosExcedente += 1;
+    }
+  }
 
   // MRR = soma dos planos active normalizados pra valor mensal
   type Joined = { plans: { price_cents: number; billing_period: "monthly" | "yearly" } | null };
@@ -131,6 +193,10 @@ export async function loadDashboardMetrics(): Promise<DashboardMetrics> {
     contratosTotal: contratosTotal ?? 0,
     pendentesCount: pendentesCount ?? 0,
     laudosTotal: laudosTotal ?? 0,
+    sacasAEntregar,
+    contratosFinalizadosPendentes,
+    sacasResiduais,
+    contratosExcedente,
     mrrCents: Math.round(mrrCents),
     activeSubs: activeSubs ?? 0,
     trialSubs: trialSubs ?? 0,
@@ -259,6 +325,7 @@ export async function loadDetailedMetrics(): Promise<DetailedMetrics> {
     supabase
       .from("contratos")
       .select("corretora_id, corretoras(name)")
+      .in("status", ["ativo", "finalizado"])
       .limit(2000),
   ]);
 

@@ -198,6 +198,26 @@ export async function gerarEntregaDoContrato(formData: FormData) {
     .maybeSingle();
   if (!contrato) return;
 
+  // Idempotência (achado da auditoria): este atalho gera 1 entrega única com
+  // as sacas do contrato. Clicar duas vezes duplicaria as sacas. Se já existe
+  // entrega não-cancelada pro contrato, não cria outra — leva pra existente.
+  const { data: existente } = await supabase
+    .from("entregas")
+    .select("id")
+    .eq("corretora_id", profile.corretora_id)
+    .eq("contrato_id", contratoId)
+    .neq("status", "cancelada")
+    .order("sequencia", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (existente) {
+    revalidatePath(`/painel/corretora/contratos/${contratoId}`);
+    revalidatePath("/painel/corretora/entregas");
+    redirect(
+      `/painel/corretora/entregas/${(existente as { id: string }).id}?ok=${encodeURIComponent("Este contrato já tem entrega gerada")}`,
+    );
+  }
+
   // Sequência atômica com retry-on-conflict (achado 2.7).
   const result = await insertEntregaWithSequence(
     supabase,

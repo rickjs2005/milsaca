@@ -56,7 +56,9 @@ export default function ContratosScreen() {
   const [filter, setFilter] = useState<ContratoStatus | "all">("all");
   const {
     data: items,
+    error,
     refreshing,
+    reload,
     onRefresh,
   } = useList<ContratoItem[]>(async () => {
     if (!profile) return;
@@ -140,7 +142,34 @@ export default function ContratosScreen() {
           })}
         </ScrollView>
 
-        {!items ? (
+        {error && !items ? (
+          <View className="mt-10 rounded-2xl border border-milsaca-dourado/20 bg-milsaca-verde-claro p-5">
+            <Text
+              className="text-sm text-milsaca-cream"
+              style={{ fontFamily: "Inter_600SemiBold" }}
+            >
+              Não foi possível carregar
+            </Text>
+            <Text
+              className="mt-1 text-xs text-milsaca-cream/70"
+              style={{ fontFamily: "Inter_400Regular" }}
+            >
+              {error} Verifique sua conexão e tente de novo.
+            </Text>
+            <Pressable
+              onPress={() => reload()}
+              className="mt-3 flex-row items-center justify-center gap-2 rounded-xl border border-milsaca-dourado/40 py-2.5 active:opacity-80"
+            >
+              <Ionicons name="refresh" size={16} color="#C9A961" />
+              <Text
+                className="text-sm text-milsaca-dourado"
+                style={{ fontFamily: "Inter_500Medium" }}
+              >
+                Tentar de novo
+              </Text>
+            </Pressable>
+          </View>
+        ) : !items ? (
           <View className="mt-12 items-center">
             <ActivityIndicator color="#C9A961" />
           </View>
@@ -218,6 +247,44 @@ export default function ContratosScreen() {
                       </Text>
                     ) : null}
                   </View>
+
+                  {c.bag_count && c.bag_count > 0 ? (
+                    <View
+                      className={
+                        c.sacas_pendentes > 0
+                          ? "mt-3 rounded-xl border border-milsaca-dourado/40 bg-milsaca-dourado/10 px-3 py-2"
+                          : "mt-3 rounded-xl border border-milsaca-dourado/15 bg-milsaca-verde/30 px-3 py-2"
+                      }
+                    >
+                      <View className="flex-row flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                        <Text
+                          className="text-[11px] text-milsaca-cream/70"
+                          style={{ fontFamily: "Inter_400Regular" }}
+                        >
+                          Entregues {c.sacas_entregues}
+                          {c.sacas_em_transito > 0
+                            ? ` · Em trânsito ${c.sacas_em_transito}`
+                            : ""}{" "}
+                          de {c.bag_count}
+                        </Text>
+                        {c.sacas_pendentes > 0 ? (
+                          <Text
+                            className="text-xs text-milsaca-dourado"
+                            style={{ fontFamily: "Inter_600SemiBold" }}
+                          >
+                            Faltam {c.sacas_pendentes} sacas
+                          </Text>
+                        ) : (
+                          <Text
+                            className="text-xs text-emerald-300"
+                            style={{ fontFamily: "Inter_500Medium" }}
+                          >
+                            Saldo zerado
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                  ) : null}
 
                   {signed && c.signed_at ? (
                     <View className="mt-3 flex-row items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-2">

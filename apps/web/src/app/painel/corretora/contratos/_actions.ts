@@ -354,6 +354,40 @@ export async function updateContratoStatus(formData: FormData) {
 
   if (!current) redirect("/painel/corretora/contratos");
 
+  // Guard de conservação de sacas (achado-raiz da auditoria): não dá pra
+  // FINALIZAR um contrato deixando sacas sem entrega registrada. Soma as
+  // entregas não-canceladas e compara com o contratado; se faltar, recusa e
+  // mostra o saldo pendente em vez de "sumir" com as sacas.
+  if (next === "finalizado" && current.bag_count != null && current.bag_count > 0) {
+    const { data: entregas } = await supabase
+      .from("entregas")
+      .select("bag_count, status")
+      .eq("corretora_id", profile.corretora_id)
+      .eq("contrato_id", id)
+      .neq("status", "cancelada");
+    const registrado = (entregas ?? []).reduce(
+      (acc, e) => acc + (e.bag_count ?? 0),
+      0,
+    );
+    const pendente = current.bag_count - registrado;
+    if (pendente > 0) {
+      const log = await getReqLogger({
+        action: "updateContratoStatus",
+        corretoraId: profile.corretora_id,
+        contratoId: id,
+      });
+      log.warn("contrato_finalizar_com_saldo_pendente", {
+        contratado: current.bag_count,
+        registrado,
+        pendente,
+      });
+      const params = new URLSearchParams({
+        error: `Não dá pra finalizar: faltam ${pendente} sacas sem entrega registrada (contratado ${current.bag_count}, registrado ${registrado}). Registre a entrega ou ajuste o contrato.`,
+      });
+      redirect(`/painel/corretora/contratos/${id}?${params.toString()}`);
+    }
+  }
+
   const payload: {
     status: ContratoStatus;
     signed_at?: string | null;

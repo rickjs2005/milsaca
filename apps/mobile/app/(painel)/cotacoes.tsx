@@ -88,16 +88,51 @@ export default function CotacoesScreen() {
   const { profile } = useAuth();
   const produtorNome = profile?.full_name ?? null;
   const [filter, setFilter] = useState<CoffeeSpecie | "all">("all");
-  const { data, refreshing, onRefresh } = useList<ProdutorCotacoesMobile>(
-    async () => {
-      if (!profile?.id) return;
-      return loadProdutorCotacoesMobile(
-        profile.id,
-        filter === "all" ? {} : { specie: filter },
-      );
-    },
-    [filter, profile?.id],
-  );
+  const { data, error, reload, refreshing, onRefresh } =
+    useList<ProdutorCotacoesMobile>(
+      async () => {
+        if (!profile?.id) return;
+        return loadProdutorCotacoesMobile(
+          profile.id,
+          filter === "all" ? {} : { specie: filter },
+        );
+      },
+      [filter, profile?.id],
+    );
+
+  if (error && !data) {
+    return (
+      <SafeAreaView className="flex-1 bg-milsaca-cream">
+        <View className="flex-1 items-center justify-center gap-3 px-8">
+          <Ionicons name="cloud-offline-outline" size={32} color="#4A5C4C" />
+          <Text
+            className="text-center text-sm text-milsaca-verde"
+            style={{ fontFamily: "Inter_600SemiBold" }}
+          >
+            Não foi possível carregar as cotações
+          </Text>
+          <Text
+            className="text-center text-xs text-milsaca-verde-claro"
+            style={{ fontFamily: "Inter_400Regular" }}
+          >
+            {error} Verifique sua conexão e tente de novo.
+          </Text>
+          <Pressable
+            onPress={() => reload()}
+            className="mt-1 flex-row items-center gap-2 rounded-full bg-milsaca-verde px-5 py-2.5 active:opacity-80"
+          >
+            <Ionicons name="refresh" size={16} color="#FAF7F0" />
+            <Text
+              className="text-sm text-milsaca-cream"
+              style={{ fontFamily: "Inter_500Medium" }}
+            >
+              Tentar de novo
+            </Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!data) {
     return (

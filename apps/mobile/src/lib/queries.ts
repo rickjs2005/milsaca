@@ -584,6 +584,10 @@ export interface ContratoItem {
   corretora_nome: string;
   corretora_phone: string | null;
   corretora_city: string | null;
+  // Conservação de sacas (o produtor precisa enxergar o saldo).
+  sacas_entregues: number;
+  sacas_em_transito: number;
+  sacas_pendentes: number;
 }
 
 interface ContratoRow {
@@ -621,8 +625,48 @@ export async function listMeusContratos(
 
   const { data } = await q;
   const rows = (data ?? []) as ContratoRow[];
+
+  // Saldo de sacas por contrato: soma as entregas não-canceladas (a RLS de
+  // entregas deixa o produtor ler as próprias). entregue = recebida/conferida;
+  // em_transito = programada/em_transito; pendente = contratado - as duas.
+  const ids = rows.map((r) => r.id);
+  const saldoPorContrato = new Map<
+    string,
+    { entregue: number; em_transito: number }
+  >();
+  if (ids.length > 0) {
+    const { data: entregas } = await supabase
+      .from("entregas")
+      .select("contrato_id, bag_count, status")
+      .in("contrato_id", ids)
+      .neq("status", "cancelada");
+    for (const e of (entregas ?? []) as {
+      contrato_id: string;
+      bag_count: number | null;
+      status: string;
+    }[]) {
+      const cur = saldoPorContrato.get(e.contrato_id) ?? {
+        entregue: 0,
+        em_transito: 0,
+      };
+      const n = e.bag_count ?? 0;
+      if (e.status === "recebida" || e.status === "conferida") {
+        cur.entregue += n;
+      } else if (e.status === "programada" || e.status === "em_transito") {
+        cur.em_transito += n;
+      }
+      saldoPorContrato.set(e.contrato_id, cur);
+    }
+  }
+
   return rows.map((r): ContratoItem => {
     const cor = pickOne(r.corretora);
+    const saldo = saldoPorContrato.get(r.id) ?? { entregue: 0, em_transito: 0 };
+    const contratado = r.bag_count ?? 0;
+    const pendentes = Math.max(
+      contratado - saldo.entregue - saldo.em_transito,
+      0,
+    );
     return {
       id: r.id,
       code: r.code,
@@ -637,6 +681,9 @@ export async function listMeusContratos(
       corretora_nome: cor?.name ?? "—",
       corretora_phone: cor?.phone ?? null,
       corretora_city: cor?.city ?? null,
+      sacas_entregues: saldo.entregue,
+      sacas_em_transito: saldo.em_transito,
+      sacas_pendentes: pendentes,
     };
   });
 }

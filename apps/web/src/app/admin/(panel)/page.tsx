@@ -8,6 +8,8 @@ import {
   FileSignature,
   Handshake,
   MessageCircle,
+  Package,
+  PackageX,
   ScrollText,
   Sprout,
   Wallet,
@@ -35,10 +37,13 @@ export default async function AdminPage() {
       .limit(5),
   ]);
 
+  const sacasAnomalia =
+    metrics.contratosFinalizadosPendentes > 0 || metrics.contratosExcedente > 0;
   const hasAlerts =
     metrics.pendentesCount > 0 ||
     metrics.trialsExpiringIn7d > 0 ||
-    metrics.pastDueSubs > 0;
+    metrics.pastDueSubs > 0 ||
+    sacasAnomalia;
 
   return (
     <>
@@ -79,6 +84,26 @@ export default async function AdminPage() {
               title={`${metrics.pastDueSubs} ${metrics.pastDueSubs === 1 ? "assinatura vencida" : "assinaturas vencidas"}`}
               description="Período encerrou e ainda não renovou."
               cta="Tratar agora"
+            />
+          ) : null}
+          {metrics.contratosFinalizadosPendentes > 0 ? (
+            <AlertCard
+              href="/admin/metricas"
+              tone="danger"
+              icon={PackageX}
+              title={`${metrics.sacasResiduais} ${metrics.sacasResiduais === 1 ? "saca pendente" : "sacas pendentes"} em ${metrics.contratosFinalizadosPendentes} ${metrics.contratosFinalizadosPendentes === 1 ? "contrato finalizado" : "contratos finalizados"}`}
+              description="Contrato finalizado com saldo de sacas em aberto — reconciliar."
+              cta="Investigar"
+            />
+          ) : null}
+          {metrics.contratosExcedente > 0 ? (
+            <AlertCard
+              href="/admin/metricas"
+              tone="danger"
+              icon={AlertTriangle}
+              title={`${metrics.contratosExcedente} ${metrics.contratosExcedente === 1 ? "contrato com excedente" : "contratos com excedente"}`}
+              description="Sacas entregues acima do contratado — verificar."
+              cta="Investigar"
             />
           ) : null}
         </div>
@@ -144,6 +169,17 @@ export default async function AdminPage() {
             metrics.novosLaudos30d > 0
               ? `+${metrics.novosLaudos30d} nos últimos 30d`
               : undefined
+          }
+        />
+        <KpiCard
+          label="Sacas a entregar"
+          value={metrics.sacasAEntregar}
+          icon={Package}
+          tone={metrics.sacasResiduais > 0 ? "danger" : "default"}
+          hint={
+            metrics.sacasResiduais > 0
+              ? `${metrics.sacasResiduais} residuais em finalizados`
+              : "Pendentes em contratos ativos."
           }
         />
       </div>

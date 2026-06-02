@@ -63,3 +63,6 @@ supabase/seed.sql.bak
 # Test
 coverage/
 .nyc_output/
+
+# Milsaca review (relatórios de auditoria pré-piloto — contêm achados sensíveis)
+.milsaca-review/
