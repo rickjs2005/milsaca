@@ -363,6 +363,11 @@ function PropostaCard({
   const venceEm = proposta.validade_ate
     ? formatVencimento(proposta.validade_ate)
     : null;
+  // Vencida: a corretora pôs validade e ela já passou. O servidor recusa o
+  // aceite (RPC), então não mostramos botões que só dariam erro.
+  const vencida = proposta.validade_ate
+    ? new Date(proposta.validade_ate).getTime() < Date.now()
+    : false;
 
   return (
     <View
@@ -428,40 +433,52 @@ function PropostaCard({
         </View>
       ) : null}
 
-      <View className="mt-4 flex-row gap-2">
-        <Pressable
-          onPress={onRejeitar}
-          disabled={respondendo}
-          className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border border-red-300/40 bg-red-500/10 py-3 active:opacity-70 disabled:opacity-50"
-        >
-          <Ionicons name="close-circle-outline" size={16} color="#FCA5A5" />
+      {vencida ? (
+        <View className="mt-4 flex-row items-center gap-1.5 rounded-xl bg-milsaca-verde/40 px-3 py-3">
+          <Ionicons name="time-outline" size={16} color="#FCA5A5" />
           <Text
-            className="text-sm text-red-200"
-            style={{ fontFamily: "Inter_600SemiBold" }}
+            className="flex-1 text-xs text-milsaca-cream/85"
+            style={{ fontFamily: "Inter_500Medium" }}
           >
-            Rejeitar
+            Proposta vencida — peça uma nova à corretora pelo WhatsApp.
           </Text>
-        </Pressable>
-        <Pressable
-          onPress={onAceitar}
-          disabled={respondendo}
-          className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl bg-milsaca-dourado py-3 active:opacity-80 disabled:opacity-50"
-        >
-          {respondendo ? (
-            <ActivityIndicator color="#2D3A2E" size="small" />
-          ) : (
-            <>
-              <Ionicons name="checkmark-circle" size={16} color="#2D3A2E" />
-              <Text
-                className="text-sm text-milsaca-verde"
-                style={{ fontFamily: "Inter_600SemiBold" }}
-              >
-                Aceitar
-              </Text>
-            </>
-          )}
-        </Pressable>
-      </View>
+        </View>
+      ) : (
+        <View className="mt-4 flex-row gap-2">
+          <Pressable
+            onPress={onRejeitar}
+            disabled={respondendo}
+            className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border border-red-300/40 bg-red-500/10 py-3 active:opacity-70 disabled:opacity-50"
+          >
+            <Ionicons name="close-circle-outline" size={16} color="#FCA5A5" />
+            <Text
+              className="text-sm text-red-200"
+              style={{ fontFamily: "Inter_600SemiBold" }}
+            >
+              Rejeitar
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={onAceitar}
+            disabled={respondendo}
+            className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl bg-milsaca-dourado py-3 active:opacity-80 disabled:opacity-50"
+          >
+            {respondendo ? (
+              <ActivityIndicator color="#2D3A2E" size="small" />
+            ) : (
+              <>
+                <Ionicons name="checkmark-circle" size={16} color="#2D3A2E" />
+                <Text
+                  className="text-sm text-milsaca-verde"
+                  style={{ fontFamily: "Inter_600SemiBold" }}
+                >
+                  Aceitar
+                </Text>
+              </>
+            )}
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }
