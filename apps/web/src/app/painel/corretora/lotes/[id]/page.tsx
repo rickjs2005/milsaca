@@ -353,6 +353,14 @@ export default async function LoteDetalhePage({
         defaultBagCount={
           lote.peso_sacas != null ? Number(lote.peso_sacas) : null
         }
+        /* Só lote 'classificado' (disponível) recebe proposta nova. Vendido
+           (deal fechado), arquivado etc. ficam read-only — espelha o card. */
+        locked={lote.status !== "classificado"}
+        lockedNote={
+          lote.status === "vendido"
+            ? "Lote vendido — negócio fechado. Não dá pra enviar nova proposta; o histórico fica como registro."
+            : "Este lote ainda não está disponível pra proposta (precisa estar classificado)."
+        }
       />
 
       <section className="space-y-3">

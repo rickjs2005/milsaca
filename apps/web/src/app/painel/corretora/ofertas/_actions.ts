@@ -151,10 +151,10 @@ export async function atualizarStatusOferta(formData: FormData) {
   // ou corrida com outra ação).
   const { data: atual } = await supabase
     .from("ofertas_comprador")
-    .select("status")
+    .select("status, lote_id")
     .eq("id", idParsed.data)
     .eq("corretora_id", profile.corretora_id)
-    .maybeSingle<{ status: OfertaStatus }>();
+    .maybeSingle<{ status: OfertaStatus; lote_id: string | null }>();
   if (!atual) redirect(back);
   if (atual.status === status) {
     redirect(`${back}?saved=${encodeURIComponent("Status da oferta atualizado.")}`);
@@ -190,6 +190,19 @@ export async function atualizarStatusOferta(formData: FormData) {
     redirect(
       `${back}?error=${encodeURIComponent("Essa oferta já foi atualizada por outra ação. Recarregue.")}`,
     );
+  }
+
+  // Oferta de LOTE aceita = lote vendido (deal fechado). Best-effort; não mexe
+  // em lote já vendido/arquivado.
+  if (status === "aceita" && atual.lote_id) {
+    await supabase
+      .from("lotes")
+      .update({ status: "vendido" })
+      .eq("id", atual.lote_id)
+      .eq("corretora_id", profile.corretora_id)
+      .not("status", "in", "(vendido,arquivado)");
+    revalidateAffected(`/painel/corretora/lotes/${atual.lote_id}`);
+    revalidatePath("/painel/corretora/lotes");
   }
 
   revalidateAffected();

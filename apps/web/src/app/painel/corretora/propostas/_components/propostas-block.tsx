@@ -74,12 +74,15 @@ export function PropostasBlock({
   defaultBagCount,
   /** Lead/lote já fechado (ex.: lead convertido): só leitura, sem nova proposta. */
   locked = false,
+  /** Texto do aviso quando `locked` (contexto varia entre lead e lote). */
+  lockedNote = "Não dá pra enviar nova proposta agora — o histórico abaixo fica como registro.",
 }: {
   propostas: PropostaRow[];
   leadId?: string;
   loteId?: string;
   defaultBagCount?: number | null;
   locked?: boolean;
+  lockedNote?: string;
 }) {
   return (
     <Card className="border-milsaca-cream-escuro shadow-card">
@@ -102,8 +105,7 @@ export function PropostasBlock({
         {/* --- Form: nova proposta (escondido quando fechado) --- */}
         {locked ? (
           <div className="rounded-lg border border-milsaca-cream-escuro bg-milsaca-cream/40 px-4 py-3 text-xs text-milsaca-verde-claro">
-            Negócio fechado — o lead virou contrato. Não dá pra enviar nova
-            proposta; o histórico abaixo fica como registro.
+            {lockedNote}
           </div>
         ) : (
         <form

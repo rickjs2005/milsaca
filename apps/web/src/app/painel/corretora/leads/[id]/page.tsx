@@ -362,6 +362,7 @@ export default async function LeadDetalhePage({
             leadId={lead.id}
             defaultBagCount={lead.bag_count}
             locked={terminal}
+            lockedNote="Negócio fechado — o lead virou contrato. Não dá pra enviar nova proposta; o histórico abaixo fica como registro."
           />
 
           <Card>

@@ -352,6 +352,18 @@ export async function updatePropostaStatus(formData: FormData) {
     }
   }
 
+  // Proposta de LOTE aceita = lote vendido (deal fechado). Terminal: o card
+  // para de oferecer "Criar proposta" e o detalhe trava. Best-effort; não
+  // mexe em lote já vendido/arquivado.
+  if (next === "aceita" && c.lote_id) {
+    await supabase
+      .from("lotes")
+      .update({ status: "vendido" })
+      .eq("id", c.lote_id)
+      .eq("corretora_id", profile.corretora_id)
+      .not("status", "in", "(vendido,arquivado)");
+  }
+
   revalidateProposta({ leadId: c.lead_id, loteId: c.lote_id });
   redirect(`${backHref}?saved=Status%20da%20proposta%20atualizado`);
 }
