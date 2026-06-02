@@ -5,6 +5,7 @@ import { MunicipioAutocomplete } from "@/components/municipio-autocomplete";
 import { MaskedInput } from "@/components/forms/masked-input";
 import { UfSelect } from "@/components/forms/uf-select";
 import { REGIOES_CAFEEIRAS, type RegiaoCafeeira } from "./regioes";
+import { ESPECIALIDADES_OPCOES } from "./especialidades";
 
 type Defaults = {
   name?: string | null;
@@ -23,6 +24,7 @@ type Defaults = {
   descricao?: string | null;
   logo_url?: string | null;
   regioes_atendimento?: RegiaoCafeeira[] | null;
+  especialidades?: string[] | null;
   lat?: number | string | null;
   lng?: number | string | null;
 };
@@ -143,6 +145,32 @@ export function CorretoraFormFields({
                   defaultChecked={checked}
                 />
                 <span>{r.label}</span>
+              </label>
+            );
+          })}
+        </div>
+      </Section>
+
+      <Section title="Especialidades">
+        <p className="text-xs text-milsaca-verde-claro/80">
+          Marque o que a corretora trabalha. Aparece como prova social na
+          página pública da corretora.
+        </p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {ESPECIALIDADES_OPCOES.map((opt) => {
+            const checked = (d.especialidades ?? []).includes(opt);
+            return (
+              <label
+                key={opt}
+                className="flex items-center gap-2 rounded-lg border border-milsaca-cream-escuro/60 px-3 py-2 text-sm text-milsaca-verde hover:border-milsaca-dourado"
+              >
+                <input
+                  type="checkbox"
+                  name="especialidades"
+                  value={opt}
+                  defaultChecked={checked}
+                />
+                <span>{opt}</span>
               </label>
             );
           })}

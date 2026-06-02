@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SidebarSupportLink } from "@/components/sidebar-support-link";
 
 type NavItem = {
   href: string;
@@ -38,11 +39,13 @@ export function ProdutorSidebar({
   producerEmail,
   fazendaNome,
   showSwitcher,
+  support,
 }: {
   producerName: string;
   producerEmail: string;
   fazendaNome: string | null;
   showSwitcher: boolean;
+  support: { waHref: string | null; mailHref: string | null };
 }) {
   const pathname = usePathname();
 
@@ -137,6 +140,7 @@ export function ProdutorSidebar({
             Trocar painel
           </Link>
         )}
+        <SidebarSupportLink waHref={support.waHref} mailHref={support.mailHref} />
         <form action="/sair" method="post">
           <button
             type="submit"

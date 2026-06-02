@@ -31,7 +31,7 @@ export async function createCorretora(formData: FormData) {
   const actor = await requireAppAdmin();
 
   const parsed = corretoraSchema.safeParse(
-    formDataToObject(formData, ["regioes_atendimento"]),
+    formDataToObject(formData, ["regioes_atendimento", "especialidades"]),
   );
   if (!parsed.success) {
     redirect(
@@ -100,7 +100,7 @@ export async function updateCorretora(formData: FormData) {
   const id = idParsed.data;
 
   const parsed = corretoraSchema.safeParse(
-    formDataToObject(formData, ["regioes_atendimento"]),
+    formDataToObject(formData, ["regioes_atendimento", "especialidades"]),
   );
   if (!parsed.success) {
     redirect(
@@ -110,10 +110,12 @@ export async function updateCorretora(formData: FormData) {
   const fields = parsed.data;
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("corretoras")
     .update(fields)
-    .eq("id", id);
+    .eq("id", id)
+    .select("slug")
+    .maybeSingle();
 
   if (error) {
     const log = await getReqLogger({
@@ -154,6 +156,8 @@ export async function updateCorretora(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/corretoras");
   revalidatePath(`/admin/corretoras/${id}`);
+  // Invalida a página pública (/c/[slug]) pra refletir a edição na hora.
+  if (updated?.slug) revalidatePath(`/c/${updated.slug}`);
   redirect(`/admin/corretoras/${id}?saved=1`);
 }
 
@@ -280,10 +284,12 @@ export async function toggleCorretoraVerified(formData: FormData) {
   const next = formData.get("verified") === "true";
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("corretoras")
     .update({ verified: next })
-    .eq("id", id);
+    .eq("id", id)
+    .select("slug")
+    .maybeSingle();
   if (error) {
     const log = await getReqLogger({
       action: "toggleCorretoraVerified",
@@ -315,6 +321,7 @@ export async function toggleCorretoraVerified(formData: FormData) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/corretoras");
+  if (updated?.slug) revalidatePath(`/c/${updated.slug}`);
 }
 
 export async function aprovarCorretora(formData: FormData) {

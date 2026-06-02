@@ -104,6 +104,10 @@ export const corretoraSchema = z.object({
   descricao: optionalText(1000),
   logo_url: optionalText(500),
   regioes_atendimento: z.array(regiaoSchema).default([]),
+  especialidades: z
+    .array(z.string().trim().min(1).max(60))
+    .max(20)
+    .default([]),
   lat: coord("Latitude", -90, 90),
   lng: coord("Longitude", -180, 180),
 });

@@ -24,6 +24,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SidebarSupportLink } from "@/components/sidebar-support-link";
 import type { SidebarBadges } from "../_lib/dashboard";
 
 type NavItem = {
@@ -161,6 +162,7 @@ export function CorretoraSidebar({
   showSwitcher,
   badges,
   isDono = true,
+  support,
 }: {
   operatorName: string;
   operatorEmail: string;
@@ -169,6 +171,7 @@ export function CorretoraSidebar({
   badges?: SidebarBadges;
   /** Dono vê tudo; operador não vê Pagamentos/Assinatura/Equipe. */
   isDono?: boolean;
+  support: { waHref: string | null; mailHref: string | null };
 }) {
   const pathname = usePathname();
   const b = badges ?? EMPTY_BADGES;
@@ -289,6 +292,7 @@ export function CorretoraSidebar({
             Trocar painel
           </Link>
         )}
+        <SidebarSupportLink waHref={support.waHref} mailHref={support.mailHref} />
         <form action="/sair" method="post">
           <button
             type="submit"

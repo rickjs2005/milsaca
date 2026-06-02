@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { getSupportChannels } from "@/lib/support";
 
 const WHATSAPP =
   process.env.NEXT_PUBLIC_WHATSAPP_CONTATO?.replace(/\D/g, "") ?? "";
@@ -20,7 +21,10 @@ const WHATSAPP_URL = WHATSAPP
   ? `https://wa.me/${WHATSAPP}?text=${encodeURIComponent("Olá! Quero conhecer o Milsaca.")}`
   : null;
 
-export default function Home() {
+export default async function Home() {
+  const support = await getSupportChannels();
+  const supportHref = support.waHref ?? support.mailHref;
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-milsaca-cream">
       <div
@@ -216,6 +220,16 @@ export default function Home() {
             >
               Privacidade
             </Link>
+            {supportHref ? (
+              <a
+                href={supportHref}
+                target={support.waHref ? "_blank" : undefined}
+                rel={support.waHref ? "noopener noreferrer" : undefined}
+                className="hover:text-milsaca-cafezal hover:underline"
+              >
+                Suporte
+              </a>
+            ) : null}
           </nav>
           <span>Mercado do café · Brasil</span>
         </footer>

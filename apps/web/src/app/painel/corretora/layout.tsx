@@ -3,6 +3,7 @@ import { requireUser, getProfile, enforceProfileStatus } from "@/lib/auth";
 import { createClient } from "@milsaca/db/web/server";
 import { ToastFromSearchParams } from "@/components/toast-from-search-params";
 import { PanelShell } from "@/components/panel-shell";
+import { getSupportChannels } from "@/lib/support";
 import { CorretoraSidebar } from "./_components/sidebar";
 import { CorretoraBottomNav } from "./_components/bottom-nav";
 import { SubscriptionBanner } from "./_components/subscription-banner";
@@ -69,6 +70,8 @@ export default async function PainelCorretoraLayout({
         .join(" · ")
     : null;
 
+  const support = await getSupportChannels();
+
   return (
     <>
       <PanelShell
@@ -82,6 +85,7 @@ export default async function PainelCorretoraLayout({
             showSwitcher={showSwitcher}
             badges={badges}
             isDono={isCorretoraDono(profile)}
+            support={support}
           />
         }
       >

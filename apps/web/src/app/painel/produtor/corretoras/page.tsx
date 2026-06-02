@@ -24,6 +24,8 @@ import { toggleFavorito } from "./_actions";
 import { buildWhatsAppInviteUrl } from "../../corretora/produtores/_lib/whatsapp";
 import { WhatsAppButton } from "./_components/whatsapp-button";
 import { CorretorasMapWrapper } from "./_components/corretoras-map-wrapper";
+import { StarsDisplay } from "@/components/stars";
+import { StarRating } from "./_components/star-rating";
 import {
   REGIAO_LABEL,
   REGIOES_CAFEEIRAS,
@@ -249,6 +251,9 @@ export default async function CorretorasProdutorPage({
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
+                  {c.rating_count > 0 && (
+                    <StarsDisplay value={c.rating_media} count={c.rating_count} />
+                  )}
                   {c.regioes_atendimento.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {c.regioes_atendimento.map((r) => (
@@ -309,6 +314,20 @@ export default async function CorretorasProdutorPage({
                       </Button>
                     )}
                   </div>
+
+                  {(c.qtd_negociacoes > 0 || c.qtd_contratos > 0) && (
+                    <div className="border-t border-neutral-100 pt-3">
+                      <p className="mb-1 text-caption text-neutral-500">
+                        {c.minha_avaliacao != null
+                          ? "Sua avaliação:"
+                          : "Avalie esta corretora:"}
+                      </p>
+                      <StarRating
+                        corretoraId={c.id}
+                        current={c.minha_avaliacao}
+                      />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );

@@ -16,6 +16,9 @@ export type CorretoraListItem = {
   is_favorita: boolean;
   qtd_negociacoes: number;
   qtd_contratos: number;
+  rating_media: number | null;
+  rating_count: number;
+  minha_avaliacao: number | null;
 };
 
 /**
@@ -28,29 +31,35 @@ export async function listCorretorasParaProdutor(
 ): Promise<CorretoraListItem[]> {
   const supabase = await createClient();
 
-  const [corretorasRes, favoritosRes, leadsRes, contratosRes] =
-    await Promise.all([
-      supabase
-        .from("corretoras_publicas")
-        .select(
-          "id, name, slug, city, state, phone, email, verified, regioes_atendimento, lat, lng",
-        )
-        .order("verified", { ascending: false })
-        .order("name", { ascending: true })
-        .limit(500),
-      supabase
-        .from("favoritos")
-        .select("corretora_id")
-        .eq("produtor_id", produtorId),
-      supabase
-        .from("leads")
-        .select("corretora_id")
-        .eq("produtor_id", produtorId),
-      supabase
-        .from("contratos")
-        .select("corretora_id")
-        .eq("produtor_id", produtorId),
-    ]);
+  const [
+    corretorasRes,
+    favoritosRes,
+    leadsRes,
+    contratosRes,
+    minhasAvaliacoesRes,
+  ] = await Promise.all([
+    supabase
+      .from("corretoras_publicas")
+      .select(
+        "id, name, slug, city, state, phone, email, verified, regioes_atendimento, lat, lng, rating_media, rating_count",
+      )
+      .order("verified", { ascending: false })
+      .order("name", { ascending: true })
+      .limit(500),
+    supabase
+      .from("favoritos")
+      .select("corretora_id")
+      .eq("produtor_id", produtorId),
+    supabase.from("leads").select("corretora_id").eq("produtor_id", produtorId),
+    supabase
+      .from("contratos")
+      .select("corretora_id")
+      .eq("produtor_id", produtorId),
+    supabase
+      .from("corretora_avaliacoes")
+      .select("corretora_id, rating")
+      .eq("produtor_id", produtorId),
+  ]);
 
   const favoritas = new Set(
     ((favoritosRes.data ?? []) as { corretora_id: string }[]).map(
@@ -68,6 +77,13 @@ export async function listCorretorasParaProdutor(
       (contratosCount.get(r.corretora_id) ?? 0) + 1,
     );
   }
+  const minhasAvaliacoes = new Map<string, number>();
+  for (const r of (minhasAvaliacoesRes.data ?? []) as {
+    corretora_id: string;
+    rating: number;
+  }[]) {
+    minhasAvaliacoes.set(r.corretora_id, r.rating);
+  }
 
   type Row = {
     id: string | null;
@@ -81,6 +97,8 @@ export async function listCorretorasParaProdutor(
     regioes_atendimento: RegiaoCafeeira[] | null;
     lat: number | string | null;
     lng: number | string | null;
+    rating_media: number | string | null;
+    rating_count: number | null;
   };
 
   const rows = ((corretorasRes.data ?? []) as Row[])
@@ -102,6 +120,9 @@ export async function listCorretorasParaProdutor(
       is_favorita: favoritas.has(c.id),
       qtd_negociacoes: leadsCount.get(c.id) ?? 0,
       qtd_contratos: contratosCount.get(c.id) ?? 0,
+      rating_media: c.rating_media != null ? Number(c.rating_media) : null,
+      rating_count: c.rating_count ?? 0,
+      minha_avaliacao: minhasAvaliacoes.get(c.id) ?? null,
     }));
 
   // Favoritas no topo, mantendo a ordem alfabética intra-grupos.

@@ -3,14 +3,17 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   BadgeCheck,
+  Coffee,
   ExternalLink,
   Globe,
   Mail,
   MapPin,
   MessageCircle,
+  type LucideIcon,
 } from "lucide-react";
 import { unstable_cache } from "next/cache";
 import { createPublicClient } from "@milsaca/db/web/public";
+import { StarsDisplay } from "@/components/stars";
 
 /**
  * Página pública da corretora — pra ser compartilhada com produtores e
@@ -43,7 +46,55 @@ type CorretoraPublic = {
   descricao: string | null;
   logo_url: string | null;
   site_url: string | null;
+  regioes_atendimento: string[] | null;
+  especialidades: string[] | null;
+  total_produtores: number | null;
+  total_negociacoes: number | null;
+  rating_media: number | null;
+  rating_count: number | null;
 };
+
+/** Rótulos das regiões cafeeiras (enum regiao_cafeeira). */
+const REGIAO_LABEL: Record<string, string> = {
+  zona_da_mata: "Zona da Mata (MG)",
+  sul_de_minas: "Sul de Minas (MG)",
+  cerrado_mineiro: "Cerrado Mineiro (MG)",
+  matas_de_minas: "Matas de Minas (MG)",
+  caparao: "Caparaó (MG/ES)",
+  mogiana: "Mogiana (SP/MG)",
+  espirito_santo: "Espírito Santo",
+  bahia: "Bahia",
+  rondonia: "Rondônia",
+  outras: "Outras",
+};
+
+function StatTile({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="rounded-card border border-neutral-200 bg-white p-5 text-center shadow-card">
+      <p className="text-h2 font-bold tabular-nums text-milsaca-cafezal">
+        {value.toLocaleString("pt-BR")}
+      </p>
+      <p className="text-caption uppercase tracking-wider text-neutral-500">
+        {label}
+      </p>
+    </div>
+  );
+}
+
+function ProofChip({
+  icon: Icon,
+  children,
+}: {
+  icon: LucideIcon;
+  children: React.ReactNode;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-pill border border-milsaca-dourado/40 bg-milsaca-dourado/10 px-3 py-1 text-body-sm font-medium text-milsaca-cafezal">
+      <Icon className="h-3.5 w-3.5 text-milsaca-dourado" />
+      {children}
+    </span>
+  );
+}
 
 /**
  * Busca da corretora pública cacheada (Opção A). A página não personaliza
@@ -51,7 +102,8 @@ type CorretoraPublic = {
  * 100% cacheável. Usamos `unstable_cache` com client SEM cookie (a RPC/view
  * `corretoras_publicas` só expõe campos públicos), tirando o tráfego do
  * Postgres mesmo a página sendo dinâmica por causa de `cookies()`.
- * TTL 600s: perfil de corretora muda muito pouco. Tag `corretora-<slug>`.
+ * TTL 60s: perfil muda pouco, mas edição no admin chama revalidatePath(/c/slug)
+ * pra refletir na hora; o TTL curto é só rede de segurança. Tag `corretora-<slug>`.
  *
  * `generateMetadata` e a página reusam o mesmo fetch cacheado (mesma chave),
  * então só há 1 ida ao banco por slug a cada janela de revalidação.
@@ -63,14 +115,14 @@ function getCorretoraPublica(slug: string) {
       const { data } = await supabase
         .from("corretoras_publicas")
         .select(
-          "id, name, slug, city, state, phone, email, verified, descricao, logo_url, site_url",
+          "id, name, slug, city, state, phone, email, verified, descricao, logo_url, site_url, regioes_atendimento, especialidades, total_produtores, total_negociacoes, rating_media, rating_count",
         )
         .eq("slug", s)
         .maybeSingle<CorretoraPublic>();
       return data ?? null;
     },
     ["corretora-publica"],
-    { revalidate: 600, tags: [`corretora-${slug}`] },
+    { revalidate: 60, tags: [`corretora-${slug}`] },
   );
   return fetchCorretora(slug);
 }
@@ -119,6 +171,11 @@ export default async function CorretoraPublicPage({ params }: Props) {
     ? `mailto:${c.email}?subject=${encodeURIComponent(`Contato via Milsaca — ${c.name}`)}`
     : null;
 
+  const produtores = c.total_produtores ?? 0;
+  const negociacoes = c.total_negociacoes ?? 0;
+  const especialidades = c.especialidades ?? [];
+  const regioes = c.regioes_atendimento ?? [];
+
   return (
     <main className="min-h-screen bg-milsaca-cream">
       <header className="bg-milsaca-cafezal px-6 py-12 text-milsaca-cream sm:px-12 sm:py-16">
@@ -161,26 +218,36 @@ export default async function CorretoraPublicPage({ params }: Props) {
                 {c.descricao}
               </p>
             ) : null}
+            {(c.rating_count ?? 0) > 0 ? (
+              <div className="flex justify-center pt-1 sm:justify-start">
+                <StarsDisplay
+                  value={c.rating_media}
+                  count={c.rating_count ?? 0}
+                  tone="dark"
+                  size="md"
+                />
+              </div>
+            ) : null}
           </div>
         </div>
       </header>
 
       <section className="mx-auto -mt-8 max-w-3xl px-6 pb-12 sm:px-0">
         <div className="rounded-card border border-neutral-200 bg-white p-6 shadow-card-hover sm:p-8">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="flex flex-col gap-3 sm:grid sm:grid-cols-2">
             <a
               href={waHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-[#25D366] px-5 text-sm font-semibold text-white shadow-card transition-colors hover:bg-[#1ebe5d]"
+              className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-[#25D366] px-5 text-base font-semibold text-white shadow-card transition-colors hover:bg-[#1ebe5d] sm:h-12 sm:text-sm"
             >
-              <MessageCircle className="h-4 w-4" />
+              <MessageCircle className="h-5 w-5 sm:h-4 sm:w-4" />
               Falar no WhatsApp
             </a>
             {mailHref ? (
               <a
                 href={mailHref}
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-md border border-milsaca-cafezal px-5 text-sm font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-cafezal hover:text-milsaca-cream"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-milsaca-cafezal px-5 text-sm font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-cafezal hover:text-milsaca-cream"
               >
                 <Mail className="h-4 w-4" />
                 Mandar e-mail
@@ -203,6 +270,56 @@ export default async function CorretoraPublicPage({ params }: Props) {
             </div>
           ) : null}
         </div>
+
+        {produtores > 0 || negociacoes > 0 ? (
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            {produtores > 0 ? (
+              <StatTile
+                value={produtores}
+                label={produtores === 1 ? "produtor" : "produtores"}
+              />
+            ) : null}
+            {negociacoes > 0 ? (
+              <StatTile
+                value={negociacoes}
+                label={negociacoes === 1 ? "negociação" : "negociações"}
+              />
+            ) : null}
+          </div>
+        ) : null}
+
+        {especialidades.length > 0 || regioes.length > 0 ? (
+          <div className="mt-4 space-y-5 rounded-card border border-neutral-200 bg-white p-6 shadow-card sm:p-8">
+            {especialidades.length > 0 ? (
+              <div>
+                <h2 className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
+                  Especialidades
+                </h2>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {especialidades.map((e) => (
+                    <ProofChip key={e} icon={Coffee}>
+                      {e}
+                    </ProofChip>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {regioes.length > 0 ? (
+              <div>
+                <h2 className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
+                  Atuação
+                </h2>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {regioes.map((r) => (
+                    <ProofChip key={r} icon={MapPin}>
+                      {REGIAO_LABEL[r] ?? r}
+                    </ProofChip>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         <p className="mt-6 text-center text-caption text-neutral-500">
           Página oficial da {c.name} no Milsaca — sistema de corretagem de café.
