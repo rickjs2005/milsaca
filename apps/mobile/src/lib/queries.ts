@@ -982,11 +982,17 @@ export async function responderProposta(
   if (error) return { error: error.message };
   const row = data?.[0];
   if (!row?.success) {
+    const MSG: Record<string, string> = {
+      proposta_indisponivel: "Proposta já respondida ou indisponível.",
+      proposta_expirada: "Proposta vencida — peça uma nova à corretora.",
+      forbidden: "Você precisa estar logado.",
+      resposta_invalida: "Resposta inválida.",
+    };
     return {
       error:
-        row?.error_msg === "proposta_indisponivel"
-          ? "Proposta já respondida ou indisponível."
-          : (row?.error_msg ?? "Falha ao responder proposta."),
+        MSG[row?.error_msg ?? ""] ??
+        row?.error_msg ??
+        "Falha ao responder proposta.",
     };
   }
   return {};
