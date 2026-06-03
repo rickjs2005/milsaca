@@ -18,8 +18,6 @@ import {
   Store,
   Building2,
   BarChart3,
-  UserPlus,
-  MessageCircle,
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
@@ -58,11 +56,6 @@ const NAV_GROUPS: NavGroup[] = [
         badgeTone: "primary",
       },
       {
-        href: "/painel/corretora/leads-whatsapp",
-        label: "Leads WhatsApp",
-        icon: MessageCircle,
-      },
-      {
         href: "/painel/corretora/lotes",
         label: "Lotes de café",
         icon: Package,
@@ -71,7 +64,7 @@ const NAV_GROUPS: NavGroup[] = [
       },
       {
         href: "/painel/corretora/ofertas",
-        label: "Ofertas a compradores",
+        label: "Oferta ao Comprador",
         icon: Store,
       },
       {
@@ -88,7 +81,7 @@ const NAV_GROUPS: NavGroup[] = [
       },
       {
         href: "/painel/corretora/pagamentos",
-        label: "Repasses",
+        label: "Pagamento ao Produtor",
         icon: Wallet,
         ownerOnly: true,
       },
@@ -101,11 +94,6 @@ const NAV_GROUPS: NavGroup[] = [
         href: "/painel/corretora/produtores",
         label: "Produtores",
         icon: Users,
-      },
-      {
-        href: "/painel/corretora/convidar",
-        label: "Convidar produtores",
-        icon: UserPlus,
       },
       {
         href: "/painel/corretora/compradores",

@@ -98,6 +98,9 @@ export type LeadEvent = {
 
 export type LeadDetail = LeadListItem & {
   events: LeadEvent[];
+  /** Lote vinculado via contrato (contratos.lote_id) — pode não existir. */
+  lote_id: string | null;
+  lote_codigo: string | null;
 };
 
 export type LeadTargetOption = {
@@ -108,4 +111,4 @@ export type LeadTargetOption = {
   sublabel: string | null;
 };
 
-export type LeadListFilter = { status?: LeadStatus };
+export type LeadListFilter = { status?: LeadStatus; origem?: LeadOrigem };

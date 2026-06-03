@@ -11,9 +11,12 @@ import { Pagination } from "@/components/pagination";
 import { EmptyState as SharedEmptyState } from "@/components/empty-state";
 import { FilterSheet } from "@/components/filter-sheet";
 import {
+  LEAD_ORIGEM_LABEL,
+  LEAD_ORIGEM_ORDER,
   LEAD_STATUS_LABEL,
   LEAD_STATUS_ORDER,
   type LeadListItem,
+  type LeadOrigem,
   type LeadStatus,
 } from "../_lib/lead-meta";
 import {
@@ -25,11 +28,16 @@ import {
 import { LeadCard } from "./lead-card";
 import { coffeeLabel } from "@/lib/coffee";
 
-type ToolbarState = { status?: LeadStatus };
+type ToolbarState = { status?: LeadStatus; origem?: LeadOrigem };
 
 const STATUS_FILTERS: { value: "" | LeadStatus; label: string }[] = [
   { value: "", label: "Todos" },
   ...LEAD_STATUS_ORDER.map((s) => ({ value: s, label: LEAD_STATUS_LABEL[s] })),
+];
+
+const ORIGEM_FILTERS: { value: "" | LeadOrigem; label: string }[] = [
+  { value: "", label: "Toda origem" },
+  ...LEAD_ORIGEM_ORDER.map((o) => ({ value: o, label: LEAD_ORIGEM_LABEL[o] })),
 ];
 
 type SortKey = "recentes" | "valor" | "quente" | "frio";
@@ -103,8 +111,10 @@ export function LeadsGrid({
   );
 
   const statusHref = (value: string) => filterHref("status", value);
+  const origemHref = (value: string) => filterHref("origem", value);
 
-  const activeFilters = (current.status ? 1 : 0) + (urgencia ? 1 : 0);
+  const activeFilters =
+    (current.status ? 1 : 0) + (current.origem ? 1 : 0) + (urgencia ? 1 : 0);
 
   const selectClass =
     "h-10 rounded-md border border-neutral-200 bg-white px-3 text-body-sm text-milsaca-cafezal outline-none transition-colors hover:border-milsaca-dourado focus-visible:ring-2 focus-visible:ring-ring/40";
@@ -164,6 +174,18 @@ export function LeadsGrid({
         </div>
         <div className="flex items-center gap-3">
           <select
+            aria-label="Filtrar por origem"
+            value={current.origem ?? ""}
+            onChange={(e) => router.push(origemHref(e.target.value))}
+            className={selectClass}
+          >
+            {ORIGEM_FILTERS.map((f) => (
+              <option key={`og-${f.value || "all"}`} value={f.value}>
+                {f.label}
+              </option>
+            ))}
+          </select>
+          <select
             aria-label="Filtrar por urgência"
             value={urgencia}
             onChange={(e) => setUrgencia(e.target.value as "" | Urgencia)}
@@ -206,7 +228,14 @@ export function LeadsGrid({
 
       {/* GRID */}
       {filtered.length === 0 ? (
-        <EmptyState hasFilter={Boolean(current.status) || !!query || !!urgencia} />
+        <EmptyState
+          hasFilter={
+            Boolean(current.status) ||
+            Boolean(current.origem) ||
+            !!query ||
+            !!urgencia
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {filtered.map((lead) => (
@@ -234,6 +263,16 @@ export function LeadsGrid({
             })),
             value: current.status ?? "",
             onSelect: (v) => router.push(statusHref(v)),
+          },
+          {
+            key: "origem",
+            label: "Origem",
+            options: ORIGEM_FILTERS.map((f) => ({
+              value: f.value,
+              label: f.label,
+            })),
+            value: current.origem ?? "",
+            onSelect: (v) => router.push(origemHref(v)),
           },
           {
             key: "urgencia",

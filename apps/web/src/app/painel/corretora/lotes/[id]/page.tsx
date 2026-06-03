@@ -6,6 +6,8 @@ import {
   ExternalLink,
   Eye,
   FileSearch,
+  FileText,
+  Handshake,
   Plus,
   Store,
 } from "lucide-react";
@@ -86,6 +88,25 @@ async function loadLote(id: string) {
     | null;
 }
 
+/**
+ * Origem comercial do lote: o contrato que o referencia (contratos.lote_id) e,
+ * por ele, o lead que originou a venda. Lead e Lote só se conectam pelo contrato.
+ */
+async function loadOrigemComercial(loteId: string, corretoraId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("contratos")
+    .select("id, codigo, lead_id")
+    .eq("lote_id", loteId)
+    .eq("corretora_id", corretoraId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data as
+    | { id: string; codigo: string | null; lead_id: string | null }
+    | null;
+}
+
 async function loadClassificacoes(
   loteId: string,
 ): Promise<ClassificacaoRow[]> {
@@ -113,10 +134,11 @@ export default async function LoteDetalhePage({
   const lote = await loadLote(id);
   if (!lote) notFound();
 
-  const [classificacoes, propostas, ofertas] = await Promise.all([
+  const [classificacoes, propostas, ofertas, origem] = await Promise.all([
     loadClassificacoes(id),
     listPropostasDoLote(profile.corretora_id, id),
     listOfertasDoLote(id),
+    loadOrigemComercial(id, profile.corretora_id),
   ]);
   const vigente = classificacoes.find((c) => !c.anulada);
 
@@ -144,6 +166,31 @@ export default async function LoteDetalhePage({
               : ""}
             {lote.safra ? ` · safra ${lote.safra}` : ""}
           </p>
+          {origem ? (
+            <p className="mt-1.5 flex flex-wrap items-center gap-2 text-caption">
+              <span className="text-neutral-500">Origem comercial:</span>
+              {origem.lead_id ? (
+                <Link
+                  href={`/painel/corretora/leads/${origem.lead_id}`}
+                  className="inline-flex items-center gap-1 rounded-pill bg-milsaca-dourado/15 px-2.5 py-0.5 font-medium text-milsaca-dourado-texto transition-colors hover:bg-milsaca-dourado/25"
+                >
+                  <Handshake className="h-3.5 w-3.5" />
+                  Lead
+                </Link>
+              ) : null}
+              <Link
+                href={`/painel/corretora/contratos/${origem.id}`}
+                className="inline-flex items-center gap-1 rounded-pill bg-milsaca-cafezal/10 px-2.5 py-0.5 font-medium text-milsaca-cafezal transition-colors hover:bg-milsaca-cafezal/20"
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Contrato {origem.codigo ?? ""}
+              </Link>
+            </p>
+          ) : (
+            <p className="mt-1.5 text-caption text-neutral-400">
+              Lote avulso — ainda sem lead/contrato vinculado.
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
@@ -367,7 +414,7 @@ export default async function LoteDetalhePage({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-milsaca-verde-claro">
             <Store className="h-4 w-4" />
-            Ofertas a compradores
+            Oferta ao Comprador
           </h2>
           <Button
             asChild

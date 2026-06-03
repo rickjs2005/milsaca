@@ -75,8 +75,14 @@ type LeadRow = {
       }[]
     | null;
   // Contrato(s) gerado(s) a partir deste lead (FK contratos.lead_id).
-  contratos: { id: string } | { id: string }[] | null;
+  // Em getLead trazemos também o lote do contrato (origem física do negócio).
+  contratos:
+    | { id: string; lote_id?: string | null; lote?: LoteEmbed | LoteEmbed[] | null }
+    | { id: string; lote_id?: string | null; lote?: LoteEmbed | LoteEmbed[] | null }[]
+    | null;
 };
+
+type LoteEmbed = { id: string; codigo: string };
 
 function pickOne<T>(v: T | T[] | null | undefined): T | null {
   if (v == null) return null;
@@ -108,6 +114,7 @@ export async function listLeads(
     .range(from, to);
 
   if (filter.status) q = q.eq("status", filter.status);
+  if (filter.origem) q = q.eq("origem", filter.origem);
 
   const { data, count } = await q;
   const rows = (data ?? []) as LeadRow[];
@@ -219,7 +226,7 @@ export async function getLead(
        produtor_id, contato_id,
        produtor:profiles!leads_produtor_id_fkey(id, full_name, phone, produtores(city, state)),
        contato:produtor_contatos!leads_contato_id_fkey(id, full_name, phone, city, state),
-       contratos:contratos!contratos_lead_id_fkey(id)`,
+       contratos:contratos!contratos_lead_id_fkey(id, lote_id, lote:lotes!contratos_lote_id_fkey(id, codigo))`,
     )
     .eq("corretora_id", corretoraId)
     .eq("id", leadId)
@@ -264,6 +271,8 @@ export async function getLead(
   const cont = pickOne(r.contato);
   const kind: "produtor" | "contato" = prod ? "produtor" : "contato";
   const prodExt = prod ? pickOne(prod.produtores) : null;
+  const contrato = pickOne(r.contratos);
+  const loteEmbed = contrato ? pickOne(contrato.lote) : null;
 
   return {
     id: r.id,
@@ -281,7 +290,9 @@ export async function getLead(
     produtor_phone: prod?.phone ?? cont?.phone ?? null,
     city: prodExt?.city ?? cont?.city ?? null,
     state: prodExt?.state ?? cont?.state ?? null,
-    contrato_id: pickOne(r.contratos)?.id ?? null,
+    contrato_id: contrato?.id ?? null,
+    lote_id: contrato?.lote_id ?? null,
+    lote_codigo: loteEmbed?.codigo ?? null,
     events,
   };
 }

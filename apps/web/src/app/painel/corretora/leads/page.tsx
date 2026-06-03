@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   CheckCircle2,
   Handshake,
+  MessageCircle,
   Plus,
   TrendingUp,
   XCircle,
@@ -17,6 +18,7 @@ import {
   LEAD_STATUS_ORDER,
   type LeadStatus,
 } from "./_lib/queries";
+import { LEAD_ORIGEM_ORDER, type LeadOrigem } from "./_lib/lead-meta";
 import { LeadsGrid } from "./_components/leads-grid";
 import { fmtMoney0, fmtInt } from "@/lib/format";
 
@@ -24,12 +26,17 @@ export const metadata = { title: "Central de Leads — Painel da corretora" };
 
 type SearchParams = Promise<{
   status?: string;
+  origem?: string;
   urgencia?: string;
   page?: string;
 }>;
 
 function isLeadStatus(v: string | undefined): v is LeadStatus {
   return !!v && (LEAD_STATUS_ORDER as readonly string[]).includes(v);
+}
+
+function isLeadOrigem(v: string | undefined): v is LeadOrigem {
+  return !!v && (LEAD_ORIGEM_ORDER as readonly string[]).includes(v);
 }
 
 export default async function LeadsPage({
@@ -44,10 +51,11 @@ export default async function LeadsPage({
 
   const sp = await searchParams;
   const status = isLeadStatus(sp.status) ? sp.status : undefined;
+  const origem = isLeadOrigem(sp.origem) ? sp.origem : undefined;
   const page = Math.max(1, Number(sp.page) || 1);
 
   const [{ rows: leads, count }, kpis, corretoraName] = await Promise.all([
-    listLeads(profile.corretora_id, { status }, page),
+    listLeads(profile.corretora_id, { status, origem }, page),
     loadLeadsKpis(profile.corretora_id),
     getCorretoraName(profile.corretora_id),
   ]);
@@ -63,13 +71,22 @@ export default async function LeadsPage({
             status e fechamento.
           </p>
         </div>
-        <Link
-          href="/painel/corretora/leads/novo"
-          className="inline-flex h-10 items-center gap-1.5 rounded-md bg-milsaca-cafezal px-4 text-sm font-semibold text-milsaca-cream transition-colors hover:bg-milsaca-folha"
-        >
-          <Plus className="h-4 w-4" />
-          Novo lead
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/painel/corretora/leads-whatsapp"
+            className="inline-flex h-10 items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-4 text-sm font-medium text-milsaca-cafezal transition-colors hover:border-milsaca-dourado"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Métricas WhatsApp
+          </Link>
+          <Link
+            href="/painel/corretora/leads/novo"
+            className="inline-flex h-10 items-center gap-1.5 rounded-md bg-milsaca-cafezal px-4 text-sm font-semibold text-milsaca-cream transition-colors hover:bg-milsaca-folha"
+          >
+            <Plus className="h-4 w-4" />
+            Novo lead
+          </Link>
+        </div>
       </header>
 
       <section
@@ -109,7 +126,7 @@ export default async function LeadsPage({
       <LeadsGrid
         leads={leads}
         corretoraName={corretoraName}
-        current={{ status }}
+        current={{ status, origem }}
         page={page}
         totalPages={totalPages}
       />

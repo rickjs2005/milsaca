@@ -8,6 +8,7 @@ import {
   Phone,
   FileText,
   Plus,
+  Package,
   RefreshCw,
   MessageSquare,
   HandCoins,
@@ -200,6 +201,20 @@ export default async function LeadDetalhePage({
               <span className="inline-flex items-center gap-1 text-neutral-600">
                 <Phone className="h-3.5 w-3.5" />
                 {lead.produtor_phone}
+              </span>
+            )}
+            {lead.lote_id && lead.lote_codigo ? (
+              <Link
+                href={`/painel/corretora/lotes/${lead.lote_id}`}
+                className="inline-flex items-center gap-1 rounded-pill bg-milsaca-cafezal/10 px-2.5 py-0.5 font-medium text-milsaca-cafezal transition-colors hover:bg-milsaca-cafezal/20"
+              >
+                <Package className="h-3.5 w-3.5" />
+                Lote {lead.lote_codigo}
+              </Link>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-neutral-400">
+                <Package className="h-3.5 w-3.5" />
+                Sem lote vinculado
               </span>
             )}
           </div>

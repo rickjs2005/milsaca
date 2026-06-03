@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Plus, Receipt, TrendingUp, UserCheck, Users } from "lucide-react";
+import {
+  Plus,
+  Receipt,
+  TrendingUp,
+  UserCheck,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/empty-state";
@@ -39,12 +46,20 @@ export default async function ProdutoresPage() {
             os leads dele migram automaticamente.
           </p>
         </div>
-        <Button asChild variant="primary">
-          <Link href="/painel/corretora/produtores/novo">
-            <Plus className="mr-2 h-4 w-4" />
-            Novo produtor
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild variant="outline">
+            <Link href="/painel/corretora/convidar">
+              <UserPlus className="mr-2 h-4 w-4" />
+              Convidar produtor
+            </Link>
+          </Button>
+          <Button asChild variant="primary">
+            <Link href="/painel/corretora/produtores/novo">
+              <Plus className="mr-2 h-4 w-4" />
+              Novo produtor
+            </Link>
+          </Button>
+        </div>
       </header>
 
       <section

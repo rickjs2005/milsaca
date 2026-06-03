@@ -1,11 +1,9 @@
 import Link from "next/link";
 import {
-  MessageCircle,
   Store,
   Truck,
   Wallet,
   Users,
-  UserPlus,
   Building2,
   TrendingUp,
   BarChart3,
@@ -37,19 +35,14 @@ const GROUPS: Group[] = [
     title: "Operação",
     items: [
       {
-        href: "/painel/corretora/leads-whatsapp",
-        label: "Leads WhatsApp",
-        icon: MessageCircle,
-      },
-      {
         href: "/painel/corretora/ofertas",
-        label: "Ofertas a compradores",
+        label: "Oferta ao Comprador",
         icon: Store,
       },
       { href: "/painel/corretora/entregas", label: "Entregas", icon: Truck },
       {
         href: "/painel/corretora/pagamentos",
-        label: "Repasses",
+        label: "Pagamento ao Produtor",
         icon: Wallet,
         ownerOnly: true,
       },
@@ -59,11 +52,6 @@ const GROUPS: Group[] = [
     title: "Cadastros",
     items: [
       { href: "/painel/corretora/produtores", label: "Produtores", icon: Users },
-      {
-        href: "/painel/corretora/convidar",
-        label: "Convidar produtores",
-        icon: UserPlus,
-      },
       {
         href: "/painel/corretora/compradores",
         label: "Compradores",

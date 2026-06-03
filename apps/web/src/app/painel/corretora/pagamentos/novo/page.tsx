@@ -30,13 +30,13 @@ export default async function NovoPagamentoPage() {
           className="inline-flex items-center gap-1 text-sm text-milsaca-verde-claro hover:text-milsaca-verde"
         >
           <ArrowLeft className="h-4 w-4" />
-          Voltar para Repasses
+          Voltar para Pagamento ao Produtor
         </Link>
       </div>
 
       <header>
         <h1 className="text-2xl font-semibold tracking-tight text-milsaca-verde sm:text-3xl">
-          Registrar repasse
+          Registrar pagamento
         </h1>
         <p className="text-sm text-milsaca-verde-claro">
           Vincule a um contrato — o produtor é definido por ele. Líquido = bruto

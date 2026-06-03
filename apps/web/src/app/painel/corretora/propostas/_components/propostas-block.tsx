@@ -89,7 +89,7 @@ export function PropostasBlock({
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <HandCoins className="h-4 w-4 text-milsaca-cafezal" />
-          Propostas
+          Propostas de Compra
           {propostas.length > 0 ? (
             <span className="rounded-full bg-milsaca-cafezal/10 px-2 py-0.5 text-[10px] font-semibold text-milsaca-cafezal">
               {propostas.length}
@@ -97,7 +97,8 @@ export function PropostasBlock({
           ) : null}
         </CardTitle>
         <CardDescription>
-          Crie ofertas pro produtor/comprador e acompanhe a resposta.
+          Preço de compra que você oferece ao produtor pelo café. Acompanhe a
+          resposta.
         </CardDescription>
       </CardHeader>
 

@@ -18,7 +18,7 @@ import {
 import { PagamentosView } from "./_components/pagamentos-view";
 import { fmtMoney } from "@/lib/format";
 
-export const metadata = { title: "Repasses — Painel da corretora" };
+export const metadata = { title: "Pagamento ao Produtor — Painel da corretora" };
 
 type SearchParams = Promise<{ status?: string; page?: string }>;
 
@@ -61,15 +61,16 @@ export default async function PagamentosPage({
     <div className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-h1 text-milsaca-cafezal">Repasses ao produtor</h1>
+          <h1 className="text-h1 text-milsaca-cafezal">Pagamento ao Produtor</h1>
           <p className="mt-1 max-w-2xl text-body-sm text-neutral-600">
-            Controle do repasse — registre o que deve e marque como repassado.
+            Controle do repasse ao produtor — registre o que deve e marque como
+            pago.
           </p>
         </div>
         <Button asChild variant="primary">
           <Link href="/painel/corretora/pagamentos/novo">
             <Plus className="mr-2 h-4 w-4" />
-            Registrar repasse
+            Registrar pagamento
           </Link>
         </Button>
       </header>
@@ -90,7 +91,7 @@ export default async function PagamentosPage({
           value={fmtMoney(kpis.pago)}
           icon={CheckCircle2}
           tone="success"
-          hint="Repasses confirmados"
+          hint="Pagamentos confirmados"
         />
         <KpiCard
           label="Vencido (líquido)"

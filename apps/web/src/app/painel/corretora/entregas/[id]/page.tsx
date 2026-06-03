@@ -149,6 +149,22 @@ export default async function EntregaDetalhePage({
         </div>
       ) : null}
 
+      {e.status === "conferida" ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-success-600/30 bg-success-50 px-4 py-3 text-success-700">
+          <span className="inline-flex items-center gap-2 text-sm font-medium">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            Entrega conferida — liberou o pagamento ao produtor.
+          </span>
+          <Link
+            href="/painel/corretora/pagamentos/novo"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-success-600 px-3 text-caption font-semibold text-white transition-colors hover:bg-success-700"
+          >
+            Registrar pagamento
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <Card className="border-milsaca-cream-escuro">
