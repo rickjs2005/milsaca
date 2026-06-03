@@ -133,7 +133,7 @@ export default async function MinhasSacasPage() {
       <header>
         <h1 className="text-h1 text-milsaca-cafezal">Minhas sacas</h1>
         <p className="mt-1 text-body-sm text-neutral-600">
-          Seus lotes classificados (laudo COB) e o valor estimado hoje.
+          Seus lotes com classificação de qualidade e o valor estimado hoje.
         </p>
       </header>
 
@@ -143,7 +143,7 @@ export default async function MinhasSacasPage() {
             <EmptyState
               icon={FileCheck2}
               title="Você ainda não tem lotes classificados"
-              description="Quando a corretora classificar um dos seus lotes, ele aparece aqui — com o laudo, PDF e QR público pra você compartilhar."
+              description="Quando a corretora classificar um dos seus lotes, ele aparece aqui — com a classificação, PDF e QR público pra você compartilhar."
             />
           </CardContent>
         </Card>

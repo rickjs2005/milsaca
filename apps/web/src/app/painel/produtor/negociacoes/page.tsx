@@ -15,7 +15,7 @@ import {
 } from "./_lib/queries";
 import { buildWhatsAppInviteUrl } from "../../corretora/produtores/_lib/whatsapp";
 
-export const metadata = { title: "Negociações — Painel do produtor" };
+export const metadata = { title: "Propostas — Painel do produtor" };
 
 type SearchParams = Promise<{ status?: string }>;
 
@@ -99,7 +99,7 @@ export default async function NegociacoesProdutorPage({
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-h1 text-milsaca-cafezal">Negociações</h1>
+        <h1 className="text-h1 text-milsaca-cafezal">Propostas</h1>
         <p className="text-body-sm text-neutral-600">
           Suas propostas: quem ofereceu, quanto você recebe e fale no WhatsApp.
         </p>

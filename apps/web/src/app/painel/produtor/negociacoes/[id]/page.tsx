@@ -35,7 +35,7 @@ import {
 } from "../_lib/queries";
 import { buildWhatsAppInviteUrl } from "../../../corretora/produtores/_lib/whatsapp";
 
-export const metadata = { title: "Negociação — Milsaca" };
+export const metadata = { title: "Proposta — Milsaca" };
 
 type Params = Promise<{ id: string }>;
 
@@ -145,7 +145,7 @@ export default async function NegociacaoDetalhePage({
           className="inline-flex items-center gap-1 text-body-sm text-neutral-600 transition-colors hover:text-milsaca-cafezal"
         >
           <ArrowLeft className="h-4 w-4" />
-          Voltar para Negociações
+          Voltar para Propostas
         </Link>
       </div>
 

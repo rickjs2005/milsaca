@@ -120,7 +120,7 @@ export default async function CotacoesProdutorPage({
           className="inline-flex items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-3 py-2 text-body-sm text-milsaca-cafezal transition-colors hover:border-milsaca-dourado hover:bg-milsaca-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <Bell className="h-4 w-4 text-milsaca-dourado" />
-          Meus alvos
+          Alertas de preço
         </Link>
       </header>
 

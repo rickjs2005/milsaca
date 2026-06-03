@@ -30,8 +30,8 @@ type Row = {
   data_realizada: string | null;
   peso_liquido_kg: number | string | null;
   contrato:
-    | { code: string; corretora: { name: string } | { name: string }[] | null }
-    | { code: string; corretora: { name: string } | { name: string }[] | null }[]
+    | { id: string; code: string; corretora: { name: string } | { name: string }[] | null }
+    | { id: string; code: string; corretora: { name: string } | { name: string }[] | null }[]
     | null;
 };
 
@@ -49,7 +49,7 @@ export default async function MinhasEntregasPage() {
     .from("entregas")
     .select(
       `id, sequencia, bag_count, status, data_prevista, data_realizada, peso_liquido_kg,
-       contrato:contratos!entregas_contrato_id_fkey(code, corretora:corretoras!contratos_corretora_id_fkey(name))`,
+       contrato:contratos!entregas_contrato_id_fkey(id, code, corretora:corretoras!contratos_corretora_id_fkey(name))`,
     )
     .eq("produtor_id", profile.id)
     .order("data_prevista", { ascending: false, nullsFirst: false })
@@ -99,9 +99,18 @@ export default async function MinhasEntregasPage() {
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-mono text-caption text-milsaca-dourado-texto">
-                        {c?.code ?? "—"}
-                      </p>
+                      {c?.id ? (
+                        <Link
+                          href={`/painel/produtor/contratos/${c.id}`}
+                          className="font-mono text-caption text-milsaca-dourado-texto hover:underline"
+                        >
+                          {c.code}
+                        </Link>
+                      ) : (
+                        <p className="font-mono text-caption text-milsaca-dourado-texto">
+                          {c?.code ?? "—"}
+                        </p>
+                      )}
                       <span className="text-caption text-neutral-500">
                         · #{r.sequencia}
                       </span>

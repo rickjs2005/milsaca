@@ -14,7 +14,7 @@ import { createClient } from "@milsaca/db/web/server";
 import { createAlert } from "../_actions";
 import { AlertFormFields } from "../_components/alert-form-fields";
 
-export const metadata = { title: "Novo alvo — Milsaca" };
+export const metadata = { title: "Novo alerta — Milsaca" };
 
 type SP = Promise<{
   error?: string;
@@ -54,12 +54,12 @@ export default async function NovoAlvoPage({
           className="inline-flex items-center gap-1 rounded-sm text-body-sm text-neutral-600 transition-colors hover:text-milsaca-cafezal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          Voltar para alvos
+          Voltar para alertas
         </Link>
       </div>
 
       <header>
-        <h1 className="text-h1 text-milsaca-cafezal">Novo alvo de preço</h1>
+        <h1 className="text-h1 text-milsaca-cafezal">Novo alerta de preço</h1>
         <p className="text-body-sm text-neutral-600">
           Defina café + condição + preço. O Milsaca te avisa quando bater.
         </p>
@@ -67,9 +67,9 @@ export default async function NovoAlvoPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>Dados do alvo</CardTitle>
+          <CardTitle>Dados do alerta</CardTitle>
           <CardDescription>
-            Dedup automático: alvo dispara no máximo 1 vez a cada 24h.
+            Dedup automático: o alerta dispara no máximo 1 vez a cada 24h.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -98,7 +98,7 @@ export default async function NovoAlvoPage({
                 <Link href="/painel/produtor/cotacoes/alvos">Cancelar</Link>
               </Button>
               <SubmitButton variant="primary" pendingLabel="Criando...">
-                Criar alvo
+                Criar alerta
               </SubmitButton>
             </div>
           </form>

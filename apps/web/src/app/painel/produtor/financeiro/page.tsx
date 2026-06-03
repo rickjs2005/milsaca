@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   Wallet,
@@ -69,7 +70,7 @@ export default async function FinanceiroPage() {
     .select(
       `id, valor_bruto, descontos, valor_liquido, status,
        data_prevista, data_paga, comprovante_url, observacoes,
-       contrato:contratos!produtor_pagamentos_contrato_id_fkey(code),
+       contrato:contratos!produtor_pagamentos_contrato_id_fkey(id, code),
        corretora:corretoras!produtor_pagamentos_corretora_id_fkey(name)`,
     )
     .eq("produtor_id", profile.id)
@@ -86,7 +87,7 @@ export default async function FinanceiroPage() {
     data_paga: string | null;
     comprovante_url: string | null;
     observacoes: string | null;
-    contrato: { code: string } | { code: string }[] | null;
+    contrato: { id: string; code: string } | { id: string; code: string }[] | null;
     corretora: { name: string } | { name: string }[] | null;
   };
   const rows = (data ?? []) as Row[];
@@ -123,7 +124,7 @@ export default async function FinanceiroPage() {
       <header>
         <h1 className="text-h1 text-milsaca-cafezal">Financeiro</h1>
         <p className="mt-1 text-body-sm text-neutral-600">
-          Repasses das corretoras pelos seus contratos.
+          Pagamentos que você recebe das corretoras pelos seus contratos.
         </p>
       </header>
 
@@ -170,9 +171,18 @@ export default async function FinanceiroPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-mono text-caption text-milsaca-dourado-texto">
-                          {con?.code ?? "—"}
-                        </p>
+                        {con?.id ? (
+                          <Link
+                            href={`/painel/produtor/contratos/${con.id}`}
+                            className="font-mono text-caption text-milsaca-dourado-texto hover:underline"
+                          >
+                            {con.code}
+                          </Link>
+                        ) : (
+                          <p className="font-mono text-caption text-milsaca-dourado-texto">
+                            {con?.code ?? "—"}
+                          </p>
+                        )}
                         <span className="text-caption text-neutral-600">
                           · {cor?.name ?? "—"}
                         </span>

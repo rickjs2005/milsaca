@@ -20,7 +20,7 @@ import { createClient } from "@milsaca/db/web/server";
 import { timeAgo } from "@/lib/format";
 import { toggleAlertActive, deleteAlert } from "./_actions";
 
-export const metadata = { title: "Alvos de preço — Painel do produtor" };
+export const metadata = { title: "Alertas de preço — Painel do produtor" };
 
 type Row = {
   id: string;
@@ -88,7 +88,7 @@ export default async function AlvosPage() {
 
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-h1 text-milsaca-cafezal">Alvos de preço</h1>
+          <h1 className="text-h1 text-milsaca-cafezal">Alertas de preço</h1>
           <p className="text-body-sm text-neutral-600">
             Receba uma notificação quando uma cotação bater o preço que você
             quer.
@@ -97,7 +97,7 @@ export default async function AlvosPage() {
         <Button asChild variant="primary">
           <Link href="/painel/produtor/cotacoes/alvos/novo">
             <Plus className="mr-1.5 h-4 w-4" />
-            Novo alvo
+            Novo alerta
           </Link>
         </Button>
       </header>
@@ -109,15 +109,15 @@ export default async function AlvosPage() {
               <Bell className="h-6 w-6" />
             </span>
             <p className="text-body-sm font-medium text-milsaca-cafezal">
-              Você ainda não criou nenhum alvo.
+              Você ainda não criou nenhum alerta.
             </p>
             <p className="max-w-md text-caption text-neutral-600">
-              Crie um alvo (ex: &quot;avisar quando Arábica passar de R$
+              Crie um alerta (ex: &quot;avisar quando Arábica passar de R$
               2.000&quot;) e o Milsaca notifica você quando bater o preço.
             </p>
             <Button asChild variant="primary">
               <Link href="/painel/produtor/cotacoes/alvos/novo">
-                Criar primeiro alvo
+                Criar primeiro alerta
               </Link>
             </Button>
           </CardContent>

@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { redirect } from "next/navigation";
 import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,6 +36,42 @@ function fmtDateTime(iso: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+/**
+ * Destino "Ver →" de cada notificação, a partir do tipo + ids em `data`
+ * (lead_id/contrato_id gravados pelo notify()). Produtor não tem detalhe de
+ * entrega/pagamento, então esses caem na lista correspondente.
+ */
+function actionFor(
+  kind: string,
+  data: Record<string, unknown> | null,
+): { href: string; label: string } | null {
+  const id = (k: string) =>
+    data && typeof data[k] === "string" ? (data[k] as string) : null;
+  switch (kind) {
+    case "lead": {
+      const leadId = id("lead_id");
+      return leadId
+        ? { href: `/painel/produtor/negociacoes/${leadId}`, label: "Ver proposta" }
+        : null;
+    }
+    case "contrato": {
+      const contratoId = id("contrato_id");
+      return contratoId
+        ? { href: `/painel/produtor/contratos/${contratoId}`, label: "Ver contrato" }
+        : null;
+    }
+    case "entrega":
+      return { href: "/painel/produtor/entregas", label: "Ver entregas" };
+    case "pagamento":
+      return { href: "/painel/produtor/financeiro", label: "Ver no financeiro" };
+    case "cotacao":
+    case "price_alert":
+      return { href: "/painel/produtor/cotacoes", label: "Ver cotações" };
+    default:
+      return null;
+  }
 }
 
 export default async function NotificacoesPage() {
@@ -104,6 +142,18 @@ export default async function NotificacoesPage() {
                   <p className="mt-2 text-caption text-neutral-500">
                     {fmtDateTime(n.created_at)}
                   </p>
+                  {(() => {
+                    const act = actionFor(n.kind, n.data);
+                    return act ? (
+                      <Link
+                        href={act.href}
+                        className="mt-2 inline-flex items-center gap-1 text-caption font-semibold text-milsaca-dourado-texto hover:underline"
+                      >
+                        {act.label}
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                    ) : null;
+                  })()}
                 </div>
                 {!n.read_at ? (
                   <span
