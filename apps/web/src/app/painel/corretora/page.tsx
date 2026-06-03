@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   AlertTriangle,
-  ChevronRight,
   Coffee,
   Handshake,
   FileSignature,
@@ -35,9 +34,11 @@ import {
   loadLeadsRecentes,
   loadCotacoesDashboard,
   loadAutomationSuggestions,
+  loadPipelineFunnel,
   type CotacaoDashboard,
   type DashboardLead,
 } from "./_lib/dashboard";
+import { PipelineFunnel } from "./_components/pipeline-funnel";
 import { LEAD_STATUS_LABEL } from "./leads/_lib/lead-meta";
 import { getCorretoraSubscriptionInfo } from "./_lib/corretora";
 import { isProOrAbove } from "./_lib/plan-gate";
@@ -67,19 +68,27 @@ export default async function InicioCorretoraPage() {
   const profile = await getProfile();
   const corretoraId = profile?.corretora_id ?? "";
 
-  const [kpis, leads, cotacoes, entregasSnap, suggestions, subscription] =
-    await Promise.all([
-      loadDashboardKpis(corretoraId),
-      loadLeadsRecentes(corretoraId),
-      loadCotacoesDashboard(corretoraId),
-      corretoraId
-        ? listEntregasHojeEAtrasadas(corretoraId)
-        : Promise.resolve({ hoje: [], atrasadas: [] }),
-      loadAutomationSuggestions(corretoraId),
-      corretoraId
-        ? getCorretoraSubscriptionInfo(corretoraId)
-        : Promise.resolve(null),
-    ]);
+  const [
+    kpis,
+    leads,
+    cotacoes,
+    entregasSnap,
+    suggestions,
+    subscription,
+    funnel,
+  ] = await Promise.all([
+    loadDashboardKpis(corretoraId),
+    loadLeadsRecentes(corretoraId),
+    loadCotacoesDashboard(corretoraId),
+    corretoraId
+      ? listEntregasHojeEAtrasadas(corretoraId)
+      : Promise.resolve({ hoje: [], atrasadas: [] }),
+    loadAutomationSuggestions(corretoraId),
+    corretoraId
+      ? getCorretoraSubscriptionInfo(corretoraId)
+      : Promise.resolve(null),
+    loadPipelineFunnel(corretoraId),
+  ]);
 
   const operationEmpty =
     kpis.lotesAtivos === 0 &&
@@ -149,14 +158,9 @@ export default async function InicioCorretoraPage() {
       </section>
 
       {/* ---------------------------------------------------------------- */}
-      {/* FUNIL — como a corretora lê o pipeline                            */}
+      {/* FUNIL — fluxo completo da corretagem (lead -> pagamento)          */}
       {/* ---------------------------------------------------------------- */}
-      <Funil
-        leads={kpis.leadsNovos}
-        emNeg={kpis.emNegociacao}
-        convertidos={kpis.convertidosMes}
-        contratos={kpis.contratosAtivos}
-      />
+      <PipelineFunnel data={funnel} />
 
       {/* ---------------------------------------------------------------- */}
       {/* OPERAÇÃO — atalhos secundários, clicáveis                         */}
@@ -351,61 +355,6 @@ function MoneyCard({
         </CardContent>
       </Card>
     </Link>
-  );
-}
-
-function Funil({
-  leads,
-  emNeg,
-  convertidos,
-  contratos,
-}: {
-  leads: number;
-  emNeg: number;
-  convertidos: number;
-  contratos: number;
-}) {
-  const steps: { label: string; value: number; href: string }[] = [
-    { label: "Leads", value: leads, href: "/painel/corretora/leads?status=novo" },
-    {
-      label: "Negociação",
-      value: emNeg,
-      href: "/painel/corretora/leads?status=em_negociacao",
-    },
-    {
-      label: "Convertidos",
-      value: convertidos,
-      href: "/painel/corretora/leads?status=convertido",
-    },
-    {
-      label: "Contratos",
-      value: contratos,
-      href: "/painel/corretora/contratos?status=ativo",
-    },
-  ];
-  return (
-    <Card tone="muted">
-      <CardContent className="flex items-stretch gap-1 overflow-x-auto p-3 sm:gap-2">
-        {steps.map((s, i) => (
-          <div key={s.label} className="flex flex-1 items-center gap-1 sm:gap-2">
-            <Link
-              href={s.href}
-              className="flex flex-1 flex-col items-center rounded-md px-2 py-2 text-center transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <span className="text-h2 leading-none text-milsaca-cafezal">
-                {s.value}
-              </span>
-              <span className="mt-1 text-caption text-neutral-500">
-                {s.label}
-              </span>
-            </Link>
-            {i < steps.length - 1 ? (
-              <ChevronRight className="h-4 w-4 shrink-0 text-neutral-400" />
-            ) : null}
-          </div>
-        ))}
-      </CardContent>
-    </Card>
   );
 }
 

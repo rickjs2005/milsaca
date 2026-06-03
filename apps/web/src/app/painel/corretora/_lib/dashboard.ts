@@ -163,6 +163,64 @@ export async function loadDashboardKpis(
   };
 }
 
+export type PipelineFunnel = {
+  leads: number;
+  lotes: number;
+  ofertas: number;
+  contratos: number;
+  entregas: number;
+  pagamentos: number;
+};
+
+/**
+ * Contagem por etapa do ciclo da corretagem, pro funil do dashboard.
+ * leads/lotes/contratos têm corretora_id (filtro explícito); ofertas/entregas/
+ * pagamentos são isolados pelo RLS (escopo via lote/contrato), então a contagem
+ * já vem só da corretora do usuário autenticado.
+ */
+export async function loadPipelineFunnel(
+  corretoraId: string,
+): Promise<PipelineFunnel> {
+  const empty = {
+    leads: 0,
+    lotes: 0,
+    ofertas: 0,
+    contratos: 0,
+    entregas: 0,
+    pagamentos: 0,
+  };
+  if (!corretoraId) return empty;
+  const supabase = await createClient();
+  const headCount = (q: { count: number | null }) => q.count ?? 0;
+  const scoped = (table: "leads" | "lotes" | "contratos") =>
+    supabase
+      .from(table)
+      .select("*", { count: "exact", head: true })
+      .eq("corretora_id", corretoraId);
+  const viaRls = (
+    table: "ofertas_comprador" | "entregas" | "produtor_pagamentos",
+  ) => supabase.from(table).select("*", { count: "exact", head: true });
+
+  const [leads, lotes, ofertas, contratos, entregas, pagamentos] =
+    await Promise.all([
+      scoped("leads"),
+      scoped("lotes"),
+      viaRls("ofertas_comprador"),
+      scoped("contratos"),
+      viaRls("entregas"),
+      viaRls("produtor_pagamentos"),
+    ]);
+
+  return {
+    leads: headCount(leads),
+    lotes: headCount(lotes),
+    ofertas: headCount(ofertas),
+    contratos: headCount(contratos),
+    entregas: headCount(entregas),
+    pagamentos: headCount(pagamentos),
+  };
+}
+
 export type DashboardLead = {
   id: string;
   produtor: string;
