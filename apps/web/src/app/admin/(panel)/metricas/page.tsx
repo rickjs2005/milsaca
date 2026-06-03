@@ -1,9 +1,13 @@
-import { Building2, TrendingUp, Wallet } from "lucide-react";
+import { Building2, PackageX, TrendingUp, Wallet } from "lucide-react";
 import { requireAppAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { KpiCard } from "@/components/kpi-card";
 import { EmptyState } from "@/components/empty-state";
-import { formatBRL, loadDetailedMetrics } from "../_lib/metricas";
+import {
+  formatBRL,
+  loadDetailedMetrics,
+  loadReconciliacaoSacas,
+} from "../_lib/metricas";
 import {
   MonthlyBarChart,
   MonthlyLineChart,
@@ -22,7 +26,10 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default async function MetricasAdminPage() {
   await requireAppAdmin();
-  const m = await loadDetailedMetrics();
+  const [m, reconc] = await Promise.all([
+    loadDetailedMetrics(),
+    loadReconciliacaoSacas(),
+  ]);
   const activeCount =
     m.subsByStatus.find((s) => s.status === "active")?.count ?? 0;
 
@@ -58,6 +65,70 @@ export default async function MetricasAdminPage() {
           tone="success"
         />
       </div>
+
+      {/* Reconciliação de sacas — drill-down do alerta de saldo do dashboard */}
+      <section id="sacas" className="mb-8 scroll-mt-24">
+        <Panel
+          title="Reconciliação de sacas"
+          subtitle="Contratos com saldo residual (finalizado sem fechar) ou excedente — investigue e ajuste"
+        >
+          {reconc.length === 0 ? (
+            <EmptyState
+              compact
+              icon={PackageX}
+              title="Nenhuma anomalia de saldo"
+              description="Todo contrato finalizado está conciliado e não há excedente."
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-500">
+                    <th className="py-2 pr-4 font-medium">Contrato</th>
+                    <th className="py-2 pr-4 font-medium">Produtor</th>
+                    <th className="py-2 pr-4 font-medium">Status</th>
+                    <th className="py-2 pr-4 text-right font-medium">Contratado</th>
+                    <th className="py-2 pr-4 text-right font-medium">Registrado</th>
+                    <th className="py-2 text-right font-medium">Saldo</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {reconc.map((r) => (
+                    <tr key={r.contrato_id}>
+                      <td className="py-2 pr-4 font-mono text-xs text-slate-700">
+                        {r.code}
+                      </td>
+                      <td className="py-2 pr-4 text-slate-700">
+                        {r.produtor_nome}
+                      </td>
+                      <td className="py-2 pr-4 text-slate-600">
+                        {r.status === "finalizado" ? "Finalizado" : "Ativo"}
+                      </td>
+                      <td className="py-2 pr-4 text-right tabular-nums text-slate-700">
+                        {r.contratado}
+                      </td>
+                      <td className="py-2 pr-4 text-right tabular-nums text-slate-700">
+                        {r.registrado}
+                      </td>
+                      <td className="py-2 text-right font-semibold tabular-nums">
+                        {r.excedente > 0 ? (
+                          <span className="text-danger-700">
+                            +{r.excedente} excedente
+                          </span>
+                        ) : (
+                          <span className="text-warning-700">
+                            {r.pendente} pendente
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Panel>
+      </section>
 
       <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Panel title="Novas corretoras / mês" subtitle="Últimos 6 meses">

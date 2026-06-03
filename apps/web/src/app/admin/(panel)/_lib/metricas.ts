@@ -365,3 +365,87 @@ export async function loadDetailedMetrics(): Promise<DetailedMetrics> {
     topCorretoras,
   };
 }
+
+// =====================================================================
+// Reconciliação de sacas — drill-down do alerta de saldo residual.
+// Lista os contratos com ANOMALIA: finalizado com saldo pendente (sacas
+// que "sumiram") ou excedente (entregue > contratado). Computado em JS a
+// partir de contratos + entregas (mesma conta da view contrato_saldo, sem
+// depender dela nos tipos gerados — ver feedback_supabase_gen_types_lixo).
+// =====================================================================
+export type ReconciliacaoSacasRow = {
+  contrato_id: string;
+  code: string;
+  produtor_nome: string;
+  status: "ativo" | "finalizado";
+  contratado: number;
+  registrado: number;
+  pendente: number;
+  excedente: number;
+};
+
+export async function loadReconciliacaoSacas(): Promise<ReconciliacaoSacasRow[]> {
+  const supabase = await createClient();
+  const [{ data: contratosRows }, { data: entregasRows }] = await Promise.all([
+    supabase
+      .from("contratos")
+      .select(
+        "id, code, status, bag_count, produtor:profiles!contratos_produtor_id_fkey(full_name)",
+      )
+      .in("status", ["ativo", "finalizado"]),
+    supabase
+      .from("entregas")
+      .select("contrato_id, bag_count, status")
+      .neq("status", "cancelada"),
+  ]);
+
+  const registradoPorContrato = new Map<string, number>();
+  for (const e of (entregasRows ?? []) as {
+    contrato_id: string;
+    bag_count: number | null;
+  }[]) {
+    registradoPorContrato.set(
+      e.contrato_id,
+      (registradoPorContrato.get(e.contrato_id) ?? 0) + (e.bag_count ?? 0),
+    );
+  }
+
+  type CRow = {
+    id: string;
+    code: string;
+    status: "ativo" | "finalizado";
+    bag_count: number | null;
+    produtor:
+      | { full_name: string | null }
+      | { full_name: string | null }[]
+      | null;
+  };
+
+  const anomalias: ReconciliacaoSacasRow[] = [];
+  for (const c of (contratosRows ?? []) as CRow[]) {
+    const contratado = c.bag_count ?? 0;
+    if (contratado <= 0) continue;
+    const registrado = registradoPorContrato.get(c.id) ?? 0;
+    const pendente = Math.max(contratado - registrado, 0);
+    const excedente = Math.max(registrado - contratado, 0);
+    // Anomalia: finalizado com saldo aberto, OU qualquer excedente.
+    if ((c.status === "finalizado" && pendente > 0) || excedente > 0) {
+      const prod = Array.isArray(c.produtor) ? c.produtor[0] : c.produtor;
+      anomalias.push({
+        contrato_id: c.id,
+        code: c.code,
+        produtor_nome: prod?.full_name ?? "—",
+        status: c.status,
+        contratado,
+        registrado,
+        pendente,
+        excedente,
+      });
+    }
+  }
+  // Maiores divergências primeiro.
+  anomalias.sort(
+    (a, b) => b.pendente + b.excedente - (a.pendente + a.excedente),
+  );
+  return anomalias;
+}

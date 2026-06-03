@@ -88,7 +88,7 @@ export default async function AdminPage() {
           ) : null}
           {metrics.contratosFinalizadosPendentes > 0 ? (
             <AlertCard
-              href="/admin/metricas"
+              href="/admin/metricas#sacas"
               tone="danger"
               icon={PackageX}
               title={`${metrics.sacasResiduais} ${metrics.sacasResiduais === 1 ? "saca pendente" : "sacas pendentes"} em ${metrics.contratosFinalizadosPendentes} ${metrics.contratosFinalizadosPendentes === 1 ? "contrato finalizado" : "contratos finalizados"}`}
@@ -98,7 +98,7 @@ export default async function AdminPage() {
           ) : null}
           {metrics.contratosExcedente > 0 ? (
             <AlertCard
-              href="/admin/metricas"
+              href="/admin/metricas#sacas"
               tone="danger"
               icon={AlertTriangle}
               title={`${metrics.contratosExcedente} ${metrics.contratosExcedente === 1 ? "contrato com excedente" : "contratos com excedente"}`}
