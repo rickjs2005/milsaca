@@ -305,7 +305,7 @@ export default async function EditCorretoraPage({
                 tierAtual === "premium"
                   ? "rounded-full bg-milsaca-dourado/20 px-2.5 py-1 font-semibold text-milsaca-cafezal ring-1 ring-inset ring-milsaca-dourado/40"
                   : tierAtual === "pro"
-                    ? "rounded-full bg-emerald-100 px-2.5 py-1 font-semibold text-emerald-800"
+                    ? "rounded-full bg-success-100 px-2.5 py-1 font-semibold text-success-700"
                     : "rounded-full bg-slate-200 px-2.5 py-1 font-semibold text-slate-700"
               }
             >
@@ -344,7 +344,7 @@ export default async function EditCorretoraPage({
             <input type="hidden" name="tier" value="pro" />
             <SubmitButton
               variant="outline"
-              className="border-emerald-300 text-emerald-800 hover:bg-emerald-50 disabled:opacity-60"
+              className="border-success-100 text-success-700 hover:bg-success-50 disabled:opacity-60"
               pendingLabel="Liberando..."
               disabled={tierAtual === "pro"}
             >

@@ -173,9 +173,9 @@ export default async function CotacoesAdminPage() {
           <span
             className={
               pos
-                ? "text-xs font-medium text-emerald-600"
+                ? "text-xs font-medium text-success-600"
                 : neg
-                  ? "text-xs font-medium text-rose-600"
+                  ? "text-xs font-medium text-danger-600"
                   : "text-xs text-slate-500"
             }
           >
@@ -287,7 +287,7 @@ export default async function CotacoesAdminPage() {
             <ConfirmSubmit
               variant="ghost"
               size="sm"
-              className="h-7 text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+              className="h-7 text-xs text-danger-600 hover:bg-danger-50 hover:text-danger-700"
               confirmTitle="Apagar cotação?"
               confirmMessage={
                 <p>

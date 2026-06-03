@@ -39,7 +39,7 @@ export default async function ConviteInvalidoPage({
 
         <Card className="border-milsaca-cream-escuro">
           <CardHeader>
-            <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-rose-700">
+            <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-danger-700">
               <AlertCircle className="h-3.5 w-3.5" />
               Convite inválido
             </div>

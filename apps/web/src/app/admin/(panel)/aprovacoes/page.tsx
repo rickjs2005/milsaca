@@ -79,7 +79,7 @@ export default async function AdminAprovacoesPage({
         </span>
         <span
           className={
-            fOpen && fUsed < fTotal ? "text-emerald-700" : "text-slate-500"
+            fOpen && fUsed < fTotal ? "text-success-700" : "text-slate-500"
           }
         >
           · {fStatusLabel}

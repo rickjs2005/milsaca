@@ -12,7 +12,7 @@ import { isDemoModeAsync } from "@/lib/quotes-mode";
 export async function DemoModeBadge() {
   if (!(await isDemoModeAsync())) return null;
   return (
-    <div className="flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+    <div className="flex items-center gap-2 rounded-md border border-warning-100 bg-warning-50 px-3 py-2 text-xs text-warning-700">
       <AlertTriangle aria-hidden className="h-3.5 w-3.5" />
       <span>
         <strong>Modo Demonstração</strong> — algumas cotações podem ser dados

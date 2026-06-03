@@ -92,7 +92,7 @@ export default async function NovaCotacaoAdminPage({
       />
 
       {error ? (
-        <p className="mb-4 rounded-md border border-rose-500/30 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <p className="mb-4 rounded-md border border-danger-500/30 bg-danger-50 px-4 py-3 text-sm text-danger-700">
           {error}
         </p>
       ) : null}

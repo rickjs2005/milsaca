@@ -284,7 +284,7 @@ export default async function EditCotacaoPage({
         <ConfirmSubmit
           variant="ghost"
           size="sm"
-          className="text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+          className="text-xs text-danger-600 hover:bg-danger-50 hover:text-danger-700"
           confirmTitle="Apagar cotação?"
           confirmMessage={
             <p>

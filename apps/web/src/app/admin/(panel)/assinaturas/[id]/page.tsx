@@ -134,7 +134,7 @@ export default async function AssinaturaDetalhePage({ params }: PageProps) {
           <form action={markSubscriptionPaid}>
             <input type="hidden" name="id" value={s.id} />
             <SubmitButton
-              className="w-full gap-2 bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
+              className="w-full gap-2 bg-success-600 text-white hover:bg-success-700 sm:w-auto"
               pendingLabel="Renovando..."
             >
               Marcar como paga · +1 período

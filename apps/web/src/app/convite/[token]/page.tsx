@@ -152,7 +152,7 @@ export default async function ConvitePage({
               {sp.error ? (
                 <p
                   role="alert"
-                  className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"
+                  className="rounded-md border border-danger-100 bg-danger-50 px-3 py-2 text-sm text-danger-700"
                 >
                   {sp.error}
                 </p>

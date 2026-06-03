@@ -42,7 +42,7 @@ export function AnonimizarForm() {
       <div className="space-y-2">
         <Label htmlFor="confirm">
           Pra confirmar, digite{" "}
-          <span className="font-mono font-semibold text-rose-700">
+          <span className="font-mono font-semibold text-danger-700">
             {CONFIRM_WORD}
           </span>
         </Label>
@@ -59,7 +59,7 @@ export function AnonimizarForm() {
       <SubmitButton
         pendingLabel="Anonimizando..."
         disabled={!ready}
-        className="bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50"
+        className="bg-danger-600 text-white hover:bg-danger-700 disabled:opacity-50"
       >
         <ShieldAlert className="h-4 w-4" />
         Anonimizar titular

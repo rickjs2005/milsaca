@@ -172,7 +172,7 @@ export default async function FontesPage() {
                   {r.last_error_at ? (
                     <div className="flex items-center justify-between gap-2">
                       <dt className="text-slate-500">Último erro</dt>
-                      <dd className="font-medium text-rose-700">
+                      <dd className="font-medium text-danger-700">
                         {fmtDateTime(r.last_error_at)}
                       </dd>
                     </div>
@@ -180,7 +180,7 @@ export default async function FontesPage() {
                 </dl>
 
                 {r.last_error_message ? (
-                  <p className="rounded-md bg-rose-50 px-2 py-1.5 font-mono text-[10px] text-rose-700">
+                  <p className="rounded-md bg-danger-50 px-2 py-1.5 font-mono text-[10px] text-danger-700">
                     {r.last_error_message}
                   </p>
                 ) : null}

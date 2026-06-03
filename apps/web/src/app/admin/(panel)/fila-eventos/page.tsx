@@ -162,7 +162,7 @@ export default async function FilaEventosPage({ searchParams }: PageProps) {
           </summary>
           <div className="mt-2 space-y-1.5">
             {r.error ? (
-              <p className="rounded-md bg-rose-50 p-2 font-mono text-[10px] text-rose-700">
+              <p className="rounded-md bg-danger-50 p-2 font-mono text-[10px] text-danger-700">
                 {r.error}
               </p>
             ) : null}

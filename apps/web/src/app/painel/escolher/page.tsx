@@ -58,7 +58,7 @@ export default async function EscolherPainelPage() {
           <Card className="border-milsaca-cream-escuro">
             <CardContent className="space-y-4 p-6">
               <div className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-warning-100 text-warning-700">
                   <AlertCircle className="h-5 w-5" />
                 </span>
                 <div className="space-y-1">

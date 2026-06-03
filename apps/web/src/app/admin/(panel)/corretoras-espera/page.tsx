@@ -163,7 +163,7 @@ export default async function CorretorasEsperaPage() {
                 href={waUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-7 items-center rounded-md border border-emerald-600/40 px-2 text-[11px] font-medium text-emerald-700 hover:bg-emerald-50"
+                className="inline-flex h-7 items-center rounded-md border border-success-600/40 px-2 text-[11px] font-medium text-success-700 hover:bg-success-50"
               >
                 WhatsApp
               </a>

@@ -49,7 +49,7 @@ export default async function AdminSegurancaPage() {
           />
         ) : unverified ? (
           <div className="space-y-3">
-            <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <div className="rounded-md border border-warning-100 bg-warning-50 px-4 py-3 text-sm text-warning-700">
               <p className="font-medium">Setup incompleto</p>
               <p className="mt-0.5 text-xs">
                 Você começou a configurar um autenticador mas não terminou.

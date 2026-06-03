@@ -177,7 +177,7 @@ export default async function AutomacoesPage() {
       />
 
       {pendingCount && pendingCount > 0 ? (
-        <p className="mb-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <p className="mb-6 rounded-md border border-warning-100 bg-warning-50 px-4 py-3 text-sm text-warning-700">
           <strong>{pendingCount} evento(s) pendente(s)</strong> aguardando worker
           — verifique se o cron está agendado corretamente.
         </p>
@@ -227,7 +227,7 @@ export default async function AutomacoesPage() {
                     </StatusBadge>
                   </div>
                   {f.error ? (
-                    <p className="rounded bg-rose-50 px-2 py-1 font-mono text-[11px] text-rose-700">
+                    <p className="rounded bg-danger-50 px-2 py-1 font-mono text-[11px] text-danger-700">
                       {f.error}
                     </p>
                   ) : null}

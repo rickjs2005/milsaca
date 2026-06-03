@@ -43,7 +43,7 @@ export function TotpDisable({ factorId, friendlyName }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+      <div className="rounded-lg border border-success-100 bg-success-50 px-4 py-3 text-sm text-success-700">
         <p className="font-medium">✓ Autenticador ativo</p>
         <p className="mt-0.5 text-xs">
           {friendlyName ?? "TOTP"} — você precisa do código a cada login.

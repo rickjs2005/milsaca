@@ -70,17 +70,17 @@ export default async function EudrAdminPage() {
         />
       </div>
 
-      <section className="mb-8 rounded-card border border-amber-200 bg-amber-50 p-6">
+      <section className="mb-8 rounded-card border border-warning-100 bg-warning-50 p-6">
         <div className="flex items-start gap-3">
           <FileWarning
-            className="mt-0.5 h-5 w-5 shrink-0 text-amber-700"
+            className="mt-0.5 h-5 w-5 shrink-0 text-warning-700"
             aria-hidden
           />
           <div>
-            <h2 className="text-base font-semibold text-amber-900">
+            <h2 className="text-base font-semibold text-warning-700">
               Dados EUDR incompletos
             </h2>
-            <p className="mt-1 text-sm text-amber-800">
+            <p className="mt-1 text-sm text-warning-700">
               Hoje o schema de <code>produtores</code> não tem CAR nem polígono.
               Sem isso, o Milsaca não consegue gerar DDS automaticamente. Isso
               precisa ser endereçado antes de 30/12/2026 (deadline grandes) ou
