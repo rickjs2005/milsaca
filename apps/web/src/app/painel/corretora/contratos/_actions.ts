@@ -192,6 +192,36 @@ export async function createContrato(formData: FormData) {
     lote_id = loteOwn?.id ?? null;
   }
 
+  // Guard de estoque: não dá pra comprometer mais sacas do que o lote tem
+  // disponível (peso − contratos não-cancelados que já o referenciam). Mantém
+  // o estoque do produtor coerente (uma fonte de verdade: o lote).
+  if (lote_id && bag_count) {
+    const [{ data: loteInfo }, { data: jaCom }] = await Promise.all([
+      supabase
+        .from("lotes")
+        .select("peso_sacas")
+        .eq("id", lote_id)
+        .maybeSingle<{ peso_sacas: number | null }>(),
+      supabase
+        .from("contratos")
+        .select("bag_count")
+        .eq("lote_id", lote_id)
+        .neq("status", "cancelado"),
+    ]);
+    const totalLote = Number(loteInfo?.peso_sacas ?? 0);
+    const comprometido = ((jaCom ?? []) as { bag_count: number | null }[]).reduce(
+      (s, c) => s + Number(c.bag_count ?? 0),
+      0,
+    );
+    const disponivel = totalLote - comprometido;
+    if (totalLote > 0 && bag_count > disponivel) {
+      const params = new URLSearchParams({
+        error: `Lote tem só ${disponivel} saca(s) disponível(is) de ${totalLote}. Reduza a quantidade ou escolha outro lote.`,
+      });
+      redirect(`/painel/corretora/contratos/novo?${params.toString()}`);
+    }
+  }
+
   // Insert com retry-on-conflict no código AUTO-GERADO: nextContratoCode usa
   // COUNT+1 (não-atômico), então dois contratos simultâneos podem tentar o
   // mesmo code (unique). Recomputa e tenta de novo (até 3x). Código manual

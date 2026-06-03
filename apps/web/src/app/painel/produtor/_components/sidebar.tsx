@@ -11,6 +11,7 @@ import {
   Repeat,
   Package,
   Wallet,
+  Receipt,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,8 +29,9 @@ type NavItem = {
 // Entregas/Notificações ficam aninhadas nas áreas correspondentes.
 const NAV_ITEMS: NavItem[] = [
   { href: "/painel/produtor", label: "Início", icon: Home, exact: true },
-  { href: "/painel/produtor/laudos", label: "Sacas", icon: Package },
+  { href: "/painel/produtor/laudos", label: "Meu Café", icon: Package },
   { href: "/painel/produtor/negociacoes", label: "Propostas", icon: Handshake },
+  { href: "/painel/produtor/vendas", label: "Vendas", icon: Receipt },
   { href: "/painel/produtor/financeiro", label: "Financeiro", icon: Wallet },
   { href: "/painel/produtor/perfil", label: "Perfil", icon: User },
 ];

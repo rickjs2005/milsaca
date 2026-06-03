@@ -18,8 +18,9 @@ import { EmptyState } from "@/components/empty-state";
 import { cn } from "@/lib/utils";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
+import { loadComprometidoPorLote } from "../_lib/estoque";
 
-export const metadata = { title: "Minhas sacas — Milsaca" };
+export const metadata = { title: "Meu Café — Milsaca" };
 
 const BRL_SACA = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -119,6 +120,11 @@ export default async function MinhasSacasPage() {
   // RLS filtra pra produtor só ver os próprios laudos (via lote.produtor_id)
   const rows = (laudosRes.data ?? []) as Row[];
 
+  // Sacas já comprometidas por lote (contratos não-cancelados) → quanto sobra.
+  const comprometido = await loadComprometidoPorLote(
+    rows.map((r) => r.lote_id),
+  );
+
   // Última cotação por espécie → conecta laudo com dinheiro.
   const precoPorSpecie = new Map<string, number>();
   for (const c of (cotRes.data ?? []) as Array<{
@@ -131,7 +137,7 @@ export default async function MinhasSacasPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-h1 text-milsaca-cafezal">Minhas sacas</h1>
+        <h1 className="text-h1 text-milsaca-cafezal">Meu Café</h1>
         <p className="mt-1 text-body-sm text-neutral-600">
           Seus lotes com classificação de qualidade e o valor estimado hoje.
         </p>
@@ -154,6 +160,8 @@ export default async function MinhasSacasPage() {
             const cor = pickOne(r.corretora);
             const pva = r.pva != null ? Number(r.pva) : null;
             const peso = lote?.peso_sacas != null ? Number(lote.peso_sacas) : null;
+            const com = comprometido[r.lote_id] ?? 0;
+            const totalSacas = peso ?? 0;
             const preco = lote ? (precoPorSpecie.get(lote.specie) ?? null) : null;
             const vd = veredito(r.tipo, r.fora_de_tipo);
             const VdIcon = vd.icon;
@@ -172,6 +180,13 @@ export default async function MinhasSacasPage() {
                         {lote?.processo ? ` · ${lote.processo}` : ""}
                         {lote?.safra ? ` · ${lote.safra}` : ""}
                       </p>
+                      {totalSacas > 0 ? (
+                        <p className="mt-0.5 text-caption text-neutral-600">
+                          {com > 0
+                            ? `${com} de ${totalSacas} sacas vendidas · ${Math.max(0, totalSacas - com)} disponíveis`
+                            : `${totalSacas} sacas disponíveis`}
+                        </p>
+                      ) : null}
                     </div>
                     {r.fora_de_tipo ? (
                       <StatusBadge tone="danger">Fora de tipo</StatusBadge>

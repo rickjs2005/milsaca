@@ -17,7 +17,7 @@ type Item = { href: string; label: string; icon: LucideIcon; exact?: boolean };
 // Mesmos 5 destinos da sidebar — navegação primária no celular (estilo app).
 const ITEMS: Item[] = [
   { href: "/painel/produtor", label: "Início", icon: Home, exact: true },
-  { href: "/painel/produtor/laudos", label: "Sacas", icon: Package },
+  { href: "/painel/produtor/laudos", label: "Meu Café", icon: Package },
   { href: "/painel/produtor/negociacoes", label: "Propostas", icon: Handshake },
   { href: "/painel/produtor/financeiro", label: "Financeiro", icon: Wallet },
   { href: "/painel/produtor/perfil", label: "Perfil", icon: User },

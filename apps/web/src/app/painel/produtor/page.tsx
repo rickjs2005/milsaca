@@ -18,6 +18,7 @@ import { createClient } from "@milsaca/db/web/server";
 import { getProfile, requireUser } from "@/lib/auth";
 import type { LeadStatus } from "@milsaca/types";
 import { coffeeLabel } from "@/lib/coffee";
+import { loadEstoqueProdutor } from "./_lib/estoque";
 
 export const metadata = { title: "Início — Painel do produtor" };
 
@@ -168,10 +169,19 @@ function saudacaoAgora(): string {
 export default async function InicioProdutorPage() {
   const user = await requireUser("/painel/produtor");
   const profile = await getProfile();
-  const [resumo, propostas] = await Promise.all([
+  const [resumo, propostas, estoque] = await Promise.all([
     loadResumo(user.id),
     loadPropostas(user.id),
+    loadEstoqueProdutor(user.id),
   ]);
+
+  const preco = resumo.cotacao?.price ?? null;
+  const valorDisponivel =
+    preco != null ? Math.round(estoque.disponivel * preco) : null;
+  const valorVendido =
+    preco != null ? Math.round(estoque.vendido * preco) : null;
+  const pct = (n: number) =>
+    estoque.total > 0 ? Math.round((n / estoque.total) * 100) : 0;
 
   const primeiroNome = profile?.full_name?.split(" ")[0] ?? null;
   const idMelhorProposta = melhorPropostaId(propostas);
@@ -187,8 +197,8 @@ export default async function InicioProdutorPage() {
           {primeiroNome ? `, ${primeiroNome}` : ""}
         </h1>
         <p className="mt-0.5 text-body-sm text-neutral-600">
-          {resumo.estoqueSacas > 0
-            ? `${resumo.estoqueSacas} sacas disponíveis pra vender`
+          {estoque.total > 0
+            ? `${estoque.disponivel} sacas disponíveis · ${estoque.vendido} já vendidas`
             : "Cadastre seu café e receba propostas das corretoras."}
         </p>
       </header>
@@ -203,16 +213,18 @@ export default async function InicioProdutorPage() {
                 <Wallet className="h-5 w-5" />
               </span>
               <p className="text-caption font-medium uppercase tracking-wider text-neutral-500">
-                Valor do meu café
+                Valor disponível para venda
               </p>
             </div>
             <p className="mt-3 text-display leading-none text-milsaca-cafezal">
-              {resumo.valorEstimado != null
-                ? BRL.format(resumo.valorEstimado)
-                : "—"}
+              {valorDisponivel != null ? BRL.format(valorDisponivel) : "—"}
             </p>
             <p className="mt-2 text-caption text-neutral-500">
-              {resumo.estoqueSacas} sacas × cotação de hoje
+              {estoque.disponivel} sacas × cotação de hoje
+            </p>
+            <p className="text-caption text-neutral-500">
+              Já vendido: {estoque.vendido} sacas
+              {valorVendido != null ? ` · ${BRL.format(valorVendido)}` : ""}
             </p>
           </CardContent>
         </Card>
@@ -278,6 +290,58 @@ export default async function InicioProdutorPage() {
           </Card>
         </Link>
       </div>
+
+      {/* Meu estoque de café — visão de estoque coerente */}
+      <Card>
+        <CardContent className="p-card">
+          <p className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
+            Meu estoque de café
+          </p>
+          <p className="mt-1 text-h2 text-milsaca-cafezal">
+            {estoque.total}{" "}
+            <span className="text-body-sm font-normal text-neutral-500">
+              sacas totais
+            </span>
+          </p>
+          <div className="mt-3 flex h-3 w-full overflow-hidden rounded-pill bg-neutral-100">
+            <div
+              className="bg-success-500"
+              style={{ width: `${pct(estoque.disponivel)}%` }}
+            />
+            <div
+              className="bg-warning-400"
+              style={{ width: `${pct(estoque.emNegociacao)}%` }}
+            />
+            <div
+              className="bg-neutral-400"
+              style={{ width: `${pct(estoque.vendido)}%` }}
+            />
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-caption">
+            <div className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-success-500" />
+              <span className="text-neutral-600">Disponível</span>
+              <span className="font-semibold text-milsaca-cafezal">
+                {estoque.disponivel}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-warning-400" />
+              <span className="text-neutral-600">Em negociação</span>
+              <span className="font-semibold text-milsaca-cafezal">
+                {estoque.emNegociacao}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-neutral-400" />
+              <span className="text-neutral-600">Vendido</span>
+              <span className="font-semibold text-milsaca-cafezal">
+                {estoque.vendido}
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* 5. CTA gigante: vender */}
       <Link
