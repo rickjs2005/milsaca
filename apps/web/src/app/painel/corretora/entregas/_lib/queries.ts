@@ -101,6 +101,28 @@ export async function listEntregas(
   };
 }
 
+/**
+ * Entregas de um contrato específico, em ordem de sequência — pra timeline
+ * dentro do detalhe do contrato. Sem paginação (um contrato tem poucas).
+ */
+export async function listEntregasDoContrato(
+  contratoId: string,
+): Promise<EntregaListItem[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("entregas")
+    .select(
+      `id, sequencia, bag_count, peso_liquido_kg, status, data_prevista, data_realizada,
+       contrato_id, produtor_id, created_at, updated_at,
+       contrato:contratos!entregas_contrato_id_fkey(code),
+       produtor:profiles!entregas_produtor_id_fkey(full_name)`,
+    )
+    .eq("contrato_id", contratoId)
+    .order("sequencia", { ascending: true });
+  const today = todayISO();
+  return ((data ?? []) as Row[]).map((r) => toListItem(r, today));
+}
+
 export type EntregasKpis = {
   programadas: number;
   emTransito: number;

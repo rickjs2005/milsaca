@@ -7,7 +7,6 @@ import {
   ArrowRight,
   Phone,
   Link2,
-  Truck,
 } from "lucide-react";
 import {
   Card,
@@ -36,7 +35,8 @@ import {
   updateContratoFields,
   updateContratoStatus,
 } from "../_actions";
-import { gerarEntregaDoContrato } from "../../entregas/_actions";
+import { listEntregasDoContrato } from "../../entregas/_lib/queries";
+import { EntregasContrato } from "../_components/entregas-contrato";
 import { buildWhatsAppInviteUrl } from "../../produtores/_lib/whatsapp";
 import { listCompradoresOptions } from "../../compradores/_lib/queries";
 
@@ -102,11 +102,13 @@ export default async function ContratoDetalhePage({
   const { id } = await params;
   const sp = await searchParams;
 
-  const [contrato, compradoresOpts, subscription] = await Promise.all([
-    getContrato(profile.corretora_id, id),
-    listCompradoresOptions(profile.corretora_id),
-    getCorretoraSubscriptionInfo(profile.corretora_id),
-  ]);
+  const [contrato, compradoresOpts, subscription, entregas] =
+    await Promise.all([
+      getContrato(profile.corretora_id, id),
+      listCompradoresOptions(profile.corretora_id),
+      getCorretoraSubscriptionInfo(profile.corretora_id),
+      listEntregasDoContrato(id),
+    ]);
   if (!contrato) notFound();
   const isPro = isProOrAbove(subscription);
 
@@ -156,18 +158,6 @@ export default async function ContratoDetalhePage({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {isPro ? (
-            <form action={gerarEntregaDoContrato} className="inline">
-              <input type="hidden" name="contrato_id" value={contrato.id} />
-              <button
-                type="submit"
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-milsaca-verde bg-transparent px-4 text-sm font-medium text-milsaca-verde hover:bg-milsaca-verde hover:text-milsaca-cream"
-              >
-                <Truck className="h-4 w-4" />
-                Gerar entrega
-              </button>
-            </form>
-          ) : null}
           <Button
             asChild
             variant="outline"
@@ -466,6 +456,15 @@ export default async function ContratoDetalhePage({
               )}
             </CardContent>
           </Card>
+
+          {isPro ? (
+            <EntregasContrato
+              entregas={entregas}
+              contratado={contrato.bag_count}
+              contratoId={contrato.id}
+              canCreate={isPro}
+            />
+          ) : null}
         </div>
 
         <Card className="border-milsaca-cream-escuro lg:col-span-1">
