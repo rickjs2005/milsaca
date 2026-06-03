@@ -247,7 +247,9 @@ export async function listContratosOptions(
        produtor:profiles!contratos_produtor_id_fkey(full_name)`,
     )
     .eq("corretora_id", corretoraId)
-    .neq("status", "cancelado")
+    // Só contrato ATIVO (assinado) recebe entrega. Rascunho/em análise ainda
+    // não é negócio fechado; finalizado já encerrou; cancelado fora.
+    .eq("status", "ativo")
     .order("created_at", { ascending: false })
     .limit(200);
 

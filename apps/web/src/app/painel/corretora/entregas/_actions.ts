@@ -121,16 +121,22 @@ export async function createEntrega(formData: FormData) {
     redirect("/painel/corretora/entregas/nova?error=Contrato%20obrigat%C3%B3rio");
   }
 
-  // Pega produtor_id + sequência atual do contrato
+  // Pega produtor_id + status do contrato
   const { data: contrato } = await supabase
     .from("contratos")
-    .select("produtor_id")
+    .select("produtor_id, status")
     .eq("corretora_id", profile.corretora_id)
     .eq("id", contratoId)
     .maybeSingle();
 
   if (!contrato) {
     redirect("/painel/corretora/entregas/nova?error=Contrato%20n%C3%A3o%20encontrado");
+  }
+  // Só contrato ATIVO (assinado) recebe entrega.
+  if (contrato.status !== "ativo") {
+    redirect(
+      `/painel/corretora/entregas/nova?contrato=${contratoId}&error=${encodeURIComponent("Só dá pra registrar entrega de um contrato ativo (assinado).")}`,
+    );
   }
 
   const bag_count = parseInt0(formData.get("bag_count"));
@@ -206,11 +212,17 @@ export async function gerarEntregaDoContrato(formData: FormData) {
 
   const { data: contrato } = await supabase
     .from("contratos")
-    .select("produtor_id, bag_count")
+    .select("produtor_id, bag_count, status")
     .eq("corretora_id", profile.corretora_id)
     .eq("id", contratoId)
     .maybeSingle();
   if (!contrato) return;
+  // Só contrato ATIVO (assinado) recebe entrega.
+  if (contrato.status !== "ativo") {
+    redirect(
+      `/painel/corretora/contratos/${contratoId}?error=${encodeURIComponent("Só dá pra gerar entrega de um contrato ativo (assinado).")}`,
+    );
+  }
 
   // Idempotência (achado da auditoria): este atalho gera 1 entrega única com
   // as sacas do contrato. Clicar duas vezes duplicaria as sacas. Se já existe
