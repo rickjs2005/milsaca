@@ -44,7 +44,7 @@ function Section({
 }) {
   return (
     <section className="space-y-4">
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-milsaca-dourado">
+      <h2 className="text-xs font-semibold uppercase tracking-wider text-milsaca-dourado-texto">
         {title}
       </h2>
       {children}

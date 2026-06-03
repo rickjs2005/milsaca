@@ -75,13 +75,13 @@ function UpgradeCard() {
       className="group flex items-center justify-between gap-3 rounded-md border border-milsaca-dourado/30 bg-milsaca-dourado/10 px-4 py-2.5 transition-colors hover:bg-milsaca-dourado/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
       <span className="flex min-w-0 items-center gap-2 text-body-sm text-milsaca-cafezal">
-        <Sparkles className="h-4 w-4 shrink-0 text-dourado-texto" />
+        <Sparkles className="h-4 w-4 shrink-0 text-milsaca-dourado-texto" />
         <span className="truncate">
           <strong>Plano gratuito.</strong> Ative o {PREMIUM_PITCH} e libere
           tudo.
         </span>
       </span>
-      <span className="inline-flex shrink-0 items-center gap-1 text-caption font-semibold text-dourado-texto transition-all group-hover:gap-2">
+      <span className="inline-flex shrink-0 items-center gap-1 text-caption font-semibold text-milsaca-dourado-texto transition-all group-hover:gap-2">
         Liberar
         <ArrowRight className="h-3.5 w-3.5" />
       </span>

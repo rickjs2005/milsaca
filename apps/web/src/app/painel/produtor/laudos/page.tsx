@@ -164,7 +164,7 @@ export default async function MinhasSacasPage() {
                   {/* Topo: lote + Tipo em destaque */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="font-mono text-caption text-dourado-texto">
+                      <p className="font-mono text-caption text-milsaca-dourado-texto">
                         {lote?.codigo ?? "—"}
                       </p>
                       <p className="mt-0.5 text-body-sm font-medium text-milsaca-cafezal">

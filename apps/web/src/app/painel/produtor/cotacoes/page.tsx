@@ -136,7 +136,7 @@ export default async function CotacoesProdutorPage({
         <Card tone="premium">
           <CardContent className="flex flex-wrap items-end justify-between gap-4 p-card">
             <div>
-              <p className="inline-flex items-center gap-1.5 text-caption font-semibold uppercase tracking-wider text-dourado-texto">
+              <p className="inline-flex items-center gap-1.5 text-caption font-semibold uppercase tracking-wider text-milsaca-dourado-texto">
                 <Flame className="h-4 w-4" />
                 Melhor preço hoje
               </p>

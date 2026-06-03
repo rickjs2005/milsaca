@@ -77,7 +77,7 @@ export default async function ConvitePage({
 
         <Card className="border-milsaca-cream-escuro">
           <CardHeader>
-            <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-milsaca-dourado">
+            <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-milsaca-dourado-texto">
               <ShieldCheck className="h-3.5 w-3.5" />
               Convite válido
             </div>

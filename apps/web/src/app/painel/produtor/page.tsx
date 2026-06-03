@@ -283,7 +283,7 @@ export default async function InicioProdutorPage() {
           {propostas.length > 0 ? (
             <Link
               href="/painel/produtor/negociacoes"
-              className="rounded-md text-caption font-medium text-dourado-texto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="rounded-md text-caption font-medium text-milsaca-dourado-texto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               Ver todas →
             </Link>

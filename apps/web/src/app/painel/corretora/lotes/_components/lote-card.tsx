@@ -146,7 +146,7 @@ export function LoteCard({
             <Link
               href={laudoHref}
               target="_blank"
-              className="inline-flex items-center gap-1 text-caption font-semibold text-dourado-texto hover:underline"
+              className="inline-flex items-center gap-1 text-caption font-semibold text-milsaca-dourado-texto hover:underline"
             >
               <FileCheck2 className="h-3.5 w-3.5" />
               Ver laudo →

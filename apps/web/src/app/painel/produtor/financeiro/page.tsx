@@ -170,7 +170,7 @@ export default async function FinanceiroPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-mono text-caption text-dourado-texto">
+                        <p className="font-mono text-caption text-milsaca-dourado-texto">
                           {con?.code ?? "—"}
                         </p>
                         <span className="text-caption text-neutral-600">

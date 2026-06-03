@@ -99,7 +99,7 @@ export default async function MinhasEntregasPage() {
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-mono text-caption text-dourado-texto">
+                      <p className="font-mono text-caption text-milsaca-dourado-texto">
                         {c?.code ?? "—"}
                       </p>
                       <span className="text-caption text-neutral-500">

@@ -230,7 +230,7 @@ export function ContratosView({
                   <td className="px-5 py-3 text-right font-semibold tabular-nums text-milsaca-cafezal">
                     {fmtMoney0(c.total_value)}
                   </td>
-                  <td className="px-5 py-3 text-right tabular-nums text-dourado-texto">
+                  <td className="px-5 py-3 text-right tabular-nums text-milsaca-dourado-texto">
                     {fmtMoney0(c.comissao_total)}
                   </td>
                   <td className="px-5 py-3">

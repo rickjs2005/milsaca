@@ -232,7 +232,7 @@ function IndicadorCard({
           {formatted?.primary ?? "—"}
         </p>
         {formatted?.secondary ? (
-          <p className="mt-0.5 text-caption font-medium text-dourado-texto">
+          <p className="mt-0.5 text-caption font-medium text-milsaca-dourado-texto">
             {formatted.secondary}
           </p>
         ) : null}
@@ -248,7 +248,7 @@ function IndicadorCard({
               href={indicador.externalUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-auto text-dourado-texto hover:underline"
+              className="ml-auto text-milsaca-dourado-texto hover:underline"
             >
               fonte ↗
             </a>

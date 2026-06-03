@@ -101,7 +101,7 @@ export default async function AdminCorretorasPage({
             <ConfirmSubmit
               variant="ghost"
               size="sm"
-              className="h-auto p-0 text-xs font-medium text-milsaca-dourado hover:bg-transparent hover:underline"
+              className="h-auto p-0 text-xs font-medium text-milsaca-dourado-texto hover:bg-transparent hover:underline"
               shouldConfirm={c.verified}
               confirmTitle="Desativar corretora?"
               confirmMessage={
