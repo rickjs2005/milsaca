@@ -231,9 +231,11 @@ export default async function MinhasSacasPage() {
                             /saca
                           </span>
                         </p>
-                        {peso ? (
+                        {totalSacas > 0 ? (
                           <p className="text-body-sm font-semibold text-milsaca-cafezal">
-                            {BRL_TOTAL.format(peso * preco)} no lote
+                            {Math.max(0, totalSacas - com) > 0
+                              ? `${BRL_TOTAL.format(Math.max(0, totalSacas - com) * preco)} disponível`
+                              : "Vendido"}
                           </p>
                         ) : null}
                       </div>
