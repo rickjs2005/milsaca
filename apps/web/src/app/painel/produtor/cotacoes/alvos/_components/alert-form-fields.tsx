@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 import { Input, inputBaseClassName } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -9,7 +13,8 @@ type Defaults = {
   product_id?: string;
   region_id?: string | null;
   target_price?: number | string;
-  condition?: "acima_de" | "abaixo_de";
+  target_pct?: number | string;
+  condition?: "acima_de" | "abaixo_de" | "melhor_preco" | "acima_media";
   channel?: "app" | "whatsapp" | "email";
   active?: boolean;
   notes?: string | null;
@@ -29,6 +34,12 @@ export function AlertFormFields({
     typeof d.target_price === "number"
       ? String(d.target_price).replace(".", ",")
       : (d.target_price ?? "");
+  const pctDefault =
+    typeof d.target_pct === "number"
+      ? String(d.target_pct).replace(".", ",")
+      : (d.target_pct ?? "");
+
+  const [condition, setCondition] = useState<string>(d.condition ?? "acima_de");
 
   return (
     <div className="space-y-5">
@@ -74,24 +85,54 @@ export function AlertFormFields({
             id="condition"
             name="condition"
             required
-            defaultValue={d.condition ?? "acima_de"}
+            value={condition}
+            onChange={(e) => setCondition(e.target.value)}
           >
             <option value="acima_de">Subir acima de</option>
             <option value="abaixo_de">Cair abaixo de</option>
+            <option value="melhor_preco">Melhor preço da praça</option>
+            <option value="acima_media">% acima da média</option>
           </Select>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="target_price">Preço alvo (R$/saca) *</Label>
-          <Input
-            id="target_price"
-            name="target_price"
-            type="text"
-            inputMode="decimal"
-            required
-            defaultValue={priceDefault}
-            placeholder="2.000,00"
-          />
-        </div>
+        {(condition === "acima_de" || condition === "abaixo_de") && (
+          <div className="space-y-2">
+            <Label htmlFor="target_price">Preço alvo (R$/saca) *</Label>
+            <Input
+              id="target_price"
+              name="target_price"
+              type="text"
+              inputMode="decimal"
+              required
+              defaultValue={priceDefault}
+              placeholder="2.000,00"
+            />
+          </div>
+        )}
+        {condition === "acima_media" && (
+          <div className="space-y-2">
+            <Label htmlFor="target_pct">% acima da média *</Label>
+            <Input
+              id="target_pct"
+              name="target_pct"
+              type="text"
+              inputMode="decimal"
+              required
+              defaultValue={pctDefault}
+              placeholder="5"
+            />
+            <p className="text-caption text-neutral-500">
+              Avisa quando alguma corretora pagar essa % acima da média da
+              praça.
+            </p>
+          </div>
+        )}
+        {condition === "melhor_preco" && (
+          <div className="space-y-2">
+            <p className="text-caption text-neutral-500">
+              Avisamos quando aparecer o melhor preço da praça (1× por dia).
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="space-y-2">

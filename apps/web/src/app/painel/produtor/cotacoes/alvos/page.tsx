@@ -26,8 +26,9 @@ type Row = {
   id: string;
   product_id: string;
   region_id: string | null;
-  target_price: number;
-  condition: "acima_de" | "abaixo_de";
+  target_price: number | null;
+  target_pct: number | null;
+  condition: "acima_de" | "abaixo_de" | "melhor_preco" | "acima_media";
   channel: "app" | "whatsapp" | "email";
   active: boolean;
   last_triggered_at: string | null;
@@ -41,6 +42,13 @@ const CHANNEL_LABEL: Record<Row["channel"], string> = {
   app: "App",
   whatsapp: "WhatsApp",
   email: "E-mail",
+};
+
+const CONDITION_LABEL: Record<string, string> = {
+  acima_de: "Subir acima de",
+  abaixo_de: "Cair abaixo de",
+  melhor_preco: "Melhor preço da praça",
+  acima_media: "% acima da média",
 };
 
 function fmtBRL(value: number) {
@@ -64,14 +72,15 @@ export default async function AlvosPage() {
   const { data } = await supabase
     .from("price_alerts")
     .select(
-      "id, product_id, region_id, target_price, condition, channel, active, last_triggered_at, notes, created_at, coffee_types(name), pracas(name, state)",
+      "id, product_id, region_id, target_price, target_pct, condition, channel, active, last_triggered_at, notes, created_at, coffee_types(name), pracas(name, state)",
     )
     .eq("produtor_id", user.id)
     .order("created_at", { ascending: false });
 
   const rows = ((data ?? []) as unknown as Row[]).map((r) => ({
     ...r,
-    target_price: Number(r.target_price),
+    target_price: r.target_price == null ? null : Number(r.target_price),
+    target_pct: r.target_pct == null ? null : Number(r.target_pct),
   }));
 
   return (
@@ -127,7 +136,7 @@ export default async function AlvosPage() {
           {rows.map((r) => {
             const ct = pick(r.coffee_types);
             const pr = pick(r.pracas) as { name: string; state: string } | null;
-            const above = r.condition === "acima_de";
+            const positive = r.condition !== "abaixo_de";
             return (
               <Card
                 key={r.id}
@@ -165,16 +174,28 @@ export default async function AlvosPage() {
 
                   <div className="flex items-baseline gap-2">
                     <span className="inline-flex items-center gap-1 text-body-sm font-medium text-milsaca-cafezal">
-                      {above ? (
+                      {positive ? (
                         <TrendingUp className="h-4 w-4 text-success-600" />
                       ) : (
                         <TrendingDown className="h-4 w-4 text-danger-600" />
                       )}
-                      {above ? "Subir acima de" : "Cair abaixo de"}
+                      {CONDITION_LABEL[r.condition]}
                     </span>
-                    <span className="text-2xl font-semibold text-milsaca-cafezal">
-                      {fmtBRL(r.target_price)}
-                    </span>
+                    {(r.condition === "acima_de" ||
+                      r.condition === "abaixo_de") &&
+                    r.target_price != null ? (
+                      <span className="text-2xl font-semibold text-milsaca-cafezal">
+                        {fmtBRL(r.target_price ?? 0)}
+                      </span>
+                    ) : r.condition === "acima_media" ? (
+                      <span className="text-2xl font-semibold text-milsaca-cafezal">
+                        {r.target_pct}% acima da média
+                      </span>
+                    ) : r.condition === "melhor_preco" ? (
+                      <span className="text-body-sm italic text-neutral-600">
+                        quando for o melhor da praça
+                      </span>
+                    ) : null}
                   </div>
 
                   <div className="flex flex-wrap items-center justify-between gap-2 text-caption text-neutral-600">

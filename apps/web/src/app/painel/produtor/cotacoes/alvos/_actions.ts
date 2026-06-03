@@ -8,7 +8,13 @@ import { friendlyPostgresError } from "@/lib/postgres-error";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
 
-const CONDITIONS = ["acima_de", "abaixo_de"] as const;
+const CONDITIONS = [
+  "acima_de",
+  "abaixo_de",
+  "melhor_preco",
+  "acima_media",
+] as const;
+type Condition = (typeof CONDITIONS)[number];
 const CHANNELS = ["app", "whatsapp", "email"] as const;
 
 function parsePriceBRL(v: FormDataEntryValue | null): number | null {
@@ -23,11 +29,21 @@ function parsePriceBRL(v: FormDataEntryValue | null): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+/** Percentual ("5" ou "5,5") → número > 0, ou null. */
+function parsePct(v: FormDataEntryValue | null): number | null {
+  if (v == null) return null;
+  const s = String(v).trim().replace("%", "").replace(",", ".");
+  if (!s) return null;
+  const n = Number(s);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 type Fields = {
   product_id: string;
   region_id: string | null;
-  target_price: number;
-  condition: "acima_de" | "abaixo_de";
+  target_price: number | null;
+  target_pct: number | null;
+  condition: Condition;
   channel: "app" | "whatsapp" | "email";
   active: boolean;
   notes: string | null;
@@ -40,20 +56,24 @@ function readFields(formData: FormData): {
   const product_id = String(formData.get("product_id") ?? "").trim();
   const region_id = String(formData.get("region_id") ?? "").trim() || null;
   const target_price = parsePriceBRL(formData.get("target_price"));
+  const target_pct = parsePct(formData.get("target_pct"));
   const condition = String(formData.get("condition") ?? "").trim();
   const channel = String(formData.get("channel") ?? "app").trim();
   const active = formData.get("active") === "on";
   const notes = String(formData.get("notes") ?? "").trim() || null;
 
+  const isFixo = condition === "acima_de" || condition === "abaixo_de";
   const errors: string[] = [];
   if (!product_id) errors.push("Selecione o tipo de café.");
-  if (target_price == null) errors.push("Preço alvo inválido.");
   if (!(CONDITIONS as readonly string[]).includes(condition))
     errors.push("Condição inválida.");
+  if (isFixo && target_price == null) errors.push("Preço alvo inválido.");
+  if (condition === "acima_media" && target_pct == null)
+    errors.push("Informe a % acima da média.");
   if (!(CHANNELS as readonly string[]).includes(channel))
     errors.push("Canal inválido.");
 
-  if (errors.length > 0 || target_price == null) {
+  if (errors.length > 0) {
     return { errors, fields: null };
   }
   return {
@@ -61,8 +81,9 @@ function readFields(formData: FormData): {
     fields: {
       product_id,
       region_id,
-      target_price,
-      condition: condition as "acima_de" | "abaixo_de",
+      target_price: isFixo ? target_price : null,
+      target_pct: condition === "acima_media" ? target_pct : null,
+      condition: condition as Condition,
       channel: channel as "app" | "whatsapp" | "email",
       active,
       notes,

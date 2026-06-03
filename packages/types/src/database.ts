@@ -1759,7 +1759,8 @@ export type Database = {
           product_id: string;
           produtor_id: string;
           region_id: string | null;
-          target_price: number;
+          target_price: number | null;
+          target_pct: number | null;
           updated_at: string;
         };
         Insert: {
@@ -1773,7 +1774,8 @@ export type Database = {
           product_id: string;
           produtor_id: string;
           region_id?: string | null;
-          target_price: number;
+          target_price?: number | null;
+          target_pct?: number | null;
           updated_at?: string;
         };
         Update: {
@@ -1787,7 +1789,8 @@ export type Database = {
           product_id?: string;
           produtor_id?: string;
           region_id?: string | null;
-          target_price?: number;
+          target_price?: number | null;
+          target_pct?: number | null;
           updated_at?: string;
         };
         Relationships: [

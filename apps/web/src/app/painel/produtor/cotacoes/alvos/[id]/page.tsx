@@ -38,7 +38,7 @@ export default async function EditAlvoPage({
     supabase
       .from("price_alerts")
       .select(
-        "id, product_id, region_id, target_price, condition, channel, active, notes",
+        "id, product_id, region_id, target_price, target_pct, condition, channel, active, notes",
       )
       .eq("id", id)
       .eq("produtor_id", user.id)
@@ -100,8 +100,15 @@ export default async function EditAlvoPage({
               defaults={{
                 product_id: row.product_id,
                 region_id: row.region_id,
-                target_price: Number(row.target_price),
-                condition: row.condition as "acima_de" | "abaixo_de",
+                target_price:
+                  row.target_price == null ? undefined : Number(row.target_price),
+                target_pct:
+                  row.target_pct == null ? undefined : Number(row.target_pct),
+                condition: row.condition as
+                  | "acima_de"
+                  | "abaixo_de"
+                  | "melhor_preco"
+                  | "acima_media",
                 channel: row.channel as "app" | "whatsapp" | "email",
                 active: row.active,
                 notes: row.notes,
