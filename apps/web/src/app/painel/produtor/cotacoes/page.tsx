@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { loadProdutorCotacoes } from "./_lib/queries";
+import { loadMarketTrend, type MarketTrend } from "@/lib/market-trend";
 import { CotacoesFiltros } from "./_components/cotacoes-filtros";
 import type { CoffeeProcesso, CoffeeSpecie } from "@milsaca/types";
 import type { CotacaoCard, MarketIndicator } from "./_lib/queries";
@@ -83,6 +84,8 @@ export default async function CotacoesProdutorPage({
     specie,
     praca,
   });
+
+  const trend = await loadMarketTrend(data.market.map((m) => m.symbol));
 
   // "Melhor preço hoje" — a maior oferta entre as corretoras (favoritas +
   // outras). É a resposta nº 1 do produtor: quem está pagando mais?
@@ -255,7 +258,7 @@ export default async function CotacoesProdutorPage({
           </header>
           <div className="grid gap-3 sm:grid-cols-2">
             {marketNacional.map((m) => (
-              <MarketCard key={`${m.source}-${m.symbol}`} m={m} />
+              <MarketCard key={`${m.source}-${m.symbol}`} m={m} trend={trend[m.symbol]} />
             ))}
           </div>
         </section>
@@ -274,7 +277,7 @@ export default async function CotacoesProdutorPage({
           </header>
           <div className="grid gap-3 sm:grid-cols-2">
             {marketInternacional.map((m) => (
-              <MarketCard key={`${m.source}-${m.symbol}`} m={m} />
+              <MarketCard key={`${m.source}-${m.symbol}`} m={m} trend={trend[m.symbol]} />
             ))}
           </div>
         </section>
@@ -306,7 +309,7 @@ export default async function CotacoesProdutorPage({
 // Subcomponentes
 // =================================================================
 
-function MarketCard({ m }: { m: MarketIndicator }) {
+function MarketCard({ m, trend }: { m: MarketIndicator; trend?: MarketTrend }) {
   const fmtFn = m.currency === "USD" ? fmtUSD : fmtBRL;
   const up = m.variation_pct != null && m.variation_pct > 0.001;
   const down = m.variation_pct != null && m.variation_pct < -0.001;
@@ -341,6 +344,36 @@ function MarketCard({ m }: { m: MarketIndicator }) {
             </span>
           ) : null}
         </div>
+        {trend ? (
+          <span
+            className={`inline-flex items-center gap-1 text-caption font-medium ${
+              trend.direction === "alta"
+                ? "text-success-700"
+                : trend.direction === "baixa"
+                  ? "text-danger-700"
+                  : "text-neutral-500"
+            }`}
+          >
+            <span
+              className={`h-2 w-2 rounded-full ${
+                trend.direction === "alta"
+                  ? "bg-success-500"
+                  : trend.direction === "baixa"
+                    ? "bg-danger-500"
+                    : "bg-warning-500"
+              }`}
+            />
+            {trend.direction === "alta"
+              ? "Alta"
+              : trend.direction === "baixa"
+                ? "Baixa"
+                : "Estável"}
+            {trend.pct != null
+              ? ` ${trend.pct >= 0 ? "+" : ""}${trend.pct.toFixed(1)}%`
+              : ""}{" "}
+            · {trend.label}
+          </span>
+        ) : null}
         <p
           className={`text-caption ${
             m.stale ? "text-warning-700" : "text-neutral-500"

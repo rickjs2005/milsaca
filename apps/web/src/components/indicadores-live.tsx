@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { createClient } from "@milsaca/db/web/server";
+import { loadMarketTrend, type MarketTrend } from "@/lib/market-trend";
 import { cn } from "@/lib/utils";
 
 type MarketQuote = {
@@ -137,6 +138,8 @@ export async function IndicadoresLive() {
     rows.map((r) => [`${r.source}/${r.symbol}`, r] as const),
   );
 
+  const trend = await loadMarketTrend(INDICADORES.map((i) => i.symbol));
+
   // Se nenhum dado existe ainda, esconde o bloco em vez de mostrar cards vazios
   const haveAny = INDICADORES.some((i) => byKey.has(`${i.source}/${i.symbol}`));
   if (!haveAny) return null;
@@ -154,6 +157,7 @@ export async function IndicadoresLive() {
       indicador={ind}
       quote={byKey.get(`${ind.source}/${ind.symbol}`) ?? null}
       ctx={ctx}
+      trend={trend[ind.symbol]}
     />
   );
 
@@ -189,10 +193,12 @@ function IndicadorCard({
   indicador,
   quote,
   ctx,
+  trend,
 }: {
   indicador: Indicador;
   quote: MarketQuote | null;
   ctx: FormatCtx;
+  trend?: MarketTrend;
 }) {
   if (!quote) {
     return (
@@ -270,6 +276,36 @@ function IndicadorCard({
             </a>
           ) : null}
         </p>
+        {trend ? (
+          <span
+            className={`mt-1 inline-flex items-center gap-1 text-caption font-medium ${
+              trend.direction === "alta"
+                ? "text-success-700"
+                : trend.direction === "baixa"
+                  ? "text-danger-700"
+                  : "text-neutral-500"
+            }`}
+          >
+            <span
+              className={`h-2 w-2 rounded-full ${
+                trend.direction === "alta"
+                  ? "bg-success-500"
+                  : trend.direction === "baixa"
+                    ? "bg-danger-500"
+                    : "bg-warning-500"
+              }`}
+            />
+            {trend.direction === "alta"
+              ? "Alta"
+              : trend.direction === "baixa"
+                ? "Baixa"
+                : "Estável"}
+            {trend.pct != null
+              ? ` ${trend.pct >= 0 ? "+" : ""}${trend.pct.toFixed(1)}%`
+              : ""}{" "}
+            · {trend.label}
+          </span>
+        ) : null}
       </CardContent>
     </Card>
   );

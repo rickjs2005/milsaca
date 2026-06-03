@@ -1296,6 +1296,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      market_quotes_history: {
+        Row: {
+          captured_date: string;
+          price_brl_cents: number | null;
+          price_usd_cents: number | null;
+          quoted_at: string;
+          source: string;
+          symbol: string;
+          updated_at: string;
+          variation_pct: number | null;
+        };
+        Insert: {
+          captured_date: string;
+          price_brl_cents?: number | null;
+          price_usd_cents?: number | null;
+          quoted_at: string;
+          source: string;
+          symbol: string;
+          updated_at?: string;
+          variation_pct?: number | null;
+        };
+        Update: {
+          captured_date?: string;
+          price_brl_cents?: number | null;
+          price_usd_cents?: number | null;
+          quoted_at?: string;
+          source?: string;
+          symbol?: string;
+          updated_at?: string;
+          variation_pct?: number | null;
+        };
+        Relationships: [];
+      };
       message_dispatches: {
         Row: {
           attempts: number;
