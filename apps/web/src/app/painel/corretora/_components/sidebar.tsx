@@ -88,6 +88,21 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    title: "Mercado",
+    items: [
+      {
+        href: "/painel/corretora/cotacoes",
+        label: "Cotações",
+        icon: TrendingUp,
+      },
+      {
+        href: "/painel/corretora/analytics",
+        label: "Analytics",
+        icon: BarChart3,
+      },
+    ],
+  },
+  {
     title: "Cadastros",
     items: [
       {
@@ -99,21 +114,6 @@ const NAV_GROUPS: NavGroup[] = [
         href: "/painel/corretora/compradores",
         label: "Compradores",
         icon: Building2,
-      },
-      {
-        href: "/painel/corretora/cotacoes",
-        label: "Cotações",
-        icon: TrendingUp,
-      },
-    ],
-  },
-  {
-    title: "Insights",
-    items: [
-      {
-        href: "/painel/corretora/analytics",
-        label: "Analytics",
-        icon: BarChart3,
       },
     ],
   },

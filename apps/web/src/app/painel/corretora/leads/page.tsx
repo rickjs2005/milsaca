@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   Handshake,
   MessageCircle,
+  Percent,
   Plus,
   TrendingUp,
   XCircle,
@@ -91,7 +92,7 @@ export default async function LeadsPage({
 
       <section
         aria-label="Indicadores de leads"
-        className="grid grid-cols-2 gap-4 xl:grid-cols-4"
+        className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-5"
       >
         <KpiCard
           label="Leads novos"
@@ -120,6 +121,15 @@ export default async function LeadsPage({
           icon={XCircle}
           tone="danger"
           hint="Pra aprender com o motivo"
+        />
+        <KpiCard
+          label="Taxa de conversão"
+          value={
+            kpis.taxaConversao != null ? `${kpis.taxaConversao}%` : "—"
+          }
+          icon={Percent}
+          tone="premium"
+          hint="Fechados vs. perdidos no mês"
         />
       </section>
 

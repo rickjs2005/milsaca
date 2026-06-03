@@ -203,11 +203,19 @@ export async function loadLeadsKpis(corretoraId: string) {
       0,
     );
 
+  const convMes = (convVal.data ?? []).length;
+  const perdMesN = perdMes.count ?? 0;
+  const fechadosMes = convMes + perdMesN;
+
   return {
     novos: novos.count ?? 0,
     emNeg: emNeg.count ?? 0,
-    perdMes: perdMes.count ?? 0,
-    convMes: (convVal.data ?? []).length,
+    perdMes: perdMesN,
+    convMes,
+    // Win rate do mês: fechados que viraram contrato vs. perdidos. null quando
+    // não houve nenhum fechamento (evita "0%" enganoso num mês sem desfecho).
+    taxaConversao:
+      fechadosMes > 0 ? Math.round((convMes / fechadosMes) * 100) : null,
     valorNovos: sumTotal(novosVal.data),
     valorEmNeg: sumTotal(emNegVal.data),
     valorConv: sumTotal(convVal.data),

@@ -49,6 +49,17 @@ const GROUPS: Group[] = [
     ],
   },
   {
+    title: "Mercado",
+    items: [
+      { href: "/painel/corretora/cotacoes", label: "Cotações", icon: TrendingUp },
+      {
+        href: "/painel/corretora/analytics",
+        label: "Analytics",
+        icon: BarChart3,
+      },
+    ],
+  },
+  {
     title: "Cadastros",
     items: [
       { href: "/painel/corretora/produtores", label: "Produtores", icon: Users },
@@ -56,17 +67,6 @@ const GROUPS: Group[] = [
         href: "/painel/corretora/compradores",
         label: "Compradores",
         icon: Building2,
-      },
-      { href: "/painel/corretora/cotacoes", label: "Cotações", icon: TrendingUp },
-    ],
-  },
-  {
-    title: "Insights",
-    items: [
-      {
-        href: "/painel/corretora/analytics",
-        label: "Analytics",
-        icon: BarChart3,
       },
     ],
   },
