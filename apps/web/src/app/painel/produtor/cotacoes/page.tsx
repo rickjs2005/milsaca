@@ -45,6 +45,15 @@ const PROCESS_LABEL: Record<CoffeeProcesso, string> = {
 
 type SearchParams = Promise<{ specie?: string; praca?: string }>;
 
+type InsightTone = "oportunidade" | "favoravel" | "atencao" | "estavel";
+
+type Insight = {
+  tone: InsightTone;
+  emoji: string;
+  title: string;
+  detail: string;
+};
+
 function isSpecie(v: string | undefined): v is CoffeeSpecie {
   return v === "arabica" || v === "conillon";
 }
@@ -123,6 +132,57 @@ export default async function CotacoesProdutorPage({
   const cepeaRefDe = (c: { specie: string | null }) =>
     c.specie ? cepeaBySpecie[c.specie] ?? null : null;
 
+  // Insight automático no topo: a leitura do dia em uma frase, por prioridade.
+  const bestCepea = best ? cepeaRefDe(best) : null;
+  const bestVsCepeaPct =
+    best && bestCepea && bestCepea > 0
+      ? ((best.current_price - bestCepea) / bestCepea) * 100
+      : null;
+  const riser = ofertas
+    .filter((o) => o.variacao_pct != null)
+    .reduce<(typeof ofertas)[number] | null>(
+      (top, o) =>
+        (o.variacao_pct ?? 0) > (top?.variacao_pct ?? -Infinity) ? o : top,
+      null,
+    );
+
+  const insight: Insight | null = !best
+    ? null
+    : riser && riser.variacao_pct! >= 3
+      ? {
+          tone: "oportunidade",
+          emoji: "🔥",
+          title: "Oportunidade",
+          detail: `${riser.corretora_name ?? "Uma corretora"} subiu a oferta +${riser.variacao_pct!.toFixed(1)}% — pode ser hora de negociar.`,
+        }
+      : bestVsCepeaPct != null && bestVsCepeaPct >= 2
+        ? {
+            tone: "favoravel",
+            emoji: "🟢",
+            title: "Mercado favorável",
+            detail: `O melhor preço (${fmtBRL(best.current_price)}) está +${bestVsCepeaPct.toFixed(1)}% acima do CEPEA.`,
+          }
+        : bestVsCepeaPct != null && bestVsCepeaPct <= -2
+          ? {
+              tone: "atencao",
+              emoji: "🟡",
+              title: "Preços abaixo do mercado",
+              detail: `O melhor preço está ${bestVsCepeaPct.toFixed(1)}% abaixo do CEPEA — talvez valha esperar.`,
+            }
+          : {
+              tone: "estavel",
+              emoji: "⚪",
+              title: "Mercado estável",
+              detail: "O melhor preço está em linha com o CEPEA hoje.",
+            };
+
+  const insightToneClass: Record<InsightTone, string> = {
+    oportunidade: "border-milsaca-dourado/40 bg-milsaca-dourado/10",
+    favoravel: "border-success-100 bg-success-50",
+    atencao: "border-warning-100 bg-warning-50",
+    estavel: "border-neutral-200 bg-neutral-50",
+  };
+
   // Mercado: só cards COM dado (sem "fonte indisponível" frustrando o produtor)
   const marketComDado = data.market.filter((m) => m.price != null);
   const marketNacional = marketComDado.filter((m) => m.source === "cepea_esalq");
@@ -157,6 +217,23 @@ export default async function CotacoesProdutorPage({
         pracas={data.pracasDisponiveis}
       />
 
+      {/* Insight automático — a leitura do dia em uma frase */}
+      {insight ? (
+        <div
+          className={`flex items-start gap-3 rounded-card border px-4 py-3 ${insightToneClass[insight.tone]}`}
+        >
+          <span className="text-lg leading-none" aria-hidden>
+            {insight.emoji}
+          </span>
+          <div>
+            <p className="text-body-sm font-semibold text-milsaca-cafezal">
+              {insight.title}
+            </p>
+            <p className="text-caption text-neutral-600">{insight.detail}</p>
+          </div>
+        </div>
+      ) : null}
+
       {/* 🔥 Melhor preço hoje — resposta imediata "quem paga mais?" */}
       {best ? (
         <Card tone="premium">
@@ -176,12 +253,29 @@ export default async function CotacoesProdutorPage({
                 {best.process ? ` ${PROCESS_LABEL[best.process]}` : ""}
               </p>
             </div>
-            {bestAcimaMedia != null && bestAcimaMedia > 0.05 ? (
-              <span className="inline-flex items-center gap-1 rounded-pill bg-success-50 px-3 py-1 text-body-sm font-semibold text-success-700">
-                <ArrowUpRight className="h-4 w-4" />
-                {bestAcimaMedia.toFixed(1)}% acima da média
-              </span>
-            ) : null}
+            <div className="flex flex-col items-end gap-1.5">
+              {bestAcimaMedia != null && bestAcimaMedia > 0.05 ? (
+                <span className="inline-flex items-center gap-1 rounded-pill bg-success-50 px-3 py-1 text-body-sm font-semibold text-success-700">
+                  <ArrowUpRight className="h-4 w-4" />
+                  {bestAcimaMedia.toFixed(1)}% acima da média
+                </span>
+              ) : null}
+              {bestVsCepeaPct != null ? (
+                <span
+                  className={`inline-flex items-center gap-1 text-body-sm font-semibold ${
+                    bestVsCepeaPct >= 0 ? "text-success-700" : "text-danger-700"
+                  }`}
+                >
+                  {bestVsCepeaPct >= 0 ? (
+                    <ArrowUpRight className="h-4 w-4" />
+                  ) : (
+                    <ArrowDownRight className="h-4 w-4" />
+                  )}
+                  {bestVsCepeaPct >= 0 ? "+" : ""}
+                  {bestVsCepeaPct.toFixed(1)}% vs CEPEA
+                </span>
+              ) : null}
+            </div>
           </CardContent>
         </Card>
       ) : null}
@@ -219,7 +313,13 @@ export default async function CotacoesProdutorPage({
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {data.minhasCorretoras.map((c) => (
-              <CotacaoCardView key={c.key} c={c} accent cepeaRef={cepeaRefDe(c)} />
+              <CotacaoCardView
+                key={c.key}
+                c={c}
+                accent
+                isBest={best?.key === c.key}
+                cepeaRef={cepeaRefDe(c)}
+              />
             ))}
           </div>
         )}
@@ -239,7 +339,12 @@ export default async function CotacoesProdutorPage({
           </header>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {data.outrasPracas.map((c) => (
-              <CotacaoCardView key={c.key} c={c} cepeaRef={cepeaRefDe(c)} />
+              <CotacaoCardView
+                key={c.key}
+                c={c}
+                isBest={best?.key === c.key}
+                cepeaRef={cepeaRefDe(c)}
+              />
             ))}
           </div>
         </section>
@@ -394,10 +499,13 @@ function MarketCard({ m, trend }: { m: MarketIndicator; trend?: MarketTrend }) {
 function CotacaoCardView({
   c,
   accent,
+  isBest,
   cepeaRef,
 }: {
   c: CotacaoCard;
   accent?: boolean;
+  /** Marca a oferta de maior preço do dia (a "Melhor oferta"). */
+  isBest?: boolean;
   /** Preço CEPEA da mesma espécie, pra mostrar o ganho/perda vs mercado. */
   cepeaRef?: number | null;
 }) {
@@ -427,6 +535,11 @@ function CotacaoCardView({
               {c.specie ? SPECIE_LABEL[c.specie] : c.coffee_type}
               {c.process ? ` · ${PROCESS_LABEL[c.process]}` : ""}
             </p>
+            {isBest ? (
+              <span className="mt-1.5 inline-flex items-center rounded-pill bg-milsaca-dourado/20 px-2 py-0.5 text-[10px] font-semibold text-milsaca-cafezal">
+                🔥 Melhor oferta
+              </span>
+            ) : null}
           </div>
           {accent ? (
             <span className="inline-flex shrink-0 items-center gap-1 rounded-pill bg-milsaca-dourado/15 px-2 py-0.5 text-[10px] font-medium text-milsaca-cafezal">

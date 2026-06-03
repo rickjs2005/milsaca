@@ -105,8 +105,8 @@ const MARKET_INDICATORS = [
   {
     source: "ice_us",
     symbol: "KC.F",
-    label: "Arábica NY (ICE)",
-    sublabel: "Futuros · US¢/lb",
+    label: "Bolsa de Nova York (ICE)",
+    sublabel: "Arábica · influencia o preço no Brasil",
   },
   {
     source: "bcb_ptax",

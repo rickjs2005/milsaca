@@ -129,6 +129,29 @@ async function loadPropostas(userId: string): Promise<Proposta[]> {
   });
 }
 
+// Status terminais negativos não disputam "melhor proposta" — só ativas/abertas/convertidas.
+const STATUS_DESCARTADO: ReadonlySet<LeadStatus> = new Set<LeadStatus>([
+  "perdido",
+  "arquivado",
+]);
+
+// Melhor proposta = maior valor (total quando existir, senão preço por saca).
+// Considera só propostas ativas; retorna null se não houver candidata.
+function melhorPropostaId(propostas: Proposta[]): string | null {
+  let melhorId: string | null = null;
+  let melhorValor = -Infinity;
+  for (const p of propostas) {
+    if (STATUS_DESCARTADO.has(p.status)) continue;
+    const valor = p.total ?? p.proposed_price;
+    if (valor == null) continue;
+    if (valor > melhorValor) {
+      melhorValor = valor;
+      melhorId = p.id;
+    }
+  }
+  return melhorId;
+}
+
 function saudacaoAgora(): string {
   const h = Number(
     new Intl.DateTimeFormat("pt-BR", {
@@ -151,6 +174,7 @@ export default async function InicioProdutorPage() {
   ]);
 
   const primeiroNome = profile?.full_name?.split(" ")[0] ?? null;
+  const idMelhorProposta = melhorPropostaId(propostas);
   const up = (resumo.cotacao?.variacao ?? 0) >= 0;
   const Arrow = up ? ArrowUpRight : ArrowDownRight;
 
@@ -306,7 +330,7 @@ export default async function InicioProdutorPage() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {propostas.map((p) => (
-              <PropostaCard key={p.id} p={p} />
+              <PropostaCard key={p.id} p={p} melhor={p.id === idMelhorProposta} />
             ))}
           </div>
         )}
@@ -315,7 +339,7 @@ export default async function InicioProdutorPage() {
   );
 }
 
-function PropostaCard({ p }: { p: Proposta }) {
+function PropostaCard({ p, melhor }: { p: Proposta; melhor: boolean }) {
   // Rótulo + tone da fonte única da persona produtor (negociacoes/_lib/lead-labels).
   return (
     <Card interactive>
@@ -326,6 +350,11 @@ function PropostaCard({ p }: { p: Proposta }) {
             <p className="truncate text-h3 font-semibold text-milsaca-cafezal">
               {p.corretora}
             </p>
+            {melhor ? (
+              <span className="mt-1 inline-flex items-center gap-1 rounded-pill bg-milsaca-dourado/20 px-2 py-0.5 text-[10px] font-semibold text-milsaca-cafezal">
+                🔥 Melhor proposta
+              </span>
+            ) : null}
             <p className="mt-1 text-caption text-neutral-600">
               {p.bag_count ? `${p.bag_count} sacas` : "—"} ·{" "}
               {p.coffee_type ? coffeeLabel(p.coffee_type) : "—"}{" "}

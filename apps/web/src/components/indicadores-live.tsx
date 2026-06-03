@@ -85,8 +85,8 @@ const INDICADORES: Indicador[] = [
   },
   {
     key: "ice-arabica",
-    label: "Café NY (ICE KC)",
-    sublabel: "Arábica, US¢/lb",
+    label: "Bolsa de Nova York (ICE)",
+    sublabel: "Arábica · influencia o preço no Brasil",
     source: "ice_us",
     symbol: "KC.F",
     format: (q, ctx) => {

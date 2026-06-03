@@ -5,7 +5,7 @@ export function Sparkline({
   data: number[];
   className?: string;
 }) {
-  if (!data || data.length < 2) return null;
+  if (!data || data.length < 3) return null;
   const w = 100;
   const h = 28;
   const min = Math.min(...data);
