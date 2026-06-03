@@ -38,7 +38,7 @@ export default async function NovaEntregaPage({
       <div>
         <Link
           href="/painel/corretora/entregas"
-          className="text-xs text-milsaca-dourado hover:underline"
+          className="text-xs text-milsaca-dourado-texto hover:underline"
         >
           ← Entregas
         </Link>
@@ -61,7 +61,7 @@ export default async function NovaEntregaPage({
           Nenhum contrato disponível.{" "}
           <Link
             href="/painel/corretora/contratos/novo"
-            className="text-milsaca-dourado hover:underline"
+            className="text-milsaca-dourado-texto hover:underline"
           >
             Criar um contrato primeiro
           </Link>

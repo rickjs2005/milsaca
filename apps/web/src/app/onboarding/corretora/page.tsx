@@ -45,12 +45,12 @@ export default async function OnboardingCorretoraPage({
         </header>
 
         <div className="mt-8">
-          <p className="text-sm font-medium text-milsaca-dourado">
+          <p className="text-sm font-medium text-milsaca-dourado-texto">
             Bem-vinda, {corretora?.name}
           </p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-milsaca-verde">
             Complete os dados{" "}
-            <span className="text-milsaca-dourado">da sua corretora</span>
+            <span className="text-milsaca-dourado-texto">da sua corretora</span>
           </h1>
           <p className="mt-3 text-sm text-milsaca-verde-claro">
             Isso aparece pro produtor quando ele te vê no diretório e nos
@@ -69,7 +69,7 @@ export default async function OnboardingCorretoraPage({
           className="mt-8 space-y-6 rounded-2xl border border-milsaca-cream-escuro bg-white p-6 shadow-sm"
         >
           <section className="space-y-2">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-milsaca-dourado">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-milsaca-dourado-texto">
               Operador
             </h2>
             <Label htmlFor="full_name">Seu nome completo *</Label>
@@ -87,7 +87,7 @@ export default async function OnboardingCorretoraPage({
           </section>
 
           <section className="space-y-4 border-t border-milsaca-cream-escuro pt-4">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-milsaca-dourado">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-milsaca-dourado-texto">
               Identificação da corretora
             </h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -128,7 +128,7 @@ export default async function OnboardingCorretoraPage({
           </section>
 
           <section className="space-y-4 border-t border-milsaca-cream-escuro pt-4">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-milsaca-dourado">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-milsaca-dourado-texto">
               Endereço
             </h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -179,7 +179,7 @@ export default async function OnboardingCorretoraPage({
           </section>
 
           <section className="space-y-4 border-t border-milsaca-cream-escuro pt-4">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-milsaca-dourado">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-milsaca-dourado-texto">
               Contato adicional
             </h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

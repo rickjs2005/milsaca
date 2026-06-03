@@ -252,7 +252,7 @@ export default async function ProdutorDetalheAdminPage({ params }: PageProps) {
 
       <section className="mb-8">
         <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-milsaca-preto">
-          <Handshake className="h-4 w-4 text-milsaca-dourado" />
+          <Handshake className="h-4 w-4 text-milsaca-dourado-texto" />
           Leads ({leads.length})
         </h2>
         <DataTable
@@ -272,7 +272,7 @@ export default async function ProdutorDetalheAdminPage({ params }: PageProps) {
 
       <section className="mb-8">
         <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-milsaca-preto">
-          <FileSignature className="h-4 w-4 text-milsaca-dourado" />
+          <FileSignature className="h-4 w-4 text-milsaca-dourado-texto" />
           Contratos ({contratos.length})
         </h2>
         <DataTable
@@ -310,7 +310,7 @@ function Panel({
   return (
     <section className="rounded-card border border-slate-200 bg-white p-6 shadow-card">
       <header className="mb-4 flex items-center gap-2">
-        <Icon className="h-4 w-4 text-milsaca-dourado" />
+        <Icon className="h-4 w-4 text-milsaca-dourado-texto" />
         <h2 className="text-base font-semibold text-milsaca-preto">{title}</h2>
       </header>
       <div className="space-y-2">{children}</div>

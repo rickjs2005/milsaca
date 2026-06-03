@@ -26,7 +26,7 @@ export default async function NovoCompradorPage({
       <div>
         <Link
           href="/painel/corretora/compradores"
-          className="text-xs text-milsaca-dourado hover:underline"
+          className="text-xs text-milsaca-dourado-texto hover:underline"
         >
           ← Compradores
         </Link>

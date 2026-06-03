@@ -317,7 +317,7 @@ export default async function NovoContratoPage({
                     Nenhum comprador ativo.{" "}
                     <Link
                       href="/painel/corretora/compradores/novo"
-                      className="text-milsaca-dourado hover:underline"
+                      className="text-milsaca-dourado-texto hover:underline"
                     >
                       Cadastrar um agora
                     </Link>

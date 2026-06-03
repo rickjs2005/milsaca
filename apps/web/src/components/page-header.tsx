@@ -82,7 +82,7 @@ export function PageHeader({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-1.5">
           {eyebrow ? (
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-milsaca-dourado">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-milsaca-dourado-texto">
               {eyebrow}
             </p>
           ) : null}

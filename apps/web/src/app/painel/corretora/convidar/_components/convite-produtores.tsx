@@ -98,7 +98,7 @@ export function ConviteProdutores({
 
       {/* Dica de envio em massa */}
       <div className="flex items-start gap-2 rounded-card border border-milsaca-dourado/30 bg-milsaca-cream-claro/50 p-card text-body-sm text-milsaca-cafezal">
-        <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-milsaca-dourado" />
+        <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-milsaca-dourado-texto" />
         <p>
           <strong>Pra mandar pra muitos de uma vez:</strong> copie a mensagem,
           abra o WhatsApp → <em>Nova transmissão</em>, selecione seus contatos de

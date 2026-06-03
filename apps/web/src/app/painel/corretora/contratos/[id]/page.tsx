@@ -404,7 +404,7 @@ export default async function ContratoDetalhePage({
                       Nenhum comprador ativo.{" "}
                       <Link
                         href="/painel/corretora/compradores/novo"
-                        className="text-milsaca-dourado hover:underline"
+                        className="text-milsaca-dourado-texto hover:underline"
                       >
                         Cadastrar
                       </Link>

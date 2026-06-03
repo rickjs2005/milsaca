@@ -248,7 +248,7 @@ export default async function PerfilCorretoraPage({
               </div>
 
               <div className="flex items-start gap-2 rounded-md border border-milsaca-dourado/30 bg-milsaca-dourado/5 p-3 text-xs text-milsaca-verde">
-                <Info className="mt-0.5 h-4 w-4 shrink-0 text-milsaca-dourado" />
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-milsaca-dourado-texto" />
                 <p>
                   Pra atualizar dados da corretora (nome, CNPJ, descrição, site
                   ou logo), fale com o suporte da Milsaca.
@@ -500,7 +500,7 @@ function PublicPreview({ corretora }: { corretora: CorretoraFull }) {
             className="h-14 w-14 shrink-0 rounded-lg border border-milsaca-dourado/40 bg-white object-contain p-1"
           />
         ) : (
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-milsaca-dourado/20 text-2xl font-bold text-milsaca-dourado">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-milsaca-dourado/20 text-2xl font-bold text-milsaca-dourado-texto">
             {corretora.name.charAt(0).toUpperCase()}
           </div>
         )}
@@ -508,7 +508,7 @@ function PublicPreview({ corretora }: { corretora: CorretoraFull }) {
           <div className="flex flex-wrap items-center gap-2">
             <p className="truncate text-base font-semibold">{corretora.name}</p>
             {corretora.verified ? (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-milsaca-dourado/15 px-2 py-0.5 text-[10px] font-medium text-milsaca-dourado">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-milsaca-dourado/15 px-2 py-0.5 text-[10px] font-medium text-milsaca-dourado-texto">
                 <BadgeCheck className="h-2.5 w-2.5" />
                 Verificada
               </span>

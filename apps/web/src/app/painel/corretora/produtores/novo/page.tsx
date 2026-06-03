@@ -50,7 +50,7 @@ export default async function NovoProdutorPage({
 
       <Card className="border-milsaca-dourado/30 bg-milsaca-dourado/5">
         <CardContent className="flex gap-3 py-4 text-sm text-milsaca-verde">
-          <Info className="mt-0.5 h-5 w-5 shrink-0 text-milsaca-dourado" />
+          <Info className="mt-0.5 h-5 w-5 shrink-0 text-milsaca-dourado-texto" />
           <div className="space-y-1">
             <p className="font-medium">Como funciona o cadastro sombra</p>
             <p className="text-milsaca-verde-claro">

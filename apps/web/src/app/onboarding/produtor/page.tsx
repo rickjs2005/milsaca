@@ -55,12 +55,12 @@ export default async function OnboardingProdutorPage({
         </header>
 
         <div className="mt-8">
-          <p className="text-sm font-medium text-milsaca-dourado">
+          <p className="text-sm font-medium text-milsaca-dourado-texto">
             Boas-vindas, {user.email}
           </p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-milsaca-verde">
             Vamos começar{" "}
-            <span className="text-milsaca-dourado">do básico</span>
+            <span className="text-milsaca-dourado-texto">do básico</span>
           </h1>
           <p className="mt-3 text-sm text-milsaca-verde-claro">
             São três blocos curtos. Dá pra mudar tudo depois no Perfil.
@@ -255,7 +255,7 @@ function Section({
   return (
     <section className="rounded-2xl border border-milsaca-cream-escuro bg-white p-6 shadow-sm">
       <header className="mb-5 flex items-start gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-milsaca-verde text-milsaca-dourado">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-milsaca-verde text-milsaca-dourado-texto">
           <span className="text-sm font-bold">{number}</span>
         </span>
         <div className="space-y-0.5">

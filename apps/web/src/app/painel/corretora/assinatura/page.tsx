@@ -83,7 +83,7 @@ export default async function AssinaturaPage() {
     <div className="space-y-8">
       <header>
         <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-semibold tracking-tight text-milsaca-verde">
-          <Sparkles className="h-7 w-7 text-milsaca-dourado" />
+          <Sparkles className="h-7 w-7 text-milsaca-dourado-texto" />
           Assinatura
         </h1>
         <p className="mt-1 text-sm text-milsaca-verde-claro">
@@ -252,7 +252,7 @@ function StatusCard({
       </div>
       {isOnFreePlan ? (
         <div className="flex items-start gap-2 border-t border-milsaca-cream-escuro bg-milsaca-cream/40 px-6 py-3 text-xs text-milsaca-verde">
-          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-milsaca-dourado" />
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-milsaca-dourado-texto" />
           <span>
             No <strong>{PREMIUM_NAME}</strong> ({PREMIUM_PRICE_LABEL}/mês, 1º
             mês grátis) você libera contratos completos, analytics comercial,
@@ -263,7 +263,7 @@ function StatusCard({
         </div>
       ) : (
         <div className="flex items-start gap-2 border-t border-milsaca-cream-escuro bg-milsaca-cream/40 px-6 py-3 text-xs text-milsaca-verde-claro">
-          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-milsaca-dourado" />
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-milsaca-dourado-texto" />
           <span>
             Sem fidelidade. Precisa pausar ou cancelar?{" "}
             <Link
@@ -287,7 +287,7 @@ function FaqCard({ question, answer }: { question: string; answer: string }) {
     <Card className="border-milsaca-cream-escuro">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-sm text-milsaca-verde">
-          <CheckCircle2 className="h-3.5 w-3.5 text-milsaca-dourado" />
+          <CheckCircle2 className="h-3.5 w-3.5 text-milsaca-dourado-texto" />
           {question}
         </CardTitle>
       </CardHeader>
