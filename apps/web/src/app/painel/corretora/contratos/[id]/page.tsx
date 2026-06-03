@@ -74,7 +74,7 @@ const STATUS_BUTTONS: { value: ContratoStatus; label: string; tone: string }[] =
     {
       value: "ativo",
       label: "Ativar contrato",
-      tone: "bg-emerald-600 text-white hover:bg-emerald-700",
+      tone: "bg-success-600 text-white hover:bg-success-700",
     },
     {
       value: "finalizado",
@@ -84,7 +84,7 @@ const STATUS_BUTTONS: { value: ContratoStatus; label: string; tone: string }[] =
     {
       value: "cancelado",
       label: "Cancelar",
-      tone: "bg-rose-600 text-white hover:bg-rose-700",
+      tone: "bg-danger-600 text-white hover:bg-danger-700",
     },
   ];
 
@@ -180,7 +180,7 @@ export default async function ContratoDetalhePage({
           {waUrl && (
             <Button
               asChild
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
+              className="bg-success-600 text-white hover:bg-success-700"
             >
               <a href={waUrl} target="_blank" rel="noopener noreferrer">
                 <MessageCircle className="mr-2 h-4 w-4" />
@@ -192,13 +192,13 @@ export default async function ContratoDetalhePage({
       </header>
 
       {sp.saved && (
-        <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-800">
+        <div className="flex items-center gap-2 rounded-md border border-success-100 bg-success-50 px-4 py-2 text-sm text-success-700">
           <CheckCircle2 className="h-4 w-4" />
           Atualizado.
         </div>
       )}
       {sp.error && (
-        <div className="rounded-md border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">
+        <div className="rounded-md border border-danger-100 bg-danger-50 px-4 py-2 text-sm text-danger-700">
           {sp.error}
         </div>
       )}
@@ -240,7 +240,7 @@ export default async function ContratoDetalhePage({
               {isSigned ? (
                 <div className="space-y-5">
                   <div className="flex items-start gap-2 rounded-md border border-milsaca-cream-escuro bg-milsaca-cream-escuro/40 px-4 py-3 text-sm text-milsaca-verde">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success-600" />
                     <p>
                       Contrato assinado — valores travados pelo hash de
                       verificação. Para alterar, cancele o contrato e refaça.
@@ -526,7 +526,7 @@ export default async function ContratoDetalhePage({
                 <ConfirmSubmit
                   variant="outline"
                   size="sm"
-                  className="w-full gap-1 border-rose-300 text-rose-700 hover:bg-rose-50"
+                  className="w-full gap-1 border-danger-100 text-danger-700 hover:bg-danger-50"
                   confirmTitle="Cancelar contrato?"
                   confirmMessage={
                     <>

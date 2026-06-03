@@ -86,7 +86,7 @@ export default async function NovoLotePage({
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="produtor_id">Produtor *</Label>
               {produtores.length === 0 ? (
-                <p className="text-sm text-rose-700">
+                <p className="text-sm text-danger-700">
                   Nenhum produtor cadastrado. Peça ao produtor para entrar pelo
                   /entrar antes de cadastrar lotes.
                 </p>
@@ -173,7 +173,7 @@ export default async function NovoLotePage({
             </div>
 
             {sp.error && (
-              <p className="text-sm text-rose-700 sm:col-span-2">{sp.error}</p>
+              <p className="text-sm text-danger-700 sm:col-span-2">{sp.error}</p>
             )}
 
             <div className="flex justify-end gap-2 sm:col-span-2">

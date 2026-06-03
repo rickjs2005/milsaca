@@ -31,7 +31,7 @@ export function CopyLinkButton({
       className={cn(
         "inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-xs font-semibold transition-colors",
         copied
-          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+          ? "border-success-100 bg-success-50 text-success-700"
           : "border-milsaca-cream-escuro text-milsaca-cafezal hover:bg-milsaca-cream-escuro/40",
         className,
       )}

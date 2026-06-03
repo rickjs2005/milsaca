@@ -607,8 +607,8 @@ export function ClassificarForm({ loteId, specie }: Props) {
         </Card>
 
         {error && (
-          <Card className="border-rose-200 bg-rose-50">
-            <CardContent className="py-3 text-sm text-rose-800">
+          <Card className="border-danger-100 bg-danger-50">
+            <CardContent className="py-3 text-sm text-danger-700">
               {error}
             </CardContent>
           </Card>
@@ -631,16 +631,16 @@ export function ClassificarForm({ loteId, specie }: Props) {
         <Card
           className={
             resultado.fora_de_tipo
-              ? "border-rose-200 bg-rose-50"
+              ? "border-danger-100 bg-danger-50"
               : "border-milsaca-cream-escuro"
           }
         >
           <CardHeader>
             <div className="flex items-center gap-2">
               {resultado.fora_de_tipo ? (
-                <AlertTriangle className="h-5 w-5 text-rose-700" />
+                <AlertTriangle className="h-5 w-5 text-danger-700" />
               ) : (
-                <CheckCircle2 className="h-5 w-5 text-emerald-700" />
+                <CheckCircle2 className="h-5 w-5 text-success-700" />
               )}
               <CardTitle className="text-base">
                 {resultado.fora_de_tipo
@@ -672,7 +672,7 @@ export function ClassificarForm({ loteId, specie }: Props) {
               value={String(resultado.breakdown.total_excluindo_leves)}
             />
             {resultado.fora_de_tipo && (
-              <div className="space-y-1 rounded-md bg-rose-100 p-3 text-xs text-rose-800">
+              <div className="space-y-1 rounded-md bg-danger-100 p-3 text-xs text-danger-700">
                 <p className="font-medium">Motivos:</p>
                 <ul className="list-disc pl-4">
                   {resultado.fora_de_tipo_motivos.map((m, i) => (

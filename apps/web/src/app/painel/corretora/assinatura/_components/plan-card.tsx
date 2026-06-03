@@ -72,7 +72,7 @@ export function PlanCard({
           {plan.pricePeriod}
         </p>
         {plan.priceAnchor ? (
-          <p className="mt-2 text-xs font-medium text-emerald-700">
+          <p className="mt-2 text-xs font-medium text-success-700">
             {plan.priceAnchor}
           </p>
         ) : null}
@@ -89,7 +89,7 @@ export function PlanCard({
             )}
           >
             {f.included ? (
-              <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-success-600" />
             ) : (
               <Minus className="mt-0.5 h-4 w-4 shrink-0 text-milsaca-verde-claro/40" />
             )}

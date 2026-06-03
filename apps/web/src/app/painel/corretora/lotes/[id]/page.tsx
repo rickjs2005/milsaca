@@ -335,7 +335,7 @@ export default async function LoteDetalhePage({
                       </Badge>
                     )}
                     {c.fora_de_tipo && !c.anulada && (
-                      <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-100">
+                      <Badge className="bg-danger-100 text-danger-700 hover:bg-danger-100">
                         Fora de tipo
                       </Badge>
                     )}

@@ -234,9 +234,9 @@ function PropostaItem({
       className={cn(
         "rounded-lg border bg-white p-4 transition-colors",
         proposta.status === "aceita"
-          ? "border-emerald-300 bg-emerald-50/30"
+          ? "border-success-100 bg-success-50/30"
           : proposta.status === "rejeitada"
-            ? "border-rose-200 bg-rose-50/20"
+            ? "border-danger-100 bg-danger-50/20"
             : "border-milsaca-cream-escuro",
       )}
     >
@@ -316,7 +316,7 @@ function PropostaItem({
                 <input type="hidden" name="id" value={proposta.id} />
                 <button
                   type="submit"
-                  className="inline-flex h-8 items-center gap-1 rounded-md border border-rose-200 px-2.5 text-[11px] font-semibold text-rose-700 transition-colors hover:bg-rose-50"
+                  className="inline-flex h-8 items-center gap-1 rounded-md border border-danger-100 px-2.5 text-[11px] font-semibold text-danger-700 transition-colors hover:bg-danger-50"
                   aria-label="Excluir rascunho"
                 >
                   <Trash2 className="h-3 w-3" />
@@ -344,8 +344,8 @@ function StatusButton({
 }) {
   const TONE_CLASS: Record<typeof tone, string> = {
     emerald:
-      "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100",
-    rose: "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100",
+      "border-success-100 bg-success-50 text-success-700 hover:bg-success-100",
+    rose: "border-danger-100 bg-danger-50 text-danger-700 hover:bg-danger-100",
     cafezal:
       "border-milsaca-cafezal bg-milsaca-cafezal/10 text-milsaca-cafezal hover:bg-milsaca-cafezal/20",
   };

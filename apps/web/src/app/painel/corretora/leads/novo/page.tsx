@@ -199,7 +199,7 @@ export default async function NovoLeadPage({
               </div>
 
               {sp.error && (
-                <p className="text-sm text-rose-700 sm:col-span-2">{sp.error}</p>
+                <p className="text-sm text-danger-700 sm:col-span-2">{sp.error}</p>
               )}
 
               <div className="flex justify-end gap-2 sm:col-span-2">

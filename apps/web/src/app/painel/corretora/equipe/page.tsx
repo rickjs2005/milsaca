@@ -122,13 +122,13 @@ export default async function EquipePage({
       </header>
 
       {sp.ok && (
-        <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-800">
+        <div className="flex items-center gap-2 rounded-md border border-success-100 bg-success-50 px-4 py-2 text-sm text-success-700">
           <CheckCircle2 className="h-4 w-4" />
           {sp.ok}
         </div>
       )}
       {sp.error && (
-        <div className="flex items-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-800">
+        <div className="flex items-center gap-2 rounded-md border border-danger-100 bg-danger-50 px-4 py-2 text-sm text-danger-700">
           <ShieldAlert className="h-4 w-4" />
           {sp.error}
         </div>
@@ -214,7 +214,7 @@ export default async function EquipePage({
                     type="submit"
                     variant="outline"
                     size="sm"
-                    className="border-rose-300 text-rose-700 hover:bg-rose-50"
+                    className="border-danger-100 text-danger-700 hover:bg-danger-50"
                   >
                     Revogar
                   </Button>
@@ -279,8 +279,8 @@ export default async function EquipePage({
                   <Badge
                     className={
                       op.status === "ativo"
-                        ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100"
-                        : "bg-amber-100 text-amber-800 hover:bg-amber-100"
+                        ? "bg-success-100 text-success-700 hover:bg-success-100"
+                        : "bg-warning-100 text-warning-700 hover:bg-warning-100"
                     }
                   >
                     {STATUS_LABEL[op.status] ?? op.status}
@@ -291,7 +291,7 @@ export default async function EquipePage({
                       <ConfirmSubmit
                         variant="outline"
                         size="sm"
-                        className="gap-2 border-rose-300 text-rose-700 hover:bg-rose-50"
+                        className="gap-2 border-danger-100 text-danger-700 hover:bg-danger-50"
                         confirmTitle="Remover operador?"
                         confirmMessage={
                           <p>

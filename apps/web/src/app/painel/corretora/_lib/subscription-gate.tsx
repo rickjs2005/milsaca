@@ -24,11 +24,11 @@ export async function blockIfNoActiveSubscription(
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="rounded-2xl border border-rose-300 bg-rose-50 p-8 text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-700">
+      <div className="rounded-2xl border border-danger-100 bg-danger-50 p-8 text-center">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-danger-100 text-danger-700">
           <Lock className="h-6 w-6" />
         </div>
-        <h2 className="text-xl font-semibold text-rose-900">
+        <h2 className="text-xl font-semibold text-danger-700">
           {info.effectiveStatus === "canceled"
             ? "Assinatura cancelada"
             : info.effectiveStatus === "expired"
@@ -37,7 +37,7 @@ export async function blockIfNoActiveSubscription(
                 ? "Pagamento em atraso"
                 : "Sem assinatura ativa"}
         </h2>
-        <p className="mt-2 text-sm text-rose-800">
+        <p className="mt-2 text-sm text-danger-700">
           {action.charAt(0).toUpperCase() + action.slice(1)} está bloqueada até
           sua assinatura ser regularizada.
         </p>
@@ -52,7 +52,7 @@ export async function blockIfNoActiveSubscription(
           </Link>
           <Link
             href={backHref}
-            className="rounded-md border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-rose-900 hover:bg-rose-100"
+            className="rounded-md border border-danger-100 bg-white px-4 py-2 text-sm font-medium text-danger-700 hover:bg-danger-100"
           >
             Voltar
           </Link>

@@ -95,7 +95,7 @@ export default async function ContatoDetalhePage({
         {waUrl && (
           <Button
             asChild
-            className="bg-emerald-600 text-white hover:bg-emerald-700"
+            className="bg-success-600 text-white hover:bg-success-700"
           >
             <a href={waUrl} target="_blank" rel="noopener noreferrer">
               <MessageCircle className="mr-2 h-4 w-4" />
@@ -106,7 +106,7 @@ export default async function ContatoDetalhePage({
       </header>
 
       {sp.saved && (
-        <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-800">
+        <div className="flex items-center gap-2 rounded-md border border-success-100 bg-success-50 px-4 py-2 text-sm text-success-700">
           <CheckCircle2 className="h-4 w-4" />
           Contato atualizado.
         </div>
@@ -225,7 +225,7 @@ export default async function ContatoDetalhePage({
             </div>
 
             {sp.error && (
-              <p className="text-sm text-rose-700 sm:col-span-2">{sp.error}</p>
+              <p className="text-sm text-danger-700 sm:col-span-2">{sp.error}</p>
             )}
 
             <div className="flex justify-end gap-2 sm:col-span-2">
@@ -243,9 +243,9 @@ export default async function ContatoDetalhePage({
         </CardContent>
       </Card>
 
-      <Card className="border-rose-200">
+      <Card className="border-danger-100">
         <CardHeader>
-          <CardTitle className="text-base text-rose-700">Zona de risco</CardTitle>
+          <CardTitle className="text-base text-danger-700">Zona de risco</CardTitle>
           <CardDescription>
             Apagar remove apenas o contato sombra. Se houver leads vinculados, o
             sistema bloqueia o delete.
@@ -256,7 +256,7 @@ export default async function ContatoDetalhePage({
             <input type="hidden" name="id" value={contato.id} />
             <ConfirmSubmit
               variant="outline"
-              className="gap-2 border-rose-300 text-rose-700 hover:bg-rose-50"
+              className="gap-2 border-danger-100 text-danger-700 hover:bg-danger-50"
               confirmTitle="Apagar contato?"
               confirmMessage={
                 <p>

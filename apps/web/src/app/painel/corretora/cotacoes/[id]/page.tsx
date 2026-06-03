@@ -68,7 +68,7 @@ export default async function EditCotacaoCorretoraPage({
       </header>
 
       {sp.saved ? (
-        <p className="rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
+        <p className="rounded-md border border-success-100 bg-success-50 px-4 py-2 text-sm text-success-700">
           Alterações salvas.
         </p>
       ) : null}
@@ -161,7 +161,7 @@ export default async function EditCotacaoCorretoraPage({
             </div>
 
             {sp.error ? (
-              <p className="text-sm text-rose-700 sm:col-span-2">{sp.error}</p>
+              <p className="text-sm text-danger-700 sm:col-span-2">{sp.error}</p>
             ) : null}
 
             <div className="flex justify-end gap-2 sm:col-span-2">

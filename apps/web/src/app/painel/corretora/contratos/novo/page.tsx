@@ -132,8 +132,8 @@ export default async function NovoContratoPage({
       </header>
 
       {lead && !leadProdutorMissing && (
-        <Card className="border-emerald-200 bg-emerald-50">
-          <CardContent className="flex items-center gap-3 py-4 text-sm text-emerald-900">
+        <Card className="border-success-100 bg-success-50">
+          <CardContent className="flex items-center gap-3 py-4 text-sm text-success-700">
             <Link2 className="h-5 w-5 shrink-0" />
             <div>
               <p className="font-medium">
@@ -148,8 +148,8 @@ export default async function NovoContratoPage({
       )}
 
       {leadProdutorMissing && (
-        <Card className="border-rose-200 bg-rose-50">
-          <CardContent className="flex items-start gap-3 py-4 text-sm text-rose-800">
+        <Card className="border-danger-100 bg-danger-50">
+          <CardContent className="flex items-start gap-3 py-4 text-sm text-danger-700">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
             <div className="space-y-2">
               <p className="font-medium">
@@ -356,7 +356,7 @@ export default async function NovoContratoPage({
               </div>
 
               {sp.error && (
-                <p className="text-sm text-rose-700 sm:col-span-2">{sp.error}</p>
+                <p className="text-sm text-danger-700 sm:col-span-2">{sp.error}</p>
               )}
 
               <div className="flex justify-end gap-2 sm:col-span-2">
