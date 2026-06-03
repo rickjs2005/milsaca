@@ -32,10 +32,11 @@ function fmtDate(iso: string | null): string {
 
 type VendaRow = {
   id: string;
+  code: string;
   bag_count: number | null;
   coffee_type: string | null;
-  proposed_price: number | string | null;
-  updated_at: string | null;
+  total_value: number | string | null;
+  created_at: string | null;
   corretoras: { name: string } | { name: string }[] | null;
 };
 
@@ -47,24 +48,23 @@ function pickOne<T>(v: T | T[] | null | undefined): T | null {
 export default async function VendasProdutorPage() {
   const user = await requireUser("/painel/produtor/vendas");
 
+  // Venda = CONTRATO (ativo/finalizado). Fonte única; coerente com o estoque.
   const supabase = await createClient();
   const { data } = await supabase
-    .from("leads")
+    .from("contratos")
     .select(
-      "id, bag_count, coffee_type, proposed_price, updated_at, corretoras(name)",
+      "id, code, bag_count, coffee_type, total_value, status, created_at, corretoras(name)",
     )
     .eq("produtor_id", user.id)
-    .eq("status", "convertido")
-    .order("updated_at", { ascending: false });
+    .in("status", ["ativo", "finalizado"])
+    .order("created_at", { ascending: false });
 
   const rows = (data ?? []) as VendaRow[];
 
   const totals = rows.reduce(
     (acc, r) => {
-      const sacas = r.bag_count ?? 0;
-      const preco = r.proposed_price != null ? Number(r.proposed_price) : 0;
-      acc.sacas += sacas;
-      acc.valor += sacas * preco;
+      acc.sacas += r.bag_count ?? 0;
+      acc.valor += r.total_value != null ? Number(r.total_value) : 0;
       return acc;
     },
     { sacas: 0, valor: 0 },
@@ -104,9 +104,8 @@ export default async function VendasProdutorPage() {
               {rows.map((r) => {
                 const cor = pickOne(r.corretoras);
                 const sacas = r.bag_count ?? 0;
-                const preco =
-                  r.proposed_price != null ? Number(r.proposed_price) : 0;
-                const total = sacas * preco;
+                const total = r.total_value != null ? Number(r.total_value) : 0;
+                const preco = sacas > 0 ? total / sacas : 0;
                 const cafe = coffeeLabel(r.coffee_type);
                 return (
                   <div key={r.id} className="p-card">
@@ -126,7 +125,7 @@ export default async function VendasProdutorPage() {
                           {` · ${fmtBRL(preco)}/saca`}
                         </p>
                         <p className="mt-1 text-caption text-neutral-500">
-                          Fechada em {fmtDate(r.updated_at)}
+                          Fechada em {fmtDate(r.created_at)}
                         </p>
                       </div>
                       <div className="shrink-0 text-right">

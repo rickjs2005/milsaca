@@ -178,8 +178,9 @@ export default async function InicioProdutorPage() {
   const preco = resumo.cotacao?.price ?? null;
   const valorDisponivel =
     preco != null ? Math.round(estoque.disponivel * preco) : null;
-  const valorVendido =
-    preco != null ? Math.round(estoque.vendido * preco) : null;
+  // Valor já vendido = REAL (Σ total_value dos contratos), não estimado pela
+  // cotação de hoje — bate com a tela de Vendas.
+  const valorVendido = estoque.valorVendido > 0 ? estoque.valorVendido : null;
   const pct = (n: number) =>
     estoque.total > 0 ? Math.round((n / estoque.total) * 100) : 0;
 

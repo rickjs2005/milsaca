@@ -4,42 +4,60 @@ import { createClient } from "@milsaca/db/web/server";
  * Estoque de café do produtor — o conceito central da comercialização.
  * Total (lotes) = Vendido + Em negociação + Disponível.
  *
- * Fonte: lotes (total registrado) + leads (propostas do produtor):
- *   - vendido       = leads convertidos (viraram venda/contrato)
- *   - emNegociacao  = leads novos / em negociação
- *   - disponivel    = max(0, total - vendido - emNegociacao)
- * O disponível atualiza sozinho conforme as propostas avançam.
+ * UMA fonte de verdade: a VENDA flui pelo CONTRATO (não pelo lead).
+ *   - total        = lotes registrados (peso_sacas, não-arquivados)
+ *   - vendido      = contratos ativo/finalizado  (bag_count)
+ *   - emNegociacao = contratos rascunho/em_analise (bag_count)
+ *   - cancelado    = ignorado
+ *   - disponivel   = max(0, total - vendido - emNegociacao)
+ * Conversa (lead) não compromete estoque; só o contrato compromete — coerente
+ * com o guard de criação de contrato e com o estoque por lote (contratos.lote_id).
  */
 export type EstoqueProdutor = {
   total: number;
   vendido: number;
   emNegociacao: number;
   disponivel: number;
+  /** Valor REAL já vendido (Σ total_value dos contratos ativo/finalizado). */
+  valorVendido: number;
 };
+
+const STATUS_VENDIDO = ["ativo", "finalizado"];
+const STATUS_NEGOCIACAO = ["rascunho", "em_analise"];
 
 export async function loadEstoqueProdutor(
   userId: string,
 ): Promise<EstoqueProdutor> {
   const supabase = await createClient();
-  const [lotesRes, leadsRes] = await Promise.all([
+  const [lotesRes, contratosRes] = await Promise.all([
     supabase.from("lotes").select("peso_sacas, status").eq("produtor_id", userId),
-    supabase.from("leads").select("bag_count, status").eq("produtor_id", userId),
+    supabase
+      .from("contratos")
+      .select("bag_count, total_value, status")
+      .eq("produtor_id", userId),
   ]);
 
   const total = ((lotesRes.data ?? []) as { peso_sacas: number | string | null; status: string }[])
     .filter((l) => l.status !== "arquivado")
     .reduce((s, l) => s + Number(l.peso_sacas ?? 0), 0);
 
-  const leads = (leadsRes.data ?? []) as { bag_count: number | null; status: string }[];
-  const vendido = leads
-    .filter((l) => l.status === "convertido")
-    .reduce((s, l) => s + (l.bag_count ?? 0), 0);
-  const emNegociacao = leads
-    .filter((l) => l.status === "novo" || l.status === "em_negociacao")
-    .reduce((s, l) => s + (l.bag_count ?? 0), 0);
+  const contratos = (contratosRes.data ?? []) as {
+    bag_count: number | null;
+    total_value: number | string | null;
+    status: string;
+  }[];
+  const vendidos = contratos.filter((c) => STATUS_VENDIDO.includes(c.status));
+  const vendido = vendidos.reduce((s, c) => s + (c.bag_count ?? 0), 0);
+  const valorVendido = vendidos.reduce(
+    (s, c) => s + (c.total_value != null ? Number(c.total_value) : 0),
+    0,
+  );
+  const emNegociacao = contratos
+    .filter((c) => STATUS_NEGOCIACAO.includes(c.status))
+    .reduce((s, c) => s + (c.bag_count ?? 0), 0);
 
   const disponivel = Math.max(0, total - vendido - emNegociacao);
-  return { total, vendido, emNegociacao, disponivel };
+  return { total, vendido, emNegociacao, disponivel, valorVendido };
 }
 
 /**
