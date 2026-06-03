@@ -501,14 +501,12 @@ export async function grantCorretoraTier(formData: FormData) {
   if (tier === "gratuito") {
     // Cancela subscription existente. Painel da corretora cai pra Free
     // automaticamente (detectCurrentTier resolve "none" como Gratuito).
-    const { error: cancelErr } = await supabase
-      .from("subscriptions")
-      .update({
-        status: "canceled",
-        canceled_at: new Date().toISOString(),
-      })
-      .eq("corretora_id", corretoraId);
-    if (cancelErr) {
+    // Atômico: cancela a subscription + audit numa transação (migration 20261030).
+    const { error: grantErr } = await supabase.rpc(
+      "admin_grant_corretora_tier",
+      { p_corretora_id: corretoraId, p_tier: "gratuito" },
+    );
+    if (grantErr) {
       const log = await getReqLogger({
         action: "grantCorretoraTier",
         userId: actor.id,
@@ -516,26 +514,12 @@ export async function grantCorretoraTier(formData: FormData) {
       });
       log.error("grant_tier_cancel_falhou", {
         tier: "gratuito",
-        code: cancelErr.code,
-        err: safeError(cancelErr),
+        code: grantErr.code,
+        err: safeError(grantErr),
       });
-    }
-
-    const { error: auditErr } = await supabase.from("audit_log").insert({
-      actor_id: actor.id,
-      corretora_id: corretoraId,
-      action: "grant_tier_gratuito",
-      entity: "subscription",
-      entity_id: corretoraId,
-      payload: { tier: "gratuito" },
-    });
-    if (auditErr) {
-      const log = await getReqLogger({
-        action: "grantCorretoraTier",
-        userId: actor.id,
-        corretoraId,
-      });
-      log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+      redirect(
+        `/admin/corretoras/${corretoraId}?error=${encodeURIComponent(friendlyPostgresError(grantErr))}`,
+      );
     }
 
     revalidatePath("/admin/corretoras");
@@ -607,25 +591,19 @@ export async function grantCorretoraTier(formData: FormData) {
     periodEnd.setFullYear(periodEnd.getFullYear() + 1);
   }
 
-  // Upsert da subscription. Schema tem corretora_id UNIQUE, então
-  // onConflict resolve em update — sem race condition.
-  const { error: subErr } = await supabase
-    .from("subscriptions")
-    .upsert(
-      {
-        corretora_id: corretoraId,
-        plan_id: planId,
-        status: "active",
-        started_at: now.toISOString(),
-        current_period_start: now.toISOString(),
-        current_period_end: periodEnd.toISOString(),
-        canceled_at: null,
-        trial_ends_at: null,
-      },
-      { onConflict: "corretora_id" },
-    );
+  // Atômico: upsert da subscription + audit numa transação (migration 20261030).
+  // O plano já foi resolvido (self-heal idempotente acima) — passamos só o id.
+  const { error: grantErr } = await supabase.rpc(
+    "admin_grant_corretora_tier",
+    {
+      p_corretora_id: corretoraId,
+      p_tier: tier,
+      p_plan_id: planId,
+      p_period_end: periodEnd.toISOString(),
+    },
+  );
 
-  if (subErr) {
+  if (grantErr) {
     const log = await getReqLogger({
       action: "grantCorretoraTier",
       userId: actor.id,
@@ -633,29 +611,12 @@ export async function grantCorretoraTier(formData: FormData) {
     });
     log.error("grant_tier_subscription_upsert_falhou", {
       tier,
-      code: subErr.code,
-      err: safeError(subErr),
+      code: grantErr.code,
+      err: safeError(grantErr),
     });
     redirect(
-      `/admin/corretoras/${corretoraId}?error=${encodeURIComponent(friendlyPostgresError(subErr))}`,
+      `/admin/corretoras/${corretoraId}?error=${encodeURIComponent(friendlyPostgresError(grantErr))}`,
     );
-  }
-
-  const { error: auditErr } = await supabase.from("audit_log").insert({
-    actor_id: actor.id,
-    corretora_id: corretoraId,
-    action: `grant_tier_${tier}`,
-    entity: "subscription",
-    entity_id: corretoraId,
-    payload: { tier, plan_id: planId, period_end: periodEnd.toISOString() },
-  });
-  if (auditErr) {
-    const log = await getReqLogger({
-      action: "grantCorretoraTier",
-      userId: actor.id,
-      corretoraId,
-    });
-    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
   }
 
   revalidatePath("/admin/corretoras");

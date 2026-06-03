@@ -36,17 +36,16 @@ export async function updateSubscription(formData: FormData) {
     parsed.data;
 
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("subscriptions")
-    .update({
-      status,
-      plan_id,
-      trial_ends_at: dateInputToIso(trial_ends_at),
-      current_period_end: dateInputToIso(current_period_end),
-      canceled_at: status === "canceled" ? new Date().toISOString() : null,
-      notes,
-    })
-    .eq("id", id);
+  // Atômico: a RPC faz o UPDATE da subscription + o INSERT no audit_log numa
+  // única transação (migration 20261030).
+  const { error } = await supabase.rpc("admin_update_subscription", {
+    p_id: id,
+    p_status: status,
+    p_plan_id: plan_id,
+    p_trial_ends_at: dateInputToIso(trial_ends_at),
+    p_current_period_end: dateInputToIso(current_period_end),
+    p_notes: notes ?? null,
+  });
 
   if (error) {
     const log = await getReqLogger({
@@ -61,22 +60,6 @@ export async function updateSubscription(formData: FormData) {
     redirect(
       `/admin/assinaturas/${id}?error=${encodeURIComponent(friendlyPostgresError(error))}`,
     );
-  }
-
-  const { error: auditErr } = await supabase.from("audit_log").insert({
-    actor_id: actor.id,
-    action: "update_subscription",
-    entity: "subscription",
-    entity_id: id,
-    payload: { status, plan_id },
-  });
-  if (auditErr) {
-    const log = await getReqLogger({
-      action: "updateSubscription",
-      userId: actor.id,
-      entityId: id,
-    });
-    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
   }
 
   revalidatePath("/admin/assinaturas");
@@ -153,13 +136,10 @@ export async function cancelSubscription(formData: FormData) {
   const { id } = parsed.data;
 
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("subscriptions")
-    .update({
-      status: "canceled",
-      canceled_at: new Date().toISOString(),
-    })
-    .eq("id", id);
+  // Atômico: cancela + audit numa transação (migration 20261030).
+  const { error } = await supabase.rpc("admin_cancel_subscription", {
+    p_id: id,
+  });
   if (error) {
     const log = await getReqLogger({
       action: "cancelSubscription",
@@ -170,22 +150,9 @@ export async function cancelSubscription(formData: FormData) {
       code: error.code,
       err: safeError(error),
     });
-  }
-
-  const { error: auditErr } = await supabase.from("audit_log").insert({
-    actor_id: actor.id,
-    action: "subscription_canceled",
-    entity: "subscription",
-    entity_id: id,
-    payload: {},
-  });
-  if (auditErr) {
-    const log = await getReqLogger({
-      action: "cancelSubscription",
-      userId: actor.id,
-      entityId: id,
-    });
-    log.warn("audit_insert_falhou", { err: safeError(auditErr) });
+    redirect(
+      `/admin/assinaturas/${id}?error=${encodeURIComponent(friendlyPostgresError(error))}`,
+    );
   }
 
   revalidatePath("/admin/assinaturas");

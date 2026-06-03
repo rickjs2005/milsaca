@@ -2646,6 +2646,30 @@ export type Database = {
         Args: { p_mensagem: string; p_user_id: string };
         Returns: undefined;
       };
+      admin_update_subscription: {
+        Args: {
+          p_current_period_end: string | null;
+          p_id: string;
+          p_notes: string | null;
+          p_plan_id: string | null;
+          p_status: string;
+          p_trial_ends_at: string | null;
+        };
+        Returns: undefined;
+      };
+      admin_cancel_subscription: {
+        Args: { p_id: string };
+        Returns: undefined;
+      };
+      admin_grant_corretora_tier: {
+        Args: {
+          p_corretora_id: string;
+          p_period_end?: string | null;
+          p_plan_id?: string | null;
+          p_tier: string;
+        };
+        Returns: undefined;
+      };
       current_corretora: { Args: never; Returns: string };
       current_role: {
         Args: never;
