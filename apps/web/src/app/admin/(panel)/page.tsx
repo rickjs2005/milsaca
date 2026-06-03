@@ -338,18 +338,18 @@ function AlertCard({
 }) {
   const TONE_BORDER: Record<AlertTone, string> = {
     premium: "border-milsaca-dourado/60 bg-milsaca-dourado/8",
-    info: "border-sky-200 bg-sky-50",
-    danger: "border-rose-200 bg-rose-50",
+    info: "border-info-100 bg-info-50",
+    danger: "border-danger-100 bg-danger-50",
   };
   const TONE_ICON: Record<AlertTone, string> = {
     premium: "bg-milsaca-dourado/20 text-milsaca-cafezal",
-    info: "bg-sky-100 text-sky-700",
-    danger: "bg-rose-100 text-rose-700",
+    info: "bg-info-100 text-info-700",
+    danger: "bg-danger-100 text-danger-700",
   };
   const TONE_CTA: Record<AlertTone, string> = {
     premium: "text-milsaca-cafezal",
-    info: "text-sky-700",
-    danger: "text-rose-700",
+    info: "text-info-700",
+    danger: "text-danger-700",
   };
   return (
     <Link

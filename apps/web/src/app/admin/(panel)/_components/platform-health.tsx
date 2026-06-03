@@ -19,20 +19,20 @@ const STATUS_VISUAL: Record<
 > = {
   ok: {
     icon: CheckCircle2,
-    iconClass: "text-emerald-600",
-    chipClass: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+    iconClass: "text-success-600",
+    chipClass: "bg-success-50 text-success-700 ring-success-100",
     label: "OK",
   },
   warn: {
     icon: AlertTriangle,
-    iconClass: "text-amber-600",
-    chipClass: "bg-amber-50 text-amber-800 ring-amber-200",
+    iconClass: "text-warning-600",
+    chipClass: "bg-warning-50 text-warning-700 ring-warning-100",
     label: "Atenção",
   },
   pending: {
     icon: Circle,
-    iconClass: "text-slate-400",
-    chipClass: "bg-slate-100 text-slate-600 ring-slate-200",
+    iconClass: "text-neutral-400",
+    chipClass: "bg-neutral-100 text-neutral-600 ring-neutral-200",
     label: "Pendente",
   },
 };
@@ -102,13 +102,13 @@ export function PlatformHealth({ cotacoesLastSync }: Props) {
   ];
 
   return (
-    <section className="flex flex-col rounded-card border border-slate-200 bg-white p-6 shadow-card">
+    <section className="flex flex-col rounded-card border border-neutral-200 bg-white p-6 shadow-card">
       <header className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-base font-semibold text-milsaca-preto">
             Saúde da plataforma
           </h2>
-          <p className="mt-0.5 text-xs text-slate-500">
+          <p className="mt-0.5 text-xs text-neutral-500">
             Status das integrações críticas.
           </p>
         </div>
@@ -125,7 +125,7 @@ export function PlatformHealth({ cotacoesLastSync }: Props) {
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-medium text-slate-900">
+                  <p className="text-sm font-medium text-neutral-900">
                     {c.label}
                   </p>
                   <span
@@ -134,7 +134,7 @@ export function PlatformHealth({ cotacoesLastSync }: Props) {
                     {v.label}
                   </span>
                 </div>
-                <p className="mt-0.5 text-xs text-slate-500">{c.hint}</p>
+                <p className="mt-0.5 text-xs text-neutral-500">{c.hint}</p>
               </div>
             </li>
           );
