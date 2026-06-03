@@ -25,7 +25,7 @@ type AuditRow = {
 
 const FALLBACK: { icon: LucideIcon; tone: string } = {
   icon: ScrollText,
-  tone: "bg-slate-100 text-slate-600",
+  tone: "bg-neutral-100 text-neutral-600",
 };
 
 /**
@@ -44,53 +44,53 @@ const EVENT_MAP: Record<
   },
   "update:corretora": {
     icon: Building2,
-    tone: "bg-sky-50 text-sky-700",
+    tone: "bg-info-50 text-info-700",
     label: (r) => `Corretora "${r.corretora?.name ?? "—"}" atualizada`,
     href: (r) => `/admin/corretoras/${r.entity_id ?? ""}`,
   },
   "toggle:corretora": {
     icon: Building2,
-    tone: "bg-amber-50 text-amber-800",
+    tone: "bg-warning-50 text-warning-700",
     label: (r) =>
       `Corretora "${r.corretora?.name ?? "—"}" ${(r.payload?.active ? "ativada" : "desativada")}`,
   },
   "approve:corretora": {
     icon: CheckCircle2,
-    tone: "bg-emerald-50 text-emerald-700",
+    tone: "bg-success-50 text-success-700",
     label: (r) => `Corretora aprovada — "${r.corretora?.name ?? "—"}"`,
   },
   "reject:signup": {
     icon: XCircle,
-    tone: "bg-rose-50 text-rose-700",
+    tone: "bg-danger-50 text-danger-700",
     label: () => `Cadastro de corretora rejeitado`,
   },
   "create:plan": {
     icon: Wallet,
-    tone: "bg-emerald-50 text-emerald-700",
+    tone: "bg-success-50 text-success-700",
     label: () => "Novo plano cadastrado",
     href: () => "/admin/planos",
   },
   "update:plan": {
     icon: Wallet,
-    tone: "bg-sky-50 text-sky-700",
+    tone: "bg-info-50 text-info-700",
     label: () => "Plano atualizado",
     href: () => "/admin/planos",
   },
   "toggle:plan": {
     icon: Wallet,
-    tone: "bg-amber-50 text-amber-800",
+    tone: "bg-warning-50 text-warning-700",
     label: (r) =>
       `Plano ${r.payload?.active ? "ativado" : "desativado"}`,
     href: () => "/admin/planos",
   },
   "link:profile": {
     icon: UserPlus,
-    tone: "bg-sky-50 text-sky-700",
+    tone: "bg-info-50 text-info-700",
     label: () => "Operador vinculado à corretora",
   },
   "block:profile": {
     icon: ShieldOff,
-    tone: "bg-rose-50 text-rose-700",
+    tone: "bg-danger-50 text-danger-700",
     label: () => "Acesso bloqueado",
   },
 };
@@ -129,13 +129,13 @@ export async function ActivityFeed() {
   const rows = ((data ?? []) as unknown as AuditRow[]) ?? [];
 
   return (
-    <section className="flex flex-col rounded-card border border-slate-200 bg-white p-6 shadow-card">
+    <section className="flex flex-col rounded-card border border-neutral-200 bg-white p-6 shadow-card">
       <header className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-base font-semibold text-milsaca-preto">
             Atividade recente
           </h2>
-          <p className="mt-0.5 text-xs text-slate-500">
+          <p className="mt-0.5 text-xs text-neutral-500">
             Últimas ações registradas no sistema.
           </p>
         </div>
@@ -149,19 +149,19 @@ export async function ActivityFeed() {
 
       {rows.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-8 text-center">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-neutral-400">
             <Inbox className="h-5 w-5" />
           </span>
-          <p className="text-sm font-medium text-slate-700">
+          <p className="text-sm font-medium text-neutral-700">
             Nada por aqui ainda
           </p>
-          <p className="max-w-xs text-xs text-slate-500">
+          <p className="max-w-xs text-xs text-neutral-500">
             Ações administrativas (criar/editar/aprovar) aparecem aqui assim
             que acontecerem.
           </p>
         </div>
       ) : (
-        <ul className="-mx-2 divide-y divide-slate-100">
+        <ul className="-mx-2 divide-y divide-neutral-100">
           {rows.map((r) => {
             const m = EVENT_MAP[keyOf(r)] ?? null;
             const Icon = (m?.icon ?? FALLBACK.icon) as LucideIcon;
@@ -178,10 +178,10 @@ export async function ActivityFeed() {
                   <Icon className="h-4 w-4" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-slate-900">
+                  <p className="truncate text-sm font-medium text-neutral-900">
                     {label}
                   </p>
-                  <p className="mt-0.5 text-xs text-slate-500">
+                  <p className="mt-0.5 text-xs text-neutral-500">
                     por {actor} · {timeAgo(r.created_at)}
                   </p>
                 </div>

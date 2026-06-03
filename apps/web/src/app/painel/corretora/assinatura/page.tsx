@@ -50,11 +50,11 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_TONE: Record<string, string> = {
-  trial: "bg-sky-50 text-sky-800 ring-sky-200",
-  active: "bg-emerald-50 text-emerald-800 ring-emerald-200",
-  past_due: "bg-rose-50 text-rose-800 ring-rose-200",
-  canceled: "bg-slate-100 text-slate-700 ring-slate-200",
-  expired: "bg-rose-50 text-rose-800 ring-rose-200",
+  trial: "bg-info-50 text-info-700 ring-info-100",
+  active: "bg-success-50 text-success-700 ring-success-100",
+  past_due: "bg-danger-50 text-danger-700 ring-danger-100",
+  canceled: "bg-neutral-100 text-neutral-700 ring-neutral-200",
+  expired: "bg-danger-50 text-danger-700 ring-danger-100",
   none: "bg-milsaca-dourado/15 text-milsaca-cafezal ring-milsaca-dourado/40",
 };
 

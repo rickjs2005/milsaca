@@ -23,40 +23,40 @@ export default async function AdminLgpdPage({ searchParams }: PageProps) {
       />
 
       {sp.ok ? (
-        <div className="mb-6 flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+        <div className="mb-6 flex items-center gap-2 rounded-md border border-success-100 bg-success-50 px-4 py-3 text-sm text-success-700">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           {sp.ok}
         </div>
       ) : null}
       {sp.warn ? (
-        <div className="mb-6 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div className="mb-6 flex items-start gap-2 rounded-md border border-warning-100 bg-warning-50 px-4 py-3 text-sm text-warning-700">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           {sp.warn}
         </div>
       ) : null}
       {sp.error ? (
-        <div className="mb-6 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <div className="mb-6 rounded-md border border-danger-100 bg-danger-50 px-4 py-3 text-sm text-danger-700">
           {sp.error}
         </div>
       ) : null}
 
-      <section className="mb-6 rounded-card border border-slate-200 bg-white p-6 shadow-card">
+      <section className="mb-6 rounded-card border border-neutral-200 bg-white p-6 shadow-card">
         <header className="mb-4 flex items-center gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-700 ring-1 ring-inset ring-rose-200">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-danger-100 text-danger-700 ring-1 ring-inset ring-danger-100">
             <ShieldAlert className="h-5 w-5" />
           </span>
           <div>
             <h2 className="text-lg font-semibold text-milsaca-preto">
               Anonimizar titular
             </h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-neutral-500">
               Ação destrutiva e irreversível. Use apenas em resposta a um
               pedido formal de exclusão do titular.
             </p>
           </div>
         </header>
 
-        <div className="mb-5 space-y-3 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <div className="mb-5 space-y-3 rounded-md border border-warning-100 bg-warning-50 p-4 text-sm text-warning-700">
           <p className="font-medium">O que a anonimização faz:</p>
           <ul className="space-y-1 text-xs">
             <li className="flex items-start gap-2">
@@ -82,7 +82,7 @@ export default async function AdminLgpdPage({ searchParams }: PageProps) {
               </span>
             </li>
           </ul>
-          <p className="flex items-start gap-2 border-t border-amber-200 pt-3 text-xs">
+          <p className="flex items-start gap-2 border-t border-warning-100 pt-3 text-xs">
             <Info className="mt-0.5 h-4 w-4 shrink-0" />
             <span>
               A neutralização do e-mail em <code>auth.users</code> depende da{" "}
