@@ -8,6 +8,8 @@ export type MarketTrend = {
   pct: number | null;
   /** Rótulo do período usado: "30 dias" | "7 dias" | "hoje". */
   label: string;
+  /** Série de preços do histórico, do mais antigo pro mais novo (alimenta o Sparkline). */
+  series: number[];
 };
 
 type HistoryRow = {
@@ -105,7 +107,12 @@ export async function loadMarketTrend(
       label = "hoje";
     }
 
-    result[symbol] = { direction: directionFor(pct), pct, label };
+    result[symbol] = {
+      direction: directionFor(pct),
+      pct,
+      label,
+      series: points.map((p) => p.price),
+    };
   }
 
   return result;

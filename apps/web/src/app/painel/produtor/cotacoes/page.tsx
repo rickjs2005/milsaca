@@ -13,6 +13,7 @@ import {
 import { requireUser } from "@/lib/auth";
 import { timeAgo } from "@/lib/format";
 import { DemoModeBadge } from "@/components/demo-mode-badge";
+import { Sparkline } from "@/components/sparkline";
 import {
   Card,
   CardContent,
@@ -374,6 +375,9 @@ function MarketCard({ m, trend }: { m: MarketIndicator; trend?: MarketTrend }) {
             · {trend.label}
           </span>
         ) : null}
+        {trend?.series && trend.series.length >= 2 ? (
+          <Sparkline data={trend.series} className="h-7 w-full text-neutral-400" />
+        ) : null}
         <p
           className={`text-caption ${
             m.stale ? "text-warning-700" : "text-neutral-500"
@@ -478,6 +482,10 @@ function CotacaoCardView({
               : ""}{" "}
             vs CEPEA
           </span>
+        ) : null}
+
+        {c.series && c.series.length >= 2 ? (
+          <Sparkline data={c.series} className="h-7 w-full text-milsaca-dourado-texto/50" />
         ) : null}
 
         <p

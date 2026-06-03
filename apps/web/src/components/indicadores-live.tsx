@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { createClient } from "@milsaca/db/web/server";
 import { loadMarketTrend, type MarketTrend } from "@/lib/market-trend";
+import { Sparkline } from "@/components/sparkline";
 import { cn } from "@/lib/utils";
 
 type MarketQuote = {
@@ -305,6 +306,9 @@ function IndicadorCard({
               : ""}{" "}
             · {trend.label}
           </span>
+        ) : null}
+        {trend?.series && trend.series.length >= 2 ? (
+          <Sparkline data={trend.series} className="mt-1 h-7 w-full text-neutral-300" />
         ) : null}
       </CardContent>
     </Card>
