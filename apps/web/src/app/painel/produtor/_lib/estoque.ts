@@ -2,39 +2,43 @@ import { createClient } from "@milsaca/db/web/server";
 
 /**
  * Estoque de café do produtor — o conceito central da comercialização.
- * Total (lotes) = Vendido + Em negociação + Disponível.
- *
- * UMA fonte de verdade: a VENDA flui pelo CONTRATO (não pelo lead).
+ * Reconcilia TODOS os módulos (Propostas, Vendas, Financeiro, Meu Café):
  *   - total        = lotes registrados (peso_sacas, não-arquivados)
- *   - vendido      = contratos ativo/finalizado  (bag_count)
- *   - emNegociacao = contratos rascunho/em_analise (bag_count)
+ *   - vendido      = CONTRATOS ativo/finalizado (= Vendas = Financeiro)
+ *   - naoVendido   = total − vendido (= Σ "não vendidas" por lote no Meu Café)
+ *   - emNegociacao = PROPOSTAS abertas (leads novo/em_negociacao) — interesse,
+ *                    ainda não compromete; é um subconjunto do não-vendido
+ *   - livre        = max(0, naoVendido − emNegociacao)
  *   - cancelado    = ignorado
- *   - disponivel   = max(0, total - vendido - emNegociacao)
- * Conversa (lead) não compromete estoque; só o contrato compromete — coerente
- * com o guard de criação de contrato e com o estoque por lote (contratos.lote_id).
+ * A venda flui pelo CONTRATO; a negociação é a proposta (lead). Cada um aparece
+ * no módulo certo e os números fecham (total = vendido + emNeg + livre).
  */
 export type EstoqueProdutor = {
   total: number;
   vendido: number;
   emNegociacao: number;
-  disponivel: number;
+  /** Não vendido (total − vendido) — bate com o "disponível" por lote. */
+  naoVendido: number;
+  /** Disponível livre de negociação (não-vendido − em negociação). */
+  livre: number;
   /** Valor REAL já vendido (Σ total_value dos contratos ativo/finalizado). */
   valorVendido: number;
 };
 
 const STATUS_VENDIDO = ["ativo", "finalizado"];
-const STATUS_NEGOCIACAO = ["rascunho", "em_analise"];
+const STATUS_EM_NEG_LEAD = ["novo", "em_negociacao"];
 
 export async function loadEstoqueProdutor(
   userId: string,
 ): Promise<EstoqueProdutor> {
   const supabase = await createClient();
-  const [lotesRes, contratosRes] = await Promise.all([
+  const [lotesRes, contratosRes, leadsRes] = await Promise.all([
     supabase.from("lotes").select("peso_sacas, status").eq("produtor_id", userId),
     supabase
       .from("contratos")
       .select("bag_count, total_value, status")
       .eq("produtor_id", userId),
+    supabase.from("leads").select("bag_count, status").eq("produtor_id", userId),
   ]);
 
   const total = ((lotesRes.data ?? []) as { peso_sacas: number | string | null; status: string }[])
@@ -52,12 +56,18 @@ export async function loadEstoqueProdutor(
     (s, c) => s + (c.total_value != null ? Number(c.total_value) : 0),
     0,
   );
-  const emNegociacao = contratos
-    .filter((c) => STATUS_NEGOCIACAO.includes(c.status))
-    .reduce((s, c) => s + (c.bag_count ?? 0), 0);
 
-  const disponivel = Math.max(0, total - vendido - emNegociacao);
-  return { total, vendido, emNegociacao, disponivel, valorVendido };
+  const leads = (leadsRes.data ?? []) as { bag_count: number | null; status: string }[];
+  const emNegociacaoBruto = leads
+    .filter((l) => STATUS_EM_NEG_LEAD.includes(l.status))
+    .reduce((s, l) => s + (l.bag_count ?? 0), 0);
+
+  const naoVendido = Math.max(0, total - vendido);
+  // Em negociação não pode exceder o que não foi vendido (clamp p/ coerência).
+  const emNegociacao = Math.min(emNegociacaoBruto, naoVendido);
+  const livre = Math.max(0, naoVendido - emNegociacao);
+
+  return { total, vendido, emNegociacao, naoVendido, livre, valorVendido };
 }
 
 /**

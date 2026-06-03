@@ -177,7 +177,7 @@ export default async function InicioProdutorPage() {
 
   const preco = resumo.cotacao?.price ?? null;
   const valorDisponivel =
-    preco != null ? Math.round(estoque.disponivel * preco) : null;
+    preco != null ? Math.round(estoque.naoVendido * preco) : null;
   // Valor já vendido = REAL (Σ total_value dos contratos), não estimado pela
   // cotação de hoje — bate com a tela de Vendas.
   const valorVendido = estoque.valorVendido > 0 ? estoque.valorVendido : null;
@@ -199,7 +199,7 @@ export default async function InicioProdutorPage() {
         </h1>
         <p className="mt-0.5 text-body-sm text-neutral-600">
           {estoque.total > 0
-            ? `${estoque.disponivel} sacas disponíveis · ${estoque.vendido} já vendidas`
+            ? `${estoque.naoVendido} disponíveis · ${estoque.emNegociacao} em negociação · ${estoque.vendido} vendidas`
             : "Cadastre seu café e receba propostas das corretoras."}
         </p>
       </header>
@@ -221,7 +221,7 @@ export default async function InicioProdutorPage() {
               {valorDisponivel != null ? BRL.format(valorDisponivel) : "—"}
             </p>
             <p className="mt-2 text-caption text-neutral-500">
-              {estoque.disponivel} sacas × cotação de hoje
+              {estoque.naoVendido} sacas × cotação de hoje
             </p>
             <p className="text-caption text-neutral-500">
               Já vendido: {estoque.vendido} sacas
@@ -307,7 +307,7 @@ export default async function InicioProdutorPage() {
           <div className="mt-3 flex h-3 w-full overflow-hidden rounded-pill bg-neutral-100">
             <div
               className="bg-success-500"
-              style={{ width: `${pct(estoque.disponivel)}%` }}
+              style={{ width: `${pct(estoque.livre)}%` }}
             />
             <div
               className="bg-warning-400"
@@ -321,9 +321,9 @@ export default async function InicioProdutorPage() {
           <div className="mt-3 grid grid-cols-3 gap-2 text-caption">
             <div className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-success-500" />
-              <span className="text-neutral-600">Disponível</span>
+              <span className="text-neutral-600">Livre</span>
               <span className="font-semibold text-milsaca-cafezal">
-                {estoque.disponivel}
+                {estoque.livre}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
