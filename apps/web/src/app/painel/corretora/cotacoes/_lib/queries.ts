@@ -147,3 +147,70 @@ export async function loadCotacoesKpis(
     diasDesdeUltima: ultimaData ? diasDesde(ultimaData) : null,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Inteligência competitiva (#6): onde a cotação da corretora se posiciona
+// frente às outras corretoras (mesma espécie). A RLS deixa ler cotações
+// active/stale de todas — é o mesmo dado que o produtor compara.
+// ---------------------------------------------------------------------------
+export type PosicaoEspecie = {
+  /** Posição (1 = melhor oferta / maior preço pro produtor). */
+  rank: number;
+  /** Quantas corretoras têm cotação dessa espécie. */
+  total: number;
+  /** Quanto a cotação da corretora está acima/abaixo da média do mercado. */
+  deltaVsMediaPct: number | null;
+} | null;
+
+export type PosicaoMercado = {
+  arabica: PosicaoEspecie;
+  conillon: PosicaoEspecie;
+};
+
+async function posicaoEspecie(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  specie: CoffeeSpecie,
+  corretoraId: string,
+): Promise<PosicaoEspecie> {
+  const { data } = await supabase
+    .from("cotacoes")
+    .select("price, corretora_id, reference_date, created_at")
+    .eq("specie", specie)
+    .in("status", ["active", "stale"])
+    .order("reference_date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(1000);
+
+  const rows = (data ?? []) as {
+    price: number | string;
+    corretora_id: string;
+  }[];
+
+  // Linhas já vêm da mais recente pra mais antiga → 1ª de cada corretora = atual.
+  const latest = new Map<string, number>();
+  for (const r of rows) {
+    if (!latest.has(r.corretora_id)) latest.set(r.corretora_id, Number(r.price));
+  }
+
+  const minha = latest.get(corretoraId);
+  if (minha == null) return null;
+  const prices = [...latest.values()];
+  const total = prices.length;
+  if (total < 2) return null; // sem comparação não há posição
+
+  const rank = 1 + prices.filter((p) => p > minha).length;
+  const media = prices.reduce((s, p) => s + p, 0) / total;
+  const deltaVsMediaPct = media > 0 ? ((minha - media) / media) * 100 : null;
+  return { rank, total, deltaVsMediaPct };
+}
+
+export async function loadPosicaoMercado(
+  corretoraId: string,
+): Promise<PosicaoMercado> {
+  const supabase = await createClient();
+  const [arabica, conillon] = await Promise.all([
+    posicaoEspecie(supabase, "arabica", corretoraId),
+    posicaoEspecie(supabase, "conillon", corretoraId),
+  ]);
+  return { arabica, conillon };
+}

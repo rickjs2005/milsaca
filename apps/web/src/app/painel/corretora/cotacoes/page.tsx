@@ -1,13 +1,19 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CalendarClock, Coffee, LineChart, Plus } from "lucide-react";
+import { CalendarClock, Coffee, LineChart, Plus, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/empty-state";
 import { KpiCard } from "@/components/kpi-card";
 import { IndicadoresLive } from "@/components/indicadores-live";
 import { getProfile } from "@/lib/auth";
-import { listCotacoes, loadCotacoesKpis, type CotacaoUltima } from "./_lib/queries";
+import {
+  listCotacoes,
+  loadCotacoesKpis,
+  loadPosicaoMercado,
+  type CotacaoUltima,
+  type PosicaoEspecie,
+} from "./_lib/queries";
 import {
   formatBRL,
   formatDateShort,
@@ -48,9 +54,10 @@ export default async function CotacoesCorretoraPage({
   const specie = isSpecie(sp.specie) ? sp.specie : undefined;
   const process = isProcess(sp.process) ? sp.process : undefined;
 
-  const [cotacoes, kpis] = await Promise.all([
+  const [cotacoes, kpis, posicao] = await Promise.all([
     listCotacoes(corretoraId, { specie, process }),
     loadCotacoesKpis(corretoraId),
+    loadPosicaoMercado(corretoraId),
   ]);
 
   const filtroAtivo = Boolean(specie || process);
@@ -119,6 +126,17 @@ export default async function CotacoesCorretoraPage({
           />
         </section>
 
+        {posicao.arabica || posicao.conillon ? (
+          <div className="flex flex-wrap gap-2">
+            {posicao.arabica ? (
+              <PosicaoChip specie="Arábica" p={posicao.arabica} />
+            ) : null}
+            {posicao.conillon ? (
+              <PosicaoChip specie="Conillón" p={posicao.conillon} />
+            ) : null}
+          </div>
+        ) : null}
+
         {cotacoes.length === 0 ? (
           <Card tone="muted" className="border-dashed">
             <CardContent className="p-card">
@@ -141,6 +159,45 @@ export default async function CotacoesCorretoraPage({
           <CotacoesView cotacoes={cotacoes} current={{ specie, process }} />
         )}
       </div>
+    </div>
+  );
+}
+
+/** Onde a cotação da corretora se posiciona vs as outras (inteligência #6). */
+function PosicaoChip({
+  specie,
+  p,
+}: {
+  specie: string;
+  p: NonNullable<PosicaoEspecie>;
+}) {
+  const lider = p.rank === 1;
+  const delta = p.deltaVsMediaPct;
+  return (
+    <div className="inline-flex flex-wrap items-center gap-2 rounded-md border border-milsaca-cream-escuro bg-white px-3 py-2 text-caption shadow-card">
+      <span className="font-semibold text-milsaca-cafezal">{specie}</span>
+      <span
+        className={
+          lider
+            ? "inline-flex items-center gap-1 rounded-pill bg-success-50 px-2 py-0.5 font-medium text-success-700"
+            : "text-neutral-600"
+        }
+      >
+        {lider ? <Trophy className="h-3.5 w-3.5" /> : null}
+        {p.rank}ª melhor de {p.total} corretora{p.total === 1 ? "" : "s"}
+      </span>
+      {delta != null ? (
+        <span
+          className={
+            delta >= 0
+              ? "font-medium text-success-700"
+              : "font-medium text-danger-700"
+          }
+        >
+          {delta >= 0 ? "+" : ""}
+          {delta.toFixed(1)}% vs média da praça
+        </span>
+      ) : null}
     </div>
   );
 }

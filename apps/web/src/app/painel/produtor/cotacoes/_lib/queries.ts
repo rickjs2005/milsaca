@@ -97,6 +97,12 @@ const MARKET_INDICATORS = [
     sublabel: "Bica corrida · saca 60kg",
   },
   {
+    source: "cepea_esalq",
+    symbol: "conilon_es_esalq",
+    label: "Conilon CEPEA",
+    sublabel: "Espírito Santo · saca 60kg",
+  },
+  {
     source: "ice_us",
     symbol: "KC.F",
     label: "Arábica NY (ICE)",

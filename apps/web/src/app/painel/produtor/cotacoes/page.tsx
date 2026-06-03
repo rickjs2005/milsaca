@@ -85,24 +85,46 @@ export default async function CotacoesProdutorPage({
   });
 
   // "Melhor preço hoje" — a maior oferta entre as corretoras (favoritas +
-  // outras), com o quanto está acima da média. É a resposta nº 1 do produtor:
-  // quem está pagando mais?
+  // outras). É a resposta nº 1 do produtor: quem está pagando mais?
   const ofertas = [...data.minhasCorretoras, ...data.outrasPracas];
   const best =
     ofertas.length > 0
       ? ofertas.reduce((b, c) => (c.current_price > b.current_price ? c : b))
       : null;
-  const media =
-    ofertas.length > 0
-      ? ofertas.reduce((s, c) => s + c.current_price, 0) / ofertas.length
+
+  // "% acima da média" compara MAÇÃ COM MAÇÃ: só ofertas do mesmo café
+  // (espécie + processo) da melhor. Misturar arábica natural × CD × conilon
+  // dava uma média sem sentido.
+  const peerKey = (c: { specie: string | null; process: string | null; coffee_type: string }) =>
+    `${c.specie ?? c.coffee_type}|${c.process ?? ""}`;
+  const peers = best ? ofertas.filter((o) => peerKey(o) === peerKey(best)) : [];
+  const mediaPares =
+    peers.length > 0
+      ? peers.reduce((s, c) => s + c.current_price, 0) / peers.length
       : null;
   const bestAcimaMedia =
-    best && media && media > 0
-      ? ((best.current_price - media) / media) * 100
+    best && mediaPares && mediaPares > 0 && peers.length >= 2
+      ? ((best.current_price - mediaPares) / mediaPares) * 100
       : null;
+
+  // Referência CEPEA por espécie — pra mostrar o ganho/perda de cada oferta
+  // vs o mercado (#1). Arábica e Conilon têm indicador próprio.
+  const cepeaBySpecie: Record<string, number | null> = {
+    arabica:
+      data.market.find((m) => m.symbol === "arabica_bica_corrida_esalq")
+        ?.price ?? null,
+    conillon:
+      data.market.find((m) => m.symbol === "conilon_es_esalq")?.price ?? null,
+  };
+  const cepeaRefDe = (c: { specie: string | null }) =>
+    c.specie ? cepeaBySpecie[c.specie] ?? null : null;
 
   // Mercado: só cards COM dado (sem "fonte indisponível" frustrando o produtor)
   const marketComDado = data.market.filter((m) => m.price != null);
+  const marketNacional = marketComDado.filter((m) => m.source === "cepea_esalq");
+  const marketInternacional = marketComDado.filter(
+    (m) => m.source !== "cepea_esalq",
+  );
 
   return (
     <div className="space-y-8">
@@ -193,7 +215,7 @@ export default async function CotacoesProdutorPage({
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {data.minhasCorretoras.map((c) => (
-              <CotacaoCardView key={c.key} c={c} accent />
+              <CotacaoCardView key={c.key} c={c} accent cepeaRef={cepeaRefDe(c)} />
             ))}
           </div>
         )}
@@ -213,26 +235,45 @@ export default async function CotacoesProdutorPage({
           </header>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {data.outrasPracas.map((c) => (
-              <CotacaoCardView key={c.key} c={c} />
+              <CotacaoCardView key={c.key} c={c} cepeaRef={cepeaRefDe(c)} />
             ))}
           </div>
         </section>
       ) : null}
 
-      {/* 3. Mercado (referência) — por último, só com dado disponível */}
-      {marketComDado.length > 0 ? (
+      {/* 3. Mercado (referência) — separado em Nacional × Internacional */}
+      {marketNacional.length > 0 ? (
         <section className="space-y-3">
           <header>
             <h2 className="flex items-center gap-2 text-h3 text-milsaca-cafezal">
               <Activity className="h-4 w-4 text-milsaca-dourado" />
-              Mercado
+              Mercado nacional
             </h2>
             <p className="text-caption text-neutral-600">
-              Referência — CEPEA/ESALQ, ICE NY e Banco Central.
+              Referência CEPEA/ESALQ — preço médio do café no Brasil.
             </p>
           </header>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {marketComDado.map((m) => (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {marketNacional.map((m) => (
+              <MarketCard key={`${m.source}-${m.symbol}`} m={m} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {marketInternacional.length > 0 ? (
+        <section className="space-y-3">
+          <header>
+            <h2 className="flex items-center gap-2 text-h3 text-milsaca-cafezal">
+              <Activity className="h-4 w-4 text-milsaca-dourado" />
+              Mercado internacional
+            </h2>
+            <p className="text-caption text-neutral-600">
+              Bolsa de NY (ICE) e dólar (Banco Central) — movem o preço aqui.
+            </p>
+          </header>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {marketInternacional.map((m) => (
               <MarketCard key={`${m.source}-${m.symbol}`} m={m} />
             ))}
           </div>
@@ -313,11 +354,28 @@ function MarketCard({ m }: { m: MarketIndicator }) {
   );
 }
 
-function CotacaoCardView({ c, accent }: { c: CotacaoCard; accent?: boolean }) {
+function CotacaoCardView({
+  c,
+  accent,
+  cepeaRef,
+}: {
+  c: CotacaoCard;
+  accent?: boolean;
+  /** Preço CEPEA da mesma espécie, pra mostrar o ganho/perda vs mercado. */
+  cepeaRef?: number | null;
+}) {
   const v = c.variacao_pct;
   const up = v != null && v > 0.001;
   const down = v != null && v < -0.001;
   const stale = c.status === "stale";
+
+  // Ganho/perda vs CEPEA (#1): quanto essa oferta paga acima/abaixo do mercado.
+  const diffCepea =
+    cepeaRef != null && cepeaRef > 0 ? c.current_price - cepeaRef : null;
+  const pctCepea =
+    diffCepea != null && cepeaRef ? (diffCepea / cepeaRef) * 100 : null;
+  const acimaCepea = diffCepea != null && diffCepea > 0.5;
+  const abaixoCepea = diffCepea != null && diffCepea < -0.5;
 
   return (
     <Card tone={accent ? "premium" : "default"} interactive>
@@ -367,6 +425,27 @@ function CotacaoCardView({ c, accent }: { c: CotacaoCard; accent?: boolean }) {
             </span>
           ) : null}
         </div>
+
+        {diffCepea != null ? (
+          <span
+            className={`inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-caption font-medium ${
+              acimaCepea
+                ? "bg-success-50 text-success-700"
+                : abaixoCepea
+                  ? "bg-danger-50 text-danger-700"
+                  : "bg-neutral-100 text-neutral-600"
+            }`}
+          >
+            {acimaCepea ? <ArrowUpRight className="h-3.5 w-3.5" /> : null}
+            {abaixoCepea ? <ArrowDownRight className="h-3.5 w-3.5" /> : null}
+            {diffCepea >= 0 ? "+" : "−"}
+            {fmtBRL(Math.abs(diffCepea))}/sc
+            {pctCepea != null
+              ? ` (${pctCepea >= 0 ? "+" : ""}${pctCepea.toFixed(1)}%)`
+              : ""}{" "}
+            vs CEPEA
+          </span>
+        ) : null}
 
         <p
           className={`text-caption ${stale ? "font-medium text-warning-700" : "text-neutral-500"}`}

@@ -146,25 +146,41 @@ export async function IndicadoresLive() {
     ptax?.price_brl_cents != null ? ptax.price_brl_cents / 100 : null;
   const ctx: FormatCtx = { usdBrl };
 
+  const nacional = INDICADORES.filter((i) => i.source === "cepea_esalq");
+  const internacional = INDICADORES.filter((i) => i.source !== "cepea_esalq");
+  const card = (ind: Indicador) => (
+    <IndicadorCard
+      key={ind.key}
+      indicador={ind}
+      quote={byKey.get(`${ind.source}/${ind.symbol}`) ?? null}
+      ctx={ctx}
+    />
+  );
+
   return (
-    <section className="space-y-3">
+    <section className="space-y-4">
       <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-500">
         <Activity className="h-4 w-4" />
         Indicadores ao vivo
       </h2>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {INDICADORES.map((ind) => {
-          const q = byKey.get(`${ind.source}/${ind.symbol}`);
-          return (
-            <IndicadorCard
-              key={ind.key}
-              indicador={ind}
-              quote={q ?? null}
-              ctx={ctx}
-            />
-          );
-        })}
-      </div>
+      {nacional.length > 0 ? (
+        <div className="space-y-2">
+          <h3 className="text-caption font-medium text-neutral-500">
+            Mercado nacional · CEPEA/ESALQ
+          </h3>
+          <div className="grid gap-4 sm:grid-cols-2">{nacional.map(card)}</div>
+        </div>
+      ) : null}
+      {internacional.length > 0 ? (
+        <div className="space-y-2">
+          <h3 className="text-caption font-medium text-neutral-500">
+            Mercado internacional · ICE NY e dólar
+          </h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {internacional.map(card)}
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
