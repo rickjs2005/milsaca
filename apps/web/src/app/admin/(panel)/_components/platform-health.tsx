@@ -80,7 +80,7 @@ export function PlatformHealth({ cotacoesLastSync }: Props) {
     {
       label: "Banco de dados",
       status: "ok",
-      hint: "RLS ativa em todas as tabelas. 31 migrations no remoto.",
+      hint: "RLS ativa em todas as tabelas; migrations versionadas no repo.",
     },
     {
       label: "Cotações",

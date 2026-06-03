@@ -173,7 +173,8 @@ export async function createContrato(formData: FormData) {
     redirect(`/painel/corretora/contratos/novo?${params.toString()}`);
   }
 
-  const code = code_input ?? (await nextContratoCode(profile.corretora_id));
+  const codeManual = code_input != null;
+  let code = code_input ?? (await nextContratoCode(profile.corretora_id));
 
   const supabase = await createClient();
 
@@ -191,24 +192,40 @@ export async function createContrato(formData: FormData) {
     lote_id = loteOwn?.id ?? null;
   }
 
-  const { data, error } = await supabase
-    .from("contratos")
-    .insert({
-      corretora_id: profile.corretora_id,
-      produtor_id: produtor_id as string,
-      comprador_id,
-      lead_id,
-      lote_id,
-      code,
-      status: "rascunho",
-      coffee_type,
-      bag_count,
-      total_value,
-      comissao_pct,
-      comissao_total,
-    })
-    .select("id")
-    .single();
+  // Insert com retry-on-conflict no código AUTO-GERADO: nextContratoCode usa
+  // COUNT+1 (não-atômico), então dois contratos simultâneos podem tentar o
+  // mesmo code (unique). Recomputa e tenta de novo (até 3x). Código manual
+  // não é recomputado — o erro de duplicata volta pro usuário.
+  let data: { id: string } | null = null;
+  let error: { code?: string; message?: string } | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    ({ data, error } = await supabase
+      .from("contratos")
+      .insert({
+        corretora_id: profile.corretora_id,
+        produtor_id: produtor_id as string,
+        comprador_id,
+        lead_id,
+        lote_id,
+        code,
+        status: "rascunho",
+        coffee_type,
+        bag_count,
+        total_value,
+        comissao_pct,
+        comissao_total,
+      })
+      .select("id")
+      .single());
+
+    if (!error) break;
+    // Conflito de código auto-gerado: recomputa e tenta de novo.
+    if (error.code === "23505" && !codeManual && /code/i.test(error.message ?? "")) {
+      code = await nextContratoCode(profile.corretora_id);
+      continue;
+    }
+    break;
+  }
 
   if (error || !data) {
     const log = await getReqLogger({

@@ -58,8 +58,13 @@ export type EntregaListItem = {
   updated_at: string;
 };
 
-/** Sacas recebidas estimadas a partir do peso líquido (saca = 60 kg). */
+/**
+ * Sacas recebidas. Prefere a quantidade declarada (`bag_count`) — é o número
+ * acordado e independe do peso da saca. Só cai no peso/60kg como estimativa
+ * quando não há contagem declarada (evita divergência falsa quando saca ≠ 60kg).
+ */
 export function sacasRecebidas(e: EntregaListItem): number | null {
+  if (e.bag_count != null) return e.bag_count;
   return e.peso_liquido_kg != null ? Math.round(e.peso_liquido_kg / 60) : null;
 }
 

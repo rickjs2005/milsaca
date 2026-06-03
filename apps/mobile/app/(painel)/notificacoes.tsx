@@ -166,11 +166,11 @@ export default function NotificacoesScreen() {
                 <View className="flex-row items-start justify-between">
                   <View
                     className="rounded-full px-2 py-0.5"
-                    style={{ backgroundColor: KIND_BG[n.kind] }}
+                    style={{ backgroundColor: KIND_BG[n.kind] ?? KIND_BG.sistema }}
                   >
                     <Text
                       style={{
-                        color: KIND_FG[n.kind],
+                        color: KIND_FG[n.kind] ?? KIND_FG.sistema,
                         fontFamily: "Inter_500Medium",
                         fontSize: 10,
                       }}

@@ -170,6 +170,7 @@ export default function FinanceiroScreen() {
             {items.map((r) => {
               const c = pickOne(r.contrato);
               const cor = pickOne(r.corretora);
+              const desc = fmtDescontos(r.descontos);
               return (
                 <View
                   key={r.id}
@@ -221,6 +222,15 @@ export default function FinanceiroScreen() {
                       {BRL.format(Number(r.valor_liquido))}
                     </Text>
                   </View>
+
+                  {desc ? (
+                    <Text
+                      className="mt-1 text-[11px] text-milsaca-cream/60"
+                      style={{ fontFamily: "Inter_400Regular" }}
+                    >
+                      Descontos: {desc}
+                    </Text>
+                  ) : null}
                 </View>
               );
             })}
@@ -229,6 +239,15 @@ export default function FinanceiroScreen() {
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+// Quebra os descontos (jsonb { frete, sacaria, comissao... }) em texto.
+function fmtDescontos(d: Record<string, unknown> | null): string | null {
+  if (!d || typeof d !== "object") return null;
+  const items = Object.entries(d)
+    .filter(([, v]) => typeof v === "number" && (v as number) > 0)
+    .map(([k, v]) => `${k}: ${BRL.format(v as number)}`);
+  return items.length > 0 ? items.join(" · ") : null;
 }
 
 function Total({
