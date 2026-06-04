@@ -9,12 +9,15 @@ import {
   Clock,
   CheckCircle2,
   TrendingUp,
+  Plus,
+  ShoppingCart,
+  FileText,
+  type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
 import { IndicadoresLive } from "@/components/indicadores-live";
-import { Sparkline } from "@/components/sparkline";
-import { MinhaSafra } from "./_components/minha-safra";
+import { MinhaSafra, type IndiceRef } from "./_components/minha-safra";
 import {
   LEAD_STATUS_LABEL,
   LEAD_STATUS_TONE,
@@ -24,7 +27,6 @@ import { createClient } from "@milsaca/db/web/server";
 import { getProfile, requireUser } from "@/lib/auth";
 import type { LeadStatus } from "@milsaca/types";
 import { coffeeLabel } from "@/lib/coffee";
-import { loadMarketTrend } from "@/lib/market-trend";
 import { loadEstoqueProdutor } from "./_lib/estoque";
 import { loadCarteira } from "./_lib/carteira";
 import { getProdutorByProfileId } from "./_lib/produtor";
@@ -54,7 +56,6 @@ type Proposta = {
   data: string;
 };
 
-// Só propostas EM ABERTO na Início (convertidas/recusadas ficam no histórico).
 async function loadPropostas(userId: string): Promise<Proposta[]> {
   const supabase = await createClient();
   const { data } = await supabase
@@ -131,36 +132,39 @@ export default async function InicioProdutorPage() {
   const profile = await getProfile();
   const produtor = await getProdutorByProfileId(profile?.id ?? user.id);
 
-  // Cotação PRINCIPAL = índice CEPEA da espécie (referência de mercado).
-  // TODO(roadmap): migrar para Índice MilSaca; CEPEA vira referência complementar.
   const specie = produtor?.specie === "conilon" ? "conilon" : "arabica";
-  const principalSymbol =
+  const cepeaSymbol =
     specie === "conilon" ? "conilon_es_esalq" : "arabica_bica_corrida_esalq";
 
-  const [estoque, propostas, cot, carteira, trendMap] = await Promise.all([
+  const [estoque, propostas, cot, carteira] = await Promise.all([
     loadEstoqueProdutor(user.id),
     loadPropostas(user.id),
     loadProdutorCotacoes({ produtorId: user.id }),
     loadCarteira(user.id),
-    loadMarketTrend([principalSymbol]),
   ]);
 
-  const principal = cot.market.find((m) => m.symbol === principalSymbol) ?? null;
-  const precoPrincipal = principal?.price ?? null;
-  const principalLabel = specie === "conilon" ? "Conilon CEPEA" : "Arábica CEPEA";
-  const trend = trendMap[principalSymbol] ?? null;
-
-  // FONTE ÚNICA: valor do que AINDA PODE VENDER (disponível) × cotação.
-  const valorDisponivel =
-    precoPrincipal != null ? Math.round(estoque.disponivel * precoPrincipal) : null;
-  const valorVendido = estoque.valorVendido > 0 ? estoque.valorVendido : null;
-
-  // Melhor oportunidade: corretora (da espécie) pagando acima do CEPEA.
+  // ÍNDICE MILSACA = média do preço das corretoras na plataforma (da espécie).
+  // É dado próprio (white-label). CEPEA fica como referência secundária; se não
+  // houver corretora cotando, cai no CEPEA.
+  const cepea =
+    cot.market.find((m) => m.symbol === cepeaSymbol)?.price ?? null;
   const normSpecie = (s: string | null) =>
     s === "conillon" ? "conilon" : s ?? "";
   const candidatas = [...cot.minhasCorretoras, ...cot.outrasPracas].filter(
     (c) => normSpecie(c.specie) === specie,
   );
+  const indiceMilsaca =
+    candidatas.length > 0
+      ? candidatas.reduce((s, c) => s + c.current_price, 0) / candidatas.length
+      : null;
+  const indice: IndiceRef = {
+    preco: indiceMilsaca ?? cepea,
+    fonte: indiceMilsaca != null ? "milsaca" : "cepea",
+    cepea,
+    nCorretoras: candidatas.length,
+  };
+
+  // Melhor oportunidade: corretora pagando acima da referência (índice).
   let melhorCorretora: (typeof candidatas)[number] | null = null;
   for (const c of candidatas) {
     if (!melhorCorretora || c.current_price > melhorCorretora.current_price)
@@ -168,14 +172,14 @@ export default async function InicioProdutorPage() {
   }
   const ganho =
     melhorCorretora &&
-    precoPrincipal != null &&
-    melhorCorretora.current_price > precoPrincipal &&
+    indice.preco != null &&
+    melhorCorretora.current_price > indice.preco &&
     estoque.disponivel > 0
       ? {
           corretora: melhorCorretora.corretora_name ?? "uma corretora",
           preco: melhorCorretora.current_price,
           extra: Math.round(
-            estoque.disponivel * (melhorCorretora.current_price - precoPrincipal),
+            estoque.disponivel * (melhorCorretora.current_price - indice.preco),
           ),
         }
       : null;
@@ -186,7 +190,6 @@ export default async function InicioProdutorPage() {
 
   return (
     <div className="space-y-6">
-      {/* Saudação — resumo da safra (mesma fonte: disponível/negociação/vendidas) */}
       <header>
         <h1 className="text-h2 text-milsaca-cafezal">
           {saudacaoAgora()}
@@ -200,65 +203,18 @@ export default async function InicioProdutorPage() {
       </header>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* COLUNA PRINCIPAL — o que é acionável */}
+        {/* PRINCIPAL — a safra e o que fazer com ela */}
         <div className="space-y-6 lg:col-span-2">
-          {/* 1. Minha Safra */}
-          <MinhaSafra estoque={estoque} />
+          {/* 1. Minha Safra (herói) */}
+          <MinhaSafra estoque={estoque} indice={indice} />
 
-          {/* 2. Valor disponível (hero) */}
-          <Card tone="premium">
-            <CardContent className="p-card">
-              <div className="flex items-center gap-2">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-milsaca-dourado/15 text-milsaca-cafezal ring-1 ring-inset ring-milsaca-dourado/30">
-                  <Wallet className="h-5 w-5" />
-                </span>
-                <p className="text-caption font-medium uppercase tracking-wider text-neutral-500">
-                  Valor disponível para venda
-                </p>
-              </div>
-              <p className="mt-3 text-display leading-none text-milsaca-cafezal">
-                {valorDisponivel != null ? BRL0.format(valorDisponivel) : "—"}
-              </p>
-              <p className="mt-2 text-caption text-neutral-500">
-                {estoque.disponivel} sacas disponíveis ×{" "}
-                {precoPrincipal != null
-                  ? `${principalLabel} ${BRL2.format(precoPrincipal)}/saca`
-                  : "cotação indisponível"}
-              </p>
-              <p className="text-caption text-neutral-500">
-                Já vendido: {estoque.vendido} sacas
-                {valorVendido != null ? ` · ${BRL0.format(valorVendido)}` : ""}
-              </p>
-
-              {trend && trend.pct != null ? (
-                <div className="mt-3 flex items-center gap-3 border-t border-milsaca-cream-escuro/60 pt-3">
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1 text-caption font-semibold",
-                      trend.direction === "alta"
-                        ? "text-success-700"
-                        : trend.direction === "baixa"
-                          ? "text-danger-700"
-                          : "text-neutral-500",
-                    )}
-                  >
-                    <TrendingUp className="h-3.5 w-3.5" />
-                    {trend.pct >= 0 ? "+" : ""}
-                    {trend.pct.toFixed(1)}% em {trend.label}
-                  </span>
-                  {trend.series.length >= 2 ? (
-                    <Sparkline
-                      data={trend.series}
-                      className="h-6 flex-1 text-milsaca-dourado"
-                    />
-                  ) : null}
-                  <span className="text-caption text-neutral-500">
-                    {principalLabel}
-                  </span>
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
+          {/* 2. Ações rápidas — alvos grandes, uma mão */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <AcaoRapida href="/painel/produtor/cafe/novo" icon={Plus} label="Registrar café" destaque />
+            <AcaoRapida href="/painel/produtor/corretoras" icon={ShoppingCart} label="Vender café" />
+            <AcaoRapida href="/painel/produtor/contratos" icon={FileText} label="Contratos" />
+            <AcaoRapida href="/painel/produtor/financeiro" icon={Wallet} label="Financeiro" />
+          </div>
 
           {/* Melhor oportunidade de venda */}
           {ganho ? (
@@ -273,82 +229,18 @@ export default async function InicioProdutorPage() {
                   <span className="font-semibold">
                     {BRL2.format(ganho.preco)}/saca
                   </span>{" "}
-                  — vendendo suas {estoque.disponivel} sacas disponíveis você faz{" "}
+                  — acima da média. Pelas suas {estoque.disponivel} sacas
+                  disponíveis, são{" "}
                   <span className="font-semibold text-success-700">
                     +{BRL0.format(ganho.extra)}
-                  </span>{" "}
-                  acima do CEPEA.
+                  </span>
+                  .
                 </p>
               </CardContent>
             </Card>
           ) : null}
 
-          {/* 3. Propostas em aberto */}
-          <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-500">
-                <Handshake className="h-4 w-4" />
-                Propostas em aberto
-              </h2>
-              {propostas.length > 0 ? (
-                <Link
-                  href="/painel/produtor/negociacoes"
-                  className="rounded-md text-caption font-medium text-milsaca-dourado-texto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  Ver todas →
-                </Link>
-              ) : null}
-            </div>
-            {propostas.length === 0 ? (
-              <Card tone="muted" className="border-dashed">
-                <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
-                  <p className="text-body-sm text-neutral-600">
-                    Nenhuma proposta em aberto. Comece chamando uma corretora.
-                  </p>
-                  <Link
-                    href="/painel/produtor/corretoras"
-                    className="inline-flex items-center gap-2 rounded-md bg-success-600 px-4 py-2 text-body-sm font-medium text-milsaca-cream transition-colors hover:bg-success-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  >
-                    Ver corretoras
-                  </Link>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {propostas.map((p) => (
-                  <PropostaCard
-                    key={p.id}
-                    p={p}
-                    melhor={p.id === idMelhorProposta}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* 4. CTA vender */}
-          <Link
-            href="/painel/produtor/corretoras"
-            className="group flex items-center justify-between gap-4 rounded-card bg-success-600 px-6 py-6 text-milsaca-cream shadow-card transition-colors hover:bg-success-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            <div className="flex items-center gap-4">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/15">
-                <Wallet className="h-6 w-6" />
-              </span>
-              <div>
-                <p className="text-h3 font-semibold">Vender meu café</p>
-                <p className="text-body-sm text-milsaca-cream/90">
-                  Receba propostas das corretoras da sua região no WhatsApp.
-                </p>
-              </div>
-            </div>
-            <ArrowRight className="h-6 w-6 shrink-0 transition-transform group-hover:translate-x-1" />
-          </Link>
-        </div>
-
-        {/* COLUNA SECUNDÁRIA — mercado e dinheiro (referência) */}
-        <div className="space-y-6">
-          {/* 6. Corretoras pagando hoje */}
+          {/* 4. Corretoras pagando hoje (melhor preço) */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-500">
@@ -377,7 +269,7 @@ export default async function InicioProdutorPage() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {favoritas.map((c) => {
                   const up = c.variacao_pct != null && c.variacao_pct >= 0;
                   const Arrow = up ? ArrowUpRight : ArrowDownRight;
@@ -422,7 +314,53 @@ export default async function InicioProdutorPage() {
             )}
           </section>
 
-          {/* 7. Financeiro — a receber × recebido */}
+          {/* 5. Propostas em aberto */}
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-500">
+                <Handshake className="h-4 w-4" />
+                Propostas em aberto
+              </h2>
+              {propostas.length > 0 ? (
+                <Link
+                  href="/painel/produtor/negociacoes"
+                  className="rounded-md text-caption font-medium text-milsaca-dourado-texto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  Ver todas →
+                </Link>
+              ) : null}
+            </div>
+            {propostas.length === 0 ? (
+              <Card tone="muted" className="border-dashed">
+                <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
+                  <p className="text-body-sm text-neutral-600">
+                    Nenhuma proposta em aberto. Comece chamando uma corretora.
+                  </p>
+                  <Link
+                    href="/painel/produtor/corretoras"
+                    className="inline-flex items-center gap-2 rounded-md bg-success-600 px-4 py-2 text-body-sm font-medium text-milsaca-cream transition-colors hover:bg-success-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    Ver corretoras
+                  </Link>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {propostas.map((p) => (
+                  <PropostaCard
+                    key={p.id}
+                    p={p}
+                    melhor={p.id === idMelhorProposta}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* SECUNDÁRIA — dinheiro e mercado (referência) */}
+        <div className="space-y-6">
+          {/* Financeiro — a receber × recebido */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-500">
@@ -485,11 +423,38 @@ export default async function InicioProdutorPage() {
             </div>
           </section>
 
-          {/* 8. Indicadores de mercado (referência) */}
+          {/* Indicadores de mercado (referência) — sempre por último */}
           <IndicadoresLive />
         </div>
       </div>
     </div>
+  );
+}
+
+function AcaoRapida({
+  href,
+  icon: Icon,
+  label,
+  destaque,
+}: {
+  href: string;
+  icon: LucideIcon;
+  label: string;
+  destaque?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "flex flex-col items-center justify-center gap-2 rounded-card border px-3 py-4 text-center text-body-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        destaque
+          ? "border-transparent bg-success-600 text-milsaca-cream hover:bg-success-700"
+          : "border-neutral-200 bg-white text-milsaca-cafezal hover:border-milsaca-dourado",
+      )}
+    >
+      <Icon className="h-6 w-6" />
+      {label}
+    </Link>
   );
 }
 

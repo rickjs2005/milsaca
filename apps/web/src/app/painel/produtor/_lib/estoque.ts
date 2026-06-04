@@ -31,6 +31,10 @@ export type EstoqueProdutor = {
   valorVendido: number;
   /** Há lote não-beneficiado em estoque → parte das sacas é ESTIMADA. */
   temEstimada: boolean;
+  /** Safra predominante (mais recente) dos lotes — rótulo do herói. */
+  safra: string | null;
+  /** Vendido + em negociação > produção declarada → revisar lotes. */
+  sobreComprometido: boolean;
 };
 
 const STATUS_VENDIDO = ["ativo", "finalizado"];
@@ -41,7 +45,7 @@ export async function loadEstoqueProdutor(
 ): Promise<EstoqueProdutor> {
   const supabase = await createClient();
   const [lotesRes, contratosRes, leadsRes] = await Promise.all([
-    supabase.from("lotes").select("peso_sacas, status, beneficiado").eq("produtor_id", userId),
+    supabase.from("lotes").select("peso_sacas, status, beneficiado, safra").eq("produtor_id", userId),
     supabase
       .from("contratos")
       .select("bag_count, total_value, status")
@@ -53,6 +57,7 @@ export async function loadEstoqueProdutor(
     peso_sacas: number | string | null;
     status: string;
     beneficiado: boolean;
+    safra: string | null;
   }[];
   const ativos = lotes.filter((l) => l.status !== "arquivado");
   const total = ativos.reduce((s, l) => s + Number(l.peso_sacas ?? 0), 0);
@@ -60,6 +65,13 @@ export async function loadEstoqueProdutor(
   const temEstimada = ativos.some(
     (l) => l.status !== "vendido" && !l.beneficiado,
   );
+  // Safra predominante = a mais recente (texto "2025/2026" ordena bem).
+  const safra =
+    ativos
+      .map((l) => l.safra)
+      .filter((s): s is string => !!s)
+      .sort()
+      .at(-1) ?? null;
 
   const contratos = (contratosRes.data ?? []) as {
     bag_count: number | null;
@@ -85,6 +97,9 @@ export async function loadEstoqueProdutor(
   const vendidoClamp = Math.min(vendido, total);
   const emNegociacao = Math.min(emNegociacaoBruto, total - vendidoClamp);
   const disponivel = Math.max(0, total - vendidoClamp - emNegociacao);
+  // Sobre-comprometido: o que foi vendido + negociado passa da produção
+  // declarada (lotes). Não corrige em silêncio — a UI avisa "revise os lotes".
+  const sobreComprometido = vendido + emNegociacaoBruto > total + 0.001;
 
   // Guarda de regressão: se algum dia os números não fecharem, grita no dev.
   if (
@@ -106,6 +121,8 @@ export async function loadEstoqueProdutor(
     disponivel,
     valorVendido,
     temEstimada,
+    safra,
+    sobreComprometido,
   };
 }
 
