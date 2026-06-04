@@ -11,6 +11,7 @@ import {
   Plus,
   ShoppingCart,
   FileText,
+  Coins,
   type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -194,22 +195,58 @@ export default async function InicioProdutorPage({
   const idMelhorProposta = melhorPropostaId(propostas);
   const favoritas = cot.minhasCorretoras.slice(0, 6);
 
+  // Resumo executivo + progresso da safra (leitura instantânea).
+  const valorDisponivel =
+    indice.preco != null ? Math.round(estoque.disponivel * indice.preco) : null;
+  const pctComercializada =
+    estoque.total > 0 ? Math.round((estoque.vendido / estoque.total) * 100) : 0;
+  // Hora do último carregamento — mostra o "último estado salvo" quando offline (cache).
+  const atualizadoEm = new Intl.DateTimeFormat("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  }).format(new Date());
+
   return (
     <div className="space-y-6">
+      {/* Saudação + RESUMO EXECUTIVO (leitura instantânea, desktop e mobile) */}
       <header>
         <h1 className="text-h2 text-milsaca-cafezal">
           {saudacaoAgora()}
           {primeiroNome ? `, ${primeiroNome}` : ""}
         </h1>
-        <p className="mt-0.5 text-body-sm text-neutral-600">
-          {estoque.total > 0
-            ? `${estoque.disponivel} disponíveis · ${estoque.emNegociacao} em negociação · ${estoque.vendido} vendidas`
-            : "Cadastre seu café e receba propostas das corretoras."}
-        </p>
+        {estoque.total > 0 ? (
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-card bg-milsaca-cream/70 px-4 py-2.5 text-body-sm text-neutral-700 ring-1 ring-inset ring-milsaca-cream-escuro">
+            <span>
+              <strong className="font-bold text-milsaca-cafezal">
+                {estoque.disponivel} sacas
+              </strong>{" "}
+              disponíveis
+            </span>
+            <span aria-hidden className="text-neutral-400">·</span>
+            <span>
+              <strong className="font-bold text-milsaca-cafezal">
+                {valorDisponivel != null ? `≈ ${BRL0.format(valorDisponivel)}` : "—"}
+              </strong>{" "}
+              hoje
+            </span>
+            <span aria-hidden className="text-neutral-400">·</span>
+            <span>
+              <strong className="font-bold text-milsaca-cafezal">
+                {pctComercializada}%
+              </strong>{" "}
+              da safra comercializada
+            </span>
+          </div>
+        ) : (
+          <p className="mt-0.5 text-body-sm text-neutral-600">
+            Cadastre seu café e receba propostas das corretoras.
+          </p>
+        )}
       </header>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* PRINCIPAL — a safra e o que fazer com ela */}
+        {/* PRINCIPAL — o negócio do produtor */}
         <div className="space-y-6 lg:col-span-2">
           {/* 1. Minha Safra (herói) */}
           <MinhaSafra
@@ -218,7 +255,7 @@ export default async function InicioProdutorPage({
             safraSelecionada={safraParam ?? ""}
           />
 
-          {/* 2. Melhor oportunidade — card de ação, subordinado ao herói */}
+          {/* 2. Melhor oportunidade — lidera pelo GANHO, CTA honesto */}
           {ganho ? (
             <Card className="border-success-200 bg-success-50/60">
               <CardContent className="p-card">
@@ -226,34 +263,30 @@ export default async function InicioProdutorPage({
                   <span aria-hidden="true">🔥</span>
                   Melhor oportunidade
                 </p>
-                <p className="mt-2 text-h3 font-semibold text-milsaca-cafezal">
-                  {ganho.corretora}
+                <p className="mt-2 text-caption font-medium uppercase tracking-wider text-neutral-600">
+                  Ganho extra estimado
                 </p>
-                <p className="text-h2 font-bold text-milsaca-cafezal">
-                  {BRL2.format(ganho.preco)}
-                  <span className="text-caption font-normal text-neutral-600">
-                    /saca
-                  </span>
+                <p className="text-display font-bold leading-none text-success-700">
+                  +{BRL0.format(ganho.extra)}
                 </p>
-                <p className="text-body-sm font-semibold text-success-700">
-                  +{BRL0.format(ganho.extra)} acima da média
+                <p className="mt-2 text-body-sm text-neutral-700">
+                  <span className="font-semibold text-milsaca-cafezal">
+                    {ganho.corretora}
+                  </span>{" "}
+                  · {BRL2.format(ganho.preco)}/saca (acima da média)
                 </p>
-                <Button asChild variant="primary" className="mt-3 w-full">
+                <Button
+                  asChild
+                  variant="primary"
+                  className="mt-3 min-h-[48px] w-full"
+                >
                   <Link href="/painel/produtor/corretoras">Ver corretora</Link>
                 </Button>
               </CardContent>
             </Card>
           ) : null}
 
-          {/* 3. Ações rápidas — alvos grandes, uma mão */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <AcaoRapida href="/painel/produtor/cafe/novo" icon={Plus} label="Registrar café" destaque />
-            <AcaoRapida href="/painel/produtor/corretoras" icon={ShoppingCart} label="Vender café" />
-            <AcaoRapida href="/painel/produtor/contratos" icon={FileText} label="Contratos" />
-            <AcaoRapida href="/painel/produtor/financeiro" icon={Wallet} label="Financeiro" />
-          </div>
-
-          {/* 4. Propostas em aberto */}
+          {/* 3. Propostas em aberto */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-600">
@@ -296,11 +329,65 @@ export default async function InicioProdutorPage({
             )}
           </section>
 
-          {/* 5. Corretoras pagando hoje (melhor preço) */}
+          {/* 4. Resultado da safra — DESTAQUE (dado próprio do produtor) */}
+          {estoque.vendido > 0 ? (
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-600">
+                  <Coins className="h-4 w-4" aria-hidden />
+                  Resultado da safra
+                </h2>
+                <Link
+                  href="/painel/produtor/vendas"
+                  className="rounded-md py-1 text-caption font-medium text-milsaca-dourado-texto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  Ver →
+                </Link>
+              </div>
+              <Card>
+                <CardContent className="p-card">
+                  <p className="text-caption font-medium uppercase tracking-wider text-neutral-600">
+                    Receita acumulada
+                  </p>
+                  <p className="text-h1 font-bold tabular-nums text-milsaca-cafezal">
+                    {BRL0.format(estoque.valorVendido)}
+                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    <div className="rounded-md bg-milsaca-cream/50 px-3 py-2">
+                      <p className="text-caption text-neutral-600">
+                        Preço médio vendido
+                      </p>
+                      <p className="text-body-sm font-semibold tabular-nums text-milsaca-cafezal">
+                        {estoque.vendido > 0
+                          ? `${BRL2.format(estoque.valorVendido / estoque.vendido)}/saca`
+                          : "—"}
+                      </p>
+                    </div>
+                    <div className="rounded-md bg-milsaca-cream/50 px-3 py-2">
+                      <p className="text-caption text-neutral-600">Total vendido</p>
+                      <p className="text-body-sm font-semibold tabular-nums text-milsaca-cafezal">
+                        {estoque.vendido} sacas
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+          ) : null}
+
+          {/* 5. Ações rápidas — alvos grandes, uma mão */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <AcaoRapida href="/painel/produtor/cafe/novo" icon={Plus} label="Registrar café" destaque />
+            <AcaoRapida href="/painel/produtor/corretoras" icon={ShoppingCart} label="Vender café" />
+            <AcaoRapida href="/painel/produtor/contratos" icon={FileText} label="Contratos" />
+            <AcaoRapida href="/painel/produtor/financeiro" icon={Wallet} label="Financeiro" />
+          </div>
+
+          {/* 6. Corretoras pagando hoje (melhor preço) — hierarquia inferior */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-600">
-                <Star className="h-4 w-4" />
+                <Star className="h-4 w-4" aria-hidden />
                 Corretoras · preço de hoje
               </h2>
               <Link
@@ -373,51 +460,6 @@ export default async function InicioProdutorPage({
 
         {/* SECUNDÁRIA — dinheiro e mercado (referência) */}
         <div className="space-y-6">
-          {/* Resultado da safra (mini) — só quando já vendeu algo */}
-          {estoque.vendido > 0 ? (
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-caption font-semibold uppercase tracking-wider text-neutral-600">
-                  Resultado da safra
-                </h2>
-                <Link
-                  href="/painel/produtor/vendas"
-                  className="rounded-md text-caption font-medium text-milsaca-dourado-texto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  Ver →
-                </Link>
-              </div>
-              <Card>
-                <CardContent className="space-y-2.5 p-card">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-caption text-neutral-600">
-                      Receita acumulada
-                    </p>
-                    <p className="text-body-sm font-semibold tabular-nums text-milsaca-cafezal">
-                      {BRL0.format(estoque.valorVendido)}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-caption text-neutral-600">
-                      Preço médio vendido
-                    </p>
-                    <p className="text-body-sm font-semibold tabular-nums text-milsaca-cafezal">
-                      {estoque.vendido > 0
-                        ? `${BRL2.format(estoque.valorVendido / estoque.vendido)}/saca`
-                        : "—"}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-caption text-neutral-600">Total vendido</p>
-                    <p className="text-body-sm font-semibold tabular-nums text-milsaca-cafezal">
-                      {estoque.vendido} sacas
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </section>
-          ) : null}
-
           {/* Financeiro — a receber × recebido */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
@@ -485,6 +527,11 @@ export default async function InicioProdutorPage({
           <MercadoCompacto market={cot.market} />
         </div>
       </div>
+
+      {/* Estado dos dados — discreto; mostra o último estado salvo se offline */}
+      <p className="text-center text-caption text-neutral-500">
+        Última atualização: hoje às {atualizadoEm}
+      </p>
     </div>
   );
 }

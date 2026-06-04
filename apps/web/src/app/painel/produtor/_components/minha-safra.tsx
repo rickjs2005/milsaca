@@ -46,6 +46,9 @@ export function MinhaSafra({
   const valorDisponivel =
     indice.preco != null ? Math.round(estoque.disponivel * indice.preco) : null;
   const fonteLabel = indice.fonte === "milsaca" ? "Índice MilSaca" : "CEPEA";
+  // Safra comercializada = vendidas ÷ produção (leitura instantânea da evolução).
+  const pctComercializada =
+    estoque.total > 0 ? Math.round((estoque.vendido / estoque.total) * 100) : 0;
 
   return (
     <Card tone="premium">
@@ -111,11 +114,21 @@ export function MinhaSafra({
               </p>
             </div>
 
+            {/* Progresso: quanto da safra já foi comercializada */}
+            <div className="mt-4 flex items-center justify-between text-caption">
+              <span className="font-medium text-neutral-600">
+                Safra comercializada
+              </span>
+              <span className="font-bold tabular-nums text-milsaca-cafezal">
+                {pctComercializada}%
+              </span>
+            </div>
+
             {/* Barra proporcional (visual da safra) */}
             <div
-              className="mt-4 flex h-2.5 w-full overflow-hidden rounded-pill bg-neutral-100"
+              className="mt-1.5 flex h-2.5 w-full overflow-hidden rounded-pill bg-neutral-100"
               role="img"
-              aria-label={`Safra: ${estoque.disponivel} disponíveis, ${estoque.emNegociacao} em negociação, ${estoque.vendido} vendidas, de ${estoque.total} sacas`}
+              aria-label={`Safra: ${estoque.disponivel} disponíveis, ${estoque.emNegociacao} em negociação, ${estoque.vendido} vendidas, de ${estoque.total} sacas (${pctComercializada}% comercializada)`}
             >
               <div className="bg-success-500" style={{ width: `${pct(estoque.disponivel)}%` }} />
               <div className="bg-warning-400" style={{ width: `${pct(estoque.emNegociacao)}%` }} />
