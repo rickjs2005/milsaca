@@ -19,6 +19,8 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@milsaca/db/web/server";
 import { getProfile } from "@/lib/auth";
 import { loadComprometidoPorLote } from "../_lib/estoque";
+import { UnidadeToggle } from "@/components/produtor/UnidadeToggle/UnidadeToggle";
+import { formatarKg } from "@/lib/unidades";
 
 export const metadata = { title: "Meu Café — Milsaca" };
 
@@ -43,10 +45,27 @@ type Row = {
   pva: number | string | null;
   created_at: string;
   lote:
-    | { codigo: string; specie: string; processo: string | null; safra: string | null; peso_sacas: number | string | null }
-    | { codigo: string; specie: string; processo: string | null; safra: string | null; peso_sacas: number | string | null }[]
+    | { codigo: string; specie: string; processo: string | null; safra: string | null; peso_sacas: number | string | null; peso_kg: number | string | null }
+    | { codigo: string; specie: string; processo: string | null; safra: string | null; peso_sacas: number | string | null; peso_kg: number | string | null }[]
     | null;
   corretora: { name: string } | { name: string }[] | null;
+};
+
+// Lote do próprio produtor ainda sem laudo (rascunho / aguardando classificação).
+type LoteProprio = {
+  id: string;
+  codigo: string;
+  specie: string;
+  processo: string | null;
+  safra: string | null;
+  status: string;
+  pesoKg: number;
+  pesoPorBagKg: number | null;
+};
+
+const LOTE_STATUS_LABEL: Record<string, { label: string; tone: StatusTone }> = {
+  rascunho: { label: "Registrado", tone: "neutral" },
+  aguardando_classificacao: { label: "Aguardando classificação", tone: "warning" },
 };
 
 function pickOne<T>(v: T | T[] | null | undefined): T | null {
@@ -100,12 +119,12 @@ export default async function MinhasSacasPage() {
   if (!profile) redirect("/entrar");
 
   const supabase = await createClient();
-  const [laudosRes, cotRes] = await Promise.all([
+  const [laudosRes, cotRes, lotesRes] = await Promise.all([
     supabase
       .from("classificacoes_cob")
       .select(
         `id, lote_id, tipo, fora_de_tipo, bebida, peneira_dominante, pva, created_at,
-         lote:lotes!classificacoes_cob_lote_id_fkey(codigo, specie, processo, safra, peso_sacas),
+         lote:lotes!classificacoes_cob_lote_id_fkey(codigo, specie, processo, safra, peso_sacas, peso_kg),
          corretora:corretoras!classificacoes_cob_corretora_id_fkey(name)`,
       )
       .order("created_at", { ascending: false })
@@ -115,10 +134,47 @@ export default async function MinhasSacasPage() {
       .select("specie, price, reference_date")
       .order("reference_date", { ascending: false })
       .limit(50),
+    // Lotes do próprio produtor ainda sem classificação (incl. o que ele acabou
+    // de registrar). RLS: produtor vê os próprios lotes (lotes_tenant_read).
+    supabase
+      .from("lotes")
+      .select(
+        "id, codigo, specie, processo, safra, status, peso_kg, peso_por_volume_kg, unidade_entrada, created_at",
+      )
+      .eq("produtor_id", profile.id)
+      .in("status", ["rascunho", "aguardando_classificacao"])
+      .order("created_at", { ascending: false }),
   ]);
 
   // RLS filtra pra produtor só ver os próprios laudos (via lote.produtor_id)
   const rows = (laudosRes.data ?? []) as Row[];
+
+  // peso_kg/peso_por_volume_kg são numeric → supabase-js devolve string; coage.
+  const lotesAguardando: LoteProprio[] = (
+    (lotesRes.data ?? []) as Array<{
+      id: string;
+      codigo: string;
+      specie: string;
+      processo: string | null;
+      safra: string | null;
+      status: string;
+      peso_kg: number | string | null;
+      peso_por_volume_kg: number | string | null;
+      unidade_entrada: string | null;
+    }>
+  ).map((l) => ({
+    id: l.id,
+    codigo: l.codigo,
+    specie: l.specie,
+    processo: l.processo,
+    safra: l.safra,
+    status: l.status,
+    pesoKg: l.peso_kg != null ? Number(l.peso_kg) : 0,
+    pesoPorBagKg:
+      l.unidade_entrada === "bag" && l.peso_por_volume_kg != null
+        ? Number(l.peso_por_volume_kg)
+        : null,
+  }));
 
   // Sacas já comprometidas por lote (contratos não-cancelados) → quanto sobra.
   const comprometido = await loadComprometidoPorLote(
@@ -148,12 +204,52 @@ export default async function MinhasSacasPage() {
         </Button>
       </header>
 
-      {rows.length === 0 ? (
+      {/* Café que o produtor registrou e ainda não foi classificado pela corretora */}
+      {lotesAguardando.length > 0 ? (
+        <section className="space-y-3">
+          <h2 className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
+            Aguardando classificação
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {lotesAguardando.map((l) => {
+              const st = LOTE_STATUS_LABEL[l.status] ?? {
+                label: l.status,
+                tone: "neutral" as StatusTone,
+              };
+              return (
+                <Card key={l.id}>
+                  <CardContent className="space-y-3 p-card">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-mono text-caption text-milsaca-dourado-texto">
+                          {l.codigo}
+                        </p>
+                        <p className="mt-0.5 text-body-sm font-medium text-milsaca-cafezal">
+                          {specieLabel(l.specie)}
+                          {l.processo ? ` · ${l.processo}` : ""}
+                          {l.safra ? ` · ${l.safra}` : ""}
+                        </p>
+                      </div>
+                      <StatusBadge tone={st.tone}>{st.label}</StatusBadge>
+                    </div>
+                    <UnidadeToggle
+                      valorKg={l.pesoKg}
+                      pesoPorBagKg={l.pesoPorBagKg ?? undefined}
+                    />
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
+      {rows.length === 0 && lotesAguardando.length === 0 ? (
         <Card tone="muted" className="border-dashed">
           <CardContent className="p-card">
             <EmptyState
               icon={FileCheck2}
-              title="Você ainda não tem lotes classificados"
+              title="Você ainda não tem café registrado"
               description="Registre seu café pra ele entrar no seu estoque. Quando a corretora classificar um lote, o laudo aparece aqui — com PDF e QR público pra compartilhar."
             />
             <div className="mt-4 flex justify-center">
@@ -163,8 +259,16 @@ export default async function MinhasSacasPage() {
             </div>
           </CardContent>
         </Card>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+      ) : null}
+
+      {rows.length > 0 ? (
+        <section className="space-y-3">
+          {lotesAguardando.length > 0 ? (
+            <h2 className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
+              Classificados
+            </h2>
+          ) : null}
+          <div className="grid gap-4 sm:grid-cols-2">
           {rows.map((r) => {
             const lote = pickOne(r.lote);
             const cor = pickOne(r.corretora);
@@ -195,6 +299,9 @@ export default async function MinhasSacasPage() {
                           {com > 0
                             ? `${com} de ${totalSacas} sacas vendidas · ${Math.max(0, totalSacas - com)} disponíveis`
                             : `${totalSacas} sacas disponíveis`}
+                          {lote?.peso_kg != null
+                            ? ` · ${formatarKg(Number(lote.peso_kg))}`
+                            : ""}
                         </p>
                       ) : null}
                     </div>
@@ -274,8 +381,9 @@ export default async function MinhasSacasPage() {
               </Card>
             );
           })}
-        </div>
-      )}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

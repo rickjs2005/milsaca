@@ -18,6 +18,7 @@ import { createClient } from "@milsaca/db/web/server";
 import { getProfile, requireUser } from "@/lib/auth";
 import type { LeadStatus } from "@milsaca/types";
 import { coffeeLabel } from "@/lib/coffee";
+import { formatarKg, sacasParaKg } from "@/lib/unidades";
 import { loadEstoqueProdutor } from "./_lib/estoque";
 
 export const metadata = { title: "Início — Painel do produtor" };
@@ -313,6 +314,11 @@ export default async function InicioProdutorPage() {
               sacas totais
             </span>
           </p>
+          {estoque.total > 0 ? (
+            <p className="text-caption text-neutral-500">
+              ≈ {formatarKg(sacasParaKg(estoque.total))}
+            </p>
+          ) : null}
           <div className="mt-3 flex h-3 w-full overflow-hidden rounded-pill bg-neutral-100">
             <div
               className="bg-success-500"
