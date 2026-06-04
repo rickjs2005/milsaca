@@ -117,7 +117,8 @@ async function loadPropostas(userId: string): Promise<Proposta[]> {
     return {
       id: r.id,
       corretora: corretora ?? "Corretora",
-      bag_count: r.bag_count,
+      // bag_count é numeric no Postgres → vem como string; coage pro tipo number.
+      bag_count: r.bag_count != null ? Number(r.bag_count) : null,
       coffee_type: r.coffee_type,
       proposed_price: r.proposed_price,
       total,

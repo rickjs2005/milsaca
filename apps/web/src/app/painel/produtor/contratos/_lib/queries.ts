@@ -95,7 +95,8 @@ export async function listMeusContratos(
       code: r.code,
       status: r.status,
       coffee_type: r.coffee_type,
-      bag_count: r.bag_count,
+      // bag_count é numeric no Postgres → vem como string; coage (igual total_value).
+      bag_count: r.bag_count != null ? Number(r.bag_count) : null,
       total_value: r.total_value != null ? Number(r.total_value) : null,
       signed_at: r.signed_at,
       created_at: r.created_at,
@@ -132,7 +133,8 @@ export async function getMeuContrato(
     code: r.code,
     status: r.status,
     coffee_type: r.coffee_type,
-    bag_count: r.bag_count,
+    // bag_count é numeric no Postgres → vem como string; coage (igual total_value).
+    bag_count: r.bag_count != null ? Number(r.bag_count) : null,
     total_value: r.total_value != null ? Number(r.total_value) : null,
     signed_at: r.signed_at,
     created_at: r.created_at,

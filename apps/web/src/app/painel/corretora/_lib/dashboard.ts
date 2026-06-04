@@ -144,7 +144,7 @@ export async function loadDashboardKpis(
     (sum, r) =>
       sum +
       (r.proposed_price != null && r.bag_count != null
-        ? Number(r.proposed_price) * r.bag_count
+        ? Number(r.proposed_price) * Number(r.bag_count)
         : 0),
     0,
   );
@@ -266,12 +266,12 @@ export async function loadLeadsRecentes(
       : r.produtor?.full_name;
     const valor =
       r.proposed_price != null && r.bag_count != null
-        ? Number(r.proposed_price) * r.bag_count
+        ? Number(r.proposed_price) * Number(r.bag_count)
         : null;
     return {
       id: r.id,
       produtor: produtor ?? "Produtor sem nome",
-      bag_count: r.bag_count,
+      bag_count: r.bag_count != null ? Number(r.bag_count) : null,
       coffee_type: r.coffee_type,
       status: r.status,
       valor,

@@ -52,7 +52,8 @@ export async function loadEstoqueProdutor(
     status: string;
   }[];
   const vendidos = contratos.filter((c) => STATUS_VENDIDO.includes(c.status));
-  const vendido = vendidos.reduce((s, c) => s + (c.bag_count ?? 0), 0);
+  // bag_count é numeric no Postgres → supabase-js devolve string; coage pra somar.
+  const vendido = vendidos.reduce((s, c) => s + Number(c.bag_count ?? 0), 0);
   const valorVendido = vendidos.reduce(
     (s, c) => s + (c.total_value != null ? Number(c.total_value) : 0),
     0,
@@ -61,7 +62,7 @@ export async function loadEstoqueProdutor(
   const leads = (leadsRes.data ?? []) as { bag_count: number | null; status: string }[];
   const emNegociacaoBruto = leads
     .filter((l) => STATUS_EM_NEG_LEAD.includes(l.status))
-    .reduce((s, l) => s + (l.bag_count ?? 0), 0);
+    .reduce((s, l) => s + Number(l.bag_count ?? 0), 0);
 
   const naoVendido = Math.max(0, total - vendido);
   // Em negociação não pode exceder o que não foi vendido (clamp p/ coerência).
@@ -94,7 +95,7 @@ export async function loadComprometidoPorLote(
     status: string;
   }[]) {
     if (!r.lote_id) continue;
-    out[r.lote_id] = (out[r.lote_id] ?? 0) + (r.bag_count ?? 0);
+    out[r.lote_id] = (out[r.lote_id] ?? 0) + Number(r.bag_count ?? 0);
   }
   return out;
 }

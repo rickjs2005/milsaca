@@ -240,10 +240,10 @@ export async function getCompradorHistorico(
       id: o.id,
       lote_codigo: pickOne(o.lote)?.codigo ?? null,
       preco_saca: preco,
-      bag_count: o.bag_count,
+      bag_count: o.bag_count != null ? Number(o.bag_count) : null,
       validade_ate: o.validade_ate,
       status: o.status,
-      total: o.bag_count != null ? preco * o.bag_count : null,
+      total: o.bag_count != null ? preco * Number(o.bag_count) : null,
     };
   });
 

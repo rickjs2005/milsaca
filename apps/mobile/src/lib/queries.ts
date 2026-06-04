@@ -470,7 +470,7 @@ export async function listMinhasNegociacoes(
       id: r.id,
       status: r.status,
       coffee_type: r.coffee_type,
-      bag_count: r.bag_count,
+      bag_count: r.bag_count != null ? Number(r.bag_count) : null,
       proposed_price:
         r.proposed_price != null ? Number(r.proposed_price) : null,
       notes: r.notes,
@@ -649,7 +649,7 @@ export async function listMeusContratos(
         entregue: 0,
         em_transito: 0,
       };
-      const n = e.bag_count ?? 0;
+      const n = e.bag_count != null ? Number(e.bag_count) : 0;
       if (e.status === "recebida" || e.status === "conferida") {
         cur.entregue += n;
       } else if (e.status === "programada" || e.status === "em_transito") {
@@ -662,7 +662,7 @@ export async function listMeusContratos(
   return rows.map((r): ContratoItem => {
     const cor = pickOne(r.corretora);
     const saldo = saldoPorContrato.get(r.id) ?? { entregue: 0, em_transito: 0 };
-    const contratado = r.bag_count ?? 0;
+    const contratado = r.bag_count != null ? Number(r.bag_count) : 0;
     const pendentes = Math.max(
       contratado - saldo.entregue - saldo.em_transito,
       0,
@@ -672,7 +672,7 @@ export async function listMeusContratos(
       code: r.code,
       status: r.status,
       coffee_type: r.coffee_type,
-      bag_count: r.bag_count,
+      bag_count: r.bag_count != null ? Number(r.bag_count) : null,
       total_value: r.total_value != null ? Number(r.total_value) : null,
       signed_at: r.signed_at,
       created_at: r.created_at,
@@ -948,7 +948,7 @@ export async function listMinhasPropostas(
       id: r.id,
       status: r.status,
       preco_saca: Number(r.preco_saca),
-      bag_count: r.bag_count,
+      bag_count: r.bag_count != null ? Number(r.bag_count) : null,
       mensagem: r.mensagem,
       validade_ate: r.validade_ate,
       enviada_em: r.enviada_em,

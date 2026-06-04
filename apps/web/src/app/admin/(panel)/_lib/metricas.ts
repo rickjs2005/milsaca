@@ -148,7 +148,7 @@ export async function loadDashboardMetrics(): Promise<DashboardMetrics> {
   for (const e of (entregasSaldoRows ?? []) as EntregaSaldoRow[]) {
     registradoPorContrato.set(
       e.contrato_id,
-      (registradoPorContrato.get(e.contrato_id) ?? 0) + (e.bag_count ?? 0),
+      (registradoPorContrato.get(e.contrato_id) ?? 0) + Number(e.bag_count ?? 0),
     );
   }
   let sacasAEntregar = 0;
@@ -156,7 +156,7 @@ export async function loadDashboardMetrics(): Promise<DashboardMetrics> {
   let sacasResiduais = 0;
   let contratosExcedente = 0;
   for (const c of (contratosSaldoRows ?? []) as ContratoSaldoRow[]) {
-    const contratado = c.bag_count ?? 0;
+    const contratado = Number(c.bag_count ?? 0);
     if (contratado <= 0) continue;
     const registrado = registradoPorContrato.get(c.id) ?? 0;
     const pendente = contratado - registrado;
@@ -406,7 +406,7 @@ export async function loadReconciliacaoSacas(): Promise<ReconciliacaoSacasRow[]>
   }[]) {
     registradoPorContrato.set(
       e.contrato_id,
-      (registradoPorContrato.get(e.contrato_id) ?? 0) + (e.bag_count ?? 0),
+      (registradoPorContrato.get(e.contrato_id) ?? 0) + Number(e.bag_count ?? 0),
     );
   }
 
@@ -423,7 +423,7 @@ export async function loadReconciliacaoSacas(): Promise<ReconciliacaoSacasRow[]>
 
   const anomalias: ReconciliacaoSacasRow[] = [];
   for (const c of (contratosRows ?? []) as CRow[]) {
-    const contratado = c.bag_count ?? 0;
+    const contratado = Number(c.bag_count ?? 0);
     if (contratado <= 0) continue;
     const registrado = registradoPorContrato.get(c.id) ?? 0;
     const pendente = Math.max(contratado - registrado, 0);

@@ -73,7 +73,8 @@ export async function listMinhasNegociacoes(
       id: r.id,
       status: r.status,
       coffee_type: r.coffee_type,
-      bag_count: r.bag_count,
+      // bag_count é numeric no Postgres → vem como string; coage (igual proposed_price).
+      bag_count: r.bag_count != null ? Number(r.bag_count) : null,
       proposed_price:
         r.proposed_price != null ? Number(r.proposed_price) : null,
       notes: r.notes,
@@ -145,7 +146,8 @@ export async function getMinhaNegociacao(
     id: r.id,
     status: r.status,
     coffee_type: r.coffee_type,
-    bag_count: r.bag_count,
+    // bag_count é numeric no Postgres → vem como string; coage (igual proposed_price).
+    bag_count: r.bag_count != null ? Number(r.bag_count) : null,
     proposed_price: r.proposed_price != null ? Number(r.proposed_price) : null,
     notes: r.notes,
     created_at: r.created_at,

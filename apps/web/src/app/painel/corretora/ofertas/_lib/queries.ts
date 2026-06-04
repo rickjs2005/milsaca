@@ -50,7 +50,7 @@ function mapRow(r: Row): OfertaItem {
   return {
     id: r.id,
     preco_saca: Number(r.preco_saca),
-    bag_count: r.bag_count,
+    bag_count: r.bag_count != null ? Number(r.bag_count) : null,
     validade_ate: r.validade_ate,
     mensagem: r.mensagem,
     status: r.status,

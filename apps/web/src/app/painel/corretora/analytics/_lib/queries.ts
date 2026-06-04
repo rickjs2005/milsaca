@@ -205,7 +205,7 @@ function flowFor(
     if (c.status !== "ativo" && c.status !== "finalizado") continue;
     if (!inWindow(c.signed_at, start, end)) continue;
     comissao += num(c.comissao_total);
-    sacasVendidas += c.bag_count ?? 0;
+    sacasVendidas += num(c.bag_count);
   }
   return {
     leadsNovos,
@@ -284,7 +284,7 @@ export async function loadAnalytics(
   // --- Snapshot (estado atual; não usa período)
   const sacasEmNegociacao = leads
     .filter((l) => l.status === "em_negociacao")
-    .reduce((s, l) => s + (l.bag_count ?? 0), 0);
+    .reduce((s, l) => s + num(l.bag_count), 0);
 
   const produtoresUnicos = new Set<string>();
   for (const l of leads) if (l.produtor_id) produtoresUnicos.add(l.produtor_id);
@@ -345,7 +345,7 @@ export async function loadAnalytics(
   const mixAcc: Record<string, number> = { arabica: 0, conillon: 0 };
   for (const c of contratosJanela) {
     const t = (c.coffee_type ?? "").toLowerCase();
-    const sacas = c.bag_count ?? 0;
+    const sacas = num(c.bag_count);
     if (t.includes("arab")) mixAcc.arabica = (mixAcc.arabica ?? 0) + sacas;
     else if (t.includes("coni")) mixAcc.conillon = (mixAcc.conillon ?? 0) + sacas;
   }

@@ -225,7 +225,7 @@ export async function listProdutorLeads(
     id: r.id,
     status: r.status,
     coffee_type: r.coffee_type,
-    bag_count: r.bag_count,
+    bag_count: r.bag_count != null ? Number(r.bag_count) : null,
     proposed_price: r.proposed_price,
     created_at: r.created_at,
     corretora: Array.isArray(r.corretoras)
@@ -274,7 +274,7 @@ export async function listProdutorContratos(
     id: r.id,
     code: r.code,
     status: r.status,
-    bag_count: r.bag_count,
+    bag_count: r.bag_count != null ? Number(r.bag_count) : null,
     total_value: r.total_value,
     signed_at: r.signed_at,
     created_at: r.created_at,

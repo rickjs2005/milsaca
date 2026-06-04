@@ -63,7 +63,7 @@ export default async function VendasProdutorPage() {
 
   const totals = rows.reduce(
     (acc, r) => {
-      acc.sacas += r.bag_count ?? 0;
+      acc.sacas += Number(r.bag_count ?? 0);
       acc.valor += r.total_value != null ? Number(r.total_value) : 0;
       return acc;
     },
@@ -103,7 +103,7 @@ export default async function VendasProdutorPage() {
             <CardContent className="divide-y divide-neutral-200 p-0">
               {rows.map((r) => {
                 const cor = pickOne(r.corretoras);
-                const sacas = r.bag_count ?? 0;
+                const sacas = Number(r.bag_count ?? 0);
                 const total = r.total_value != null ? Number(r.total_value) : 0;
                 const preco = sacas > 0 ? total / sacas : 0;
                 const cafe = coffeeLabel(r.coffee_type);

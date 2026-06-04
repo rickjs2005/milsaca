@@ -495,7 +495,8 @@ export async function updateContratoStatus(formData: FormData) {
   // FINALIZAR um contrato deixando sacas sem entrega registrada. Soma as
   // entregas não-canceladas e compara com o contratado; se faltar, recusa e
   // mostra o saldo pendente em vez de "sumir" com as sacas.
-  if (next === "finalizado" && current.bag_count != null && current.bag_count > 0) {
+  const contratado = current.bag_count != null ? Number(current.bag_count) : null;
+  if (next === "finalizado" && contratado != null && contratado > 0) {
     const { data: entregas } = await supabase
       .from("entregas")
       .select("bag_count, status")
@@ -503,10 +504,10 @@ export async function updateContratoStatus(formData: FormData) {
       .eq("contrato_id", id)
       .neq("status", "cancelada");
     const registrado = (entregas ?? []).reduce(
-      (acc, e) => acc + (e.bag_count ?? 0),
+      (acc, e) => acc + (e.bag_count != null ? Number(e.bag_count) : 0),
       0,
     );
-    const pendente = current.bag_count - registrado;
+    const pendente = contratado - registrado;
     if (pendente > 0) {
       const log = await getReqLogger({
         action: "updateContratoStatus",
@@ -514,12 +515,12 @@ export async function updateContratoStatus(formData: FormData) {
         contratoId: id,
       });
       log.warn("contrato_finalizar_com_saldo_pendente", {
-        contratado: current.bag_count,
+        contratado,
         registrado,
         pendente,
       });
       const params = new URLSearchParams({
-        error: `Não dá pra finalizar: faltam ${pendente} sacas sem entrega registrada (contratado ${current.bag_count}, registrado ${registrado}). Registre a entrega ou ajuste o contrato.`,
+        error: `Não dá pra finalizar: faltam ${pendente} sacas sem entrega registrada (contratado ${contratado}, registrado ${registrado}). Registre a entrega ou ajuste o contrato.`,
       });
       redirect(`/painel/corretora/contratos/${id}?${params.toString()}`);
     }
@@ -542,7 +543,7 @@ export async function updateContratoStatus(formData: FormData) {
       produtor_id: current.produtor_id,
       comprador_id: current.comprador_id,
       coffee_type: current.coffee_type,
-      bag_count: current.bag_count,
+      bag_count: contratado,
       total_value:
         current.total_value != null ? Number(current.total_value) : null,
       comissao_pct:

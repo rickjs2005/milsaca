@@ -48,7 +48,7 @@ function toListItem(r: Row, today: string): EntregaListItem {
   return {
     id: r.id,
     sequencia: r.sequencia,
-    bag_count: r.bag_count,
+    bag_count: r.bag_count != null ? Number(r.bag_count) : null,
     peso_liquido_kg: r.peso_liquido_kg != null ? Number(r.peso_liquido_kg) : null,
     status: r.status,
     data_prevista: r.data_prevista,
@@ -293,7 +293,7 @@ export async function listContratosOptions(
       code: r.code,
       produtor_id: r.produtor_id,
       produtor_nome: p?.full_name ?? "—",
-      bag_count: r.bag_count,
+      bag_count: r.bag_count != null ? Number(r.bag_count) : null,
     };
   });
 }

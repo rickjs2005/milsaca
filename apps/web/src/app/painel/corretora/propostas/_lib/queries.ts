@@ -15,6 +15,7 @@ function toPropostaRow(row: PropostaRow): PropostaRow {
   return {
     ...row,
     preco_saca: Number(row.preco_saca),
+    bag_count: row.bag_count != null ? Number(row.bag_count) : null,
   };
 }
 
