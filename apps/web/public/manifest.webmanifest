@@ -1,0 +1,11 @@
+{
+  "name": "Milsaca — Painel do produtor",
+  "short_name": "Milsaca",
+  "description": "Sua safra de café: estoque, preço, propostas e contratos.",
+  "start_url": "/painel/produtor",
+  "scope": "/painel/produtor",
+  "display": "standalone",
+  "background_color": "#FAF7F0",
+  "theme_color": "#0F3D2E",
+  "lang": "pt-BR"
+}

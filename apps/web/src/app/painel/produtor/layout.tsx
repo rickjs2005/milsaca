@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { enforceProfileStatus, getProfile, requireUser } from "@/lib/auth";
 import { ToastFromSearchParams } from "@/components/toast-from-search-params";
+import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { PanelShell } from "@/components/panel-shell";
 import { getSupportChannels } from "@/lib/support";
 import { ProdutorSidebar } from "./_components/sidebar";
@@ -58,6 +59,7 @@ export default async function PainelProdutorLayout({
         </div>
       </PanelShell>
       <ToastFromSearchParams />
+      <ServiceWorkerRegister />
     </>
   );
 }
