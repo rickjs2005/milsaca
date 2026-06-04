@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Wallet, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { MobileFilterSelect } from "@/components/mobile-filter-select";
 import { cn } from "@/lib/utils";
@@ -19,8 +19,6 @@ const BRL2 = new Intl.NumberFormat("pt-BR", {
   minimumFractionDigits: 2,
 });
 
-// Preço de referência do valor estimado: Índice MilSaca (média das corretoras)
-// como principal; CEPEA como referência secundária (não branda o herói).
 export type IndiceRef = {
   preco: number | null;
   fonte: "milsaca" | "cepea";
@@ -29,9 +27,9 @@ export type IndiceRef = {
 };
 
 /**
- * MINHA SAFRA — herói da Início. O produtor vê a safra como o extrato do banco:
- * quanto produziu, vendeu, comprometeu e quanto AINDA PODE VENDER + quanto vale.
- * Consome a fonte única (EstoqueProdutor); invariante total = vend + neg + disp.
+ * MINHA SAFRA — herói com FOCO ÚNICO: "quanto café ainda posso vender?".
+ * Disponível + valor dominam; Produção/Em negociação/Vendidas são apoio.
+ * Fonte única (EstoqueProdutor); invariante total = vend + neg + disp.
  */
 export function MinhaSafra({
   estoque,
@@ -40,7 +38,6 @@ export function MinhaSafra({
 }: {
   estoque: EstoqueProdutor;
   indice: IndiceRef;
-  /** Safra do filtro (URL ?safra) — "" = todas. */
   safraSelecionada: string;
 }) {
   const totalKg = sacasParaKg(estoque.total);
@@ -53,27 +50,27 @@ export function MinhaSafra({
   return (
     <Card tone="premium">
       <CardContent className="p-card">
+        {/* Cabeçalho discreto: safra + atalhos */}
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-h3 text-milsaca-cafezal">
+          <p className="text-caption font-semibold uppercase tracking-wider text-neutral-600">
             Minha Safra{estoque.safra ? ` ${estoque.safra}` : ""}
-          </h2>
+          </p>
           <div className="flex shrink-0 items-center gap-3">
             <Link
               href="/painel/produtor/plano"
-              className="rounded-md text-caption font-medium text-milsaca-dourado-texto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="rounded-md py-1 text-caption font-medium text-milsaca-dourado-texto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               Planejar venda →
             </Link>
             <Link
               href="/painel/produtor/extrato"
-              className="rounded-md text-caption font-medium text-milsaca-dourado-texto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="rounded-md py-1 text-caption font-medium text-milsaca-dourado-texto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               Ver extrato →
             </Link>
           </div>
         </div>
 
-        {/* Seletor de safra (só quando há mais de uma) */}
         {estoque.safrasDisponiveis.length >= 2 ? (
           <div className="mt-2">
             <MobileFilterSelect
@@ -90,22 +87,33 @@ export function MinhaSafra({
 
         {estoque.total > 0 ? (
           <>
-            {/* As 4 perguntas da safra */}
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <Tile label="Produção total" valor={estoque.total} />
-              <Tile label="Disponíveis" valor={estoque.disponivel} destaque />
-              <Tile label="Em negociação" valor={estoque.emNegociacao} />
-              <Tile label="Vendidas" valor={estoque.vendido} />
+            {/* FOCO PRINCIPAL — disponível + valor (domina a tela) */}
+            <div className="mt-4">
+              <p className="text-[3.25rem] font-bold leading-none tabular-nums text-milsaca-cafezal sm:text-6xl">
+                {NUM.format(estoque.disponivel)}
+              </p>
+              <p className="mt-1 text-label font-semibold uppercase tracking-wider text-neutral-600">
+                sacas disponíveis para venda
+              </p>
+              <p className="mt-3 text-h2 font-bold text-milsaca-cafezal">
+                {valorDisponivel != null ? `≈ ${BRL0.format(valorDisponivel)}` : "—"}
+                <span className="text-body-sm font-medium text-neutral-600">
+                  {valorDisponivel != null ? " hoje" : ""}
+                </span>
+              </p>
+              <p className="mt-1 text-body-sm text-neutral-600">
+                {indice.preco != null
+                  ? `Baseado no ${fonteLabel} · ${BRL2.format(indice.preco)}/saca`
+                  : "Cotação indisponível"}
+                {indice.fonte === "milsaca" && indice.cepea != null
+                  ? ` · CEPEA ${BRL2.format(indice.cepea)} (ref.)`
+                  : ""}
+              </p>
             </div>
 
-            <p className="mt-3 text-caption text-neutral-500">
-              {NUM.format(estoque.total)} sacas ·{" "}
-              {formatarBags(totalKg, PESO_BAG_PADRAO)} · {formatarKg(totalKg)}
-            </p>
-
-            {/* Barra proporcional: disponível · negociação · vendido = total */}
+            {/* Barra proporcional (visual da safra) */}
             <div
-              className="mt-3 flex h-3 w-full overflow-hidden rounded-pill bg-neutral-100"
+              className="mt-4 flex h-2.5 w-full overflow-hidden rounded-pill bg-neutral-100"
               role="img"
               aria-label={`Safra: ${estoque.disponivel} disponíveis, ${estoque.emNegociacao} em negociação, ${estoque.vendido} vendidas, de ${estoque.total} sacas`}
             >
@@ -113,15 +121,21 @@ export function MinhaSafra({
               <div className="bg-warning-400" style={{ width: `${pct(estoque.emNegociacao)}%` }} />
               <div className="bg-neutral-400" style={{ width: `${pct(estoque.vendido)}%` }} />
             </div>
-            <div className="mt-3 grid grid-cols-3 gap-2 text-caption">
-              <Legenda cor="bg-success-500" label="Disponível" valor={estoque.disponivel} />
-              <Legenda cor="bg-warning-400" label="Em negociação" valor={estoque.emNegociacao} />
-              <Legenda cor="bg-neutral-400" label="Vendido" valor={estoque.vendido} />
+
+            {/* APOIO — métricas secundárias (subordinadas ao foco) */}
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              <Apoio cor="bg-success-500" label="Produção" valor={estoque.total} />
+              <Apoio cor="bg-warning-400" label="Em negociação" valor={estoque.emNegociacao} />
+              <Apoio cor="bg-neutral-400" label="Vendidas" valor={estoque.vendido} />
             </div>
+            <p className="mt-2 text-caption text-neutral-600">
+              Produção: {NUM.format(estoque.total)} sacas ·{" "}
+              {formatarBags(totalKg, PESO_BAG_PADRAO)} · {formatarKg(totalKg)}
+            </p>
 
             {estoque.sobreComprometido ? (
               <p className="mt-2 flex items-start gap-1.5 rounded-md bg-danger-50 px-3 py-2 text-caption text-danger-700">
-                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <AlertTriangle aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 Comprometido (vendido + em negociação) maior que a produção
                 declarada — revise os lotes da safra.
               </p>
@@ -131,32 +145,6 @@ export function MinhaSafra({
                 * inclui café não beneficiado — saca estimada até o beneficiamento.
               </p>
             ) : null}
-
-            {/* Valor estimado do DISPONÍVEL (Índice MilSaca principal) */}
-            <div className="mt-4 border-t border-milsaca-cream-escuro/60 pt-3">
-              <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-milsaca-dourado/15 text-milsaca-cafezal ring-1 ring-inset ring-milsaca-dourado/30">
-                  <Wallet className="h-4 w-4" />
-                </span>
-                <p className="text-caption font-medium uppercase tracking-wider text-neutral-600">
-                  Valor estimado disponível
-                </p>
-              </div>
-              <p className="mt-2 text-display leading-none text-milsaca-cafezal">
-                {valorDisponivel != null ? BRL0.format(valorDisponivel) : "—"}
-              </p>
-              <p className="mt-1 text-caption text-neutral-500">
-                {NUM.format(estoque.disponivel)} sacas disponíveis ×{" "}
-                {indice.preco != null
-                  ? `${fonteLabel} ${BRL2.format(indice.preco)}/saca`
-                  : "cotação indisponível"}
-              </p>
-              {indice.fonte === "milsaca" && indice.cepea != null ? (
-                <p className="text-caption text-neutral-500">
-                  CEPEA {BRL2.format(indice.cepea)}/saca · referência
-                </p>
-              ) : null}
-            </div>
           </>
         ) : (
           <p className="mt-3 text-body-sm text-neutral-600">
@@ -175,33 +163,8 @@ export function MinhaSafra({
   );
 }
 
-function Tile({
-  label,
-  valor,
-  destaque,
-}: {
-  label: string;
-  valor: number;
-  destaque?: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        "rounded-md px-3 py-2.5",
-        destaque
-          ? "bg-milsaca-dourado/15 ring-1 ring-inset ring-milsaca-dourado/30"
-          : "bg-white/60",
-      )}
-    >
-      <p className="text-h2 leading-none tabular-nums text-milsaca-cafezal">
-        {NUM.format(valor)}
-      </p>
-      <p className="mt-1 text-caption font-medium text-neutral-600">{label}</p>
-    </div>
-  );
-}
-
-function Legenda({
+// Métrica de apoio: pequena, subordinada ao foco (disponível).
+function Apoio({
   cor,
   label,
   valor,
@@ -211,10 +174,14 @@ function Legenda({
   valor: number;
 }) {
   return (
-    <div className="flex items-center gap-1.5">
-      <span className={cn("h-2 w-2 rounded-full", cor)} />
-      <span className="text-neutral-600">{label}</span>
-      <span className="font-semibold text-milsaca-cafezal">{NUM.format(valor)}</span>
+    <div className="rounded-md bg-white/60 px-2.5 py-2">
+      <div className="flex items-center gap-1.5">
+        <span className={cn("h-2 w-2 rounded-full", cor)} aria-hidden />
+        <span className="text-caption text-neutral-600">{label}</span>
+      </div>
+      <p className="mt-0.5 text-h3 font-semibold tabular-nums text-milsaca-cafezal">
+        {NUM.format(valor)}
+      </p>
     </div>
   );
 }

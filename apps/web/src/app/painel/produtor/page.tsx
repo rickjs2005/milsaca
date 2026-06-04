@@ -8,16 +8,16 @@ import {
   Star,
   Clock,
   CheckCircle2,
-  TrendingUp,
   Plus,
   ShoppingCart,
   FileText,
   type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/status-badge";
-import { IndicadoresLive } from "@/components/indicadores-live";
 import { MinhaSafra, type IndiceRef } from "./_components/minha-safra";
+import { MercadoCompacto } from "./_components/mercado-compacto";
 import {
   LEAD_STATUS_LABEL,
   LEAD_STATUS_TONE,
@@ -218,7 +218,34 @@ export default async function InicioProdutorPage({
             safraSelecionada={safraParam ?? ""}
           />
 
-          {/* 2. Ações rápidas — alvos grandes, uma mão */}
+          {/* 2. Melhor oportunidade — card de ação, subordinado ao herói */}
+          {ganho ? (
+            <Card className="border-success-200 bg-success-50/60">
+              <CardContent className="p-card">
+                <p className="flex items-center gap-1.5 text-caption font-bold uppercase tracking-wider text-success-700">
+                  <span aria-hidden="true">🔥</span>
+                  Melhor oportunidade
+                </p>
+                <p className="mt-2 text-h3 font-semibold text-milsaca-cafezal">
+                  {ganho.corretora}
+                </p>
+                <p className="text-h2 font-bold text-milsaca-cafezal">
+                  {BRL2.format(ganho.preco)}
+                  <span className="text-caption font-normal text-neutral-600">
+                    /saca
+                  </span>
+                </p>
+                <p className="text-body-sm font-semibold text-success-700">
+                  +{BRL0.format(ganho.extra)} acima da média
+                </p>
+                <Button asChild variant="primary" className="mt-3 w-full">
+                  <Link href="/painel/produtor/corretoras">Ver corretora</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {/* 3. Ações rápidas — alvos grandes, uma mão */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <AcaoRapida href="/painel/produtor/cafe/novo" icon={Plus} label="Registrar café" destaque />
             <AcaoRapida href="/painel/produtor/corretoras" icon={ShoppingCart} label="Vender café" />
@@ -226,105 +253,7 @@ export default async function InicioProdutorPage({
             <AcaoRapida href="/painel/produtor/financeiro" icon={Wallet} label="Financeiro" />
           </div>
 
-          {/* Melhor oportunidade de venda */}
-          {ganho ? (
-            <Card className="border-success-100 bg-success-50/40">
-              <CardContent className="flex items-center gap-3 p-card">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success-100 text-success-700">
-                  <TrendingUp className="h-5 w-5" />
-                </span>
-                <p className="text-body-sm text-milsaca-cafezal">
-                  <span className="font-semibold">{ganho.corretora}</span> está
-                  pagando{" "}
-                  <span className="font-semibold">
-                    {BRL2.format(ganho.preco)}/saca
-                  </span>{" "}
-                  — acima da média. Pelas suas {estoque.disponivel} sacas
-                  disponíveis, são{" "}
-                  <span className="font-semibold text-success-700">
-                    +{BRL0.format(ganho.extra)}
-                  </span>
-                  .
-                </p>
-              </CardContent>
-            </Card>
-          ) : null}
-
-          {/* 4. Corretoras pagando hoje (melhor preço) */}
-          <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-600">
-                <Star className="h-4 w-4" />
-                Corretoras · preço de hoje
-              </h2>
-              <Link
-                href="/painel/produtor/corretoras"
-                className="rounded-md text-caption font-medium text-milsaca-dourado-texto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                Ver →
-              </Link>
-            </div>
-            {favoritas.length === 0 ? (
-              <Card tone="muted" className="border-dashed">
-                <CardContent className="flex flex-col items-center gap-3 py-6 text-center">
-                  <p className="text-body-sm text-neutral-600">
-                    Favorite corretoras pra ver o preço que elas pagam aqui.
-                  </p>
-                  <Link
-                    href="/painel/produtor/corretoras"
-                    className="inline-flex items-center gap-2 rounded-md bg-success-600 px-4 py-2 text-body-sm font-medium text-milsaca-cream transition-colors hover:bg-success-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  >
-                    Ver corretoras
-                  </Link>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {favoritas.map((c) => {
-                  const up = c.variacao_pct != null && c.variacao_pct >= 0;
-                  const Arrow = up ? ArrowUpRight : ArrowDownRight;
-                  return (
-                    <Card key={c.key} interactive>
-                      <CardContent className="p-card">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="truncate text-body-sm font-semibold text-milsaca-cafezal">
-                              {c.corretora_name ?? "Corretora"}
-                            </p>
-                            <p className="mt-0.5 text-caption text-neutral-500">
-                              {coffeeLabel(c.specie ?? c.coffee_type)}
-                            </p>
-                          </div>
-                          {c.variacao_pct != null ? (
-                            <span
-                              className={cn(
-                                "inline-flex items-center gap-0.5 rounded-pill px-2 py-0.5 text-caption font-semibold",
-                                up
-                                  ? "bg-success-50 text-success-700"
-                                  : "bg-danger-50 text-danger-700",
-                              )}
-                            >
-                              <Arrow className="h-3.5 w-3.5" />
-                              {up ? "+" : ""}
-                              {c.variacao_pct.toFixed(1)}%
-                            </span>
-                          ) : null}
-                        </div>
-                        <p className="mt-2 text-h3 font-bold text-milsaca-cafezal">
-                          {BRL2.format(c.current_price)}
-                          <span className="text-caption font-normal text-neutral-500">
-                            /saca
-                          </span>
-                        </p>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-
-          {/* 5. Propostas em aberto */}
+          {/* 4. Propostas em aberto */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-600">
@@ -366,10 +295,129 @@ export default async function InicioProdutorPage({
               </div>
             )}
           </section>
+
+          {/* 5. Corretoras pagando hoje (melhor preço) */}
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-600">
+                <Star className="h-4 w-4" />
+                Corretoras · preço de hoje
+              </h2>
+              <Link
+                href="/painel/produtor/corretoras"
+                className="rounded-md text-caption font-medium text-milsaca-dourado-texto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                Ver →
+              </Link>
+            </div>
+            {favoritas.length === 0 ? (
+              <Card tone="muted" className="border-dashed">
+                <CardContent className="flex flex-col items-center gap-3 py-6 text-center">
+                  <p className="text-body-sm text-neutral-600">
+                    Favorite corretoras pra ver o preço que elas pagam aqui.
+                  </p>
+                  <Link
+                    href="/painel/produtor/corretoras"
+                    className="inline-flex items-center gap-2 rounded-md bg-success-600 px-4 py-2 text-body-sm font-medium text-milsaca-cream transition-colors hover:bg-success-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    Ver corretoras
+                  </Link>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {favoritas.map((c) => {
+                  const up = c.variacao_pct != null && c.variacao_pct >= 0;
+                  const Arrow = up ? ArrowUpRight : ArrowDownRight;
+                  return (
+                    <Card key={c.key} interactive>
+                      <CardContent className="p-card">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate text-body-sm font-semibold text-milsaca-cafezal">
+                              {c.corretora_name ?? "Corretora"}
+                            </p>
+                            <p className="mt-0.5 text-caption text-neutral-600">
+                              {coffeeLabel(c.specie ?? c.coffee_type)}
+                            </p>
+                          </div>
+                          {c.variacao_pct != null ? (
+                            <span
+                              className={cn(
+                                "inline-flex items-center gap-0.5 rounded-pill px-2 py-0.5 text-caption font-semibold",
+                                up
+                                  ? "bg-success-50 text-success-700"
+                                  : "bg-danger-50 text-danger-700",
+                              )}
+                            >
+                              <Arrow className="h-3.5 w-3.5" />
+                              {up ? "+" : ""}
+                              {c.variacao_pct.toFixed(1)}%
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="mt-2 text-h3 font-bold text-milsaca-cafezal">
+                          {BRL2.format(c.current_price)}
+                          <span className="text-caption font-normal text-neutral-600">
+                            /saca
+                          </span>
+                        </p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </section>
         </div>
 
         {/* SECUNDÁRIA — dinheiro e mercado (referência) */}
         <div className="space-y-6">
+          {/* Resultado da safra (mini) — só quando já vendeu algo */}
+          {estoque.vendido > 0 ? (
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-caption font-semibold uppercase tracking-wider text-neutral-600">
+                  Resultado da safra
+                </h2>
+                <Link
+                  href="/painel/produtor/vendas"
+                  className="rounded-md text-caption font-medium text-milsaca-dourado-texto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  Ver →
+                </Link>
+              </div>
+              <Card>
+                <CardContent className="space-y-2.5 p-card">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-caption text-neutral-600">
+                      Receita acumulada
+                    </p>
+                    <p className="text-body-sm font-semibold tabular-nums text-milsaca-cafezal">
+                      {BRL0.format(estoque.valorVendido)}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-caption text-neutral-600">
+                      Preço médio vendido
+                    </p>
+                    <p className="text-body-sm font-semibold tabular-nums text-milsaca-cafezal">
+                      {estoque.vendido > 0
+                        ? `${BRL2.format(estoque.valorVendido / estoque.vendido)}/saca`
+                        : "—"}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-caption text-neutral-600">Total vendido</p>
+                    <p className="text-body-sm font-semibold tabular-nums text-milsaca-cafezal">
+                      {estoque.vendido} sacas
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+          ) : null}
+
           {/* Financeiro — a receber × recebido */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
@@ -433,8 +481,8 @@ export default async function InicioProdutorPage({
             </div>
           </section>
 
-          {/* Indicadores de mercado (referência) — sempre por último */}
-          <IndicadoresLive />
+          {/* Mercado compacto (referência) — sempre por último */}
+          <MercadoCompacto market={cot.market} />
         </div>
       </div>
     </div>
