@@ -67,6 +67,7 @@ async function loadPropostas(userId: string): Promise<Proposta[]> {
       "id, status, coffee_type, bag_count, proposed_price, created_at, corretoras(name)",
     )
     .eq("produtor_id", userId)
+    .in("status", ["novo", "em_negociacao"])
     .order("created_at", { ascending: false })
     .limit(6);
 
@@ -506,7 +507,7 @@ export default async function InicioProdutorPage() {
         <div className="flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-500">
             <Handshake className="h-4 w-4" />
-            Propostas recebidas
+            Propostas em aberto
           </h2>
           {propostas.length > 0 ? (
             <Link
@@ -521,7 +522,8 @@ export default async function InicioProdutorPage() {
           <Card tone="muted" className="border-dashed">
             <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
               <p className="text-body-sm text-neutral-600">
-                Nenhuma proposta ainda. Comece chamando uma corretora.
+                Nenhuma proposta em aberto. Quando uma corretora abrir uma
+                proposta, ela aparece aqui.
               </p>
               <Link
                 href="/painel/produtor/corretoras"
