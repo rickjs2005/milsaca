@@ -24,6 +24,8 @@ export type EstoqueProdutor = {
   livre: number;
   /** Valor REAL já vendido (Σ total_value dos contratos ativo/finalizado). */
   valorVendido: number;
+  /** Há lote não-beneficiado em estoque → parte das sacas é ESTIMADA. */
+  temEstimada: boolean;
 };
 
 const STATUS_VENDIDO = ["ativo", "finalizado"];
@@ -34,7 +36,7 @@ export async function loadEstoqueProdutor(
 ): Promise<EstoqueProdutor> {
   const supabase = await createClient();
   const [lotesRes, contratosRes, leadsRes] = await Promise.all([
-    supabase.from("lotes").select("peso_sacas, status").eq("produtor_id", userId),
+    supabase.from("lotes").select("peso_sacas, status, beneficiado").eq("produtor_id", userId),
     supabase
       .from("contratos")
       .select("bag_count, total_value, status")
@@ -42,9 +44,17 @@ export async function loadEstoqueProdutor(
     supabase.from("leads").select("bag_count, status").eq("produtor_id", userId),
   ]);
 
-  const total = ((lotesRes.data ?? []) as { peso_sacas: number | string | null; status: string }[])
-    .filter((l) => l.status !== "arquivado")
-    .reduce((s, l) => s + Number(l.peso_sacas ?? 0), 0);
+  const lotes = (lotesRes.data ?? []) as {
+    peso_sacas: number | string | null;
+    status: string;
+    beneficiado: boolean;
+  }[];
+  const ativos = lotes.filter((l) => l.status !== "arquivado");
+  const total = ativos.reduce((s, l) => s + Number(l.peso_sacas ?? 0), 0);
+  // Café não-beneficiado (e não vendido) ainda em estoque → saca estimada.
+  const temEstimada = ativos.some(
+    (l) => l.status !== "vendido" && !l.beneficiado,
+  );
 
   const contratos = (contratosRes.data ?? []) as {
     bag_count: number | null;
@@ -69,7 +79,7 @@ export async function loadEstoqueProdutor(
   const emNegociacao = Math.min(emNegociacaoBruto, naoVendido);
   const livre = Math.max(0, naoVendido - emNegociacao);
 
-  return { total, vendido, emNegociacao, naoVendido, livre, valorVendido };
+  return { total, vendido, emNegociacao, naoVendido, livre, valorVendido, temEstimada };
 }
 
 /**

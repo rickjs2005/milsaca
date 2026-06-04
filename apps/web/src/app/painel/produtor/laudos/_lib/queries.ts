@@ -19,6 +19,7 @@ export type MeuCafeRow = {
   processo: string | null;
   safra: string | null;
   status: string;
+  beneficiado: boolean;
   createdAt: string;
   pesoKg: number;
   pesoSacas: number;
@@ -46,7 +47,7 @@ export async function loadMeusCafes(produtorId: string): Promise<MeuCafeRow[]> {
     supabase
       .from("lotes")
       .select(
-        "id, codigo, specie, processo, safra, status, peso_kg, peso_sacas, peso_por_volume_kg, unidade_entrada, created_at, corretoras(name)",
+        "id, codigo, specie, processo, safra, status, beneficiado, peso_kg, peso_sacas, peso_por_volume_kg, unidade_entrada, created_at, corretoras(name)",
       )
       .eq("produtor_id", produtorId)
       .neq("status", "arquivado")
@@ -64,6 +65,7 @@ export async function loadMeusCafes(produtorId: string): Promise<MeuCafeRow[]> {
     processo: string | null;
     safra: string | null;
     status: string;
+    beneficiado: boolean;
     created_at: string;
     peso_kg: number | string | null;
     peso_sacas: number | string | null;
@@ -132,6 +134,7 @@ export async function loadMeusCafes(produtorId: string): Promise<MeuCafeRow[]> {
       processo: l.processo,
       safra: l.safra,
       status: l.status,
+      beneficiado: l.beneficiado,
       createdAt: l.created_at,
       pesoKg: l.peso_kg != null ? Number(l.peso_kg) : 0,
       pesoSacas,

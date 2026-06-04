@@ -1296,6 +1296,7 @@ export type Database = {
       }
       lotes: {
         Row: {
+          beneficiado: boolean
           codigo: string
           corretora_id: string | null
           created_at: string
@@ -1317,6 +1318,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          beneficiado?: boolean
           codigo: string
           corretora_id?: string | null
           created_at?: string
@@ -1338,6 +1340,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          beneficiado?: boolean
           codigo?: string
           corretora_id?: string | null
           created_at?: string

@@ -242,6 +242,7 @@ export function MeuCafeView({ rows }: { rows: MeuCafeRow[] }) {
                     valorKg={r.pesoKg}
                     pesoPorBagKg={r.pesoPorBagKg ?? undefined}
                   />
+                  {!r.beneficiado ? <EstimadaTag /> : null}
                 </td>
                 <td className="px-5 py-3 align-top">
                   <StatusBadge tone={st.tone}>{st.label}</StatusBadge>
@@ -288,10 +289,13 @@ export function MeuCafeView({ rows }: { rows: MeuCafeRow[] }) {
                     <StatusBadge tone={st.tone}>{st.label}</StatusBadge>
                   </div>
 
-                  <UnidadeToggle
-                    valorKg={r.pesoKg}
-                    pesoPorBagKg={r.pesoPorBagKg ?? undefined}
-                  />
+                  <div>
+                    <UnidadeToggle
+                      valorKg={r.pesoKg}
+                      pesoPorBagKg={r.pesoPorBagKg ?? undefined}
+                    />
+                    {!r.beneficiado ? <EstimadaTag /> : null}
+                  </div>
 
                   <div className="rounded-md bg-milsaca-cream/60 px-3 py-2">
                     <p className="text-caption text-neutral-500">
@@ -318,6 +322,15 @@ export function MeuCafeView({ rows }: { rows: MeuCafeRow[] }) {
         />
       )}
     </div>
+  );
+}
+
+// Café não beneficiado → o nº de sacas é estimativa até o beneficiamento.
+function EstimadaTag() {
+  return (
+    <span className="mt-1 inline-flex items-center gap-1 rounded-pill bg-warning-50 px-2 py-0.5 text-[10px] font-medium text-warning-700">
+      saca estimada
+    </span>
   );
 }
 

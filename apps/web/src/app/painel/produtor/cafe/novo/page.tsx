@@ -93,6 +93,22 @@ export default async function RegistrarCafePage({
               />
             </div>
 
+            {/* Beneficiado: se não, a saca é estimativa até o beneficiamento */}
+            <label className="flex items-start gap-2.5 rounded-md border border-neutral-200 bg-milsaca-cream/40 px-3 py-2.5">
+              <input
+                type="checkbox"
+                name="beneficiado"
+                className="mt-0.5 h-4 w-4 shrink-0 accent-milsaca-cafezal"
+              />
+              <span className="text-body-sm text-milsaca-cafezal">
+                Meu café já está <strong>beneficiado</strong> (pronto/descascado)
+                <span className="mt-0.5 block text-caption font-normal text-neutral-500">
+                  Se ainda está em coco/cereja, deixe desmarcado — a saca fica como
+                  <strong> estimativa</strong> até o beneficiamento.
+                </span>
+              </span>
+            </label>
+
             {sp.error ? (
               <p className="rounded-md bg-danger-50 px-3 py-2 text-body-sm text-danger-700">
                 {sp.error}

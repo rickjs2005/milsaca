@@ -52,6 +52,11 @@ const schema = z.object({
   peso_por_bag: num,
   qtd_sacas: num,
   qtd_kg: num,
+  // checkbox: "on" quando marcado, ausente quando não. Default false = saca estimada.
+  beneficiado: z
+    .union([z.string(), z.undefined()])
+    .optional()
+    .transform((v) => v === "on" || v === "true"),
 });
 
 const NOVO = "/painel/produtor/cafe/novo";
@@ -119,6 +124,7 @@ export async function registrarCafe(formData: FormData) {
     unidade_entrada: f.unidade_entrada,
     qtd_volumes: qtdVolumes,
     peso_por_volume_kg: pesoPorVolume,
+    beneficiado: f.beneficiado,
     status: "rascunho",
   });
 

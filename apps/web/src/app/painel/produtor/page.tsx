@@ -382,6 +382,11 @@ export default async function InicioProdutorPage() {
                 <Legenda cor="bg-warning-400" label="Em negociação" valor={estoque.emNegociacao} />
                 <Legenda cor="bg-neutral-400" label="Vendido" valor={estoque.vendido} />
               </div>
+              {estoque.temEstimada ? (
+                <p className="mt-2 text-caption text-warning-700">
+                  * inclui café não beneficiado — saca estimada até o beneficiamento.
+                </p>
+              ) : null}
             </>
           ) : (
             <p className="mt-2 text-body-sm text-neutral-600">
