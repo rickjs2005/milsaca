@@ -3,12 +3,14 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ArrowRight,
-  Coffee,
   Wallet,
   Handshake,
+  Star,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
+import { IndicadoresLive } from "@/components/indicadores-live";
+import { UnidadeToggle } from "@/components/produtor/UnidadeToggle/UnidadeToggle";
 import {
   LEAD_STATUS_LABEL,
   LEAD_STATUS_TONE,
@@ -20,21 +22,25 @@ import type { LeadStatus } from "@milsaca/types";
 import { coffeeLabel } from "@/lib/coffee";
 import { formatarKg, sacasParaKg } from "@/lib/unidades";
 import { loadEstoqueProdutor } from "./_lib/estoque";
+import { getProdutorByProfileId } from "./_lib/produtor";
+import { loadProdutorCotacoes } from "./cotacoes/_lib/queries";
 
 export const metadata = { title: "Início — Painel do produtor" };
 
-const BRL = new Intl.NumberFormat("pt-BR", {
+// Peso padrão de big bag pra exibir o estoque agregado em bags (≈, aproximado —
+// no nível agregado os lotes podem ter pesos diferentes; o toggle mostra "≈").
+const PESO_BAG_PADRAO = 600;
+
+const BRL0 = new Intl.NumberFormat("pt-BR", {
   style: "currency",
   currency: "BRL",
   maximumFractionDigits: 0,
 });
-
-type Resumo = {
-  cotacao: { price: number; variacao: number | null } | null;
-  estoqueSacas: number;
-  valorEstimado: number | null;
-  propostasCount: number;
-};
+const BRL2 = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  minimumFractionDigits: 2,
+});
 
 type Proposta = {
   id: string;
@@ -46,47 +52,6 @@ type Proposta = {
   status: LeadStatus;
   data: string;
 };
-
-async function loadResumo(userId: string): Promise<Resumo> {
-  const supabase = await createClient();
-  const [cotRes, lotesRes, leadsRes] = await Promise.all([
-    supabase
-      .from("cotacoes")
-      .select("price, reference_date")
-      .eq("specie", "arabica")
-      .order("reference_date", { ascending: false })
-      .limit(2),
-    supabase.from("lotes").select("peso_sacas, status").eq("produtor_id", userId),
-    supabase.from("leads").select("status").eq("produtor_id", userId),
-  ]);
-
-  const cot = (cotRes.data ?? []) as Array<{
-    price: number;
-    reference_date: string;
-  }>;
-  let cotacao: Resumo["cotacao"] = null;
-  if (cot[0]) {
-    const cur = cot[0];
-    const prev = cot[1];
-    cotacao = {
-      price: cur.price,
-      variacao: prev ? ((cur.price - prev.price) / prev.price) * 100 : null,
-    };
-  }
-
-  const lotes = (lotesRes.data ?? []) as Array<{
-    peso_sacas: number | string | null;
-    status: string;
-  }>;
-  const estoqueSacas = lotes
-    .filter((l) => l.status !== "vendido" && l.status !== "arquivado")
-    .reduce((s, l) => s + Number(l.peso_sacas ?? 0), 0);
-
-  const valorEstimado = cotacao ? Math.round(estoqueSacas * cotacao.price) : null;
-  const propostasCount = (leadsRes.data ?? []).length;
-
-  return { cotacao, estoqueSacas, valorEstimado, propostasCount };
-}
 
 async function loadPropostas(userId: string): Promise<Proposta[]> {
   const supabase = await createClient();
@@ -113,13 +78,12 @@ async function loadPropostas(userId: string): Promise<Proposta[]> {
     const corretora = Array.isArray(r.corretoras)
       ? r.corretoras[0]?.name
       : r.corretoras?.name;
-    const total =
-      r.bag_count && r.proposed_price ? r.bag_count * r.proposed_price : null;
+    const bag = r.bag_count != null ? Number(r.bag_count) : null;
+    const total = bag && r.proposed_price ? bag * r.proposed_price : null;
     return {
       id: r.id,
       corretora: corretora ?? "Corretora",
-      // bag_count é numeric no Postgres → vem como string; coage pro tipo number.
-      bag_count: r.bag_count != null ? Number(r.bag_count) : null,
+      bag_count: bag,
       coffee_type: r.coffee_type,
       proposed_price: r.proposed_price,
       total,
@@ -132,14 +96,12 @@ async function loadPropostas(userId: string): Promise<Proposta[]> {
   });
 }
 
-// Status terminais negativos não disputam "melhor proposta" — só ativas/abertas/convertidas.
+// Status terminais negativos não disputam "melhor proposta".
 const STATUS_DESCARTADO: ReadonlySet<LeadStatus> = new Set<LeadStatus>([
   "perdido",
   "arquivado",
 ]);
 
-// Melhor proposta = maior valor (total quando existir, senão preço por saca).
-// Considera só propostas ativas; retorna null se não houver candidata.
 function melhorPropostaId(propostas: Proposta[]): string | null {
   let melhorId: string | null = null;
   let melhorValor = -Infinity;
@@ -171,29 +133,36 @@ function saudacaoAgora(): string {
 export default async function InicioProdutorPage() {
   const user = await requireUser("/painel/produtor");
   const profile = await getProfile();
-  const [resumo, propostas, estoque] = await Promise.all([
-    loadResumo(user.id),
-    loadPropostas(user.id),
+  const produtor = await getProdutorByProfileId(profile?.id ?? user.id);
+
+  const [estoque, propostas, cot] = await Promise.all([
     loadEstoqueProdutor(user.id),
+    loadPropostas(user.id),
+    loadProdutorCotacoes({ produtorId: user.id }),
   ]);
 
-  const preco = resumo.cotacao?.price ?? null;
+  // Cotação PRINCIPAL = índice CEPEA da espécie do produtor (não a da corretora).
+  const specie = produtor?.specie === "conilon" ? "conilon" : "arabica";
+  const principalSymbol =
+    specie === "conilon" ? "conilon_es_esalq" : "arabica_bica_corrida_esalq";
+  const principal = cot.market.find((m) => m.symbol === principalSymbol) ?? null;
+  const precoPrincipal = principal?.price ?? null;
+  const principalLabel = specie === "conilon" ? "Conilon CEPEA" : "Arábica CEPEA";
+
   const valorDisponivel =
-    preco != null ? Math.round(estoque.naoVendido * preco) : null;
-  // Valor já vendido = REAL (Σ total_value dos contratos), não estimado pela
-  // cotação de hoje — bate com a tela de Vendas.
+    precoPrincipal != null ? Math.round(estoque.naoVendido * precoPrincipal) : null;
   const valorVendido = estoque.valorVendido > 0 ? estoque.valorVendido : null;
+  const totalKg = sacasParaKg(estoque.total);
   const pct = (n: number) =>
     estoque.total > 0 ? Math.round((n / estoque.total) * 100) : 0;
 
   const primeiroNome = profile?.full_name?.split(" ")[0] ?? null;
   const idMelhorProposta = melhorPropostaId(propostas);
-  const up = (resumo.cotacao?.variacao ?? 0) >= 0;
-  const Arrow = up ? ArrowUpRight : ArrowDownRight;
+  const favoritas = cot.minhasCorretoras.slice(0, 6);
 
   return (
     <div className="space-y-6">
-      {/* 1. Saudação compacta */}
+      {/* 1. Saudação + resumo do estoque */}
       <header>
         <h1 className="text-h2 text-milsaca-cafezal">
           {saudacaoAgora()}
@@ -206,95 +175,34 @@ export default async function InicioProdutorPage() {
         </p>
       </header>
 
-      {/* 2-4. KPIs — Valor do meu café é o herói (2 colunas) */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {/* HERÓI: valor total do café */}
-        <Card tone="premium" className="col-span-2">
-          <CardContent className="p-card">
-            <div className="flex items-center gap-2">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-milsaca-dourado/15 text-milsaca-cafezal ring-1 ring-inset ring-milsaca-dourado/30">
-                <Wallet className="h-5 w-5" />
-              </span>
-              <p className="text-caption font-medium uppercase tracking-wider text-neutral-500">
-                Valor disponível para venda
-              </p>
-            </div>
-            <p className="mt-3 text-display leading-none text-milsaca-cafezal">
-              {valorDisponivel != null ? BRL.format(valorDisponivel) : "—"}
+      {/* 2. HERÓI: valor disponível pela cotação principal (índice CEPEA) */}
+      <Card tone="premium">
+        <CardContent className="p-card">
+          <div className="flex items-center gap-2">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-milsaca-dourado/15 text-milsaca-cafezal ring-1 ring-inset ring-milsaca-dourado/30">
+              <Wallet className="h-5 w-5" />
+            </span>
+            <p className="text-caption font-medium uppercase tracking-wider text-neutral-500">
+              Valor disponível para venda
             </p>
-            <p className="mt-2 text-caption text-neutral-500">
-              {estoque.naoVendido} sacas × cotação de hoje
-            </p>
-            <p className="text-caption text-neutral-500">
-              Já vendido: {estoque.vendido} sacas
-              {valorVendido != null ? ` · ${BRL.format(valorVendido)}` : ""}
-            </p>
-          </CardContent>
-        </Card>
+          </div>
+          <p className="mt-3 text-display leading-none text-milsaca-cafezal">
+            {valorDisponivel != null ? BRL0.format(valorDisponivel) : "—"}
+          </p>
+          <p className="mt-2 text-caption text-neutral-500">
+            {estoque.naoVendido} sacas disponíveis ×{" "}
+            {precoPrincipal != null
+              ? `${principalLabel} ${BRL2.format(precoPrincipal)}/saca`
+              : "cotação indisponível"}
+          </p>
+          <p className="text-caption text-neutral-500">
+            Já vendido: {estoque.vendido} sacas
+            {valorVendido != null ? ` · ${BRL0.format(valorVendido)}` : ""}
+          </p>
+        </CardContent>
+      </Card>
 
-        {/* Cotação hoje — preço grande + variação "hoje" */}
-        <Link
-          href="/painel/produtor/cotacoes"
-          className="col-span-1 rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-          <Card interactive className="h-full">
-            <CardContent className="p-card">
-              <div className="flex items-center gap-2">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-milsaca-cafezal/10 text-milsaca-cafezal">
-                  <Coffee className="h-5 w-5" />
-                </span>
-                <p className="text-caption font-medium uppercase tracking-wider text-neutral-500">
-                  Cotação hoje
-                </p>
-              </div>
-              <p className="mt-3 text-h1 leading-none text-milsaca-cafezal">
-                {resumo.cotacao ? BRL.format(resumo.cotacao.price) : "—"}
-              </p>
-              {resumo.cotacao?.variacao != null ? (
-                <p
-                  className={cn(
-                    "mt-2 inline-flex items-center gap-1 text-caption font-semibold",
-                    up ? "text-success-700" : "text-danger-700",
-                  )}
-                >
-                  <Arrow className="h-3.5 w-3.5" />
-                  {up ? "+" : ""}
-                  {resumo.cotacao.variacao.toFixed(1)}% hoje
-                </p>
-              ) : (
-                <p className="mt-2 text-caption text-neutral-500">
-                  Arábica · saca 60kg
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </Link>
-
-        {/* Propostas */}
-        <Link
-          href="/painel/produtor/negociacoes"
-          className="col-span-1 rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-          <Card interactive className="h-full">
-            <CardContent className="p-card">
-              <div className="flex items-center gap-2">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-milsaca-cafezal/10 text-milsaca-cafezal">
-                  <Handshake className="h-5 w-5" />
-                </span>
-                <p className="text-caption font-medium uppercase tracking-wider text-neutral-500">
-                  Propostas
-                </p>
-              </div>
-              <p className="mt-3 text-h1 leading-none text-milsaca-cafezal">
-                {resumo.propostasCount}
-              </p>
-              <p className="mt-2 text-caption text-neutral-500">recebidas</p>
-            </CardContent>
-          </Card>
-        </Link>
-      </div>
-
-      {/* Meu estoque de café — visão de estoque coerente */}
+      {/* 3. Estoque com unidade alternável (sacas / bags / kg) */}
       <Card>
         <CardContent className="p-card">
           <div className="flex items-center justify-between gap-3">
@@ -308,58 +216,55 @@ export default async function InicioProdutorPage() {
               + Registrar café
             </Link>
           </div>
-          <p className="mt-1 text-h2 text-milsaca-cafezal">
-            {estoque.total}{" "}
-            <span className="text-body-sm font-normal text-neutral-500">
-              sacas totais
-            </span>
-          </p>
+
           {estoque.total > 0 ? (
-            <p className="text-caption text-neutral-500">
-              ≈ {formatarKg(sacasParaKg(estoque.total))}
+            <>
+              <div className="mt-2">
+                <UnidadeToggle
+                  valorKg={totalKg}
+                  pesoPorBagKg={PESO_BAG_PADRAO}
+                />
+                <p className="mt-0.5 text-caption text-neutral-500">
+                  no total · {formatarKg(totalKg)}
+                </p>
+              </div>
+
+              <div className="mt-3 flex h-3 w-full overflow-hidden rounded-pill bg-neutral-100">
+                <div
+                  className="bg-success-500"
+                  style={{ width: `${pct(estoque.livre)}%` }}
+                />
+                <div
+                  className="bg-warning-400"
+                  style={{ width: `${pct(estoque.emNegociacao)}%` }}
+                />
+                <div
+                  className="bg-neutral-400"
+                  style={{ width: `${pct(estoque.vendido)}%` }}
+                />
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2 text-caption">
+                <Legenda cor="bg-success-500" label="Disponível" valor={estoque.livre} />
+                <Legenda cor="bg-warning-400" label="Em negociação" valor={estoque.emNegociacao} />
+                <Legenda cor="bg-neutral-400" label="Vendido" valor={estoque.vendido} />
+              </div>
+            </>
+          ) : (
+            <p className="mt-2 text-body-sm text-neutral-600">
+              Você ainda não registrou café.{" "}
+              <Link
+                href="/painel/produtor/cafe/novo"
+                className="font-medium text-milsaca-dourado-texto hover:underline"
+              >
+                Registrar agora
+              </Link>
+              .
             </p>
-          ) : null}
-          <div className="mt-3 flex h-3 w-full overflow-hidden rounded-pill bg-neutral-100">
-            <div
-              className="bg-success-500"
-              style={{ width: `${pct(estoque.livre)}%` }}
-            />
-            <div
-              className="bg-warning-400"
-              style={{ width: `${pct(estoque.emNegociacao)}%` }}
-            />
-            <div
-              className="bg-neutral-400"
-              style={{ width: `${pct(estoque.vendido)}%` }}
-            />
-          </div>
-          <div className="mt-3 grid grid-cols-3 gap-2 text-caption">
-            <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-success-500" />
-              <span className="text-neutral-600">Livre</span>
-              <span className="font-semibold text-milsaca-cafezal">
-                {estoque.livre}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-warning-400" />
-              <span className="text-neutral-600">Em negociação</span>
-              <span className="font-semibold text-milsaca-cafezal">
-                {estoque.emNegociacao}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-neutral-400" />
-              <span className="text-neutral-600">Vendido</span>
-              <span className="font-semibold text-milsaca-cafezal">
-                {estoque.vendido}
-              </span>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* 5. CTA gigante: vender */}
+      {/* 4. CTA vender */}
       <Link
         href="/painel/produtor/corretoras"
         className="group flex items-center justify-between gap-4 rounded-card bg-success-600 px-6 py-6 text-milsaca-cream shadow-card transition-colors hover:bg-success-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -378,10 +283,96 @@ export default async function InicioProdutorPage() {
         <ArrowRight className="h-6 w-6 shrink-0 transition-transform group-hover:translate-x-1" />
       </Link>
 
-      {/* Propostas recebidas — corretora é o herói do card */}
+      {/* 5. Principais cotações (índices de mercado, ao vivo) */}
+      <IndicadoresLive />
+
+      {/* 6. Corretoras favoritas — preço do dia */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
+          <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-500">
+            <Star className="h-4 w-4" />
+            Suas corretoras · preço de hoje
+          </h2>
+          <Link
+            href="/painel/produtor/corretoras"
+            className="rounded-md text-caption font-medium text-milsaca-dourado-texto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            Ver corretoras →
+          </Link>
+        </div>
+        {favoritas.length === 0 ? (
+          <Card tone="muted" className="border-dashed">
+            <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
+              <p className="text-body-sm text-neutral-600">
+                Favorite corretoras pra acompanhar o preço que elas pagam aqui no
+                seu painel.
+              </p>
+              <Link
+                href="/painel/produtor/corretoras"
+                className="inline-flex items-center gap-2 rounded-md bg-success-600 px-4 py-2 text-body-sm font-medium text-milsaca-cream transition-colors hover:bg-success-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                Ver corretoras
+              </Link>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {favoritas.map((c) => {
+              const up = c.variacao_pct != null && c.variacao_pct >= 0;
+              const Arrow = up ? ArrowUpRight : ArrowDownRight;
+              return (
+                <Card key={c.key} interactive>
+                  <CardContent className="p-card">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-body-sm font-semibold text-milsaca-cafezal">
+                          {c.corretora_name ?? "Corretora"}
+                        </p>
+                        <p className="mt-0.5 text-caption text-neutral-500">
+                          {coffeeLabel(c.specie ?? c.coffee_type)}
+                          {c.region ? ` · ${c.region}` : ""}
+                        </p>
+                      </div>
+                      {c.variacao_pct != null ? (
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-0.5 rounded-pill px-2 py-0.5 text-caption font-semibold",
+                            up
+                              ? "bg-success-50 text-success-700"
+                              : "bg-danger-50 text-danger-700",
+                          )}
+                        >
+                          <Arrow className="h-3.5 w-3.5" />
+                          {up ? "+" : ""}
+                          {c.variacao_pct.toFixed(1)}%
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-2 text-h3 font-bold text-milsaca-cafezal">
+                      {BRL2.format(c.current_price)}
+                      <span className="text-caption font-normal text-neutral-500">
+                        /saca
+                      </span>
+                    </p>
+                    <p className="mt-0.5 text-caption text-neutral-500">
+                      {new Date(c.current_date).toLocaleDateString("pt-BR", {
+                        day: "2-digit",
+                        month: "2-digit",
+                      })}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* 7. Propostas recebidas */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-500">
+            <Handshake className="h-4 w-4" />
             Propostas recebidas
           </h2>
           {propostas.length > 0 ? (
@@ -419,12 +410,28 @@ export default async function InicioProdutorPage() {
   );
 }
 
+function Legenda({
+  cor,
+  label,
+  valor,
+}: {
+  cor: string;
+  label: string;
+  valor: number;
+}) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className={cn("h-2 w-2 rounded-full", cor)} />
+      <span className="text-neutral-600">{label}</span>
+      <span className="font-semibold text-milsaca-cafezal">{valor}</span>
+    </div>
+  );
+}
+
 function PropostaCard({ p, melhor }: { p: Proposta; melhor: boolean }) {
-  // Rótulo + tone da fonte única da persona produtor (negociacoes/_lib/lead-labels).
   return (
     <Card interactive>
       <CardContent className="space-y-4 p-card">
-        {/* Corretora = elemento visual mais forte */}
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="truncate text-h3 font-semibold text-milsaca-cafezal">
@@ -437,8 +444,7 @@ function PropostaCard({ p, melhor }: { p: Proposta; melhor: boolean }) {
             ) : null}
             <p className="mt-1 text-caption text-neutral-600">
               {p.bag_count ? `${p.bag_count} sacas` : "—"} ·{" "}
-              {p.coffee_type ? coffeeLabel(p.coffee_type) : "—"}{" "}
-              · {p.data}
+              {p.coffee_type ? coffeeLabel(p.coffee_type) : "—"} · {p.data}
             </p>
           </div>
           <StatusBadge tone={LEAD_STATUS_TONE[p.status]}>
@@ -449,13 +455,13 @@ function PropostaCard({ p, melhor }: { p: Proposta; melhor: boolean }) {
           <div>
             <p className="text-caption text-neutral-500">Preço por saca</p>
             <p className="text-body font-semibold text-milsaca-cafezal">
-              {p.proposed_price != null ? BRL.format(p.proposed_price) : "—"}
+              {p.proposed_price != null ? BRL2.format(p.proposed_price) : "—"}
             </p>
           </div>
           <div className="text-right">
             <p className="text-caption text-neutral-500">Total</p>
             <p className="text-body-lg font-bold text-milsaca-cafezal">
-              {p.total != null ? BRL.format(p.total) : "—"}
+              {p.total != null ? BRL0.format(p.total) : "—"}
             </p>
           </div>
         </div>
