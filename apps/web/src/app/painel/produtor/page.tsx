@@ -127,17 +127,23 @@ function saudacaoAgora(): string {
   return "Boa noite";
 }
 
-export default async function InicioProdutorPage() {
+export default async function InicioProdutorPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ safra?: string }>;
+}) {
   const user = await requireUser("/painel/produtor");
   const profile = await getProfile();
   const produtor = await getProdutorByProfileId(profile?.id ?? user.id);
+  const sp = await searchParams;
+  const safraParam = sp.safra?.trim() || null;
 
   const specie = produtor?.specie === "conilon" ? "conilon" : "arabica";
   const cepeaSymbol =
     specie === "conilon" ? "conilon_es_esalq" : "arabica_bica_corrida_esalq";
 
   const [estoque, propostas, cot, carteira] = await Promise.all([
-    loadEstoqueProdutor(user.id),
+    loadEstoqueProdutor(user.id, safraParam),
     loadPropostas(user.id),
     loadProdutorCotacoes({ produtorId: user.id }),
     loadCarteira(user.id),
@@ -206,7 +212,11 @@ export default async function InicioProdutorPage() {
         {/* PRINCIPAL — a safra e o que fazer com ela */}
         <div className="space-y-6 lg:col-span-2">
           {/* 1. Minha Safra (herói) */}
-          <MinhaSafra estoque={estoque} indice={indice} />
+          <MinhaSafra
+            estoque={estoque}
+            indice={indice}
+            safraSelecionada={safraParam ?? ""}
+          />
 
           {/* 2. Ações rápidas — alvos grandes, uma mão */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Wallet, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { MobileFilterSelect } from "@/components/mobile-filter-select";
 import { cn } from "@/lib/utils";
 import { formatarBags, formatarKg, sacasParaKg } from "@/lib/unidades";
 import type { EstoqueProdutor } from "../_lib/estoque";
@@ -35,9 +36,12 @@ export type IndiceRef = {
 export function MinhaSafra({
   estoque,
   indice,
+  safraSelecionada,
 }: {
   estoque: EstoqueProdutor;
   indice: IndiceRef;
+  /** Safra do filtro (URL ?safra) — "" = todas. */
+  safraSelecionada: string;
 }) {
   const totalKg = sacasParaKg(estoque.total);
   const pct = (n: number) =>
@@ -68,6 +72,21 @@ export function MinhaSafra({
             </Link>
           </div>
         </div>
+
+        {/* Seletor de safra (só quando há mais de uma) */}
+        {estoque.safrasDisponiveis.length >= 2 ? (
+          <div className="mt-2">
+            <MobileFilterSelect
+              label="Safra"
+              paramName="safra"
+              current={safraSelecionada}
+              options={[
+                { value: "", label: "Todas as safras" },
+                ...estoque.safrasDisponiveis.map((s) => ({ value: s, label: s })),
+              ]}
+            />
+          </div>
+        ) : null}
 
         {estoque.total > 0 ? (
           <>

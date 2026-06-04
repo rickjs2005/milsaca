@@ -31,8 +31,10 @@ export type EstoqueProdutor = {
   valorVendido: number;
   /** Há lote não-beneficiado em estoque → parte das sacas é ESTIMADA. */
   temEstimada: boolean;
-  /** Safra predominante (mais recente) dos lotes — rótulo do herói. */
+  /** Safra selecionada (ou a mais recente quando "todas") — rótulo do herói. */
   safra: string | null;
+  /** Safras com lotes (desc) — opções do seletor. */
+  safrasDisponiveis: string[];
   /** Vendido + em negociação > produção declarada → revisar lotes. */
   sobreComprometido: boolean;
 };
@@ -40,46 +42,73 @@ export type EstoqueProdutor = {
 const STATUS_VENDIDO = ["ativo", "finalizado"];
 const STATUS_EM_NEG_LEAD = ["novo", "em_negociacao"];
 
+/**
+ * Estoque do produtor, opcionalmente escopado por SAFRA.
+ *
+ * Produção e Vendidas são escopadas com exatidão (lotes.safra; contratos via
+ * lote_id → lote.safra). "Em negociação" NÃO é por safra (leads não ligam a
+ * lote) — como proposta é pré-compromisso e se negocia a safra corrente,
+ * atribuímos a negociação à safra MAIS RECENTE (safras antigas = 0). Assim a
+ * invariante total = vendido + emNegociacao + disponivel vale por safra e a
+ * soma por safra fecha com o total global.
+ *
+ * `safra` undefined/null = TODAS as safras (visão global, comportamento antigo).
+ */
 export async function loadEstoqueProdutor(
   userId: string,
+  safra?: string | null,
 ): Promise<EstoqueProdutor> {
   const supabase = await createClient();
   const [lotesRes, contratosRes, leadsRes] = await Promise.all([
-    supabase.from("lotes").select("peso_sacas, status, beneficiado, safra").eq("produtor_id", userId),
+    supabase
+      .from("lotes")
+      .select("id, peso_sacas, status, beneficiado, safra")
+      .eq("produtor_id", userId),
     supabase
       .from("contratos")
-      .select("bag_count, total_value, status")
+      .select("bag_count, total_value, status, lote_id")
       .eq("produtor_id", userId),
     supabase.from("leads").select("bag_count, status").eq("produtor_id", userId),
   ]);
 
   const lotes = (lotesRes.data ?? []) as {
+    id: string;
     peso_sacas: number | string | null;
     status: string;
     beneficiado: boolean;
     safra: string | null;
   }[];
   const ativos = lotes.filter((l) => l.status !== "arquivado");
-  const total = ativos.reduce((s, l) => s + Number(l.peso_sacas ?? 0), 0);
-  // Café não-beneficiado (e não vendido) ainda em estoque → saca estimada.
-  const temEstimada = ativos.some(
+
+  // Safras disponíveis (desc) + a corrente (mais recente).
+  const safrasDisponiveis = [
+    ...new Set(ativos.map((l) => l.safra).filter((s): s is string => !!s)),
+  ].sort((a, b) => b.localeCompare(a));
+  const safraCorrente = safrasDisponiveis[0] ?? null;
+  const selecionada = safra ?? null; // null = todas
+
+  // Escopo dos lotes (produção) por safra.
+  const lotesEscopo = selecionada
+    ? ativos.filter((l) => l.safra === selecionada)
+    : ativos;
+  const loteIdsEscopo = new Set(lotesEscopo.map((l) => l.id));
+  const total = lotesEscopo.reduce((s, l) => s + Number(l.peso_sacas ?? 0), 0);
+  const temEstimada = lotesEscopo.some(
     (l) => l.status !== "vendido" && !l.beneficiado,
   );
-  // Safra predominante = a mais recente (texto "2025/2026" ordena bem).
-  const safra =
-    ativos
-      .map((l) => l.safra)
-      .filter((s): s is string => !!s)
-      .sort()
-      .at(-1) ?? null;
 
   const contratos = (contratosRes.data ?? []) as {
     bag_count: number | null;
     total_value: number | string | null;
     status: string;
+    lote_id: string | null;
   }[];
-  const vendidos = contratos.filter((c) => STATUS_VENDIDO.includes(c.status));
-  // bag_count é numeric no Postgres → supabase-js devolve string; coage pra somar.
+  // Vendidas da safra = contratos ligados a lotes do escopo (exato via lote_id).
+  const vendidos = contratos
+    .filter((c) => STATUS_VENDIDO.includes(c.status))
+    .filter(
+      (c) => !selecionada || (c.lote_id != null && loteIdsEscopo.has(c.lote_id)),
+    );
   const vendido = vendidos.reduce((s, c) => s + Number(c.bag_count ?? 0), 0);
   const valorVendido = vendidos.reduce(
     (s, c) => s + (c.total_value != null ? Number(c.total_value) : 0),
@@ -87,9 +116,12 @@ export async function loadEstoqueProdutor(
   );
 
   const leads = (leadsRes.data ?? []) as { bag_count: number | null; status: string }[];
-  const emNegociacaoBruto = leads
+  const emNegGlobal = leads
     .filter((l) => STATUS_EM_NEG_LEAD.includes(l.status))
     .reduce((s, l) => s + Number(l.bag_count ?? 0), 0);
+  // Negociação não é por safra → conta na safra corrente (ou em "todas").
+  const emNegociacaoBruto =
+    !selecionada || selecionada === safraCorrente ? emNegGlobal : 0;
 
   // Clamps que GARANTEM a invariante total = vendido + emNegociacao + disponivel:
   // vendido nunca passa do total; em negociação nunca passa do que sobra; o
@@ -121,7 +153,8 @@ export async function loadEstoqueProdutor(
     disponivel,
     valorVendido,
     temEstimada,
-    safra,
+    safra: selecionada ?? safraCorrente,
+    safrasDisponiveis,
     sobreComprometido,
   };
 }
