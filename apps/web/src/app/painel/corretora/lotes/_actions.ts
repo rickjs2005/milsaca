@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { friendlyPostgresError } from "@/lib/postgres-error";
+import { sacasParaKg } from "@/lib/unidades";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
 import { ensureCorretora, requireActiveSubscription } from "../_lib/corretora";
@@ -53,12 +54,18 @@ export async function createLote(formData: FormData) {
     redirect(`/painel/corretora/lotes/novo?${params.toString()}`);
   }
 
+  // peso_sacas virou coluna GERADA (peso_kg/60). A corretora ainda digita em
+  // sacas no form, então convertemos pra kg (a verdade) e NUNCA gravamos
+  // peso_sacas direto. Ver @/lib/unidades e migration 20261060.
+  const { peso_sacas, ...loteFields } = fields;
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("lotes")
     .insert({
       corretora_id: profile.corretora_id,
-      ...fields,
+      ...loteFields,
+      peso_kg: peso_sacas != null ? sacasParaKg(peso_sacas) : null,
       status: "aguardando_classificacao",
     })
     .select("id")

@@ -3,7 +3,8 @@ import { createClient } from "@milsaca/db/web/server";
 /**
  * Estoque de café do produtor — o conceito central da comercialização.
  * Reconcilia TODOS os módulos (Propostas, Vendas, Financeiro, Meu Café):
- *   - total        = lotes registrados (peso_sacas, não-arquivados)
+ *   - total        = lotes registrados (peso_sacas = coluna GERADA de peso_kg/60,
+ *                    a verdade; ver @/lib/unidades + migration 20261060), não-arquivados
  *   - vendido      = CONTRATOS ativo/finalizado (= Vendas = Financeiro)
  *   - naoVendido   = total − vendido (= Σ "não vendidas" por lote no Meu Café)
  *   - emNegociacao = PROPOSTAS abertas (leads novo/em_negociacao) — interesse,

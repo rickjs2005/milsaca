@@ -515,7 +515,7 @@ async function main() {
       specie: "arabica",
       processo: "natural",
       safra: "2025/2026",
-      peso_sacas: 320,
+      peso_kg: 19200, // 320 sacas × 60 — peso_sacas é gerada (migration 20261060)
       umidade_inicial: 11.5,
       status: "classificado",
       descricao: "Lote do talhão norte, colheita 2026-04.",
