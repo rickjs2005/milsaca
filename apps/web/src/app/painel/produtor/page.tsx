@@ -6,10 +6,14 @@ import {
   Wallet,
   Handshake,
   Star,
+  Clock,
+  CheckCircle2,
+  TrendingUp,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
 import { IndicadoresLive } from "@/components/indicadores-live";
+import { Sparkline } from "@/components/sparkline";
 import { UnidadeToggle } from "@/components/produtor/UnidadeToggle/UnidadeToggle";
 import {
   LEAD_STATUS_LABEL,
@@ -21,7 +25,9 @@ import { getProfile, requireUser } from "@/lib/auth";
 import type { LeadStatus } from "@milsaca/types";
 import { coffeeLabel } from "@/lib/coffee";
 import { formatarKg, sacasParaKg } from "@/lib/unidades";
+import { loadMarketTrend } from "@/lib/market-trend";
 import { loadEstoqueProdutor } from "./_lib/estoque";
+import { loadCarteira } from "./_lib/carteira";
 import { getProdutorByProfileId } from "./_lib/produtor";
 import { loadProdutorCotacoes } from "./cotacoes/_lib/queries";
 
@@ -135,19 +141,23 @@ export default async function InicioProdutorPage() {
   const profile = await getProfile();
   const produtor = await getProdutorByProfileId(profile?.id ?? user.id);
 
-  const [estoque, propostas, cot] = await Promise.all([
-    loadEstoqueProdutor(user.id),
-    loadPropostas(user.id),
-    loadProdutorCotacoes({ produtorId: user.id }),
-  ]);
-
   // Cotação PRINCIPAL = índice CEPEA da espécie do produtor (não a da corretora).
   const specie = produtor?.specie === "conilon" ? "conilon" : "arabica";
   const principalSymbol =
     specie === "conilon" ? "conilon_es_esalq" : "arabica_bica_corrida_esalq";
+
+  const [estoque, propostas, cot, carteira, trendMap] = await Promise.all([
+    loadEstoqueProdutor(user.id),
+    loadPropostas(user.id),
+    loadProdutorCotacoes({ produtorId: user.id }),
+    loadCarteira(user.id),
+    loadMarketTrend([principalSymbol]),
+  ]);
+
   const principal = cot.market.find((m) => m.symbol === principalSymbol) ?? null;
   const precoPrincipal = principal?.price ?? null;
   const principalLabel = specie === "conilon" ? "Conilon CEPEA" : "Arábica CEPEA";
+  const trend = trendMap[principalSymbol] ?? null;
 
   const valorDisponivel =
     precoPrincipal != null ? Math.round(estoque.naoVendido * precoPrincipal) : null;
@@ -155,6 +165,31 @@ export default async function InicioProdutorPage() {
   const totalKg = sacasParaKg(estoque.total);
   const pct = (n: number) =>
     estoque.total > 0 ? Math.round((n / estoque.total) * 100) : 0;
+
+  // Ganho potencial: melhor preço entre as corretoras (da espécie) vs CEPEA.
+  const normSpecie = (s: string | null) =>
+    s === "conillon" ? "conilon" : s ?? "";
+  const candidatas = [...cot.minhasCorretoras, ...cot.outrasPracas].filter(
+    (c) => normSpecie(c.specie) === specie,
+  );
+  let melhorCorretora: (typeof candidatas)[number] | null = null;
+  for (const c of candidatas) {
+    if (!melhorCorretora || c.current_price > melhorCorretora.current_price)
+      melhorCorretora = c;
+  }
+  const ganho =
+    melhorCorretora &&
+    precoPrincipal != null &&
+    melhorCorretora.current_price > precoPrincipal &&
+    estoque.naoVendido > 0
+      ? {
+          corretora: melhorCorretora.corretora_name ?? "uma corretora",
+          preco: melhorCorretora.current_price,
+          extra: Math.round(
+            estoque.naoVendido * (melhorCorretora.current_price - precoPrincipal),
+          ),
+        }
+      : null;
 
   const primeiroNome = profile?.full_name?.split(" ")[0] ?? null;
   const idMelhorProposta = melhorPropostaId(propostas);
@@ -199,8 +234,106 @@ export default async function InicioProdutorPage() {
             Já vendido: {estoque.vendido} sacas
             {valorVendido != null ? ` · ${BRL0.format(valorVendido)}` : ""}
           </p>
+
+          {trend && trend.pct != null ? (
+            <div className="mt-3 flex items-center gap-3 border-t border-milsaca-cream-escuro/60 pt-3">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 text-caption font-semibold",
+                  trend.direction === "alta"
+                    ? "text-success-700"
+                    : trend.direction === "baixa"
+                      ? "text-danger-700"
+                      : "text-neutral-500",
+                )}
+              >
+                <TrendingUp className="h-3.5 w-3.5" />
+                {trend.pct >= 0 ? "+" : ""}
+                {trend.pct.toFixed(1)}% em {trend.label}
+              </span>
+              {trend.series.length >= 2 ? (
+                <Sparkline
+                  data={trend.series}
+                  className="h-6 flex-1 text-milsaca-dourado"
+                />
+              ) : null}
+              <span className="text-caption text-neutral-500">{principalLabel}</span>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
+
+      {/* 2b. Carteira: o que entra (a receber × recebido) + ganho potencial */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Link
+          href="/painel/produtor/financeiro"
+          className="rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <Card interactive className="h-full">
+            <CardContent className="p-card">
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-warning-50 text-warning-700">
+                  <Clock className="h-4 w-4" />
+                </span>
+                <p className="text-caption font-medium uppercase tracking-wider text-neutral-500">
+                  A receber
+                </p>
+              </div>
+              <p className="mt-2 text-h2 tabular-nums text-milsaca-cafezal">
+                {BRL0.format(carteira.aReceber)}
+              </p>
+              {carteira.vencido > 0 ? (
+                <p className="text-caption font-medium text-danger-700">
+                  {BRL0.format(carteira.vencido)} em atraso
+                </p>
+              ) : (
+                <p className="text-caption text-neutral-500">repasses pendentes</p>
+              )}
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link
+          href="/painel/produtor/financeiro"
+          className="rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <Card interactive className="h-full">
+            <CardContent className="p-card">
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-success-50 text-success-700">
+                  <CheckCircle2 className="h-4 w-4" />
+                </span>
+                <p className="text-caption font-medium uppercase tracking-wider text-neutral-500">
+                  Recebido
+                </p>
+              </div>
+              <p className="mt-2 text-h2 tabular-nums text-milsaca-cafezal">
+                {BRL0.format(carteira.recebido)}
+              </p>
+              <p className="text-caption text-neutral-500">já caiu na sua conta</p>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+
+      {ganho ? (
+        <Card className="border-success-100 bg-success-50/40">
+          <CardContent className="flex items-center gap-3 p-card">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success-100 text-success-700">
+              <TrendingUp className="h-5 w-5" />
+            </span>
+            <p className="text-body-sm text-milsaca-cafezal">
+              <span className="font-semibold">{ganho.corretora}</span> está pagando{" "}
+              <span className="font-semibold">{BRL2.format(ganho.preco)}/saca</span> —
+              vendendo suas {estoque.naoVendido} sacas disponíveis você faz{" "}
+              <span className="font-semibold text-success-700">
+                +{BRL0.format(ganho.extra)}
+              </span>{" "}
+              acima do CEPEA.
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* 3. Estoque com unidade alternável (sacas / bags / kg) */}
       <Card>
