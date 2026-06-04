@@ -26,9 +26,14 @@ export default async function MeuCafePage() {
             valor estimado pela cotação CEPEA de hoje.
           </p>
         </div>
-        <Button asChild variant="primary" size="sm" className="shrink-0">
-          <Link href="/painel/produtor/cafe/novo">Registrar café</Link>
-        </Button>
+        <div className="flex shrink-0 gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/painel/produtor/amostras">Amostras</Link>
+          </Button>
+          <Button asChild variant="primary" size="sm">
+            <Link href="/painel/produtor/cafe/novo">Registrar café</Link>
+          </Button>
+        </div>
       </header>
 
       {rows.length === 0 ? (

@@ -13,6 +13,7 @@ import {
   LogOut,
   Repeat,
   Package,
+  FlaskConical,
   Truck,
   Wallet,
   Store,
@@ -61,6 +62,11 @@ const NAV_GROUPS: NavGroup[] = [
         icon: Package,
         badgeKey: "lotesParados",
         badgeTone: "warn",
+      },
+      {
+        href: "/painel/corretora/amostras",
+        label: "Amostras",
+        icon: FlaskConical,
       },
       {
         href: "/painel/corretora/ofertas",
