@@ -14,6 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
+      amostras: {
+        Row: {
+          corretora_id: string
+          created_at: string
+          data_entrega_prevista: string | null
+          data_recebida: string | null
+          data_resultado: string | null
+          id: string
+          laudo_observacoes: string | null
+          lote_id: string
+          mensagem: string | null
+          motivo_recusa: string | null
+          preco_oferta: number | null
+          produtor_id: string
+          resultado_bebida: string | null
+          resultado_fora_de_tipo: boolean
+          resultado_tipo: string | null
+          status: Database["public"]["Enums"]["amostra_status"]
+          updated_at: string
+        }
+        Insert: {
+          corretora_id: string
+          created_at?: string
+          data_entrega_prevista?: string | null
+          data_recebida?: string | null
+          data_resultado?: string | null
+          id?: string
+          laudo_observacoes?: string | null
+          lote_id: string
+          mensagem?: string | null
+          motivo_recusa?: string | null
+          preco_oferta?: number | null
+          produtor_id: string
+          resultado_bebida?: string | null
+          resultado_fora_de_tipo?: boolean
+          resultado_tipo?: string | null
+          status?: Database["public"]["Enums"]["amostra_status"]
+          updated_at?: string
+        }
+        Update: {
+          corretora_id?: string
+          created_at?: string
+          data_entrega_prevista?: string | null
+          data_recebida?: string | null
+          data_resultado?: string | null
+          id?: string
+          laudo_observacoes?: string | null
+          lote_id?: string
+          mensagem?: string | null
+          motivo_recusa?: string | null
+          preco_oferta?: number | null
+          produtor_id?: string
+          resultado_bebida?: string | null
+          resultado_fora_de_tipo?: boolean
+          resultado_tipo?: string | null
+          status?: Database["public"]["Enums"]["amostra_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "amostras_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "amostras_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "amostras_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "amostras_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "lotes_publicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "amostras_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_admins: {
         Row: {
           created_at: string
@@ -2940,6 +3036,12 @@ export type Database = {
       }
     }
     Enums: {
+      amostra_status:
+        | "agendada"
+        | "recebida"
+        | "classificada"
+        | "recusada"
+        | "cancelada"
       billing_period: "monthly" | "yearly"
       canal_preferido: "app" | "whatsapp" | "email" | "sms"
       coffee_processo:
@@ -3158,6 +3260,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      amostra_status: [
+        "agendada",
+        "recebida",
+        "classificada",
+        "recusada",
+        "cancelada",
+      ],
       billing_period: ["monthly", "yearly"],
       canal_preferido: ["app", "whatsapp", "email", "sms"],
       coffee_processo: [
