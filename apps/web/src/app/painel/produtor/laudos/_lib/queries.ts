@@ -19,6 +19,7 @@ export type MeuCafeRow = {
   processo: string | null;
   safra: string | null;
   status: string;
+  createdAt: string;
   pesoKg: number;
   pesoSacas: number;
   pesoPorBagKg: number | null;
@@ -63,6 +64,7 @@ export async function loadMeusCafes(produtorId: string): Promise<MeuCafeRow[]> {
     processo: string | null;
     safra: string | null;
     status: string;
+    created_at: string;
     peso_kg: number | string | null;
     peso_sacas: number | string | null;
     peso_por_volume_kg: number | string | null;
@@ -130,6 +132,7 @@ export async function loadMeusCafes(produtorId: string): Promise<MeuCafeRow[]> {
       processo: l.processo,
       safra: l.safra,
       status: l.status,
+      createdAt: l.created_at,
       pesoKg: l.peso_kg != null ? Number(l.peso_kg) : 0,
       pesoSacas,
       pesoPorBagKg:
