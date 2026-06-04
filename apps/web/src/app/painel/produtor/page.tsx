@@ -296,9 +296,17 @@ export default async function InicioProdutorPage() {
       {/* Meu estoque de café — visão de estoque coerente */}
       <Card>
         <CardContent className="p-card">
-          <p className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
-            Meu estoque de café
-          </p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
+              Meu estoque de café
+            </p>
+            <Link
+              href="/painel/produtor/cafe/novo"
+              className="rounded-md text-caption font-medium text-milsaca-dourado-texto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              + Registrar café
+            </Link>
+          </div>
           <p className="mt-1 text-h2 text-milsaca-cafezal">
             {estoque.total}{" "}
             <span className="text-body-sm font-normal text-neutral-500">

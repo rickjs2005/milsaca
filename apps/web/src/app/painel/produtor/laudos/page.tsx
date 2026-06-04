@@ -136,11 +136,16 @@ export default async function MinhasSacasPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-h1 text-milsaca-cafezal">Meu Café</h1>
-        <p className="mt-1 text-body-sm text-neutral-600">
-          Seus lotes com classificação de qualidade e o valor estimado hoje.
-        </p>
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-h1 text-milsaca-cafezal">Meu Café</h1>
+          <p className="mt-1 text-body-sm text-neutral-600">
+            Seus lotes com classificação de qualidade e o valor estimado hoje.
+          </p>
+        </div>
+        <Button asChild variant="primary" size="sm" className="shrink-0">
+          <Link href="/painel/produtor/cafe/novo">Registrar café</Link>
+        </Button>
       </header>
 
       {rows.length === 0 ? (
@@ -149,8 +154,13 @@ export default async function MinhasSacasPage() {
             <EmptyState
               icon={FileCheck2}
               title="Você ainda não tem lotes classificados"
-              description="Quando a corretora classificar um dos seus lotes, ele aparece aqui — com a classificação, PDF e QR público pra você compartilhar."
+              description="Registre seu café pra ele entrar no seu estoque. Quando a corretora classificar um lote, o laudo aparece aqui — com PDF e QR público pra compartilhar."
             />
+            <div className="mt-4 flex justify-center">
+              <Button asChild variant="primary" size="sm">
+                <Link href="/painel/produtor/cafe/novo">Registrar meu café</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : (

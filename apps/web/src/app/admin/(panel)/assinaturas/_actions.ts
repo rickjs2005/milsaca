@@ -38,13 +38,16 @@ export async function updateSubscription(formData: FormData) {
   const supabase = await createClient();
   // Atômico: a RPC faz o UPDATE da subscription + o INSERT no audit_log numa
   // única transação (migration 20261030).
+  // A RPC aceita null nesses 4 campos (colunas nullable); como os params não têm
+  // DEFAULT, o type-gen do Supabase os tipa como `string` (não `string | null`).
+  // Cast localizado p/ não brigar com o gen — runtime inalterado (Postgres aceita null).
   const { error } = await supabase.rpc("admin_update_subscription", {
     p_id: id,
     p_status: status,
-    p_plan_id: plan_id,
-    p_trial_ends_at: dateInputToIso(trial_ends_at),
-    p_current_period_end: dateInputToIso(current_period_end),
-    p_notes: notes ?? null,
+    p_plan_id: plan_id as string,
+    p_trial_ends_at: dateInputToIso(trial_ends_at) as string,
+    p_current_period_end: dateInputToIso(current_period_end) as string,
+    p_notes: (notes ?? null) as string,
   });
 
   if (error) {
