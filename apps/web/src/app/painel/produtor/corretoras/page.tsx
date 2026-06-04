@@ -36,6 +36,7 @@ import {
   REGIOES_CAFEEIRAS,
   type RegiaoCafeeira,
 } from "@/app/admin/(panel)/corretoras/_components/regioes";
+import { MobileFilterSelect } from "@/components/mobile-filter-select";
 
 export const metadata = { title: "Corretoras — Painel do produtor" };
 
@@ -128,7 +129,38 @@ export default async function CorretorasProdutorPage({
         </p>
       </header>
 
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Mobile: dois dropdowns lado a lado no lugar das pills empilhadas */}
+      <div className="flex gap-2 lg:hidden">
+        <MobileFilterSelect
+          className="flex-1"
+          label="Mostrar"
+          paramName="filter"
+          current={filter}
+          options={FILTERS.map((f) => ({
+            value: f.value,
+            label: f.label,
+            count:
+              f.value === "favoritas" && totalFavoritas > 0
+                ? totalFavoritas
+                : undefined,
+          }))}
+        />
+        <MobileFilterSelect
+          className="flex-1"
+          label="Região"
+          paramName="regiao"
+          current={regiao ?? ""}
+          options={[
+            { value: "", label: "Todas" },
+            ...REGIOES_CAFEEIRAS.map((r) => ({
+              value: r.value,
+              label: REGIAO_LABEL[r.value],
+            })),
+          ]}
+        />
+      </div>
+
+      <div className="hidden flex-wrap items-center gap-2 lg:flex">
         <span className="text-body-sm text-neutral-600">Mostrar:</span>
         {FILTERS.map((f) => {
           const params = new URLSearchParams();
@@ -159,7 +191,7 @@ export default async function CorretorasProdutorPage({
         })}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="hidden flex-wrap items-center gap-2 lg:flex">
         <span className="text-body-sm text-neutral-600">Região:</span>
         {[null, ...REGIOES_CAFEEIRAS.map((r) => r.value)].map((value) => {
           const params = new URLSearchParams();

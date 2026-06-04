@@ -14,6 +14,7 @@ import {
   type NegociacaoListItem,
 } from "./_lib/queries";
 import { buildWhatsAppInviteUrl } from "../../corretora/produtores/_lib/whatsapp";
+import { MobileFilterSelect } from "@/components/mobile-filter-select";
 
 export const metadata = { title: "Propostas — Painel do produtor" };
 
@@ -122,8 +123,21 @@ export default async function NegociacoesProdutorPage({
         />
       </div>
 
-      {/* Filtros como badges com contagem */}
-      <div className="flex flex-wrap gap-2">
+      {/* Mobile: dropdown de verdade no lugar das pills empilhadas */}
+      <MobileFilterSelect
+        className="lg:hidden"
+        label="Filtrar por status"
+        paramName="status"
+        current={status ?? ""}
+        options={FILTERS.map((f) => ({
+          value: f.value,
+          label: f.label,
+          count: f.count,
+        }))}
+      />
+
+      {/* Filtros como badges com contagem (desktop) */}
+      <div className="hidden flex-wrap gap-2 lg:flex">
         {FILTERS.map((f) => {
           const params = new URLSearchParams();
           if (f.value) params.set("status", f.value);
