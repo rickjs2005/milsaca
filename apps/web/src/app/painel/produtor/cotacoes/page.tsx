@@ -9,6 +9,7 @@ import {
   MapPin,
   Activity,
   Star,
+  Calculator,
 } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { timeAgo } from "@/lib/format";
@@ -25,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { loadProdutorCotacoes } from "./_lib/queries";
 import { loadMarketTrend, type MarketTrend } from "@/lib/market-trend";
 import { CotacoesFiltros } from "./_components/cotacoes-filtros";
+import { CalculadoraUnidades } from "@/components/produtor/CalculadoraUnidades/CalculadoraUnidades";
 import type { CoffeeProcesso, CoffeeSpecie } from "@milsaca/types";
 import type { CotacaoCard, MarketIndicator } from "./_lib/queries";
 
@@ -203,10 +205,11 @@ export default async function CotacoesProdutorPage({
         </div>
         <Link
           href="/painel/produtor/cotacoes/alvos"
+          title="Te avisamos no WhatsApp quando o preço bater no seu alvo"
           className="inline-flex items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-3 py-2 text-body-sm text-milsaca-cafezal transition-colors hover:border-milsaca-dourado hover:bg-milsaca-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <Bell className="h-4 w-4 text-milsaca-dourado" />
-          Alertas de preço
+          Alertas de preço · WhatsApp
         </Link>
       </header>
 
@@ -388,6 +391,24 @@ export default async function CotacoesProdutorPage({
           </div>
         </section>
       ) : null}
+
+      {/* Calculadora de unidades — "se informa sobre o peso do café" */}
+      <section className="space-y-3">
+        <header>
+          <h2 className="flex items-center gap-2 text-h3 text-milsaca-cafezal">
+            <Calculator className="h-4 w-4 text-milsaca-dourado" />
+            Calculadora de unidades
+          </h2>
+          <p className="text-caption text-neutral-600">
+            Converta entre bags, sacas (60 kg) e quilos na hora.
+          </p>
+        </header>
+        <Card>
+          <CardContent className="p-card">
+            <CalculadoraUnidades />
+          </CardContent>
+        </Card>
+      </section>
 
       {/* Vazio total */}
       {data.minhasCorretoras.length === 0 &&
