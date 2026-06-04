@@ -53,12 +53,20 @@ export function MinhaSafra({
           <h2 className="text-h3 text-milsaca-cafezal">
             Minha Safra{estoque.safra ? ` ${estoque.safra}` : ""}
           </h2>
-          <Link
-            href="/painel/produtor/extrato"
-            className="rounded-md text-caption font-medium text-milsaca-dourado-texto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            Ver extrato →
-          </Link>
+          <div className="flex shrink-0 items-center gap-3">
+            <Link
+              href="/painel/produtor/plano"
+              className="rounded-md text-caption font-medium text-milsaca-dourado-texto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              Planejar venda →
+            </Link>
+            <Link
+              href="/painel/produtor/extrato"
+              className="rounded-md text-caption font-medium text-milsaca-dourado-texto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              Ver extrato →
+            </Link>
+          </div>
         </div>
 
         {estoque.total > 0 ? (

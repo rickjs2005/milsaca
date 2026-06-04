@@ -1534,6 +1534,57 @@ export type Database = {
           },
         ]
       }
+      metas_venda: {
+        Row: {
+          alerta_id: string | null
+          created_at: string
+          id: string
+          observacoes: string | null
+          preco_alvo: number
+          produtor_id: string
+          sacas: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          alerta_id?: string | null
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          preco_alvo: number
+          produtor_id: string
+          sacas: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          alerta_id?: string | null
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          preco_alvo?: number
+          produtor_id?: string
+          sacas?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metas_venda_alerta_id_fkey"
+            columns: ["alerta_id"]
+            isOneToOne: false
+            referencedRelation: "price_alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metas_venda_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       moderation_reports: {
         Row: {
           created_at: string
