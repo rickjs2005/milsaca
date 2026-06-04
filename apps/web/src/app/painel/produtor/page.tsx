@@ -253,7 +253,7 @@ export default async function InicioProdutorPage({
           {/* 4. Corretoras pagando hoje (melhor preço) */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-500">
+              <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-600">
                 <Star className="h-4 w-4" />
                 Corretoras · preço de hoje
               </h2>
@@ -327,7 +327,7 @@ export default async function InicioProdutorPage({
           {/* 5. Propostas em aberto */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-500">
+              <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-600">
                 <Handshake className="h-4 w-4" />
                 Propostas em aberto
               </h2>
@@ -373,7 +373,7 @@ export default async function InicioProdutorPage({
           {/* Financeiro — a receber × recebido */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-500">
+              <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-neutral-600">
                 <Wallet className="h-4 w-4" />
                 Financeiro
               </h2>
@@ -395,7 +395,7 @@ export default async function InicioProdutorPage({
                       <span className="flex h-8 w-8 items-center justify-center rounded-full bg-warning-50 text-warning-700">
                         <Clock className="h-4 w-4" />
                       </span>
-                      <p className="text-caption font-medium uppercase tracking-wider text-neutral-500">
+                      <p className="text-caption font-medium uppercase tracking-wider text-neutral-600">
                         A receber
                       </p>
                     </div>
@@ -420,7 +420,7 @@ export default async function InicioProdutorPage({
                       <span className="flex h-8 w-8 items-center justify-center rounded-full bg-success-50 text-success-700">
                         <CheckCircle2 className="h-4 w-4" />
                       </span>
-                      <p className="text-caption font-medium uppercase tracking-wider text-neutral-500">
+                      <p className="text-caption font-medium uppercase tracking-wider text-neutral-600">
                         Recebido
                       </p>
                     </div>

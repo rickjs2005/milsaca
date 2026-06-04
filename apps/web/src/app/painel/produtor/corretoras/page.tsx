@@ -235,7 +235,7 @@ export default async function CorretorasProdutorPage({
           }));
         return pins.length > 0 ? (
           <section className="space-y-2">
-            <h2 className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
+            <h2 className="text-caption font-semibold uppercase tracking-wider text-neutral-600">
               No mapa
             </h2>
             <CorretorasMapWrapper pins={pins} />
@@ -312,6 +312,11 @@ export default async function CorretorasProdutorPage({
                       />
                       <button
                         type="submit"
+                        aria-label={
+                          c.is_favorita
+                            ? "Remover dos favoritos"
+                            : "Adicionar aos favoritos"
+                        }
                         title={
                           c.is_favorita
                             ? "Remover dos favoritos"
@@ -321,7 +326,7 @@ export default async function CorretorasProdutorPage({
                           "rounded-md p-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                           c.is_favorita
                             ? "text-milsaca-dourado hover:opacity-80"
-                            : "text-neutral-400 hover:text-milsaca-dourado",
+                            : "text-neutral-500 hover:text-milsaca-dourado",
                         )}
                       >
                         {c.is_favorita ? (

@@ -171,7 +171,7 @@ export function AlertFormFields({
           type="checkbox"
           name="active"
           defaultChecked={d.active ?? true}
-          className="h-4 w-4 cursor-pointer accent-milsaca-cafezal"
+          className="h-4 w-4 cursor-pointer accent-milsaca-cafezal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
         />
         Alvo ativo (dispara notificações)
       </label>

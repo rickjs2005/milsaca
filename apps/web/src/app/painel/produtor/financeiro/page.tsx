@@ -226,7 +226,7 @@ export default async function FinanceiroPage() {
                       rel="noopener noreferrer"
                       className="mt-3 inline-flex items-center gap-1 text-caption font-medium text-milsaca-cafezal hover:underline"
                     >
-                      <FileText className="h-3.5 w-3.5" />
+                      <FileText aria-hidden className="h-3.5 w-3.5" />
                       Ver comprovante
                     </a>
                   ) : null}
@@ -267,7 +267,7 @@ function KpiCard({
     <Card className={className}>
       <CardContent className="space-y-2 p-card">
         <div className="flex items-center justify-between">
-          <p className="text-caption font-medium uppercase tracking-wider text-neutral-500">
+          <p className="text-caption font-medium uppercase tracking-wider text-neutral-600">
             {label}
           </p>
           <span className="text-neutral-500">{icon}</span>

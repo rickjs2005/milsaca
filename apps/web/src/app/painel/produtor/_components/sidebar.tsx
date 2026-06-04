@@ -98,6 +98,7 @@ export function ProdutorSidebar({
                 />
               ) : null}
               <Icon
+                aria-hidden
                 className={cn(
                   "h-4 w-4 shrink-0 transition-colors",
                   active
@@ -138,7 +139,7 @@ export function ProdutorSidebar({
             href="/painel/escolher"
             className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-body-sm font-medium text-milsaca-cream/65 transition-colors hover:bg-white/5 hover:text-milsaca-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-milsaca-dourado focus-visible:ring-inset"
           >
-            <Repeat className="h-4 w-4" />
+            <Repeat aria-hidden className="h-4 w-4" />
             Trocar painel
           </Link>
         )}
@@ -148,7 +149,7 @@ export function ProdutorSidebar({
             type="submit"
             className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-body-sm font-medium text-milsaca-cream/65 transition-colors hover:bg-white/5 hover:text-milsaca-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-milsaca-dourado focus-visible:ring-inset"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut aria-hidden className="h-4 w-4" />
             Sair
           </button>
         </form>

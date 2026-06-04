@@ -38,7 +38,7 @@ export default async function ExtratoPage() {
           href="/painel/produtor"
           className="inline-flex items-center gap-1 text-body-sm text-milsaca-dourado-texto hover:underline"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft aria-hidden className="h-4 w-4" />
           Voltar para o Início
         </Link>
       </div>

@@ -144,7 +144,7 @@ export default async function NegociacaoDetalhePage({
           href="/painel/produtor/negociacoes"
           className="inline-flex items-center gap-1 text-body-sm text-neutral-600 transition-colors hover:text-milsaca-cafezal"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft aria-hidden className="h-4 w-4" />
           Voltar para Propostas
         </Link>
       </div>
@@ -175,7 +175,7 @@ export default async function NegociacaoDetalhePage({
         {waUrl && (
           <Button asChild variant="gold">
             <a href={waUrl} target="_blank" rel="noopener noreferrer">
-              <MessageCircle className="mr-2 h-4 w-4" />
+              <MessageCircle aria-hidden className="mr-2 h-4 w-4" />
               Falar no WhatsApp
             </a>
           </Button>
@@ -194,7 +194,7 @@ export default async function NegociacaoDetalhePage({
           <CardContent className="space-y-4">
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <p className="text-caption uppercase tracking-wider text-neutral-500">
+                <p className="text-caption uppercase tracking-wider text-neutral-600">
                   Café
                 </p>
                 <p className="text-body-sm font-medium text-milsaca-cafezal">
@@ -202,7 +202,7 @@ export default async function NegociacaoDetalhePage({
                 </p>
               </div>
               <div>
-                <p className="text-caption uppercase tracking-wider text-neutral-500">
+                <p className="text-caption uppercase tracking-wider text-neutral-600">
                   Sacas (60kg)
                 </p>
                 <p className="text-body-sm font-medium text-milsaca-cafezal">
@@ -212,7 +212,7 @@ export default async function NegociacaoDetalhePage({
                 </p>
               </div>
               <div>
-                <p className="text-caption uppercase tracking-wider text-neutral-500">
+                <p className="text-caption uppercase tracking-wider text-neutral-600">
                   Por saca
                 </p>
                 <p className="text-body-sm font-medium text-milsaca-cafezal">
@@ -236,7 +236,7 @@ export default async function NegociacaoDetalhePage({
 
             {lead.notes && (
               <div className="rounded-md border border-neutral-200 bg-milsaca-cream/60 p-4">
-                <p className="text-caption uppercase tracking-wider text-neutral-500">
+                <p className="text-caption uppercase tracking-wider text-neutral-600">
                   Observação da corretora
                 </p>
                 <p className="mt-1 text-body-sm italic text-neutral-700">

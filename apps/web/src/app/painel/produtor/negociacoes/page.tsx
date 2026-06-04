@@ -251,7 +251,7 @@ function NegociacaoCard({
             className="inline-flex min-w-0 items-center gap-2 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-milsaca-dourado/15 text-milsaca-cafezal">
-              <Coffee className="h-4 w-4" />
+              <Coffee aria-hidden className="h-4 w-4" />
             </span>
             <span className="truncate text-h3 font-semibold text-milsaca-cafezal hover:underline">
               {it.corretora_nome}
@@ -303,7 +303,7 @@ function NegociacaoCard({
           {waUrl ? (
             <Button asChild size="sm" variant="success" className="flex-1">
               <a href={waUrl} target="_blank" rel="noopener noreferrer">
-                <MessageCircle className="mr-1.5 h-4 w-4" />
+                <MessageCircle aria-hidden className="mr-1.5 h-4 w-4" />
                 WhatsApp
               </a>
             </Button>

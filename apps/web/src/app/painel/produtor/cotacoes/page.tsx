@@ -208,7 +208,7 @@ export default async function CotacoesProdutorPage({
           title="Te avisamos no WhatsApp quando o preço bater no seu alvo"
           className="inline-flex items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-3 py-2 text-body-sm text-milsaca-cafezal transition-colors hover:border-milsaca-dourado hover:bg-milsaca-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
-          <Bell className="h-4 w-4 text-milsaca-dourado" />
+          <Bell aria-hidden className="h-4 w-4 text-milsaca-dourado" />
           Alertas de preço · WhatsApp
         </Link>
       </header>
@@ -287,7 +287,7 @@ export default async function CotacoesProdutorPage({
       <section className="space-y-3">
         <header>
           <h2 className="flex items-center gap-2 text-h3 text-milsaca-cafezal">
-            <Star className="h-4 w-4 text-milsaca-dourado" />
+            <Star aria-hidden className="h-4 w-4 text-milsaca-dourado" />
             {data.minhasCorretoras.length > 0
               ? `Minhas corretoras (${data.minhasCorretoras.length})`
               : "Minhas corretoras"}
@@ -333,7 +333,7 @@ export default async function CotacoesProdutorPage({
         <section className="space-y-3">
           <header>
             <h2 className="flex items-center gap-2 text-h3 text-milsaca-cafezal">
-              <MapPin className="h-4 w-4 text-milsaca-dourado" />
+              <MapPin aria-hidden className="h-4 w-4 text-milsaca-dourado" />
               Outras corretoras ({data.outrasPracas.length})
             </h2>
             <p className="text-caption text-neutral-600">
@@ -358,7 +358,7 @@ export default async function CotacoesProdutorPage({
         <section className="space-y-3">
           <header>
             <h2 className="flex items-center gap-2 text-h3 text-milsaca-cafezal">
-              <Activity className="h-4 w-4 text-milsaca-dourado" />
+              <Activity aria-hidden className="h-4 w-4 text-milsaca-dourado" />
               Mercado nacional
             </h2>
             <p className="text-caption text-neutral-600">
@@ -377,7 +377,7 @@ export default async function CotacoesProdutorPage({
         <section className="space-y-3">
           <header>
             <h2 className="flex items-center gap-2 text-h3 text-milsaca-cafezal">
-              <Activity className="h-4 w-4 text-milsaca-dourado" />
+              <Activity aria-hidden className="h-4 w-4 text-milsaca-dourado" />
               Mercado internacional
             </h2>
             <p className="text-caption text-neutral-600">
@@ -396,7 +396,7 @@ export default async function CotacoesProdutorPage({
       <section className="space-y-3">
         <header>
           <h2 className="flex items-center gap-2 text-h3 text-milsaca-cafezal">
-            <Calculator className="h-4 w-4 text-milsaca-dourado" />
+            <Calculator aria-hidden className="h-4 w-4 text-milsaca-dourado" />
             Calculadora de unidades
           </h2>
           <p className="text-caption text-neutral-600">
@@ -502,7 +502,7 @@ function MarketCard({ m, trend }: { m: MarketIndicator; trend?: MarketTrend }) {
           </span>
         ) : null}
         {trend?.series && trend.series.length >= 2 ? (
-          <Sparkline data={trend.series} className="h-7 w-full text-neutral-400" />
+          <Sparkline data={trend.series} className="h-7 w-full text-neutral-500" />
         ) : null}
         <p
           className={`text-caption ${

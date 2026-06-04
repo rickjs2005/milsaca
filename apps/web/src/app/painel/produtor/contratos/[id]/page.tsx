@@ -94,7 +94,7 @@ export default async function ContratoProdutorDetalhePage({
           href="/painel/produtor/contratos"
           className="inline-flex items-center gap-1 text-body-sm text-neutral-600 hover:text-milsaca-cafezal"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft aria-hidden className="h-4 w-4" />
           Voltar para Contratos
         </Link>
       </div>
@@ -126,7 +126,7 @@ export default async function ContratoProdutorDetalhePage({
         {waUrl && (
           <Button asChild variant="success">
             <a href={waUrl} target="_blank" rel="noopener noreferrer">
-              <MessageCircle className="mr-2 h-4 w-4" />
+              <MessageCircle aria-hidden className="mr-2 h-4 w-4" />
               Falar no WhatsApp
             </a>
           </Button>
@@ -144,7 +144,7 @@ export default async function ContratoProdutorDetalhePage({
           <CardContent className="space-y-4">
             <div className="grid grid-cols-3 gap-3 text-body-sm">
               <div>
-                <p className="text-caption uppercase tracking-wider text-neutral-500">
+                <p className="text-caption uppercase tracking-wider text-neutral-600">
                   Café
                 </p>
                 <p className="font-medium text-milsaca-cafezal">
@@ -152,7 +152,7 @@ export default async function ContratoProdutorDetalhePage({
                 </p>
               </div>
               <div>
-                <p className="text-caption uppercase tracking-wider text-neutral-500">
+                <p className="text-caption uppercase tracking-wider text-neutral-600">
                   Sacas (60kg)
                 </p>
                 <p className="font-medium tabular-nums text-milsaca-cafezal">
@@ -162,7 +162,7 @@ export default async function ContratoProdutorDetalhePage({
                 </p>
               </div>
               <div>
-                <p className="text-caption uppercase tracking-wider text-neutral-500">
+                <p className="text-caption uppercase tracking-wider text-neutral-600">
                   Por saca
                 </p>
                 <p className="font-medium tabular-nums text-milsaca-cafezal">
@@ -173,7 +173,7 @@ export default async function ContratoProdutorDetalhePage({
 
             {contrato.total_value != null && (
               <div className="rounded-md bg-milsaca-cream p-3">
-                <p className="text-caption uppercase tracking-wider text-neutral-500">
+                <p className="text-caption uppercase tracking-wider text-neutral-600">
                   Valor total
                 </p>
                 <p className="text-h2 tabular-nums text-milsaca-cafezal">

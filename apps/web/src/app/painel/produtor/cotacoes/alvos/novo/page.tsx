@@ -53,7 +53,7 @@ export default async function NovoAlvoPage({
           href="/painel/produtor/cotacoes/alvos"
           className="inline-flex items-center gap-1 rounded-sm text-body-sm text-neutral-600 transition-colors hover:text-milsaca-cafezal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft aria-hidden className="h-4 w-4" />
           Voltar para alertas
         </Link>
       </div>

@@ -43,14 +43,15 @@ export function ProdutorBottomNav() {
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
-              active ? "text-milsaca-cafezal" : "text-neutral-500",
+              "flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 py-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+              active ? "text-milsaca-cafezal" : "text-neutral-600",
             )}
           >
             <Icon
+              aria-hidden
               className={cn(
-                "h-5 w-5",
-                active ? "text-milsaca-dourado" : "text-neutral-400",
+                "h-6 w-6",
+                active ? "text-milsaca-dourado" : "text-neutral-500",
               )}
             />
             {item.label}

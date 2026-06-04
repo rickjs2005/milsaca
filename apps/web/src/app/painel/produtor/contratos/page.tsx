@@ -109,7 +109,7 @@ export default async function ContratosProdutorPage({
       </header>
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
+        <span className="text-caption font-semibold uppercase tracking-wider text-neutral-600">
           Status
         </span>
         {FILTERS.map((f) => {
@@ -250,7 +250,7 @@ export default async function ContratosProdutorPage({
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-caption font-medium text-success-700 hover:underline"
                           >
-                            <MessageCircle className="h-3.5 w-3.5" />
+                            <MessageCircle aria-hidden className="h-3.5 w-3.5" />
                             WhatsApp
                           </a>
                         )}

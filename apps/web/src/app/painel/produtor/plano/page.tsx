@@ -37,14 +37,14 @@ export default async function PlanoVendaPage({
           href="/painel/produtor"
           className="inline-flex items-center gap-1 text-body-sm text-milsaca-dourado-texto hover:underline"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft aria-hidden className="h-4 w-4" />
           Voltar para a Início
         </Link>
       </div>
 
       <header>
         <h1 className="flex items-center gap-2 text-h1 text-milsaca-cafezal">
-          <Target className="h-6 w-6 text-milsaca-dourado" />
+          <Target aria-hidden className="h-6 w-6 text-milsaca-dourado" />
           Planejar venda
         </h1>
         <p className="mt-1 text-body-sm text-neutral-600">
@@ -62,7 +62,7 @@ export default async function PlanoVendaPage({
       {/* Resumo da safra + metas */}
       <Card>
         <CardContent className="p-card">
-          <p className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
+          <p className="text-caption font-semibold uppercase tracking-wider text-neutral-600">
             Safra · {NUM.format(plano.total)} sacas
           </p>
           <p className="mt-0.5 text-body-sm text-neutral-600">
@@ -158,7 +158,7 @@ export default async function PlanoVendaPage({
                 type="checkbox"
                 name="criar_alerta"
                 defaultChecked
-                className="mt-0.5 h-4 w-4 shrink-0 accent-milsaca-cafezal"
+                className="mt-0.5 h-4 w-4 shrink-0 accent-milsaca-cafezal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
               />
               <span className="text-body-sm text-milsaca-cafezal">
                 Me avisar no WhatsApp quando o mercado bater esse preço

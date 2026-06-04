@@ -138,7 +138,7 @@ export function MinhaSafra({
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-milsaca-dourado/15 text-milsaca-cafezal ring-1 ring-inset ring-milsaca-dourado/30">
                   <Wallet className="h-4 w-4" />
                 </span>
-                <p className="text-caption font-medium uppercase tracking-wider text-neutral-500">
+                <p className="text-caption font-medium uppercase tracking-wider text-neutral-600">
                   Valor estimado disponível
                 </p>
               </div>
@@ -152,7 +152,7 @@ export function MinhaSafra({
                   : "cotação indisponível"}
               </p>
               {indice.fonte === "milsaca" && indice.cepea != null ? (
-                <p className="text-caption text-neutral-400">
+                <p className="text-caption text-neutral-500">
                   CEPEA {BRL2.format(indice.cepea)}/saca · referência
                 </p>
               ) : null}
@@ -196,7 +196,7 @@ function Tile({
       <p className="text-h2 leading-none tabular-nums text-milsaca-cafezal">
         {NUM.format(valor)}
       </p>
-      <p className="mt-1 text-caption text-neutral-500">{label}</p>
+      <p className="mt-1 text-caption font-medium text-neutral-600">{label}</p>
     </div>
   );
 }

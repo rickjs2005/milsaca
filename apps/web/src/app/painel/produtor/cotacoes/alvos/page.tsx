@@ -90,7 +90,7 @@ export default async function AlvosPage() {
           href="/painel/produtor/cotacoes"
           className="inline-flex items-center gap-1 rounded-sm text-body-sm text-neutral-600 transition-colors hover:text-milsaca-cafezal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft aria-hidden className="h-4 w-4" />
           Voltar para Cotações
         </Link>
       </div>
@@ -105,7 +105,7 @@ export default async function AlvosPage() {
         </div>
         <Button asChild variant="primary">
           <Link href="/painel/produtor/cotacoes/alvos/novo">
-            <Plus className="mr-1.5 h-4 w-4" />
+            <Plus aria-hidden className="mr-1.5 h-4 w-4" />
             Novo alerta
           </Link>
         </Button>

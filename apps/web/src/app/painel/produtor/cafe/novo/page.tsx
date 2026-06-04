@@ -28,7 +28,7 @@ export default async function RegistrarCafePage({
           href="/painel/produtor/laudos"
           className="inline-flex items-center gap-1 text-body-sm text-milsaca-dourado-texto hover:underline"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft aria-hidden className="h-4 w-4" />
           Voltar para Meu Café
         </Link>
       </div>
@@ -98,7 +98,7 @@ export default async function RegistrarCafePage({
               <input
                 type="checkbox"
                 name="beneficiado"
-                className="mt-0.5 h-4 w-4 shrink-0 accent-milsaca-cafezal"
+                className="mt-0.5 h-4 w-4 shrink-0 accent-milsaca-cafezal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
               />
               <span className="text-body-sm text-milsaca-cafezal">
                 Meu café já está <strong>beneficiado</strong> (pronto/descascado)

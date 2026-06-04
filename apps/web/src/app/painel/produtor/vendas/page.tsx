@@ -160,7 +160,7 @@ function KpiCard({ label, value }: { label: string; value: string }) {
   return (
     <Card>
       <CardContent className="space-y-2 p-card">
-        <p className="text-caption font-medium uppercase tracking-wider text-neutral-500">
+        <p className="text-caption font-medium uppercase tracking-wider text-neutral-600">
           {label}
         </p>
         <p className="text-h2 tabular-nums text-milsaca-cafezal">{value}</p>

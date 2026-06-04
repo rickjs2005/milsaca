@@ -149,7 +149,7 @@ export function MeuCafeView({ rows }: { rows: MeuCafeRow[] }) {
       {/* Toolbar: busca · filtro de status · ordenar · CSV */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[14rem] flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+          <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -175,7 +175,7 @@ export function MeuCafeView({ rows }: { rows: MeuCafeRow[] }) {
           onClick={() => baixarCsv(filtered)}
           disabled={filtered.length === 0}
         >
-          <FileSpreadsheet className="mr-1.5 h-4 w-4" />
+          <FileSpreadsheet aria-hidden className="mr-1.5 h-4 w-4" />
           Baixar CSV
         </Button>
       </div>
@@ -186,7 +186,7 @@ export function MeuCafeView({ rows }: { rows: MeuCafeRow[] }) {
             type="button"
             onClick={() => setStatus("")}
             className={cn(
-              "rounded-pill px-3 py-1 text-caption font-medium transition-colors",
+              "rounded-pill px-3 py-1 text-caption font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
               status === ""
                 ? "bg-milsaca-cafezal text-milsaca-cream"
                 : "border border-neutral-200 text-neutral-600 hover:border-milsaca-dourado",
@@ -200,7 +200,7 @@ export function MeuCafeView({ rows }: { rows: MeuCafeRow[] }) {
               type="button"
               onClick={() => setStatus(st)}
               className={cn(
-                "rounded-pill px-3 py-1 text-caption font-medium transition-colors",
+                "rounded-pill px-3 py-1 text-caption font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
                 status === st
                   ? "bg-milsaca-cafezal text-milsaca-cream"
                   : "border border-neutral-200 text-neutral-600 hover:border-milsaca-dourado",
@@ -261,7 +261,7 @@ export function MeuCafeView({ rows }: { rows: MeuCafeRow[] }) {
                       </p>
                     </>
                   ) : (
-                    <span className="text-neutral-400">—</span>
+                    <span className="text-neutral-500">—</span>
                   )}
                 </td>
                 <td className="px-5 py-3 text-right align-top">
@@ -365,13 +365,13 @@ function AcoesLaudo({ lista }: { lista: ClassificacaoResumo[] }) {
     <div className="flex justify-end gap-2">
       <Button asChild variant="outline" size="sm">
         <Link href={`/laudos/${ultima.id}`} target="_blank">
-          <QrCode className="mr-1 h-3.5 w-3.5" />
+          <QrCode aria-hidden className="mr-1 h-3.5 w-3.5" />
           Laudo
         </Link>
       </Button>
       <Button asChild variant="primary" size="sm">
         <Link href={`/laudos/${ultima.id}/pdf`} target="_blank">
-          <Download className="mr-1 h-3.5 w-3.5" />
+          <Download aria-hidden className="mr-1 h-3.5 w-3.5" />
           PDF
         </Link>
       </Button>
