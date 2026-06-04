@@ -1,27 +1,32 @@
 import { createClient } from "@milsaca/db/web/server";
 
 /**
- * Estoque de café do produtor — o conceito central da comercialização.
- * Reconcilia TODOS os módulos (Propostas, Vendas, Financeiro, Meu Café):
- *   - total        = lotes registrados (peso_sacas = coluna GERADA de peso_kg/60,
- *                    a verdade; ver @/lib/unidades + migration 20261060), não-arquivados
+ * MINHA SAFRA — fonte ÚNICA de verdade do estoque do produtor.
+ *
+ * INVARIANTE (todas as telas DEVEM respeitar): em sacas,
+ *
+ *     total = vendido + emNegociacao + disponivel
+ *
+ *   - total        = produção registrada (lotes não-arquivados; peso_sacas é a
+ *                    coluna GERADA de peso_kg/60 — ver @/lib/unidades, migr 20261060)
  *   - vendido      = CONTRATOS ativo/finalizado (= Vendas = Financeiro)
- *   - naoVendido   = total − vendido (= Σ "não vendidas" por lote no Meu Café)
- *   - emNegociacao = PROPOSTAS abertas (leads novo/em_negociacao) — interesse,
- *                    ainda não compromete; é um subconjunto do não-vendido
- *   - livre        = max(0, naoVendido − emNegociacao)
- *   - cancelado    = ignorado
- * A venda flui pelo CONTRATO; a negociação é a proposta (lead). Cada um aparece
- * no módulo certo e os números fecham (total = vendido + emNeg + livre).
+ *   - emNegociacao = PROPOSTAS abertas (leads novo/em_negociacao) — comprometido
+ *   - disponivel   = o que AINDA PODE VENDER = total − vendido − emNegociacao
+ *
+ * ⚠️ "disponível" tem UM significado só: `disponivel` (não vendido E não
+ * comprometido). NÃO existe mais `naoVendido`/`livre` com sentidos diferentes —
+ * essa ambiguidade causava saudação/herói (410) ≠ barra (170). Toda seção da
+ * Início consome ESTES campos; nenhuma recalcula por conta própria.
  */
 export type EstoqueProdutor = {
+  /** Produção total registrada (sacas). */
   total: number;
+  /** Já vendido (contratos ativo/finalizado). */
   vendido: number;
+  /** Comprometido em propostas abertas. */
   emNegociacao: number;
-  /** Não vendido (total − vendido) — bate com o "disponível" por lote. */
-  naoVendido: number;
-  /** Disponível livre de negociação (não-vendido − em negociação). */
-  livre: number;
+  /** AINDA PODE VENDER = total − vendido − emNegociacao. O único "disponível". */
+  disponivel: number;
   /** Valor REAL já vendido (Σ total_value dos contratos ativo/finalizado). */
   valorVendido: number;
   /** Há lote não-beneficiado em estoque → parte das sacas é ESTIMADA. */
@@ -74,12 +79,34 @@ export async function loadEstoqueProdutor(
     .filter((l) => STATUS_EM_NEG_LEAD.includes(l.status))
     .reduce((s, l) => s + Number(l.bag_count ?? 0), 0);
 
-  const naoVendido = Math.max(0, total - vendido);
-  // Em negociação não pode exceder o que não foi vendido (clamp p/ coerência).
-  const emNegociacao = Math.min(emNegociacaoBruto, naoVendido);
-  const livre = Math.max(0, naoVendido - emNegociacao);
+  // Clamps que GARANTEM a invariante total = vendido + emNegociacao + disponivel:
+  // vendido nunca passa do total; em negociação nunca passa do que sobra; o
+  // disponível é o resto. Assim toda seção lê os mesmos números e eles fecham.
+  const vendidoClamp = Math.min(vendido, total);
+  const emNegociacao = Math.min(emNegociacaoBruto, total - vendidoClamp);
+  const disponivel = Math.max(0, total - vendidoClamp - emNegociacao);
 
-  return { total, vendido, emNegociacao, naoVendido, livre, valorVendido, temEstimada };
+  // Guarda de regressão: se algum dia os números não fecharem, grita no dev.
+  if (
+    process.env.NODE_ENV !== "production" &&
+    Math.abs(vendidoClamp + emNegociacao + disponivel - total) > 0.001
+  ) {
+    console.error("[estoque] invariante quebrada", {
+      total,
+      vendido: vendidoClamp,
+      emNegociacao,
+      disponivel,
+    });
+  }
+
+  return {
+    total,
+    vendido: vendidoClamp,
+    emNegociacao,
+    disponivel,
+    valorVendido,
+    temEstimada,
+  };
 }
 
 /**
