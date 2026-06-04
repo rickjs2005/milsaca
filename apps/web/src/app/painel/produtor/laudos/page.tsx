@@ -1,194 +1,65 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import {
-  FileCheck2,
-  QrCode,
-  Download,
-  Coffee,
-  Filter,
-  Droplets,
-  Star,
-  CheckCircle2,
-  type LucideIcon,
-} from "lucide-react";
+import { FileCheck2, QrCode, Download } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
-import { cn } from "@/lib/utils";
-import { createClient } from "@milsaca/db/web/server";
-import { getProfile } from "@/lib/auth";
-import { loadComprometidoPorLote } from "../_lib/estoque";
+import { ResponsiveTable } from "@/components/responsive-table";
 import { UnidadeToggle } from "@/components/produtor/UnidadeToggle/UnidadeToggle";
-import { formatarKg } from "@/lib/unidades";
+import { getProfile } from "@/lib/auth";
+import {
+  loadMeusCafes,
+  type MeuCafeRow,
+  type ClassificacaoResumo,
+} from "./_lib/queries";
 
 export const metadata = { title: "Meu Café — Milsaca" };
 
-const BRL_SACA = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  minimumFractionDigits: 2,
-});
-const BRL_TOTAL = new Intl.NumberFormat("pt-BR", {
+const BRL0 = new Intl.NumberFormat("pt-BR", {
   style: "currency",
   currency: "BRL",
   maximumFractionDigits: 0,
 });
+const BRL2 = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  minimumFractionDigits: 2,
+});
 
-type Row = {
-  id: string;
-  lote_id: string;
-  tipo: string | null;
-  fora_de_tipo: boolean;
-  bebida: string | null;
-  peneira_dominante: string | null;
-  pva: number | string | null;
-  created_at: string;
-  lote:
-    | { codigo: string; specie: string; processo: string | null; safra: string | null; peso_sacas: number | string | null; peso_kg: number | string | null }
-    | { codigo: string; specie: string; processo: string | null; safra: string | null; peso_sacas: number | string | null; peso_kg: number | string | null }[]
-    | null;
-  corretora: { name: string } | { name: string }[] | null;
-};
-
-// Lote do próprio produtor ainda sem laudo (rascunho / aguardando classificação).
-type LoteProprio = {
-  id: string;
-  codigo: string;
-  specie: string;
-  processo: string | null;
-  safra: string | null;
-  status: string;
-  pesoKg: number;
-  pesoPorBagKg: number | null;
-};
-
-const LOTE_STATUS_LABEL: Record<string, { label: string; tone: StatusTone }> = {
+const STATUS: Record<string, { label: string; tone: StatusTone }> = {
   rascunho: { label: "Registrado", tone: "neutral" },
-  aguardando_classificacao: { label: "Aguardando classificação", tone: "warning" },
+  aguardando_classificacao: { label: "Aguardando", tone: "warning" },
+  classificado: { label: "Classificado", tone: "success" },
+  fora_de_tipo: { label: "Fora de tipo", tone: "danger" },
+  rebeneficiar: { label: "Rebeneficiar", tone: "warning" },
+  vendido: { label: "Vendido", tone: "neutral" },
 };
 
-function pickOne<T>(v: T | T[] | null | undefined): T | null {
-  if (v == null) return null;
-  return Array.isArray(v) ? (v[0] ?? null) : v;
-}
-
-function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-  });
-}
-
-function specieLabel(s: string | undefined): string {
+function specieLabel(s: string): string {
   if (s === "arabica") return "Arábica";
-  if (s === "conillon") return "Conillón";
-  return "—";
+  if (s === "conillon" || s === "conilon") return "Conilón";
+  return s;
 }
 
-// Tradução simples do laudo pro produtor: "isso é bom ou ruim?".
-// COB IN 8/2003: tipo menor = melhor (menos defeitos).
-function veredito(
-  tipo: string | null,
-  foraDeTipo: boolean,
-): { label: string; tone: StatusTone; icon: LucideIcon } {
-  if (foraDeTipo) {
-    return {
-      label: "Fora de tipo — rebenefício recomendado",
-      tone: "danger",
-      icon: CheckCircle2,
-    };
-  }
-  const n = tipo ? parseInt(tipo, 10) : NaN;
-  if (!Number.isNaN(n) && n <= 3) {
-    return { label: "Café de qualidade superior", tone: "premium", icon: Star };
-  }
-  if (!Number.isNaN(n) && n <= 6) {
-    return {
-      label: "Boa para comercialização",
-      tone: "success",
-      icon: CheckCircle2,
-    };
-  }
-  return { label: "Comercializável", tone: "neutral", icon: CheckCircle2 };
+function statusInfo(s: string) {
+  return STATUS[s] ?? { label: s, tone: "neutral" as StatusTone };
 }
 
-export default async function MinhasSacasPage() {
+export default async function MeuCafePage() {
   const profile = await getProfile();
   if (!profile) redirect("/entrar");
 
-  const supabase = await createClient();
-  const [laudosRes, cotRes, lotesRes] = await Promise.all([
-    supabase
-      .from("classificacoes_cob")
-      .select(
-        `id, lote_id, tipo, fora_de_tipo, bebida, peneira_dominante, pva, created_at,
-         lote:lotes!classificacoes_cob_lote_id_fkey(codigo, specie, processo, safra, peso_sacas, peso_kg),
-         corretora:corretoras!classificacoes_cob_corretora_id_fkey(name)`,
-      )
-      .order("created_at", { ascending: false })
-      .limit(100),
-    supabase
-      .from("cotacoes")
-      .select("specie, price, reference_date")
-      .order("reference_date", { ascending: false })
-      .limit(50),
-    // Lotes do próprio produtor ainda sem classificação (incl. o que ele acabou
-    // de registrar). RLS: produtor vê os próprios lotes (lotes_tenant_read).
-    supabase
-      .from("lotes")
-      .select(
-        "id, codigo, specie, processo, safra, status, peso_kg, peso_por_volume_kg, unidade_entrada, created_at",
-      )
-      .eq("produtor_id", profile.id)
-      .in("status", ["rascunho", "aguardando_classificacao"])
-      .order("created_at", { ascending: false }),
-  ]);
+  const rows = await loadMeusCafes(profile.id);
 
-  // RLS filtra pra produtor só ver os próprios laudos (via lote.produtor_id)
-  const rows = (laudosRes.data ?? []) as Row[];
-
-  // peso_kg/peso_por_volume_kg são numeric → supabase-js devolve string; coage.
-  const lotesAguardando: LoteProprio[] = (
-    (lotesRes.data ?? []) as Array<{
-      id: string;
-      codigo: string;
-      specie: string;
-      processo: string | null;
-      safra: string | null;
-      status: string;
-      peso_kg: number | string | null;
-      peso_por_volume_kg: number | string | null;
-      unidade_entrada: string | null;
-    }>
-  ).map((l) => ({
-    id: l.id,
-    codigo: l.codigo,
-    specie: l.specie,
-    processo: l.processo,
-    safra: l.safra,
-    status: l.status,
-    pesoKg: l.peso_kg != null ? Number(l.peso_kg) : 0,
-    pesoPorBagKg:
-      l.unidade_entrada === "bag" && l.peso_por_volume_kg != null
-        ? Number(l.peso_por_volume_kg)
-        : null,
-  }));
-
-  // Sacas já comprometidas por lote (contratos não-cancelados) → quanto sobra.
-  const comprometido = await loadComprometidoPorLote(
-    rows.map((r) => r.lote_id),
-  );
-
-  // Última cotação por espécie → conecta laudo com dinheiro.
-  const precoPorSpecie = new Map<string, number>();
-  for (const c of (cotRes.data ?? []) as Array<{
-    specie: string;
-    price: number;
-  }>) {
-    if (!precoPorSpecie.has(c.specie)) precoPorSpecie.set(c.specie, Number(c.price));
-  }
+  const columns = [
+    { key: "cafe", label: "Café" },
+    { key: "peso", label: "Quantidade" },
+    { key: "status", label: "Status" },
+    { key: "class", label: "Classificação (por corretora)" },
+    { key: "valor", label: "Valor estimado", align: "right" as const },
+    { key: "acoes", label: "", align: "right" as const },
+  ];
 
   return (
     <div className="space-y-6">
@@ -196,7 +67,8 @@ export default async function MinhasSacasPage() {
         <div>
           <h1 className="text-h1 text-milsaca-cafezal">Meu Café</h1>
           <p className="mt-1 text-body-sm text-neutral-600">
-            Seus lotes com classificação de qualidade e o valor estimado hoje.
+            Sua planilha de lotes: quantidade, classificação de cada corretora e
+            valor estimado pela cotação CEPEA de hoje.
           </p>
         </div>
         <Button asChild variant="primary" size="sm" className="shrink-0">
@@ -204,53 +76,13 @@ export default async function MinhasSacasPage() {
         </Button>
       </header>
 
-      {/* Café que o produtor registrou e ainda não foi classificado pela corretora */}
-      {lotesAguardando.length > 0 ? (
-        <section className="space-y-3">
-          <h2 className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
-            Aguardando classificação
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {lotesAguardando.map((l) => {
-              const st = LOTE_STATUS_LABEL[l.status] ?? {
-                label: l.status,
-                tone: "neutral" as StatusTone,
-              };
-              return (
-                <Card key={l.id}>
-                  <CardContent className="space-y-3 p-card">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="font-mono text-caption text-milsaca-dourado-texto">
-                          {l.codigo}
-                        </p>
-                        <p className="mt-0.5 text-body-sm font-medium text-milsaca-cafezal">
-                          {specieLabel(l.specie)}
-                          {l.processo ? ` · ${l.processo}` : ""}
-                          {l.safra ? ` · ${l.safra}` : ""}
-                        </p>
-                      </div>
-                      <StatusBadge tone={st.tone}>{st.label}</StatusBadge>
-                    </div>
-                    <UnidadeToggle
-                      valorKg={l.pesoKg}
-                      pesoPorBagKg={l.pesoPorBagKg ?? undefined}
-                    />
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </section>
-      ) : null}
-
-      {rows.length === 0 && lotesAguardando.length === 0 ? (
+      {rows.length === 0 ? (
         <Card tone="muted" className="border-dashed">
           <CardContent className="p-card">
             <EmptyState
               icon={FileCheck2}
               title="Você ainda não tem café registrado"
-              description="Registre seu café pra ele entrar no seu estoque. Quando a corretora classificar um lote, o laudo aparece aqui — com PDF e QR público pra compartilhar."
+              description="Registre seu café pra ele entrar na sua planilha. Quando uma corretora classificar, o resultado aparece aqui pra você comparar."
             />
             <div className="mt-4 flex justify-center">
               <Button asChild variant="primary" size="sm">
@@ -259,151 +91,161 @@ export default async function MinhasSacasPage() {
             </div>
           </CardContent>
         </Card>
-      ) : null}
-
-      {rows.length > 0 ? (
-        <section className="space-y-3">
-          {lotesAguardando.length > 0 ? (
-            <h2 className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
-              Classificados
-            </h2>
-          ) : null}
-          <div className="grid gap-4 sm:grid-cols-2">
-          {rows.map((r) => {
-            const lote = pickOne(r.lote);
-            const cor = pickOne(r.corretora);
-            const pva = r.pva != null ? Number(r.pva) : null;
-            const peso = lote?.peso_sacas != null ? Number(lote.peso_sacas) : null;
-            const com = comprometido[r.lote_id] ?? 0;
-            const totalSacas = peso ?? 0;
-            const preco = lote ? (precoPorSpecie.get(lote.specie) ?? null) : null;
-            const vd = veredito(r.tipo, r.fora_de_tipo);
-            const VdIcon = vd.icon;
-
+      ) : (
+        <ResponsiveTable<MeuCafeRow>
+          columns={columns}
+          rows={rows}
+          keyFor={(r) => r.id}
+          renderRow={(r) => {
+            const st = statusInfo(r.status);
             return (
-              <Card key={r.id} interactive>
-                <CardContent className="space-y-4 p-card">
-                  {/* Topo: lote + Tipo em destaque */}
+              <>
+                <td className="px-5 py-3 align-top">
+                  <p className="font-mono text-caption text-milsaca-dourado-texto">
+                    {r.codigo}
+                  </p>
+                  <p className="mt-0.5 font-medium text-milsaca-cafezal">
+                    {specieLabel(r.specie)}
+                    {r.processo ? ` · ${r.processo}` : ""}
+                    {r.safra ? ` · ${r.safra}` : ""}
+                  </p>
+                </td>
+                <td className="px-5 py-3 align-top">
+                  <UnidadeToggle
+                    valorKg={r.pesoKg}
+                    pesoPorBagKg={r.pesoPorBagKg ?? undefined}
+                  />
+                </td>
+                <td className="px-5 py-3 align-top">
+                  <StatusBadge tone={st.tone}>{st.label}</StatusBadge>
+                </td>
+                <td className="px-5 py-3 align-top">
+                  <Classificacoes lista={r.classificacoes} />
+                </td>
+                <td className="px-5 py-3 text-right align-top">
+                  {r.valorEstimado != null ? (
+                    <>
+                      <p className="font-semibold text-milsaca-cafezal">
+                        {BRL0.format(r.valorEstimado)}
+                      </p>
+                      <p className="text-caption text-neutral-500">
+                        {r.precoSaca != null
+                          ? `${BRL2.format(r.precoSaca)}/saca`
+                          : ""}
+                      </p>
+                    </>
+                  ) : (
+                    <span className="text-neutral-400">—</span>
+                  )}
+                </td>
+                <td className="px-5 py-3 text-right align-top">
+                  <AcoesLaudo lista={r.classificacoes} />
+                </td>
+              </>
+            );
+          }}
+          renderCard={(r) => {
+            const st = statusInfo(r.status);
+            return (
+              <Card>
+                <CardContent className="space-y-3 p-card">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="font-mono text-caption text-milsaca-dourado-texto">
-                        {lote?.codigo ?? "—"}
+                        {r.codigo}
                       </p>
                       <p className="mt-0.5 text-body-sm font-medium text-milsaca-cafezal">
-                        {specieLabel(lote?.specie)}
-                        {lote?.processo ? ` · ${lote.processo}` : ""}
-                        {lote?.safra ? ` · ${lote.safra}` : ""}
+                        {specieLabel(r.specie)}
+                        {r.processo ? ` · ${r.processo}` : ""}
+                        {r.safra ? ` · ${r.safra}` : ""}
                       </p>
-                      {totalSacas > 0 ? (
-                        <p className="mt-0.5 text-caption text-neutral-600">
-                          {com > 0
-                            ? `${com} de ${totalSacas} sacas vendidas · ${Math.max(0, totalSacas - com)} disponíveis`
-                            : `${totalSacas} sacas disponíveis`}
-                          {lote?.peso_kg != null
-                            ? ` · ${formatarKg(Number(lote.peso_kg))}`
-                            : ""}
-                        </p>
-                      ) : null}
                     </div>
-                    {r.fora_de_tipo ? (
-                      <StatusBadge tone="danger">Fora de tipo</StatusBadge>
-                    ) : (
-                      <span className="shrink-0 rounded-pill bg-milsaca-cafezal px-3 py-1 text-body-sm font-bold text-milsaca-cream">
-                        Tipo {r.tipo ?? "—"}
-                      </span>
-                    )}
+                    <StatusBadge tone={st.tone}>{st.label}</StatusBadge>
                   </div>
 
-                  {/* Veredito simples: bom ou ruim? */}
-                  <StatusBadge tone={vd.tone}>
-                    <VdIcon className="h-3.5 w-3.5" />
-                    {vd.label}
-                  </StatusBadge>
+                  <UnidadeToggle
+                    valorKg={r.pesoKg}
+                    pesoPorBagKg={r.pesoPorBagKg ?? undefined}
+                  />
 
-                  {/* Atributos com ícones, legíveis */}
-                  <div className="grid grid-cols-3 gap-2">
-                    <Atributo icon={Coffee} label="Bebida" value={r.bebida ?? "—"} />
-                    <Atributo
-                      icon={Filter}
-                      label="Peneira"
-                      value={r.peneira_dominante ?? "—"}
-                    />
-                    <Atributo
-                      icon={Droplets}
-                      label="PVA"
-                      value={pva != null ? `${pva.toFixed(1)}%` : "—"}
-                    />
+                  <div className="rounded-md bg-milsaca-cream/60 px-3 py-2">
+                    <p className="text-caption text-neutral-500">
+                      Valor estimado{" "}
+                      {r.precoSaca != null
+                        ? `· ${BRL2.format(r.precoSaca)}/saca`
+                        : ""}
+                    </p>
+                    <p className="text-body font-bold text-milsaca-cafezal">
+                      {r.valorEstimado != null
+                        ? BRL0.format(r.valorEstimado)
+                        : "—"}
+                    </p>
                   </div>
 
-                  {/* Conecta laudo → dinheiro */}
-                  {preco != null ? (
-                    <div className="rounded-md bg-milsaca-cream/70 px-3 py-2.5">
-                      <p className="text-caption text-neutral-500">
-                        Valor estimado hoje
-                      </p>
-                      <div className="flex items-baseline justify-between gap-2">
-                        <p className="text-h3 font-bold text-milsaca-cafezal">
-                          {BRL_SACA.format(preco)}
-                          <span className="text-caption font-normal text-neutral-500">
-                            /saca
-                          </span>
-                        </p>
-                        {totalSacas > 0 ? (
-                          <p className="text-body-sm font-semibold text-milsaca-cafezal">
-                            {Math.max(0, totalSacas - com) > 0
-                              ? `${BRL_TOTAL.format(Math.max(0, totalSacas - com) * preco)} disponível`
-                              : "Vendido"}
-                          </p>
-                        ) : null}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  <p className="text-caption text-neutral-500">
-                    Classificado por {cor?.name ?? "—"} em {fmtDate(r.created_at)}
-                  </p>
-
-                  <div className="flex gap-2 pt-1">
-                    <Button asChild variant="outline" size="sm" className="flex-1">
-                      <Link href={`/laudos/${r.id}`} target="_blank">
-                        <QrCode className="mr-1.5 h-3.5 w-3.5" />
-                        Link público
-                      </Link>
-                    </Button>
-                    <Button asChild variant="primary" size="sm" className="flex-1">
-                      <Link href={`/laudos/${r.id}/pdf`} target="_blank">
-                        <Download className="mr-1.5 h-3.5 w-3.5" />
-                        Baixar PDF
-                      </Link>
-                    </Button>
+                  <div>
+                    <p className="text-caption font-medium text-neutral-500">
+                      Classificação por corretora
+                    </p>
+                    <Classificacoes lista={r.classificacoes} />
                   </div>
+
+                  <AcoesLaudo lista={r.classificacoes} />
                 </CardContent>
               </Card>
             );
-          })}
-          </div>
-        </section>
-      ) : null}
+          }}
+        />
+      )}
     </div>
   );
 }
 
-function Atributo({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-}) {
+// Lista comparativa: o que cada corretora deu pro café (bebida/tipo).
+function Classificacoes({ lista }: { lista: ClassificacaoResumo[] }) {
+  if (lista.length === 0) {
+    return (
+      <span className="text-caption text-neutral-500">
+        Aguardando classificação
+      </span>
+    );
+  }
   return (
-    <div className="rounded-md border border-neutral-100 bg-white px-2.5 py-2 text-center">
-      <Icon className={cn("mx-auto h-4 w-4 text-milsaca-dourado")} />
-      <p className="mt-1 text-[10px] uppercase tracking-wider text-neutral-500">
-        {label}
-      </p>
-      <p className="text-body-sm font-semibold text-milsaca-cafezal">{value}</p>
+    <ul className="space-y-1">
+      {lista.map((c) => (
+        <li key={c.id} className="text-caption">
+          <span className="font-medium text-milsaca-cafezal">
+            {c.fora_de_tipo
+              ? "Fora de tipo"
+              : `${c.bebida ?? "—"}${c.tipo ? ` · Tipo ${c.tipo}` : ""}`}
+          </span>
+          <span className="text-neutral-500">
+            {" "}
+            — {c.corretora_nome ?? "corretora"}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// Links pro laudo público / PDF (um por classificação).
+function AcoesLaudo({ lista }: { lista: ClassificacaoResumo[] }) {
+  if (lista.length === 0) return <span className="text-neutral-300">—</span>;
+  const ultima = lista[0]!;
+  return (
+    <div className="flex justify-end gap-2">
+      <Button asChild variant="outline" size="sm">
+        <Link href={`/laudos/${ultima.id}`} target="_blank">
+          <QrCode className="mr-1 h-3.5 w-3.5" />
+          Laudo
+        </Link>
+      </Button>
+      <Button asChild variant="primary" size="sm">
+        <Link href={`/laudos/${ultima.id}/pdf`} target="_blank">
+          <Download className="mr-1 h-3.5 w-3.5" />
+          PDF
+        </Link>
+      </Button>
     </div>
   );
 }
