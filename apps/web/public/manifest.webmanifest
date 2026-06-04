@@ -7,5 +7,19 @@
   "display": "standalone",
   "background_color": "#FAF7F0",
   "theme_color": "#0F3D2E",
-  "lang": "pt-BR"
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-1254.png",
+      "type": "image/png",
+      "sizes": "1254x1254",
+      "purpose": "any"
+    }
+  ]
 }
