@@ -4,6 +4,7 @@ import {
   MessageCircle,
   MapPin,
   CheckCircle2,
+  Info,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
@@ -46,6 +47,43 @@ function formatBRL(value: number) {
 function formatDate(iso: string) {
   const d = new Date(iso);
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+}
+
+// Barra de progresso pequena e acessível (Fase 5).
+// tone: "entregue" usa success; "pago" usa o dourado/cafezal da marca.
+function MiniBar({
+  label,
+  pct,
+  tone,
+}: {
+  label: string;
+  pct: number;
+  tone: "entregue" | "pago";
+}) {
+  const value = Math.max(0, Math.min(100, Math.round(pct)));
+  const track = "h-1.5 w-full overflow-hidden rounded-pill bg-neutral-100";
+  const fill =
+    tone === "entregue" ? "h-full bg-success-500" : "h-full bg-milsaca-dourado";
+  return (
+    <div className="min-w-[7rem]">
+      <div className="flex items-center justify-between text-caption">
+        <span className="text-neutral-500">{label}</span>
+        <span className="tabular-nums font-medium text-milsaca-cafezal">
+          {value}%
+        </span>
+      </div>
+      <div
+        className={track}
+        role="progressbar"
+        aria-label={`${label}: ${value}%`}
+        aria-valuenow={value}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div className={fill} style={{ width: `${value}%` }} />
+      </div>
+    </div>
+  );
 }
 
 export default async function ContratosProdutorPage({
@@ -120,6 +158,7 @@ export default async function ContratosProdutorPage({
                   <th className="px-5 py-3 text-right font-medium">
                     Valor total
                   </th>
+                  <th className="px-5 py-3 text-left font-medium">Progresso</th>
                   <th className="px-5 py-3 text-left font-medium">Status</th>
                   <th className="px-5 py-3 text-left font-medium">Assinado</th>
                   <th className="px-5 py-3"></th>
@@ -179,6 +218,16 @@ export default async function ContratosProdutorPage({
                           : "—"}
                       </td>
                       <td className="px-5 py-3">
+                        <div className="flex flex-col gap-1.5">
+                          <MiniBar
+                            label="Entregue"
+                            pct={c.entreguePct}
+                            tone="entregue"
+                          />
+                          <MiniBar label="Pago" pct={c.pagoPct} tone="pago" />
+                        </div>
+                      </td>
+                      <td className="px-5 py-3">
                         <StatusBadge tone={CONTRATO_STATUS_TONE[c.status]}>
                           {CONTRATO_STATUS_LABEL[c.status]}
                         </StatusBadge>
@@ -216,10 +265,20 @@ export default async function ContratosProdutorPage({
       )}
 
       {contratos.length > 0 && (
-        <p className="text-caption text-neutral-500">
-          O download do PDF com QR público vai chegar em breve — fica em uma
-          das próximas atualizações.
-        </p>
+        <>
+          <div className="flex items-start gap-2 rounded-md border border-info-100 bg-info-50 p-3 text-caption text-info-700">
+            <Info className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>
+              A Milsaca <strong>não movimenta dinheiro</strong>. O repasse é
+              feito direto com a corretora — aqui é só o acompanhamento de
+              entrega e pagamento.
+            </p>
+          </div>
+          <p className="text-caption text-neutral-500">
+            O download do PDF com QR público vai chegar em breve — fica em uma
+            das próximas atualizações.
+          </p>
+        </>
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/empty-state";
 import { createClient } from "@milsaca/db/web/server";
 import { requireUser } from "@/lib/auth";
 import { coffeeLabel } from "@/lib/coffee";
+import { loadEstoqueProdutor } from "../_lib/estoque";
 
 export const metadata = { title: "Vendas — Painel do produtor" };
 
@@ -70,6 +71,12 @@ export default async function VendasProdutorPage() {
     { sacas: 0, valor: 0 },
   );
 
+  // Produção total: fonte única do estoque (não recalcular por aqui).
+  const estoque = await loadEstoqueProdutor(user.id);
+  // Preço médio vendido = receita ÷ sacas vendidas; "—" se nada vendido.
+  const precoMedio =
+    totals.sacas > 0 ? fmtBRL(totals.valor / totals.sacas) : "—";
+
   return (
     <div className="space-y-6">
       <header>
@@ -78,6 +85,15 @@ export default async function VendasProdutorPage() {
           Tudo que você já vendeu pelas corretoras.
         </p>
       </header>
+
+      <section className="grid gap-4 sm:grid-cols-3">
+        <KpiCard
+          label="Produção total"
+          value={`${estoque.total.toLocaleString("pt-BR")} sacas`}
+        />
+        <KpiCard label="Preço médio vendido" value={precoMedio} />
+        <KpiCard label="Receita acumulada" value={fmtBRL(totals.valor)} />
+      </section>
 
       {rows.length === 0 ? (
         <Card tone="muted" className="border-dashed">
@@ -91,14 +107,6 @@ export default async function VendasProdutorPage() {
         </Card>
       ) : (
         <>
-          <section className="grid gap-4 sm:grid-cols-2">
-            <KpiCard
-              label="Sacas vendidas"
-              value={totals.sacas.toLocaleString("pt-BR")}
-            />
-            <KpiCard label="Valor total" value={fmtBRL(totals.valor)} />
-          </section>
-
           <Card>
             <CardContent className="divide-y divide-neutral-200 p-0">
               {rows.map((r) => {

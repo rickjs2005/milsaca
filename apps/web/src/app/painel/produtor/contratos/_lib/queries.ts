@@ -43,6 +43,9 @@ export type MeuContratoListItem = {
   corretora_nome: string;
   corretora_phone: string | null;
   corretora_city: string | null;
+  // Fase 5 — progresso de entrega e pagamento (0–100, já com cap).
+  entreguePct: number;
+  pagoPct: number;
 };
 
 type Row = {
@@ -67,6 +70,65 @@ function pickOne<T>(v: T | T[] | null | undefined): T | null {
   return Array.isArray(v) ? (v[0] ?? null) : v;
 }
 
+function clampPct(n: number): number {
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return n >= 100 ? 100 : n;
+}
+
+// Fase 5 — agrega % entregue e % pago por contrato.
+// % entregue = sacas_entregues / sacas_contratadas (view contrato_saldo).
+// % pago = Σ valor_liquido (status='pago') / contratos.total_value.
+async function buildProgressMaps(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  contratoIds: string[],
+  totalValueById: Map<string, number | null>,
+): Promise<{ entregue: Map<string, number>; pago: Map<string, number> }> {
+  const entregue = new Map<string, number>();
+  const pago = new Map<string, number>();
+  if (contratoIds.length === 0) return { entregue, pago };
+
+  const [saldoRes, pagamentosRes] = await Promise.all([
+    supabase
+      .from("contrato_saldo")
+      .select("contrato_id, sacas_contratadas, sacas_entregues")
+      .in("contrato_id", contratoIds),
+    supabase
+      .from("produtor_pagamentos")
+      .select("contrato_id, valor_liquido, status")
+      .in("contrato_id", contratoIds)
+      .eq("status", "pago"),
+  ]);
+
+  // numeric do Postgres chega como string → coage tudo com Number.
+  for (const row of (saldoRes.data ?? []) as {
+    contrato_id: string;
+    sacas_contratadas: number | string | null;
+    sacas_entregues: number | string | null;
+  }[]) {
+    const contratadas = Number(row.sacas_contratadas ?? 0);
+    const entregues = Number(row.sacas_entregues ?? 0);
+    const pct = contratadas > 0 ? (entregues / contratadas) * 100 : 0;
+    entregue.set(row.contrato_id, clampPct(pct));
+  }
+
+  const pagoAcc = new Map<string, number>();
+  for (const row of (pagamentosRes.data ?? []) as {
+    contrato_id: string;
+    valor_liquido: number | string | null;
+  }[]) {
+    const prev = pagoAcc.get(row.contrato_id) ?? 0;
+    pagoAcc.set(row.contrato_id, prev + Number(row.valor_liquido ?? 0));
+  }
+  for (const id of contratoIds) {
+    const base = totalValueById.get(id);
+    const total = base != null ? Number(base) : 0;
+    const pct = total > 0 ? ((pagoAcc.get(id) ?? 0) / total) * 100 : 0;
+    pago.set(id, clampPct(pct));
+  }
+
+  return { entregue, pago };
+}
+
 export async function listMeusContratos(
   produtorId: string,
   filter: { status?: ContratoStatus } = {},
@@ -88,6 +150,15 @@ export async function listMeusContratos(
   const { data } = await q;
   const rows = (data ?? []) as Row[];
 
+  const totalValueById = new Map<string, number | null>(
+    rows.map((r) => [r.id, r.total_value != null ? Number(r.total_value) : null]),
+  );
+  const { entregue, pago } = await buildProgressMaps(
+    supabase,
+    rows.map((r) => r.id),
+    totalValueById,
+  );
+
   return rows.map((r): MeuContratoListItem => {
     const cor = pickOne(r.corretora);
     return {
@@ -105,6 +176,8 @@ export async function listMeusContratos(
       corretora_nome: cor?.name ?? "—",
       corretora_phone: cor?.phone ?? null,
       corretora_city: cor?.city ?? null,
+      entreguePct: entregue.get(r.id) ?? 0,
+      pagoPct: pago.get(r.id) ?? 0,
     };
   });
 }
@@ -128,6 +201,11 @@ export async function getMeuContrato(
   if (!data) return null;
   const r = data as Row;
   const cor = pickOne(r.corretora);
+  const { entregue, pago } = await buildProgressMaps(
+    supabase,
+    [r.id],
+    new Map([[r.id, r.total_value != null ? Number(r.total_value) : null]]),
+  );
   return {
     id: r.id,
     code: r.code,
@@ -143,5 +221,7 @@ export async function getMeuContrato(
     corretora_nome: cor?.name ?? "—",
     corretora_phone: cor?.phone ?? null,
     corretora_city: cor?.city ?? null,
+    entreguePct: entregue.get(r.id) ?? 0,
+    pagoPct: pago.get(r.id) ?? 0,
   };
 }
