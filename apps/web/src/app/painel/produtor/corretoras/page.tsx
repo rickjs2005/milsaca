@@ -7,6 +7,9 @@ import {
   Star,
   StarOff,
   ShieldCheck,
+  ArrowUpRight,
+  ArrowDownRight,
+  Trophy,
 } from "lucide-react";
 import {
   Card,
@@ -19,6 +22,8 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/status-badge";
 import { cn } from "@/lib/utils";
 import { requireUser } from "@/lib/auth";
+import { getProdutorByProfileId } from "../_lib/produtor";
+import { loadProdutorCotacoes } from "../cotacoes/_lib/queries";
 import { listCorretorasParaProdutor } from "./_lib/queries";
 import { toggleFavorito } from "./_actions";
 import { buildWhatsAppInviteUrl } from "../../corretora/produtores/_lib/whatsapp";
@@ -33,6 +38,12 @@ import {
 } from "@/app/admin/(panel)/corretoras/_components/regioes";
 
 export const metadata = { title: "Corretoras — Painel do produtor" };
+
+const BRL = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  minimumFractionDigits: 2,
+});
 
 type SearchParams = Promise<{ filter?: string; regiao?: string }>;
 
@@ -67,13 +78,53 @@ export default async function CorretorasProdutorPage({
 
   const totalFavoritas = lista.filter((c) => c.is_favorita).length;
 
+  // Preço que cada corretora paga HOJE pro café da espécie do produtor →
+  // ranqueia a lista (quem paga mais primeiro) e marca o "melhor preço".
+  const produtor = await getProdutorByProfileId(user.id);
+  const specie = produtor?.specie === "conilon" ? "conilon" : "arabica";
+  const specieNome = specie === "conilon" ? "Conilón" : "Arábica";
+  const cot = await loadProdutorCotacoes({ produtorId: user.id });
+  const normSpecie = (s: string | null) =>
+    s === "conillon" ? "conilon" : s ?? "";
+  const precoPorCorretora = new Map<
+    string,
+    { price: number; variacao: number | null }
+  >();
+  for (const card of [...cot.minhasCorretoras, ...cot.outrasPracas]) {
+    if (normSpecie(card.specie) !== specie) continue;
+    const prev = precoPorCorretora.get(card.corretora_id);
+    if (!prev || card.current_price > prev.price) {
+      precoPorCorretora.set(card.corretora_id, {
+        price: card.current_price,
+        variacao: card.variacao_pct,
+      });
+    }
+  }
+  // Ranqueia por preço desc (sem preço vai pro fim, mantendo ordem anterior).
+  lista = [...lista].sort((a, b) => {
+    const pa = precoPorCorretora.get(a.id)?.price ?? -1;
+    const pb = precoPorCorretora.get(b.id)?.price ?? -1;
+    return pb - pa;
+  });
+  let melhorPrecoId: string | null = null;
+  let melhorPreco = -1;
+  for (const c of lista) {
+    const p = precoPorCorretora.get(c.id)?.price;
+    if (p != null && p > melhorPreco) {
+      melhorPreco = p;
+      melhorPrecoId = c.id;
+    }
+  }
+  const temPreco = precoPorCorretora.size > 0;
+
   return (
     <div className="space-y-6">
       <header>
         <h1 className="text-h1 text-milsaca-cafezal">Corretoras</h1>
         <p className="text-body-sm text-neutral-600">
-          Catálogo de corretoras cadastradas na Milsaca. Marque favoritas pra
-          ver as cotações delas em destaque no painel.
+          {temPreco
+            ? `Ranqueadas pelo preço que pagam hoje pelo seu café (${specieNome}). Marque favoritas pra acompanhar no painel.`
+            : "Catálogo de corretoras cadastradas na Milsaca. Marque favoritas pra ver as cotações delas em destaque no painel."}
         </p>
       </header>
 
@@ -251,6 +302,45 @@ export default async function CorretorasProdutorPage({
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
+                  {(() => {
+                    const pc = precoPorCorretora.get(c.id);
+                    if (!pc) return null;
+                    const up = pc.variacao != null && pc.variacao >= 0;
+                    const Arrow = up ? ArrowUpRight : ArrowDownRight;
+                    return (
+                      <div className="rounded-md bg-milsaca-cream/70 px-3 py-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-caption text-neutral-500">
+                            Paga hoje · {specieNome}
+                          </p>
+                          {c.id === melhorPrecoId ? (
+                            <span className="inline-flex items-center gap-1 rounded-pill bg-milsaca-dourado/25 px-2 py-0.5 text-[10px] font-semibold text-milsaca-cafezal">
+                              <Trophy className="h-3 w-3" />
+                              Melhor preço
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="text-h3 font-bold text-milsaca-cafezal">
+                          {BRL.format(pc.price)}
+                          <span className="text-caption font-normal text-neutral-500">
+                            /saca
+                          </span>
+                          {pc.variacao != null ? (
+                            <span
+                              className={cn(
+                                "ml-2 inline-flex items-center gap-0.5 text-caption font-semibold",
+                                up ? "text-success-700" : "text-danger-700",
+                              )}
+                            >
+                              <Arrow className="h-3 w-3" />
+                              {up ? "+" : ""}
+                              {pc.variacao.toFixed(1)}%
+                            </span>
+                          ) : null}
+                        </p>
+                      </div>
+                    );
+                  })()}
                   {c.rating_count > 0 && (
                     <StarsDisplay value={c.rating_media} count={c.rating_count} />
                   )}
