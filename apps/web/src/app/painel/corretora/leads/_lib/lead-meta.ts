@@ -86,6 +86,8 @@ export type LeadListItem = {
   state: string | null;
   /** Contrato gerado a partir deste lead (se houver) — lead vira terminal. */
   contrato_id: string | null;
+  /** O evento mais recente do lead é uma contraproposta do produtor sem resposta. */
+  tem_contraproposta?: boolean;
 };
 
 export type LeadEvent = {

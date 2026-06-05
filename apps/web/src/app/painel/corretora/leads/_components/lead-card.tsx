@@ -78,6 +78,14 @@ export function LeadCard({
             <StatusBadge tone={LEAD_STATUS_TONE[lead.status]} withDot={false}>
               {LEAD_STATUS_LABEL[lead.status]}
             </StatusBadge>
+            {lead.tem_contraproposta ? (
+              <StatusBadge
+                tone="danger"
+                title="O produtor mandou uma contraproposta — responda"
+              >
+                Contraproposta
+              </StatusBadge>
+            ) : null}
             <StatusBadge
               tone={URGENCIA_TONE[next.urgencia]}
               title={`Urgência: ${URGENCIA_LABEL[next.urgencia]}`}

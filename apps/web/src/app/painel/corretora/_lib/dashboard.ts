@@ -12,6 +12,7 @@
 import { createClient } from "@milsaca/db/web/server";
 import type { LeadStatus } from "@milsaca/types";
 import { ENTREGA_PENDENTE_STATUS } from "../entregas/_lib/entrega-meta";
+import { leadsComContraproposta } from "../leads/_lib/queries";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -514,6 +515,7 @@ export async function loadResultadoMes(
  * com count > 0. Cada item é uma ação concreta, sem sobreposição entre eles.
  */
 export type Triagem = {
+  contrapropostas: number; // leads cujo último evento é contraproposta do produtor
   aguardandoResposta: number; // leads "novo" (primeiro contato)
   negociacoesParadas: number; // em_negociacao sem update > 3d (follow-up)
   semAssinatura: number; // contratos rascunho + em_analise
@@ -525,6 +527,7 @@ export type Triagem = {
 
 export async function loadTriagem(corretoraId: string): Promise<Triagem> {
   const empty: Triagem = {
+    contrapropostas: 0,
     aguardandoResposta: 0,
     negociacoesParadas: 0,
     semAssinatura: 0,
@@ -553,6 +556,7 @@ export async function loadTriagem(corretoraId: string): Promise<Triagem> {
     entregas,
     conferir,
     lotesParados,
+    contraSet,
   ] = await Promise.all([
     baseLeads().eq("status", "novo"),
     baseLeads().eq("status", "em_negociacao").lt("updated_at", tresDiasAtras),
@@ -583,9 +587,11 @@ export async function loadTriagem(corretoraId: string): Promise<Triagem> {
       .eq("corretora_id", corretoraId)
       .eq("status", "classificado")
       .lt("updated_at", seteDiasAtras),
+    leadsComContraproposta(corretoraId),
   ]);
 
   return {
+    contrapropostas: contraSet.size,
     aguardandoResposta: aguardando.count ?? 0,
     negociacoesParadas: negParadas.count ?? 0,
     semAssinatura: semAssinatura.count ?? 0,

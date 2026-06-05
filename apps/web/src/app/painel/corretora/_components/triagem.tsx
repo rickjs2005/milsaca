@@ -5,6 +5,7 @@ import {
   Clock,
   FileSignature,
   PackageCheck,
+  Reply,
   Repeat2,
   TimerReset,
   Truck,
@@ -46,6 +47,14 @@ const TONE: Record<Tone, { tile: string; icon: string; num: string }> = {
  */
 export function Triagem({ triagem }: { triagem: TriagemData }) {
   const items: Item[] = [
+    {
+      count: triagem.contrapropostas,
+      label: "Contrapropostas a responder",
+      acao: "Responder o produtor",
+      icon: Reply,
+      href: "/painel/corretora/leads?status=em_negociacao",
+      tone: "danger",
+    },
     {
       count: triagem.aguardandoResposta,
       label: "Aguardando resposta",

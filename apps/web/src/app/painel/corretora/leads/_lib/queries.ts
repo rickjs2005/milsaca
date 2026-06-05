@@ -89,6 +89,37 @@ function pickOne<T>(v: T | T[] | null | undefined): T | null {
   return Array.isArray(v) ? (v[0] ?? null) : v;
 }
 
+/**
+ * Leads cujo evento MAIS RECENTE é uma contraproposta do produtor — ou seja, a
+ * bola está com a corretora (se ela já tivesse respondido, o último evento seria
+ * outro: comentário/status/proposta). Fonte única pra triagem e pro selo da lista.
+ * Sem `leadIds` → varre todos os leads da corretora (pra contagem da triagem).
+ */
+export async function leadsComContraproposta(
+  corretoraId: string,
+  leadIds?: string[],
+): Promise<Set<string>> {
+  if (!corretoraId) return new Set();
+  if (leadIds && leadIds.length === 0) return new Set();
+  const supabase = await createClient();
+  let q = supabase
+    .from("lead_events")
+    .select("lead_id, kind, created_at")
+    .eq("corretora_id", corretoraId)
+    .order("created_at", { ascending: false });
+  if (leadIds) q = q.in("lead_id", leadIds);
+
+  const { data } = await q;
+  const seen = new Set<string>();
+  const pendentes = new Set<string>();
+  for (const e of (data ?? []) as Array<{ lead_id: string; kind: string }>) {
+    if (seen.has(e.lead_id)) continue; // 1ª ocorrência (ordem desc) = evento mais recente
+    seen.add(e.lead_id);
+    if (e.kind === "contraproposta") pendentes.add(e.lead_id);
+  }
+  return pendentes;
+}
+
 export const LEADS_PAGE_SIZE = 24;
 
 export async function listLeads(
@@ -119,6 +150,12 @@ export async function listLeads(
   const { data, count } = await q;
   const rows = (data ?? []) as LeadRow[];
 
+  // Quais desta página têm contraproposta do produtor aguardando resposta.
+  const contraSet = await leadsComContraproposta(
+    corretoraId,
+    rows.map((r) => r.id),
+  );
+
   const mapped = rows.map((r): LeadListItem => {
     const prod = pickOne(r.produtor);
     const cont = pickOne(r.contato);
@@ -142,6 +179,7 @@ export async function listLeads(
       city: prodExt?.city ?? cont?.city ?? null,
       state: prodExt?.state ?? cont?.state ?? null,
       contrato_id: pickOne(r.contratos)?.id ?? null,
+      tem_contraproposta: contraSet.has(r.id),
     };
   });
 
