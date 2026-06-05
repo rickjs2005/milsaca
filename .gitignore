@@ -66,3 +66,4 @@ coverage/
 
 # Milsaca review (relatórios de auditoria pré-piloto — contêm achados sensíveis)
 .milsaca-review/
+.qa-shots/

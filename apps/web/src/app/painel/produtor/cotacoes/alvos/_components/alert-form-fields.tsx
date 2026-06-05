@@ -32,7 +32,10 @@ export function AlertFormFields({
   const d = defaults ?? {};
   const priceDefault =
     typeof d.target_price === "number"
-      ? String(d.target_price).replace(".", ",")
+      ? d.target_price.toLocaleString("pt-BR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
       : (d.target_price ?? "");
   const pctDefault =
     typeof d.target_pct === "number"

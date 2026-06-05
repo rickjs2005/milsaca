@@ -77,7 +77,7 @@ function clampPct(n: number): number {
 
 // Fase 5 — agrega % entregue e % pago por contrato.
 // % entregue = sacas_entregues / sacas_contratadas (view contrato_saldo).
-// % pago = Σ valor_liquido (status='pago') / contratos.total_value.
+// % pago = Σ valor_bruto (status='pago') / contratos.total_value.
 async function buildProgressMaps(
   supabase: Awaited<ReturnType<typeof createClient>>,
   contratoIds: string[],
@@ -94,7 +94,7 @@ async function buildProgressMaps(
       .in("contrato_id", contratoIds),
     supabase
       .from("produtor_pagamentos")
-      .select("contrato_id, valor_liquido, status")
+      .select("contrato_id, valor_bruto, status")
       .in("contrato_id", contratoIds)
       .eq("status", "pago"),
   ]);
@@ -114,10 +114,10 @@ async function buildProgressMaps(
   const pagoAcc = new Map<string, number>();
   for (const row of (pagamentosRes.data ?? []) as {
     contrato_id: string;
-    valor_liquido: number | string | null;
+    valor_bruto: number | string | null;
   }[]) {
     const prev = pagoAcc.get(row.contrato_id) ?? 0;
-    pagoAcc.set(row.contrato_id, prev + Number(row.valor_liquido ?? 0));
+    pagoAcc.set(row.contrato_id, prev + Number(row.valor_bruto ?? 0));
   }
   for (const id of contratoIds) {
     const base = totalValueById.get(id);

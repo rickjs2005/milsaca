@@ -12,6 +12,19 @@ import { ensureCorretora, requireActiveSubscription } from "../_lib/corretora";
 import type { EntregaStatus } from "./_lib/queries";
 import type { Database } from "@milsaca/types";
 
+/**
+ * Formata uma coluna `date` do banco (string "YYYY-MM-DD" ou ISO) para
+ * DD/MM/AAAA sem risco de fuso: faz split nos caracteres, não passa pelo
+ * construtor Date (que interpreta "YYYY-MM-DD" como UTC midnight e pode
+ * deslocar 1 dia em ambientes com UTC-).
+ */
+function fmtDateOnly(s: string | null | undefined): string | null {
+  if (!s) return null;
+  const [y, m, d] = s.slice(0, 10).split("-");
+  if (!y || !m || !d) return s;
+  return `${d}/${m}/${y}`;
+}
+
 type EntregaInsert = Database["public"]["Tables"]["entregas"]["Insert"];
 
 const ENTREGA_STATUS_LABEL: Record<EntregaStatus, string> = {
@@ -181,7 +194,7 @@ export async function createEntrega(formData: FormData) {
     body:
       [
         bag_count != null ? `${bag_count} sacas` : null,
-        data_prevista ? `prevista para ${data_prevista}` : null,
+        fmtDateOnly(data_prevista) ? `prevista para ${fmtDateOnly(data_prevista)}` : null,
       ]
         .filter(Boolean)
         .join(" — ") || null,

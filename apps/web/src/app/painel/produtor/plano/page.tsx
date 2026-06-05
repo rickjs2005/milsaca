@@ -143,11 +143,9 @@ export default async function PlanoVendaPage({
                 <Input
                   id="preco_alvo"
                   name="preco_alvo"
-                  type="number"
-                  min="0"
-                  step="0.01"
+                  type="text"
                   inputMode="decimal"
-                  placeholder="1.600"
+                  placeholder="1.600,00"
                   required
                 />
               </div>
