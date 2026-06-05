@@ -1,8 +1,5 @@
-import { Fragment } from "react";
 import Link from "next/link";
 import {
-  ChevronDown,
-  ChevronRight,
   FileText,
   Handshake,
   Package,
@@ -31,59 +28,53 @@ const STAGES: Stage[] = [
 ];
 
 /**
- * Funil/pipeline do ciclo da corretagem no dashboard. Mostra quantos registros
- * a corretora tem em cada etapa, ligados pelas setas do fluxo — pra um corretor
- * novo entender de cara como uma venda anda (do lead até o pagamento).
+ * Pipeline da corretagem — barras horizontais proporcionais ao maior estágio.
+ * Ocupa quase toda a largura pra a corretora "enxergar gargalos" de cara: a
+ * barra mais cheia mostra onde os negócios estão acumulando. Cada etapa abre
+ * a tela correspondente.
  */
 export function PipelineFunnel({ data }: { data: PipelineData }) {
+  const max = Math.max(1, ...STAGES.map((s) => data[s.key]));
+
   return (
-    <Card className="border-milsaca-cream-escuro shadow-card">
+    <Card className="border-milsaca-cream-escuro">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base text-milsaca-cafezal">
-          Fluxo da corretagem
+        <CardTitle className="text-h3 text-milsaca-cafezal">
+          Pipeline comercial
         </CardTitle>
         <p className="text-caption text-neutral-500">
-          Do primeiro contato ao pagamento. Clique numa etapa pra abrir.
+          Do primeiro contato ao pagamento. A barra mais cheia mostra onde
+          afunilar. Clique pra abrir.
         </p>
       </CardHeader>
-      <CardContent>
-        <ol className="flex flex-col sm:flex-row sm:items-center">
-          {STAGES.map((stage, i) => {
-            const Icon = stage.icon;
-            const count = data[stage.key];
-            return (
-              <Fragment key={stage.key}>
-                <li className="sm:flex-1">
-                  <Link
-                    href={stage.href}
-                    className="group flex w-full items-center gap-3 rounded-lg border border-milsaca-cream-escuro bg-white px-3 py-2.5 transition-colors hover:border-milsaca-dourado hover:bg-milsaca-cream/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:flex-col sm:items-start sm:gap-2"
-                  >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-milsaca-cafezal/10 text-milsaca-cafezal transition-colors group-hover:bg-milsaca-cafezal group-hover:text-milsaca-cream">
-                      <Icon className="h-4 w-4" />
-                    </span>
-                    <span className="leading-tight">
-                      <span className="block text-h3 font-semibold tabular-nums text-milsaca-cafezal">
-                        {count}
-                      </span>
-                      <span className="block text-caption text-neutral-500">
-                        {stage.label}
-                      </span>
-                    </span>
-                  </Link>
-                </li>
-                {i < STAGES.length - 1 ? (
-                  <li
-                    aria-hidden
-                    className="flex items-center justify-center py-0.5 text-neutral-300 sm:px-1 sm:py-0"
-                  >
-                    <ChevronRight className="hidden h-4 w-4 sm:block" />
-                    <ChevronDown className="h-4 w-4 sm:hidden" />
-                  </li>
-                ) : null}
-              </Fragment>
-            );
-          })}
-        </ol>
+      <CardContent className="space-y-2.5">
+        {STAGES.map((stage) => {
+          const Icon = stage.icon;
+          const count = data[stage.key];
+          const pct = Math.round((count / max) * 100);
+          return (
+            <Link
+              key={stage.key}
+              href={stage.href}
+              className="group flex items-center gap-3 rounded-md px-1 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <span className="flex w-28 shrink-0 items-center gap-2 text-body-sm font-medium text-milsaca-cafezal">
+                <Icon className="h-4 w-4 shrink-0 text-milsaca-cafezal/60" />
+                {stage.label}
+              </span>
+              <span className="relative h-7 flex-1 overflow-hidden rounded-md bg-milsaca-cream">
+                <span
+                  aria-hidden
+                  className="absolute inset-y-0 left-0 rounded-md bg-milsaca-cafezal/80 transition-all duration-500 group-hover:bg-milsaca-cafezal"
+                  style={{ width: `${Math.max(pct, count > 0 ? 6 : 0)}%` }}
+                />
+              </span>
+              <span className="w-10 shrink-0 text-right text-body-sm font-semibold tabular-nums text-milsaca-cafezal">
+                {count}
+              </span>
+            </Link>
+          );
+        })}
       </CardContent>
     </Card>
   );

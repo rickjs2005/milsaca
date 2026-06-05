@@ -11,6 +11,8 @@ import {
   User,
   ChevronRight,
   LogOut,
+  CheckSquare,
+  CalendarDays,
   type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,6 +36,16 @@ const GROUPS: Group[] = [
   {
     title: "Operação",
     items: [
+      {
+        href: "/painel/corretora/tarefas",
+        label: "Tarefas",
+        icon: CheckSquare,
+      },
+      {
+        href: "/painel/corretora/agenda",
+        label: "Agenda",
+        icon: CalendarDays,
+      },
       {
         href: "/painel/corretora/ofertas",
         label: "Oferta ao Comprador",

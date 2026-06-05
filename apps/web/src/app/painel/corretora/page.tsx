@@ -2,15 +2,11 @@ import Link from "next/link";
 import {
   AlertTriangle,
   Coffee,
-  Handshake,
-  FileSignature,
   Truck,
-  Wallet,
   Package,
   Users,
   Building2,
   Coins,
-  TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
   ArrowRight,
@@ -25,7 +21,6 @@ import {
 } from "@/components/ui/card";
 import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { IndicadoresLive } from "@/components/indicadores-live";
-import { cn } from "@/lib/utils";
 import type { LeadStatus } from "@milsaca/types";
 import { getProfile } from "@/lib/auth";
 import { listEntregasHojeEAtrasadas } from "./entregas/_lib/queries";
@@ -35,10 +30,17 @@ import {
   loadCotacoesDashboard,
   loadAutomationSuggestions,
   loadPipelineFunnel,
+  loadResultadoMes,
+  loadAcoesHoje,
+  loadRankingProdutores,
   type CotacaoDashboard,
   type DashboardLead,
 } from "./_lib/dashboard";
 import { PipelineFunnel } from "./_components/pipeline-funnel";
+import { HeroComercial } from "./_components/hero-comercial";
+import { AcaoHoje } from "./_components/acao-hoje";
+import { ResultadoMes } from "./_components/resultado-mes";
+import { RankingProdutores } from "./_components/ranking-produtores";
 import { LEAD_STATUS_LABEL } from "./leads/_lib/lead-meta";
 import { getCorretoraSubscriptionInfo } from "./_lib/corretora";
 import { isProOrAbove } from "./_lib/plan-gate";
@@ -46,7 +48,7 @@ import { AutomationCard } from "./_components/automation-card";
 import { coffeeLabel } from "@/lib/coffee";
 import { fmtMoney0, fmtInt } from "@/lib/format";
 
-export const metadata = { title: "Início — Painel da corretora" };
+export const metadata = { title: "Central comercial — Painel da corretora" };
 
 const COFFEE_LABEL: Record<string, string> = {
   arabica: "Arábica",
@@ -70,6 +72,9 @@ export default async function InicioCorretoraPage() {
 
   const [
     kpis,
+    resultado,
+    acoes,
+    ranking,
     leads,
     cotacoes,
     entregasSnap,
@@ -78,6 +83,9 @@ export default async function InicioCorretoraPage() {
     funnel,
   ] = await Promise.all([
     loadDashboardKpis(corretoraId),
+    loadResultadoMes(corretoraId),
+    loadAcoesHoje(corretoraId),
+    loadRankingProdutores(corretoraId),
     loadLeadsRecentes(corretoraId),
     loadCotacoesDashboard(corretoraId),
     corretoraId
@@ -98,73 +106,30 @@ export default async function InicioCorretoraPage() {
 
   return (
     <div className="space-y-section">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-h1 tracking-tight text-milsaca-cafezal">
-            Central comercial
-          </h1>
-          <p className="mt-1 text-body-sm text-neutral-600">
-            Seu dinheiro em jogo, o funil e o que precisa de ação hoje.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/painel/corretora/lotes/novo"
-            className="inline-flex h-11 items-center gap-1.5 rounded-md border border-milsaca-dourado/40 bg-milsaca-dourado/15 px-4 text-label font-semibold text-milsaca-cafezal transition-colors hover:bg-milsaca-dourado/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            <Package className="h-4 w-4" />
-            Cadastrar lote
-          </Link>
-          <Link
-            href="/painel/corretora/leads/novo"
-            className="inline-flex h-11 items-center gap-1.5 rounded-md bg-milsaca-cafezal px-4 text-label font-semibold text-milsaca-cream transition-colors hover:bg-milsaca-folha focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            <Handshake className="h-4 w-4" />
-            Novo lead
-          </Link>
-        </div>
-      </header>
+      {/* HERÓI — o dinheiro na mesa, impossível de ignorar */}
+      <HeroComercial
+        potencial={kpis.valorEmNegociacao}
+        sacas={kpis.sacasEmNegociacao}
+        produtoresAtivos={kpis.produtoresAtivos}
+        aguardando={kpis.leadsNovos}
+      />
 
-      {/* ---------------------------------------------------------------- */}
-      {/* FAIXA 1 — DINHEIRO (o que importa primeiro)                       */}
-      {/* ---------------------------------------------------------------- */}
-      <section
-        aria-label="Dinheiro"
-        className="grid grid-cols-2 gap-4 lg:grid-cols-3"
-      >
-        <MoneyCard
-          label="Comissão do mês"
-          value={fmtMoney0(kpis.receitaMes)}
-          hint="Contratos ativos e finalizados"
-          icon={Wallet}
-          href="/painel/corretora/contratos"
-          premium
-          className="col-span-2 lg:col-span-1"
-        />
-        <MoneyCard
-          label="Em negociação"
-          value={fmtMoney0(kpis.valorEmNegociacao)}
-          hint={`${kpis.emNegociacao} proposta${kpis.emNegociacao === 1 ? "" : "s"} aberta${kpis.emNegociacao === 1 ? "" : "s"}`}
-          icon={TrendingUp}
-          href="/painel/corretora/leads?status=em_negociacao"
-        />
-        <MoneyCard
-          label="Contratos ativos"
-          value={fmtInt(kpis.contratosAtivos)}
-          hint="Em execução"
-          icon={FileSignature}
-          href="/painel/corretora/contratos?status=ativo"
-        />
-      </section>
+      {/* AÇÃO NECESSÁRIA HOJE — prioridades, acima de tudo */}
+      <AcaoHoje acoes={acoes} />
 
-      {/* ---------------------------------------------------------------- */}
-      {/* FUNIL — fluxo completo da corretagem (lead -> pagamento)          */}
-      {/* ---------------------------------------------------------------- */}
+      {/* RESULTADO DO MÊS — contexto financeiro */}
+      <ResultadoMes
+        resultado={resultado}
+        valorEmNegociacao={kpis.valorEmNegociacao}
+      />
+
+      {/* PIPELINE — fluxo completo da corretagem com barras */}
       <PipelineFunnel data={funnel} />
 
-      {/* ---------------------------------------------------------------- */}
-      {/* OPERAÇÃO — atalhos secundários, clicáveis                         */}
-      {/* ---------------------------------------------------------------- */}
+      {/* RANKING — quem move dinheiro */}
+      <RankingProdutores ranking={ranking} />
+
+      {/* OPERAÇÃO — atalhos secundários, clicáveis */}
       <section
         aria-label="Operação"
         className="grid grid-cols-2 gap-3 sm:grid-cols-4"
@@ -183,7 +148,7 @@ export default async function InicioCorretoraPage() {
         />
         <OpChip
           label="Produtores"
-          value={fmtInt(kpis.produtoresCadastrados)}
+          value={fmtInt(kpis.produtoresAtivos)}
           icon={Users}
           href="/painel/corretora/produtores"
         />
@@ -298,65 +263,6 @@ export default async function InicioCorretoraPage() {
 /* ====================================================================== */
 /* Subcomponentes                                                         */
 /* ====================================================================== */
-
-function MoneyCard({
-  label,
-  value,
-  hint,
-  icon: Icon,
-  href,
-  premium,
-  className,
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-  icon: LucideIcon;
-  href: string;
-  premium?: boolean;
-  className?: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-        className,
-      )}
-    >
-      <Card tone={premium ? "premium" : "default"} interactive className="h-full">
-        <CardContent className="p-card">
-          <div className="flex items-center justify-between">
-            <p className="text-caption font-medium uppercase tracking-wider text-neutral-500">
-              {label}
-            </p>
-            <span
-              className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-full ring-1 ring-inset",
-                premium
-                  ? "bg-milsaca-dourado/15 text-milsaca-cafezal ring-milsaca-dourado/40"
-                  : "bg-milsaca-cafezal/10 text-milsaca-cafezal ring-transparent",
-              )}
-            >
-              <Icon className="h-[18px] w-[18px]" />
-            </span>
-          </div>
-          <p
-            className={cn(
-              "mt-3 leading-none text-milsaca-cafezal",
-              premium ? "text-display" : "text-h1",
-            )}
-          >
-            {value}
-          </p>
-          {hint ? (
-            <p className="mt-2 text-caption text-neutral-500">{hint}</p>
-          ) : null}
-        </CardContent>
-      </Card>
-    </Link>
-  );
-}
 
 function OpChip({
   label,

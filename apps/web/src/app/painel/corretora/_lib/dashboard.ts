@@ -11,6 +11,7 @@
 
 import { createClient } from "@milsaca/db/web/server";
 import type { LeadStatus } from "@milsaca/types";
+import { ENTREGA_PENDENTE_STATUS } from "../entregas/_lib/entrega-meta";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -18,12 +19,15 @@ export type DashboardKpis = {
   leadsNovos: number;
   emNegociacao: number;
   valorEmNegociacao: number;
+  sacasEmNegociacao: number;
   convertidosMes: number;
   contratosAtivos: number;
   receitaMes: number;
   lotesAtivos: number;
   sacasDisponiveis: number;
   produtoresCadastrados: number;
+  /** Produtores com quem a corretora REALMENTE opera (leads + contratos). */
+  produtoresAtivos: number;
   compradoresAtivos: number;
 };
 
@@ -35,12 +39,14 @@ export async function loadDashboardKpis(
       leadsNovos: 0,
       emNegociacao: 0,
       valorEmNegociacao: 0,
+      sacasEmNegociacao: 0,
       convertidosMes: 0,
       contratosAtivos: 0,
       receitaMes: 0,
       lotesAtivos: 0,
       sacasDisponiveis: 0,
       produtoresCadastrados: 0,
+      produtoresAtivos: 0,
       compradoresAtivos: 0,
     };
   }
@@ -71,6 +77,8 @@ export async function loadDashboardKpis(
     lotesAtivos,
     produtores,
     compradores,
+    leadsProdutores,
+    contratosProdutores,
   ] = await Promise.all([
     supabase
       .from("leads")
@@ -118,7 +126,30 @@ export async function loadDashboardKpis(
       .select("*", { count: "exact", head: true })
       .eq("corretora_id", corretoraId)
       .eq("ativo", true),
+    // Produtores ATIVOS = distintos vindos de leads (não arquivados) + contratos.
+    // produtor_contatos é "cadastrados" (outra métrica); aqui conta quem move negócio.
+    supabase
+      .from("leads")
+      .select("produtor_id")
+      .eq("corretora_id", corretoraId)
+      .not("produtor_id", "is", null)
+      .neq("status", "arquivado"),
+    supabase
+      .from("contratos")
+      .select("produtor_id")
+      .eq("corretora_id", corretoraId)
+      .not("produtor_id", "is", null),
   ]);
+
+  const produtoresAtivosSet = new Set<string>();
+  for (const r of (leadsProdutores.data ?? []) as { produtor_id: string | null }[]) {
+    if (r.produtor_id) produtoresAtivosSet.add(r.produtor_id);
+  }
+  for (const r of (contratosProdutores.data ?? []) as {
+    produtor_id: string | null;
+  }[]) {
+    if (r.produtor_id) produtoresAtivosSet.add(r.produtor_id);
+  }
 
   const receitaMes = (
     (contratosMes.data ?? []) as { comissao_total: number | string | null }[]
@@ -135,12 +166,11 @@ export async function loadDashboardKpis(
     0,
   );
 
-  const valorEmNegociacao = (
-    (emNegValores.data ?? []) as Array<{
-      proposed_price: number | string | null;
-      bag_count: number | null;
-    }>
-  ).reduce(
+  const emNegRows = (emNegValores.data ?? []) as Array<{
+    proposed_price: number | string | null;
+    bag_count: number | null;
+  }>;
+  const valorEmNegociacao = emNegRows.reduce(
     (sum, r) =>
       sum +
       (r.proposed_price != null && r.bag_count != null
@@ -148,17 +178,23 @@ export async function loadDashboardKpis(
         : 0),
     0,
   );
+  const sacasEmNegociacao = emNegRows.reduce(
+    (sum, r) => sum + (r.bag_count != null ? Number(r.bag_count) : 0),
+    0,
+  );
 
   return {
     leadsNovos: novos.count ?? 0,
     emNegociacao: emNeg.count ?? 0,
     valorEmNegociacao,
+    sacasEmNegociacao,
     convertidosMes: convMes.count ?? 0,
     contratosAtivos: contratosAtivos.count ?? 0,
     receitaMes,
     lotesAtivos: lotesRows.length,
     sacasDisponiveis,
     produtoresCadastrados: produtores.count ?? 0,
+    produtoresAtivos: produtoresAtivosSet.size,
     compradoresAtivos: compradores.count ?? 0,
   };
 }
@@ -343,40 +379,68 @@ export type SidebarBadges = {
   leadsNovos: number;
   emNegociacao: number;
   lotesParados: number;
+  /** Total de itens que exigem ação (badge da aba "Tarefas"). */
+  acoesPendentes: number;
 };
 
 export async function loadSidebarBadges(
   corretoraId: string,
 ): Promise<SidebarBadges> {
   if (!corretoraId) {
-    return { leadsNovos: 0, emNegociacao: 0, lotesParados: 0 };
+    return { leadsNovos: 0, emNegociacao: 0, lotesParados: 0, acoesPendentes: 0 };
   }
   const supabase = await createClient();
   const sevenDaysAgo = new Date(Date.now() - 7 * DAY_MS).toISOString();
 
-  const [novos, emNeg, lotesParados] = await Promise.all([
-    supabase
-      .from("leads")
-      .select("*", { count: "exact", head: true })
-      .eq("corretora_id", corretoraId)
-      .eq("status", "novo"),
-    supabase
-      .from("leads")
-      .select("*", { count: "exact", head: true })
-      .eq("corretora_id", corretoraId)
-      .eq("status", "em_negociacao"),
-    supabase
-      .from("lotes")
-      .select("*", { count: "exact", head: true })
-      .eq("corretora_id", corretoraId)
-      .eq("status", "classificado")
-      .lt("updated_at", sevenDaysAgo),
-  ]);
+  const [novos, emNeg, lotesParados, semAssinatura, pagAbertos, entregasConferir] =
+    await Promise.all([
+      supabase
+        .from("leads")
+        .select("*", { count: "exact", head: true })
+        .eq("corretora_id", corretoraId)
+        .eq("status", "novo"),
+      supabase
+        .from("leads")
+        .select("*", { count: "exact", head: true })
+        .eq("corretora_id", corretoraId)
+        .eq("status", "em_negociacao"),
+      supabase
+        .from("lotes")
+        .select("*", { count: "exact", head: true })
+        .eq("corretora_id", corretoraId)
+        .eq("status", "classificado")
+        .lt("updated_at", sevenDaysAgo),
+      supabase
+        .from("contratos")
+        .select("*", { count: "exact", head: true })
+        .eq("corretora_id", corretoraId)
+        .in("status", ["rascunho", "em_analise"]),
+      supabase
+        .from("produtor_pagamentos")
+        .select("*", { count: "exact", head: true })
+        .eq("corretora_id", corretoraId)
+        .in("status", ["vencido", "pendente"]),
+      supabase
+        .from("entregas")
+        .select("*", { count: "exact", head: true })
+        .eq("corretora_id", corretoraId)
+        .eq("status", "recebida"),
+    ]);
 
+  const leadsNovos = novos.count ?? 0;
+  const emNegociacao = emNeg.count ?? 0;
   return {
-    leadsNovos: novos.count ?? 0,
-    emNegociacao: emNeg.count ?? 0,
+    leadsNovos,
+    emNegociacao,
     lotesParados: lotesParados.count ?? 0,
+    // Backlog completo da Central de tarefas (espelha loadTarefas): responder
+    // (novo+em_negociação) + assinar + cobrar (vencido+pendente) + conferir.
+    acoesPendentes:
+      leadsNovos +
+      emNegociacao +
+      (semAssinatura.count ?? 0) +
+      (pagAbertos.count ?? 0) +
+      (entregasConferir.count ?? 0),
   };
 }
 
@@ -441,4 +505,180 @@ export async function loadAutomationSuggestions(
       href: "/painel/corretora/leads?status=em_negociacao",
     },
   ];
+}
+
+/**
+ * "Resultado do mês" — contexto financeiro do herói. Tudo derivado de
+ * `contratos` (1 query). Dá o número POR TRÁS do "R$ 282.900 sem contexto":
+ * o que está previsto, o que já confirmou, a comissão e o ticket médio.
+ *
+ *  - receitaAtivos   = Σ total_value dos contratos ATIVOS (em execução)
+ *  - receitaConfirmada = Σ total_value dos FINALIZADOS (negócio fechado)
+ *  - comissaoMes     = Σ comissao_total (ativo + finalizado)
+ *  - ticketMedio     = Σ total_value / Σ bag_count (ativo+finalizado) → R$/saca
+ */
+export type ResultadoMes = {
+  receitaAtivos: number;
+  receitaConfirmada: number;
+  comissaoMes: number;
+  ticketMedio: number;
+};
+
+export async function loadResultadoMes(
+  corretoraId: string,
+): Promise<ResultadoMes> {
+  const empty = {
+    receitaAtivos: 0,
+    receitaConfirmada: 0,
+    comissaoMes: 0,
+    ticketMedio: 0,
+  };
+  if (!corretoraId) return empty;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("contratos")
+    .select("status, total_value, comissao_total, bag_count")
+    .eq("corretora_id", corretoraId)
+    .in("status", ["ativo", "finalizado"]);
+
+  const rows = (data ?? []) as Array<{
+    status: "ativo" | "finalizado";
+    total_value: number | string | null;
+    comissao_total: number | string | null;
+    bag_count: number | string | null;
+  }>;
+
+  let receitaAtivos = 0;
+  let receitaConfirmada = 0;
+  let comissaoMes = 0;
+  let somaValor = 0;
+  let somaSacas = 0;
+  for (const r of rows) {
+    const tv = r.total_value != null ? Number(r.total_value) : 0;
+    const cm = r.comissao_total != null ? Number(r.comissao_total) : 0;
+    const bc = r.bag_count != null ? Number(r.bag_count) : 0;
+    if (r.status === "ativo") receitaAtivos += tv;
+    if (r.status === "finalizado") receitaConfirmada += tv;
+    comissaoMes += cm;
+    somaValor += tv;
+    somaSacas += bc;
+  }
+  return {
+    receitaAtivos,
+    receitaConfirmada,
+    comissaoMes,
+    ticketMedio: somaSacas > 0 ? somaValor / somaSacas : 0,
+  };
+}
+
+/**
+ * "Ação necessária hoje" — counts pra seção de urgência do dashboard.
+ * Só contagens (head:true); a tela renderiza só as linhas com count > 0.
+ */
+export type AcoesHoje = {
+  aguardandoResposta: number; // leads "novo"
+  contratosSemAssinatura: number; // rascunho + em_analise
+  pagamentosAtrasados: number; // pagamentos "vencido"
+  entregasHojeAmanha: number; // pendentes com data_prevista <= amanhã
+};
+
+export async function loadAcoesHoje(corretoraId: string): Promise<AcoesHoje> {
+  const empty = {
+    aguardandoResposta: 0,
+    contratosSemAssinatura: 0,
+    pagamentosAtrasados: 0,
+    entregasHojeAmanha: 0,
+  };
+  if (!corretoraId) return empty;
+  const supabase = await createClient();
+  const amanha = new Date(Date.now() + DAY_MS).toISOString().slice(0, 10);
+
+  const [aguardando, semAssinatura, atrasados, entregas] = await Promise.all([
+    supabase
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .eq("corretora_id", corretoraId)
+      .eq("status", "novo"),
+    supabase
+      .from("contratos")
+      .select("*", { count: "exact", head: true })
+      .eq("corretora_id", corretoraId)
+      .in("status", ["rascunho", "em_analise"]),
+    supabase
+      .from("produtor_pagamentos")
+      .select("*", { count: "exact", head: true })
+      .eq("corretora_id", corretoraId)
+      .eq("status", "vencido"),
+    supabase
+      .from("entregas")
+      .select("*", { count: "exact", head: true })
+      .eq("corretora_id", corretoraId)
+      .in("status", ENTREGA_PENDENTE_STATUS)
+      .lte("data_prevista", amanha),
+  ]);
+
+  return {
+    aguardandoResposta: aguardando.count ?? 0,
+    contratosSemAssinatura: semAssinatura.count ?? 0,
+    pagamentosAtrasados: atrasados.count ?? 0,
+    entregasHojeAmanha: entregas.count ?? 0,
+  };
+}
+
+/**
+ * Ranking dos produtores por receita (e volume) — top 5. Deriva de `contratos`
+ * fechados/em execução (ativo + finalizado) agrupados por produtor. Mostra quem
+ * move dinheiro pra corretora.
+ */
+export type RankingProdutor = {
+  produtor_id: string;
+  nome: string;
+  sacas: number;
+  receita: number;
+};
+
+export async function loadRankingProdutores(
+  corretoraId: string,
+): Promise<RankingProdutor[]> {
+  if (!corretoraId) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("contratos")
+    .select(
+      `produtor_id, total_value, bag_count,
+       produtor:profiles!contratos_produtor_id_fkey(full_name)`,
+    )
+    .eq("corretora_id", corretoraId)
+    .in("status", ["ativo", "finalizado"]);
+
+  const rows = (data ?? []) as Array<{
+    produtor_id: string;
+    total_value: number | string | null;
+    bag_count: number | string | null;
+    produtor:
+      | { full_name: string | null }
+      | { full_name: string | null }[]
+      | null;
+  }>;
+
+  const byProdutor = new Map<string, RankingProdutor>();
+  for (const r of rows) {
+    if (!r.produtor_id) continue;
+    const nome = Array.isArray(r.produtor)
+      ? r.produtor[0]?.full_name
+      : r.produtor?.full_name;
+    const prev = byProdutor.get(r.produtor_id) ?? {
+      produtor_id: r.produtor_id,
+      nome: nome ?? "Produtor sem nome",
+      sacas: 0,
+      receita: 0,
+    };
+    prev.receita += r.total_value != null ? Number(r.total_value) : 0;
+    prev.sacas += r.bag_count != null ? Number(r.bag_count) : 0;
+    byProdutor.set(r.produtor_id, prev);
+  }
+
+  return [...byProdutor.values()]
+    .sort((a, b) => b.receita - a.receita)
+    .slice(0, 5);
 }

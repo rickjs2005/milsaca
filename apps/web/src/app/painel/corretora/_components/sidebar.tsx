@@ -20,6 +20,8 @@ import {
   Building2,
   BarChart3,
   Sparkles,
+  CheckSquare,
+  CalendarDays,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -49,6 +51,18 @@ const NAV_GROUPS: NavGroup[] = [
     title: "Operação",
     items: [
       { href: "/painel/corretora", label: "Início", icon: Home, exact: true },
+      {
+        href: "/painel/corretora/tarefas",
+        label: "Tarefas",
+        icon: CheckSquare,
+        badgeKey: "acoesPendentes",
+        badgeTone: "warn",
+      },
+      {
+        href: "/painel/corretora/agenda",
+        label: "Agenda",
+        icon: CalendarDays,
+      },
       {
         href: "/painel/corretora/leads",
         label: "Central de Leads",
@@ -147,6 +161,7 @@ const EMPTY_BADGES: SidebarBadges = {
   leadsNovos: 0,
   emNegociacao: 0,
   lotesParados: 0,
+  acoesPendentes: 0,
 };
 
 export function CorretoraSidebar({
