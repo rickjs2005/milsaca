@@ -353,11 +353,9 @@ export default async function NegociacaoDetalhePage({
                 <Input
                   id="preco_saca"
                   name="preco_saca"
-                  type="number"
-                  step="0.01"
-                  min="0"
+                  type="text"
                   inputMode="decimal"
-                  placeholder="Ex.: 1450.00"
+                  placeholder="Ex.: 1.450,00"
                   required
                 />
               </div>

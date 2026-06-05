@@ -8,6 +8,21 @@ import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
 
 /**
+ * Lê um valor monetário no formato pt-BR ("1.450,00") vindo de um input
+ * `type="text" inputMode="decimal"`: tira espaços, remove os pontos de
+ * milhar e troca a vírgula decimal por ponto. Espelha o `parseNumber` das
+ * actions da corretora (não há helper compartilhado; cada action tem o seu).
+ */
+function parsePrecoBR(v: FormDataEntryValue | null): number {
+  const s = String(v ?? "")
+    .trim()
+    .replace(/\s/g, "")
+    .replace(/\./g, "")
+    .replace(",", ".");
+  return Number(s);
+}
+
+/**
  * Contraproposta LEVE do produtor: manda um contra-valor (R$/saca + msg
  * opcional) que vira evento no histórico do lead e notifica a corretora
  * (in-app), via a RPC contrapropor_lead. A negociação detalhada continua
@@ -17,7 +32,7 @@ export async function contraproporNegociacao(formData: FormData) {
   await requireUser("/painel/produtor/negociacoes");
 
   const leadId = String(formData.get("lead_id") ?? "").trim();
-  const preco = Number(String(formData.get("preco_saca") ?? "").trim());
+  const preco = parsePrecoBR(formData.get("preco_saca"));
   const mensagem = String(formData.get("mensagem") ?? "").trim() || null;
   const back = leadId
     ? `/painel/produtor/negociacoes/${leadId}`
