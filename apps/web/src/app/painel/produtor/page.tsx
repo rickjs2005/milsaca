@@ -521,6 +521,15 @@ export default async function InicioProdutorPage({
                 </Card>
               </Link>
             </div>
+            {carteira.comissao > 0 ? (
+              <p className="rounded-md bg-milsaca-cream/60 px-3 py-2 text-caption leading-relaxed text-neutral-600">
+                De <strong className="font-semibold text-milsaca-cafezal">{BRL0.format(carteira.bruto)}</strong>{" "}
+                negociados, a corretora retém{" "}
+                <strong className="font-semibold text-milsaca-cafezal">{BRL0.format(carteira.comissao)}</strong>{" "}
+                de comissão — você recebe{" "}
+                <strong className="font-semibold text-milsaca-cafezal">{BRL0.format(carteira.bruto - carteira.comissao)}</strong> líquido.
+              </p>
+            ) : null}
           </section>
 
           {/* Mercado compacto (referência) — sempre por último */}

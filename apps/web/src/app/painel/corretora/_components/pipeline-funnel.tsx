@@ -28,10 +28,10 @@ const STAGES: Stage[] = [
 ];
 
 /**
- * Pipeline da corretagem — barras horizontais proporcionais ao maior estágio.
- * Ocupa quase toda a largura pra a corretora "enxergar gargalos" de cara: a
- * barra mais cheia mostra onde os negócios estão acumulando. Cada etapa abre
- * a tela correspondente.
+ * Carga por etapa — quantos registros estão em cada estágio AGORA (não é funil
+ * de conversão: os números não precisam cair ao descer). Barras horizontais
+ * proporcionais ao maior estágio, pra ver de relance onde está o acúmulo.
+ * Cada etapa abre a tela correspondente.
  */
 export function PipelineFunnel({ data }: { data: PipelineData }) {
   const max = Math.max(1, ...STAGES.map((s) => data[s.key]));
@@ -40,11 +40,11 @@ export function PipelineFunnel({ data }: { data: PipelineData }) {
     <Card className="border-milsaca-cream-escuro">
       <CardHeader className="pb-3">
         <CardTitle className="text-h3 text-milsaca-cafezal">
-          Pipeline comercial
+          Carga por etapa
         </CardTitle>
         <p className="text-caption text-neutral-500">
-          Do primeiro contato ao pagamento. A barra mais cheia mostra onde
-          afunilar. Clique pra abrir.
+          Quantos registros estão em cada etapa agora — não é funil de
+          conversão. Clique pra abrir.
         </p>
       </CardHeader>
       <CardContent className="space-y-2.5">

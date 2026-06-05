@@ -445,69 +445,6 @@ export async function loadSidebarBadges(
 }
 
 /**
- * Sugestões de automação comercial — regras simples baseadas em tempo.
- * Não disparam ações automáticas; só apontam o que merece atenção do
- * corretor agora.
- */
-export type AutomationSuggestion = {
-  id: "leads-frios" | "lotes-parados" | "negociacoes-paradas";
-  count: number;
-  /** href pra onde clicar leva o corretor. */
-  href: string;
-};
-
-export async function loadAutomationSuggestions(
-  corretoraId: string,
-): Promise<AutomationSuggestion[]> {
-  if (!corretoraId) return [];
-
-  const now = Date.now();
-  const supabase = await createClient();
-
-  const [leadsFrios, lotesParados, negociacoesParadas] = await Promise.all([
-    // Lead novo há mais de 24h
-    supabase
-      .from("leads")
-      .select("*", { count: "exact", head: true })
-      .eq("corretora_id", corretoraId)
-      .eq("status", "novo")
-      .lt("created_at", new Date(now - 1 * DAY_MS).toISOString()),
-    // Lote classificado parado há mais de 7d
-    supabase
-      .from("lotes")
-      .select("*", { count: "exact", head: true })
-      .eq("corretora_id", corretoraId)
-      .eq("status", "classificado")
-      .lt("updated_at", new Date(now - 7 * DAY_MS).toISOString()),
-    // Lead em negociação sem update há mais de 3d
-    supabase
-      .from("leads")
-      .select("*", { count: "exact", head: true })
-      .eq("corretora_id", corretoraId)
-      .eq("status", "em_negociacao")
-      .lt("updated_at", new Date(now - 3 * DAY_MS).toISOString()),
-  ]);
-
-  return [
-    {
-      id: "leads-frios",
-      count: leadsFrios.count ?? 0,
-      href: "/painel/corretora/leads?status=novo",
-    },
-    {
-      id: "lotes-parados",
-      count: lotesParados.count ?? 0,
-      href: "/painel/corretora/lotes?status=classificado",
-    },
-    {
-      id: "negociacoes-paradas",
-      count: negociacoesParadas.count ?? 0,
-      href: "/painel/corretora/leads?status=em_negociacao",
-    },
-  ];
-}
-
-/**
  * "Resultado do mês" — contexto financeiro do herói. Tudo derivado de
  * `contratos` (1 query). Dá o número POR TRÁS do "R$ 282.900 sem contexto":
  * o que está previsto, o que já confirmou, a comissão e o ticket médio.
@@ -572,33 +509,53 @@ export async function loadResultadoMes(
 }
 
 /**
- * "Ação necessária hoje" — counts pra seção de urgência do dashboard.
- * Só contagens (head:true); a tela renderiza só as linhas com count > 0.
+ * Triagem — a fila de trabalho da corretora (consolida o antigo "Ação hoje" +
+ * "Automação comercial"). Só contagens (head:true); a tela mostra só os itens
+ * com count > 0. Cada item é uma ação concreta, sem sobreposição entre eles.
  */
-export type AcoesHoje = {
-  aguardandoResposta: number; // leads "novo"
-  contratosSemAssinatura: number; // rascunho + em_analise
-  pagamentosAtrasados: number; // pagamentos "vencido"
+export type Triagem = {
+  aguardandoResposta: number; // leads "novo" (primeiro contato)
+  negociacoesParadas: number; // em_negociacao sem update > 3d (follow-up)
+  semAssinatura: number; // contratos rascunho + em_analise
+  pagamentosVencidos: number; // pagamentos "vencido"
   entregasHojeAmanha: number; // pendentes com data_prevista <= amanhã
+  conferirEntrega: number; // entregas "recebida" (conferir peso)
+  lotesParados: number; // classificado parado > 7d
 };
 
-export async function loadAcoesHoje(corretoraId: string): Promise<AcoesHoje> {
-  const empty = {
+export async function loadTriagem(corretoraId: string): Promise<Triagem> {
+  const empty: Triagem = {
     aguardandoResposta: 0,
-    contratosSemAssinatura: 0,
-    pagamentosAtrasados: 0,
+    negociacoesParadas: 0,
+    semAssinatura: 0,
+    pagamentosVencidos: 0,
     entregasHojeAmanha: 0,
+    conferirEntrega: 0,
+    lotesParados: 0,
   };
   if (!corretoraId) return empty;
   const supabase = await createClient();
-  const amanha = new Date(Date.now() + DAY_MS).toISOString().slice(0, 10);
-
-  const [aguardando, semAssinatura, atrasados, entregas] = await Promise.all([
+  const now = Date.now();
+  const amanha = new Date(now + DAY_MS).toISOString().slice(0, 10);
+  const tresDiasAtras = new Date(now - 3 * DAY_MS).toISOString();
+  const seteDiasAtras = new Date(now - 7 * DAY_MS).toISOString();
+  const baseLeads = () =>
     supabase
       .from("leads")
       .select("*", { count: "exact", head: true })
-      .eq("corretora_id", corretoraId)
-      .eq("status", "novo"),
+      .eq("corretora_id", corretoraId);
+
+  const [
+    aguardando,
+    negParadas,
+    semAssinatura,
+    vencidos,
+    entregas,
+    conferir,
+    lotesParados,
+  ] = await Promise.all([
+    baseLeads().eq("status", "novo"),
+    baseLeads().eq("status", "em_negociacao").lt("updated_at", tresDiasAtras),
     supabase
       .from("contratos")
       .select("*", { count: "exact", head: true })
@@ -615,13 +572,27 @@ export async function loadAcoesHoje(corretoraId: string): Promise<AcoesHoje> {
       .eq("corretora_id", corretoraId)
       .in("status", ENTREGA_PENDENTE_STATUS)
       .lte("data_prevista", amanha),
+    supabase
+      .from("entregas")
+      .select("*", { count: "exact", head: true })
+      .eq("corretora_id", corretoraId)
+      .eq("status", "recebida"),
+    supabase
+      .from("lotes")
+      .select("*", { count: "exact", head: true })
+      .eq("corretora_id", corretoraId)
+      .eq("status", "classificado")
+      .lt("updated_at", seteDiasAtras),
   ]);
 
   return {
     aguardandoResposta: aguardando.count ?? 0,
-    contratosSemAssinatura: semAssinatura.count ?? 0,
-    pagamentosAtrasados: atrasados.count ?? 0,
+    negociacoesParadas: negParadas.count ?? 0,
+    semAssinatura: semAssinatura.count ?? 0,
+    pagamentosVencidos: vencidos.count ?? 0,
     entregasHojeAmanha: entregas.count ?? 0,
+    conferirEntrega: conferir.count ?? 0,
+    lotesParados: lotesParados.count ?? 0,
   };
 }
 

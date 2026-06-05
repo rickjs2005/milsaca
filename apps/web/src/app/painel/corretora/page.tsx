@@ -28,23 +28,18 @@ import {
   loadDashboardKpis,
   loadLeadsRecentes,
   loadCotacoesDashboard,
-  loadAutomationSuggestions,
   loadPipelineFunnel,
   loadResultadoMes,
-  loadAcoesHoje,
+  loadTriagem,
   loadRankingProdutores,
   type CotacaoDashboard,
   type DashboardLead,
 } from "./_lib/dashboard";
 import { PipelineFunnel } from "./_components/pipeline-funnel";
-import { HeroComercial } from "./_components/hero-comercial";
-import { AcaoHoje } from "./_components/acao-hoje";
-import { ResultadoMes } from "./_components/resultado-mes";
+import { Comando } from "./_components/comando";
+import { Triagem } from "./_components/triagem";
 import { RankingProdutores } from "./_components/ranking-produtores";
 import { LEAD_STATUS_LABEL } from "./leads/_lib/lead-meta";
-import { getCorretoraSubscriptionInfo } from "./_lib/corretora";
-import { isProOrAbove } from "./_lib/plan-gate";
-import { AutomationCard } from "./_components/automation-card";
 import { coffeeLabel } from "@/lib/coffee";
 import { fmtMoney0, fmtInt } from "@/lib/format";
 
@@ -70,190 +65,171 @@ export default async function InicioCorretoraPage() {
   const profile = await getProfile();
   const corretoraId = profile?.corretora_id ?? "";
 
-  const [
-    kpis,
-    resultado,
-    acoes,
-    ranking,
-    leads,
-    cotacoes,
-    entregasSnap,
-    suggestions,
-    subscription,
-    funnel,
-  ] = await Promise.all([
-    loadDashboardKpis(corretoraId),
-    loadResultadoMes(corretoraId),
-    loadAcoesHoje(corretoraId),
-    loadRankingProdutores(corretoraId),
-    loadLeadsRecentes(corretoraId),
-    loadCotacoesDashboard(corretoraId),
-    corretoraId
-      ? listEntregasHojeEAtrasadas(corretoraId)
-      : Promise.resolve({ hoje: [], atrasadas: [] }),
-    loadAutomationSuggestions(corretoraId),
-    corretoraId
-      ? getCorretoraSubscriptionInfo(corretoraId)
-      : Promise.resolve(null),
-    loadPipelineFunnel(corretoraId),
-  ]);
+  const [kpis, resultado, triagem, ranking, leads, cotacoes, entregasSnap, funnel] =
+    await Promise.all([
+      loadDashboardKpis(corretoraId),
+      loadResultadoMes(corretoraId),
+      loadTriagem(corretoraId),
+      loadRankingProdutores(corretoraId),
+      loadLeadsRecentes(corretoraId),
+      loadCotacoesDashboard(corretoraId),
+      corretoraId
+        ? listEntregasHojeEAtrasadas(corretoraId)
+        : Promise.resolve({ hoje: [], atrasadas: [] }),
+      loadPipelineFunnel(corretoraId),
+    ]);
 
   const operationEmpty =
     kpis.lotesAtivos === 0 &&
-    kpis.produtoresCadastrados === 0 &&
+    kpis.produtoresAtivos === 0 &&
     kpis.compradoresAtivos === 0;
-  const isPro = isProOrAbove(subscription);
 
   return (
-    <div className="space-y-section">
-      {/* HERÓI — o dinheiro na mesa, impossível de ignorar */}
-      <HeroComercial
-        potencial={kpis.valorEmNegociacao}
-        sacas={kpis.sacasEmNegociacao}
-        produtoresAtivos={kpis.produtoresAtivos}
-        aguardando={kpis.leadsNovos}
-      />
-
-      {/* AÇÃO NECESSÁRIA HOJE — prioridades, acima de tudo */}
-      <AcaoHoje acoes={acoes} />
-
-      {/* RESULTADO DO MÊS — contexto financeiro */}
-      <ResultadoMes
+    <div className="space-y-6">
+      {/* FAIXA DE COMANDO — KPIs do mês em linha densa */}
+      <Comando
         resultado={resultado}
         valorEmNegociacao={kpis.valorEmNegociacao}
+        sacasEmNegociacao={kpis.sacasEmNegociacao}
+        emNegociacao={kpis.emNegociacao}
       />
 
-      {/* PIPELINE — fluxo completo da corretagem com barras */}
-      <PipelineFunnel data={funnel} />
-
-      {/* RANKING — quem move dinheiro */}
-      <RankingProdutores ranking={ranking} />
-
-      {/* OPERAÇÃO — atalhos secundários, clicáveis */}
-      <section
-        aria-label="Operação"
-        className="grid grid-cols-2 gap-3 sm:grid-cols-4"
-      >
-        <OpChip
-          label="Sacas disponíveis"
-          value={fmtInt(kpis.sacasDisponiveis)}
-          icon={Coffee}
-          href="/painel/corretora/lotes"
-        />
-        <OpChip
-          label="Lotes ativos"
-          value={fmtInt(kpis.lotesAtivos)}
-          icon={Package}
-          href="/painel/corretora/lotes"
-        />
-        <OpChip
-          label="Produtores"
-          value={fmtInt(kpis.produtoresAtivos)}
-          icon={Users}
-          href="/painel/corretora/produtores"
-        />
-        <OpChip
-          label="Compradores"
-          value={fmtInt(kpis.compradoresAtivos)}
-          icon={Building2}
-          href="/painel/corretora/compradores"
-        />
-      </section>
+      {/* TRIAGEM — fila de trabalho, prominente */}
+      <Triagem triagem={triagem} />
 
       {operationEmpty ? <FirstStepsCard /> : null}
 
-      {isPro ? <AutomationCard suggestions={suggestions} /> : null}
+      {/* ZONA DE TRABALHO — grade multi-coluna usando a largura toda */}
+      <div className="grid gap-6 xl:grid-cols-3">
+        {/* Coluna larga */}
+        <div className="space-y-6 xl:col-span-2">
+          <PipelineFunnel data={funnel} />
 
-      {/* Entregas pra acompanhar */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-label font-semibold uppercase tracking-wider text-neutral-600">
-            <Truck className="h-4 w-4 text-milsaca-cafezal" />
-            Entregas pra acompanhar
-          </h2>
-          <Link
-            href="/painel/corretora/entregas"
-            className="rounded-sm text-caption font-medium text-milsaca-cafezal hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            Ver todas →
-          </Link>
+          {/* Leads recentes */}
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-label font-semibold uppercase tracking-wider text-neutral-600">
+                Leads recentes
+              </h2>
+              <Link
+                href="/painel/corretora/leads"
+                className="rounded-sm text-caption font-medium text-milsaca-cafezal hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                Ver central de leads →
+              </Link>
+            </div>
+            {leads.length === 0 ? (
+              <EmptyCard
+                title="Nenhum lead na sua corretora ainda."
+                description="Compartilhe seu perfil público pra começar a receber contatos de produtores e compradores."
+                cta={{ href: "/painel/corretora/perfil", label: "Ver perfil público" }}
+              />
+            ) : (
+              <Card>
+                <CardContent className="divide-y divide-neutral-200 p-0">
+                  {leads.map((l) => (
+                    <LeadRow key={l.id} l={l} />
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+          </section>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <EntregasMiniCard
-            label="Atrasadas"
-            count={entregasSnap.atrasadas.length}
-            tone="warn"
-            items={entregasSnap.atrasadas}
-          />
-          <EntregasMiniCard
-            label="Hoje"
-            count={entregasSnap.hoje.length}
-            tone="info"
-            items={entregasSnap.hoje}
-          />
-        </div>
-      </section>
 
-      {/* Leads recentes — com valor + urgência */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-label font-semibold uppercase tracking-wider text-neutral-600">
-            Leads recentes
-          </h2>
-          <Link
-            href="/painel/corretora/leads"
-            className="rounded-sm text-caption font-medium text-milsaca-cafezal hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            Ver central de leads →
-          </Link>
-        </div>
-        {leads.length === 0 ? (
-          <EmptyCard
-            title="Nenhum lead na sua corretora ainda."
-            description="Compartilhe seu perfil público pra começar a receber contatos de produtores e compradores."
-            cta={{ href: "/painel/corretora/perfil", label: "Ver perfil público" }}
-          />
-        ) : (
-          <Card>
-            <CardContent className="divide-y divide-neutral-200 p-0">
-              {leads.map((l) => (
-                <LeadRow key={l.id} l={l} />
-              ))}
-            </CardContent>
-          </Card>
-        )}
-      </section>
+        {/* Coluna estreita */}
+        <div className="space-y-6">
+          <RankingProdutores ranking={ranking} />
 
-      {/* Cotações da praça */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-label font-semibold uppercase tracking-wider text-neutral-600">
-            Cotações da praça
-          </h2>
-          <Link
-            href="/painel/corretora/cotacoes"
-            className="rounded-sm text-caption font-medium text-milsaca-cafezal hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            Gerenciar →
-          </Link>
+          {/* Entregas pra acompanhar */}
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-label font-semibold uppercase tracking-wider text-neutral-600">
+                <Truck className="h-4 w-4 text-milsaca-cafezal" />
+                Entregas
+              </h2>
+              <Link
+                href="/painel/corretora/entregas"
+                className="rounded-sm text-caption font-medium text-milsaca-cafezal hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                Ver todas →
+              </Link>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+              <EntregasMiniCard
+                label="Atrasadas"
+                count={entregasSnap.atrasadas.length}
+                tone="warn"
+                items={entregasSnap.atrasadas}
+              />
+              <EntregasMiniCard
+                label="Hoje"
+                count={entregasSnap.hoje.length}
+                tone="info"
+                items={entregasSnap.hoje}
+              />
+            </div>
+          </section>
+
+          {/* Cotações da praça */}
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-label font-semibold uppercase tracking-wider text-neutral-600">
+                Cotações da praça
+              </h2>
+              <Link
+                href="/painel/corretora/cotacoes"
+                className="rounded-sm text-caption font-medium text-milsaca-cafezal hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                Gerenciar →
+              </Link>
+            </div>
+            {cotacoes.length === 0 ? (
+              <EmptyCard
+                title="Nenhuma cotação registrada."
+                description="Adicione cotações da sua praça pra usar como referência em propostas."
+                cta={{
+                  href: "/painel/corretora/cotacoes",
+                  label: "Registrar cotação",
+                }}
+              />
+            ) : (
+              <div className="grid gap-3">
+                {cotacoes.map((c) => (
+                  <CotacaoCardView key={c.coffee_type} cotacao={c} />
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Operação — atalhos de cadastro/estoque */}
+          <section aria-label="Operação" className="grid grid-cols-2 gap-3">
+            <OpChip
+              label="Sacas disponíveis"
+              value={fmtInt(kpis.sacasDisponiveis)}
+              icon={Coffee}
+              href="/painel/corretora/lotes"
+            />
+            <OpChip
+              label="Lotes ativos"
+              value={fmtInt(kpis.lotesAtivos)}
+              icon={Package}
+              href="/painel/corretora/lotes"
+            />
+            <OpChip
+              label="Produtores"
+              value={fmtInt(kpis.produtoresAtivos)}
+              icon={Users}
+              href="/painel/corretora/produtores"
+            />
+            <OpChip
+              label="Compradores"
+              value={fmtInt(kpis.compradoresAtivos)}
+              icon={Building2}
+              href="/painel/corretora/compradores"
+            />
+          </section>
         </div>
-        {cotacoes.length === 0 ? (
-          <EmptyCard
-            title="Nenhuma cotação registrada ainda."
-            description="Adicione cotações da sua praça pra acompanhar o mercado e usar como referência em propostas."
-            cta={{
-              href: "/painel/corretora/cotacoes",
-              label: "Registrar cotação",
-            }}
-          />
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {cotacoes.map((c) => (
-              <CotacaoCardView key={c.coffee_type} cotacao={c} />
-            ))}
-          </div>
-        )}
-      </section>
+      </div>
 
       <IndicadoresLive />
     </div>

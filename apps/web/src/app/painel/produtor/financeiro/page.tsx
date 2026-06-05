@@ -111,12 +111,17 @@ export default async function FinanceiroPage() {
   const totals = rows.reduce(
     (acc, r) => {
       const liq = Number(r.valor_liquido);
+      const bru = Number(r.valor_bruto);
+      if (r.status !== "cancelado") {
+        acc.bruto += bru;
+        acc.comissao += bru - liq;
+      }
       if (r.status === "pago") acc.pago += liq;
       else if (r.status === "pendente") acc.pendente += liq;
       else if (r.status === "vencido") acc.vencido += liq;
       return acc;
     },
-    { pago: 0, pendente: 0, vencido: 0 },
+    { pago: 0, pendente: 0, vencido: 0, bruto: 0, comissao: 0 },
   );
 
   return (
@@ -148,6 +153,25 @@ export default async function FinanceiroPage() {
           tone="warn"
         />
       </section>
+
+      {totals.comissao > 0 ? (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-card border border-neutral-200 bg-white px-card py-3 text-body-sm shadow-card">
+          <span className="text-neutral-600">Bruto negociado</span>
+          <strong className="tabular-nums text-milsaca-cafezal">
+            {BRL.format(totals.bruto)}
+          </strong>
+          <span aria-hidden className="text-neutral-400">−</span>
+          <span className="text-neutral-600">comissão da corretora</span>
+          <strong className="tabular-nums text-milsaca-dourado-texto">
+            {BRL.format(totals.comissao)}
+          </strong>
+          <span aria-hidden className="text-neutral-400">=</span>
+          <span className="text-neutral-600">líquido seu</span>
+          <strong className="tabular-nums text-milsaca-cafezal">
+            {BRL.format(totals.bruto - totals.comissao)}
+          </strong>
+        </div>
+      ) : null}
 
       {rows.length === 0 ? (
         <Card tone="muted" className="border-dashed">
