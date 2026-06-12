@@ -106,6 +106,34 @@ Convenção: `bg-{token}-50` + `text-{token}-700` + `border-{token}-100` pra bad
 
 Fonte: **Inter** (via `next/font/google` no web, `@expo-google-fonts/inter` no mobile).
 
+### Tema claro/escuro (web, 2026-06-12)
+
+O usuário escolhe Claro | Escuro | Sistema (`ThemeToggle` em `@/components/theme-toggle.tsx`;
+persistência em `localStorage.mp_theme`; script anti-flash no layout raiz; default sem escolha = CLARO).
+O escuro funciona por um **shim em `globals.css`** (bloco `.dark` FORA de @layer) que remapeia as ~40
+utilities claras mais usadas (`bg-white`, `bg-milsaca-cream*`, `text-milsaca-cafezal/preto/verde`,
+`neutral/slate-*`, tints/bordas de estado, hovers).
+
+**Regras pra código novo:**
+- **NÃO usar `dark:bg-*`/`dark:text-*` em classe que o shim já mapeia** — o shim vence o empate de
+  especificidade e o `dark:` é ignorado silenciosamente.
+- Em tela/componente novo, **preferir os tokens semânticos** (`bg-background`, `bg-card`,
+  `text-foreground`, `border-border`) que trocam sozinhos via CSS vars.
+- Superfícies já escuras no claro (sidebar `bg-milsaca-cafezal`, heros) NÃO são remapeadas — seguem iguais.
+
+## Comunidade (rede social interna)
+
+Feed multi-formato (texto opcional + foto ≤5MB + vídeo ≤50MB + áudio gravado ≤2min/15MB), curtidas,
+comentários, seguir, perfil público com **apelido** (nome social — contratos seguem com `full_name`).
+- Rotas: wrappers finos em `/painel/{corretora,produtor}/comunidade{,/post/[id],/perfil/[id],/pessoas}`;
+  páginas reais em `@/components/social/pages/`; lógica em `@/lib/social/{queries,actions}.ts`.
+- Banco: tabelas `social_*` (RLS completa), view `social_perfis` (definer, só campos públicos),
+  bucket Storage `social` (público pra leitura; escrita só em `{user_id}/...`). Contadores e
+  notificações in-app (kind `social`, SEM WhatsApp de propósito) via triggers.
+- ⚠️ CSP: `<video>`/`<audio>` usam **media-src** (já liberado pro host do Supabase no next.config) —
+  img-src NÃO cobre mídia.
+- Posts não podem ser vazios (constraint `social_posts_conteudo`: texto OU mídia).
+
 ## Multi-tenant e segurança
 
 - **Toda tabela em `public` precisa ter RLS habilitado.** Sem exceção.

@@ -42,6 +42,8 @@ Conceitos de domínio que todo dev precisa conhecer:
 - **Cotações** — indicadores ao vivo: CEPEA (scraping), ICE NY Coffee C, PTAX (BCB), via edge function `sync-cotacoes` (cron). Corretora também cadastra cotação manual.
 - **Leads / WhatsApp** — pipeline de leads + tracking de clique no WhatsApp com mensagem enriquecida (funil clique→contrato).
 - **Página pública da corretora** (`/c/[slug]`) — vitrine com especialidades, regiões de atuação, números reais e avaliações (estrelas).
+- **Comunidade** — rede social interna nos dois painéis (`/painel/{produtor,corretora}/comunidade`): feed multi-formato (texto, foto, vídeo e **áudio gravado na hora** — pensado pro público rural com pouca leitura), curtidas, comentários, seguir, perfil público com **apelido** (nome social; contratos seguem com o nome registrado). Tabelas `social_*` com RLS, bucket Storage `social`, notificações in-app via trigger.
+- **Tema claro/escuro** — o usuário escolhe Claro | Escuro | Sistema (toggle nas sidebars / menu Mais / Perfil); regras do shim de dark mode no `CLAUDE.md`.
 - **EUDR / rastreabilidade** (futuro) — regulação UE com prazo dez/2026; exige polígono + DDS. PostGIS ainda não habilitado.
 
 ---

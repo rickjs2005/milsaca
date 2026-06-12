@@ -96,18 +96,20 @@ App do produtor: `(auth)` (entrar/cadastrar/esqueci) + `(painel)` (tabs + atalho
 
 ## 3. Modelo de dados
 
-38 tabelas em `public`, agrupadas por domínio. Toda tabela "de tenant" carrega `corretora_id`.
+46 tabelas em `public`, agrupadas por domínio. Toda tabela "de tenant" carrega `corretora_id`
+(exceto os domínios de plataforma e a Comunidade, que são da rede inteira).
 
 | Domínio | Tabelas |
 | --- | --- |
 | **Identidade & acesso** | `profiles`, `corretoras`, `app_admins`, `corretora_invites` |
-| **Produtores** | `produtores`, `produtor_contatos`, `produtor_pagamentos` |
+| **Produtores** | `produtores`, `produtor_contatos`, `produtor_pagamentos`, `metas_venda` |
 | **Pipeline comercial** | `leads`, `lead_events`, `lead_distribution_rules`, `lead_waitlist`, `propostas`, `whatsapp_leads` |
-| **Café & qualidade** | `lotes`, `classificacoes_cob`, `coffee_types` |
+| **Café & qualidade** | `lotes`, `classificacoes_cob`, `coffee_types`, `amostras` |
 | **Contratos & logística** | `contratos`, `entregas` |
 | **Compradores & ofertas** | `compradores`, `ofertas_comprador` |
-| **Cotações & mercado** | `cotacoes`, `market_quotes`, `quote_sources`, `pracas`, `price_alerts` |
+| **Cotações & mercado** | `cotacoes`, `market_quotes`, `market_quotes_history`, `quote_sources`, `pracas`, `price_alerts` |
 | **Reputação** | `corretora_avaliacoes`, `favoritos` |
+| **Comunidade (rede social)** | `social_posts`, `social_likes`, `social_comments`, `social_follows` (+ view `social_perfis`, bucket Storage `social`) |
 | **SaaS / plataforma** | `plans`, `subscriptions`, `platform_settings`, `corretora_waitlist` |
 | **Mensageria & notificações** | `notifications`, `notification_templates`, `message_dispatches` |
 | **Compliance & ops** | `audit_log`, `lgpd_consents`, `moderation_reports`, `rate_limits`, `system_events` |
