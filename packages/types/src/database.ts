@@ -3327,6 +3327,15 @@ export type Database = {
           success: boolean
         }[]
       }
+      corretora_sidebar_badges: {
+        Args: never
+        Returns: {
+          acoes_pendentes: number
+          em_negociacao: number
+          leads_novos: number
+          lotes_parados: number
+        }[]
+      }
       current_corretora: { Args: never; Returns: string }
       current_role: {
         Args: never

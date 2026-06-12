@@ -6,6 +6,7 @@ import { createClient } from "@milsaca/db/web/server";
 import { requireAppAdmin } from "@/lib/auth";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
+import { parseNumeroBR } from "@/lib/numero-br";
 import { friendlyPostgresError } from "../_lib/errors";
 import { flattenZodErrors, planSchema, uuidSchema } from "../_lib/schemas";
 
@@ -28,13 +29,10 @@ function parseFeatures(v: FormDataEntryValue | null): string[] {
 }
 
 function reaisToCents(v: FormDataEntryValue | null): number {
-  // aceita "123,45", "123.45", "12345"
-  const raw = String(v ?? "")
-    .replace(/[^0-9,.-]/g, "")
-    .replace(/\./g, "")
-    .replace(",", ".");
-  const n = Number(raw);
-  if (!Number.isFinite(n) || n < 0) return 0;
+  // aceita "123,45", "123.45", "12345" — limpa "R$" e afins antes do parse;
+  // inválido/negativo vira 0 (comportamento histórico).
+  const raw = String(v ?? "").replace(/[^0-9,.-]/g, "");
+  const n = parseNumeroBR(raw) ?? 0;
   return Math.round(n * 100);
 }
 

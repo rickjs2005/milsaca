@@ -8,6 +8,7 @@ import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
 import { uuidSchema } from "../_lib/schemas";
 import { ensureCorretora, requireActiveSubscription } from "../_lib/corretora";
+import { parseInteiroBR, parseNumeroBR } from "@/lib/numero-br";
 import type { OfertaStatus } from "./_lib/queries";
 
 const STATUS_VALIDOS: OfertaStatus[] = [
@@ -28,18 +29,11 @@ const OFERTA_TRANSICOES: Record<OfertaStatus, OfertaStatus[]> = {
 };
 
 function parseBRL(v: FormDataEntryValue | null): number | null {
-  if (v == null) return null;
-  const s = String(v).trim().replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
-  if (!s) return null;
-  const n = Number(s);
-  return Number.isFinite(n) ? n : null;
+  return parseNumeroBR(v, { permitirNegativo: true });
 }
 
 function parseInt0(v: FormDataEntryValue | null): number | null {
-  const s = String(v ?? "").trim();
-  if (!s) return null;
-  const n = parseInt(s, 10);
-  return Number.isFinite(n) && n >= 0 ? n : null;
+  return parseInteiroBR(v);
 }
 
 function safeBack(v: FormDataEntryValue | null): string {

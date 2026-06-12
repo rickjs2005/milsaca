@@ -7,6 +7,7 @@ import { createClient } from "@milsaca/db/web/server";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { getReqLogger } from "@/lib/req-logger";
 import { safeError } from "@/lib/logger";
+import { parseNumeroBR } from "@/lib/numero-br";
 import type { CoffeeProcesso, CoffeeSpecie } from "@milsaca/types";
 
 const SPECIES: readonly CoffeeSpecie[] = ["arabica", "conillon"];
@@ -28,11 +29,7 @@ const CURRENCIES = ["BRL", "USD"] as const;
 const STATUS = ["active", "stale", "error", "hidden"] as const;
 
 function parsePriceBRL(v: FormDataEntryValue | null): number | null {
-  if (v == null) return null;
-  const s = String(v).trim().replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
-  if (!s) return null;
-  const n = Number(s);
-  return Number.isFinite(n) && n > 0 ? n : null;
+  return parseNumeroBR(v, { exigirPositivo: true });
 }
 
 function revalidateAffected() {

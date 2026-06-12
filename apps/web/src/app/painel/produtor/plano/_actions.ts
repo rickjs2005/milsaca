@@ -8,6 +8,7 @@ import { getProdutorByProfileId } from "../_lib/produtor";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
+import { parseNumeroBR } from "@/lib/numero-br";
 
 const PLANO = "/painel/produtor/plano";
 const erro = (m: string): never =>
@@ -15,10 +16,7 @@ const erro = (m: string): never =>
 
 // "1.234,56" / "1234.56" → número > 0, ou null.
 function num(v: FormDataEntryValue | null): number | null {
-  if (v == null) return null;
-  const s = String(v).trim().replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
-  const n = Number(s);
-  return Number.isFinite(n) && n > 0 ? n : null;
+  return parseNumeroBR(v, { exigirPositivo: true });
 }
 
 export async function criarMeta(formData: FormData) {

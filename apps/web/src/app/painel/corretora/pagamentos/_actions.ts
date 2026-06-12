@@ -8,6 +8,7 @@ import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
 import { uuidSchema } from "../_lib/schemas";
 import { notify } from "@/lib/notify";
+import { parseNumeroBR } from "@/lib/numero-br";
 import {
   ensureCorretora,
   isCorretoraDono,
@@ -26,11 +27,7 @@ const SO_DONO = encodeURIComponent(
 );
 
 function parseBRL(v: FormDataEntryValue | null): number | null {
-  if (v == null) return null;
-  const s = String(v).trim().replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
-  if (!s) return null;
-  const n = Number(s);
-  return Number.isFinite(n) ? n : null;
+  return parseNumeroBR(v, { permitirNegativo: true });
 }
 
 function revalidateAffected() {

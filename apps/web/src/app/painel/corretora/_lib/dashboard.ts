@@ -11,6 +11,8 @@
 
 import { createClient } from "@milsaca/db/web/server";
 import type { LeadStatus } from "@milsaca/types";
+import { safeError } from "@/lib/logger";
+import { getReqLogger } from "@/lib/req-logger";
 import { ENTREGA_PENDENTE_STATUS } from "../entregas/_lib/entrega-meta";
 import { leadsComContraproposta } from "../leads/_lib/queries";
 
@@ -391,57 +393,29 @@ export async function loadSidebarBadges(
     return { leadsNovos: 0, emNegociacao: 0, lotesParados: 0, acoesPendentes: 0 };
   }
   const supabase = await createClient();
-  const sevenDaysAgo = new Date(Date.now() - 7 * DAY_MS).toISOString();
 
-  const [novos, emNeg, lotesParados, semAssinatura, pagAbertos, entregasConferir] =
-    await Promise.all([
-      supabase
-        .from("leads")
-        .select("*", { count: "exact", head: true })
-        .eq("corretora_id", corretoraId)
-        .eq("status", "novo"),
-      supabase
-        .from("leads")
-        .select("*", { count: "exact", head: true })
-        .eq("corretora_id", corretoraId)
-        .eq("status", "em_negociacao"),
-      supabase
-        .from("lotes")
-        .select("*", { count: "exact", head: true })
-        .eq("corretora_id", corretoraId)
-        .eq("status", "classificado")
-        .lt("updated_at", sevenDaysAgo),
-      supabase
-        .from("contratos")
-        .select("*", { count: "exact", head: true })
-        .eq("corretora_id", corretoraId)
-        .in("status", ["rascunho", "em_analise"]),
-      supabase
-        .from("produtor_pagamentos")
-        .select("*", { count: "exact", head: true })
-        .eq("corretora_id", corretoraId)
-        .in("status", ["vencido", "pendente"]),
-      supabase
-        .from("entregas")
-        .select("*", { count: "exact", head: true })
-        .eq("corretora_id", corretoraId)
-        .eq("status", "recebida"),
-    ]);
+  // 1 RPC no lugar de 6 counts (P1 da auditoria: isto roda no LAYOUT, em toda
+  // navegação do painel — era o multiplicador de queries mais caro do app).
+  // A função é scoped por current_corretora() no banco; acoesPendentes espelha
+  // o backlog da Central de tarefas (responder + assinar + cobrar + conferir).
+  const { data, error } = await supabase
+    .rpc("corretora_sidebar_badges")
+    .maybeSingle();
 
-  const leadsNovos = novos.count ?? 0;
-  const emNegociacao = emNeg.count ?? 0;
+  if (error || !data) {
+    if (error) {
+      (await getReqLogger()).warn("sidebar_badges_rpc_falhou", {
+        err: safeError(error),
+      });
+    }
+    return { leadsNovos: 0, emNegociacao: 0, lotesParados: 0, acoesPendentes: 0 };
+  }
+
   return {
-    leadsNovos,
-    emNegociacao,
-    lotesParados: lotesParados.count ?? 0,
-    // Backlog completo da Central de tarefas (espelha loadTarefas): responder
-    // (novo+em_negociação) + assinar + cobrar (vencido+pendente) + conferir.
-    acoesPendentes:
-      leadsNovos +
-      emNegociacao +
-      (semAssinatura.count ?? 0) +
-      (pagAbertos.count ?? 0) +
-      (entregasConferir.count ?? 0),
+    leadsNovos: data.leads_novos ?? 0,
+    emNegociacao: data.em_negociacao ?? 0,
+    lotesParados: data.lotes_parados ?? 0,
+    acoesPendentes: data.acoes_pendentes ?? 0,
   };
 }
 

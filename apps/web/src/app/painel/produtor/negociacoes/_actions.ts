@@ -6,20 +6,15 @@ import { createClient } from "@milsaca/db/web/server";
 import { requireUser } from "@/lib/auth";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
+import { limparNumeroBR } from "@/lib/numero-br";
 
 /**
  * Lê um valor monetário no formato pt-BR ("1.450,00") vindo de um input
- * `type="text" inputMode="decimal"`: tira espaços, remove os pontos de
- * milhar e troca a vírgula decimal por ponto. Espelha o `parseNumber` das
- * actions da corretora (não há helper compartilhado; cada action tem o seu).
+ * `type="text" inputMode="decimal"`. Diferente das demais actions, retorna
+ * `number` cru (pode ser NaN/0) — a validação é feita no call-site.
  */
 function parsePrecoBR(v: FormDataEntryValue | null): number {
-  const s = String(v ?? "")
-    .trim()
-    .replace(/\s/g, "")
-    .replace(/\./g, "")
-    .replace(",", ".");
-  return Number(s);
+  return Number(limparNumeroBR(String(v ?? "")));
 }
 
 /**

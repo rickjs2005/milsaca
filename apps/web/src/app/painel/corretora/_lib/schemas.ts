@@ -6,6 +6,7 @@ import {
   phoneBROptionalSchema,
   ufOptionalSchema,
 } from "@/lib/brasil-schemas";
+import { limparNumeroBR } from "@/lib/numero-br";
 
 /**
  * Schemas Zod das server actions do painel da corretora.
@@ -35,18 +36,15 @@ const requiredText = (label: string, max = 200) =>
     .min(1, { message: `${label} obrigatório.` })
     .max(max, { message: `${label} muito longo.` });
 
-// Decimal vindo do form pode chegar "1.234,56" ou "1234.56" — normaliza
+// Decimal vindo do form pode chegar "1.234,56" ou "1234.56" — normaliza.
+// Mantém Number() direto (sem o guard de string vazia do parseNumeroBR):
+// whitespace-only vira 0 aqui, comportamento histórico deste schema.
 const decimal = z
   .union([z.string(), z.number()])
   .optional()
   .transform((v) => {
     if (v == null || v === "") return null;
-    const s = String(v)
-      .trim()
-      .replace(/\s/g, "")
-      .replace(/\./g, "")
-      .replace(",", ".");
-    const n = Number(s);
+    const n = Number(limparNumeroBR(String(v)));
     return Number.isFinite(n) && n >= 0 ? n : null;
   });
 

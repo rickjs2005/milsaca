@@ -12,6 +12,7 @@ import {
   phoneBROptionalSchema,
   ufOptionalSchema,
 } from "@/lib/brasil-schemas";
+import { parseInteiroBR, parseNumeroBR } from "@/lib/numero-br";
 import type {
   CanalPreferido,
   ProdutorSpecie,
@@ -47,19 +48,11 @@ function parseBrField<T>(
 }
 
 function parseDecimal(v: FormDataEntryValue | null): number | null {
-  if (v == null) return null;
-  const s = String(v).trim().replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
-  if (!s) return null;
-  const n = Number(s);
-  return Number.isFinite(n) && n >= 0 ? n : null;
+  return parseNumeroBR(v);
 }
 
 function parseInteger(v: FormDataEntryValue | null): number | null {
-  if (v == null) return null;
-  const s = String(v).trim();
-  if (!s) return null;
-  const n = parseInt(s, 10);
-  return Number.isFinite(n) && n >= 0 ? n : null;
+  return parseInteiroBR(v);
 }
 
 function parseSpecie(v: FormDataEntryValue | null): ProdutorSpecie | null {

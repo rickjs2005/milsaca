@@ -8,6 +8,7 @@ import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
 import { uuidSchema } from "../_lib/schemas";
 import { ensureCorretora, requireActiveSubscription } from "../_lib/corretora";
+import { parseNumeroBR } from "@/lib/numero-br";
 import type { CoffeeProcesso, CoffeeSpecie } from "@milsaca/types";
 
 const SPECIES: readonly CoffeeSpecie[] = ["arabica", "conillon"];
@@ -25,12 +26,7 @@ const COFFEE_TYPE_LABEL: Record<CoffeeSpecie, string> = {
 };
 
 function parsePriceBRL(v: FormDataEntryValue | null): number | null {
-  if (v == null) return null;
-  // aceita "1.234,56" (BR), "1234.56" (US), "1234,56" simples
-  const s = String(v).trim().replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
-  if (!s) return null;
-  const n = Number(s);
-  return Number.isFinite(n) && n > 0 ? n : null;
+  return parseNumeroBR(v, { exigirPositivo: true });
 }
 
 function revalidateAffected() {

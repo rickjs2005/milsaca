@@ -9,6 +9,7 @@ import { friendlyPostgresError } from "@/lib/postgres-error";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
 import { notify } from "@/lib/notify";
+import { parseInteiroBR, parseNumeroBR } from "@/lib/numero-br";
 import { ensureCorretora, requireActiveSubscription } from "../_lib/corretora";
 import {
   PROPOSTA_STATUS_ORDER,
@@ -22,23 +23,11 @@ function clean(v: FormDataEntryValue | null): string | null {
 }
 
 function parseNumber(v: FormDataEntryValue | null): number | null {
-  if (v == null) return null;
-  const s = String(v)
-    .trim()
-    .replace(/\s/g, "")
-    .replace(/\./g, "")
-    .replace(",", ".");
-  if (!s) return null;
-  const n = Number(s);
-  return Number.isFinite(n) && n >= 0 ? n : null;
+  return parseNumeroBR(v);
 }
 
 function parseInteger(v: FormDataEntryValue | null): number | null {
-  if (v == null) return null;
-  const s = String(v).trim();
-  if (!s) return null;
-  const n = parseInt(s, 10);
-  return Number.isFinite(n) && n >= 0 ? n : null;
+  return parseInteiroBR(v);
 }
 
 function parseDateTime(v: FormDataEntryValue | null): string | null {

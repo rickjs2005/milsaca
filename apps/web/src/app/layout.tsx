@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -36,15 +37,20 @@ export const viewport: Viewport = {
  */
 const THEME_INIT = `(function(){try{var t=localStorage.getItem("mp_theme");var d=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(d)document.documentElement.classList.add("dark");}catch(e){}})();`;
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Nonce de CSP gerado pelo middleware (script-src sem 'unsafe-inline' em
+  // prod). Ler headers() torna o app dinâmico — custo aceito, o painel já
+  // era todo dinâmico e as públicas têm unstable_cache nos dados.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
       </head>
       {/* bg/text semânticos (idênticos a cream/verde no claro) pro tema trocar junto */}
       <body className="min-h-screen bg-background font-sans text-foreground">

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import { defaultRouteFor, isAppAdmin } from "@/lib/auth";
 import { checkRateLimit, identityKey } from "@/lib/rate-limit";
+import { safeInternalPath } from "@/lib/safe-url";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
 import type { Profile } from "@milsaca/types";
@@ -16,7 +17,8 @@ import type { Profile } from "@milsaca/types";
 export async function signIn(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
-  const redirectTo = String(formData.get("redirectTo") ?? "/painel");
+  // allowlist: só caminho interno (open redirect — auditoria 2026-06-12)
+  const redirectTo = safeInternalPath(formData.get("redirectTo") as string);
 
   if (!email || !password) {
     redirect("/entrar?error=Email%20e%20senha%20obrigat%C3%B3rios");
@@ -40,9 +42,11 @@ export async function signIn(formData: FormData) {
   if (error) {
     const log = await getReqLogger({ action: "signIn" });
     log.warn("signin_credencial_falhou", { err: safeError(error) });
+    // Mensagem GENÉRICA fixa: ecoar error.message do GoTrue ("Email not
+    // confirmed" etc.) era oráculo de enumeração de contas (auditoria).
     const params = new URLSearchParams({
       email,
-      error: error.message,
+      error: "Email ou senha inválidos.",
     });
     if (redirectTo !== "/painel") params.set("redirectTo", redirectTo);
     redirect(`/entrar?${params.toString()}`);
@@ -103,10 +107,19 @@ export async function verifyMfa(formData: FormData) {
   const code = String(formData.get("code") ?? "")
     .replace(/\D/g, "")
     .slice(0, 6);
-  const redirectTo = String(formData.get("redirectTo") ?? "/painel");
+  const redirectTo = safeInternalPath(formData.get("redirectTo") as string);
 
   if (!factorId || code.length !== 6) {
     redirect("/entrar/mfa?error=C%C3%B3digo%20inv%C3%A1lido");
+  }
+
+  // Rate limit por fator: TOTP tem só 1M combinações — sem trava de app,
+  // brute force fica viável (auditoria 2026-06-12; espelha o signin).
+  const rlMfa = await checkRateLimit(identityKey("verify-mfa", factorId), 5, 300);
+  if (!rlMfa.allowed) {
+    redirect(
+      `/entrar/mfa?error=${encodeURIComponent(`Muitas tentativas. Tente de novo em ${rlMfa.retryAfterSeconds}s.`)}`,
+    );
   }
 
   const supabase = await createClient();

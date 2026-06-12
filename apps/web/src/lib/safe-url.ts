@@ -6,6 +6,22 @@
  * vira XSS armazenado. Regra: só http/https; sem scheme, assume https://;
  * qualquer outra coisa vira null.
  */
+/**
+ * Allowlist de redirect interno (auditoria 2026-06-12: `redirectTo` cru em
+ * `redirect()` permitia open redirect pra fora no ramo de conta sem papel).
+ * Só aceita caminho local: começa com "/" e não com "//" nem "/\".
+ */
+export function safeInternalPath(
+  value: string | null | undefined,
+  fallback = "/painel",
+): string {
+  const s = (value ?? "").trim();
+  if (!s.startsWith("/") || s.startsWith("//") || s.startsWith("/\\")) {
+    return fallback;
+  }
+  return s;
+}
+
 export function sanitizeHttpUrl(
   value: string | null | undefined,
 ): string | null {

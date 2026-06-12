@@ -7,6 +7,7 @@ import { createClient } from "@milsaca/db/web/server";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
+import { parseNumeroBR } from "@/lib/numero-br";
 
 const CONDITIONS = [
   "acima_de",
@@ -18,15 +19,7 @@ type Condition = (typeof CONDITIONS)[number];
 const CHANNELS = ["app", "whatsapp", "email"] as const;
 
 function parsePriceBRL(v: FormDataEntryValue | null): number | null {
-  if (v == null) return null;
-  const s = String(v)
-    .trim()
-    .replace(/\s/g, "")
-    .replace(/\./g, "")
-    .replace(",", ".");
-  if (!s) return null;
-  const n = Number(s);
-  return Number.isFinite(n) && n > 0 ? n : null;
+  return parseNumeroBR(v, { exigirPositivo: true });
 }
 
 /** Percentual ("5" ou "5,5") → número > 0, ou null. */

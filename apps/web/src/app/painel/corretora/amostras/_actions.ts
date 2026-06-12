@@ -8,6 +8,7 @@ import { friendlyPostgresError } from "@/lib/postgres-error";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
 import { notify } from "@/lib/notify";
+import { limparNumeroBR } from "@/lib/numero-br";
 import { getCorretoraName, ensureCorretora } from "../_lib/corretora";
 import { formDataToObject, flattenZodErrors, uuidSchema } from "../_lib/schemas";
 
@@ -38,12 +39,7 @@ const precoSchema = z
   .union([z.string(), z.number()])
   .transform((v) => {
     if (v == null || v === "") return null;
-    const s = String(v)
-      .trim()
-      .replace(/\s/g, "")
-      .replace(/\./g, "")
-      .replace(",", ".");
-    const n = Number(s);
+    const n = Number(limparNumeroBR(String(v)));
     return Number.isFinite(n) && n >= 0 ? n : null;
   });
 

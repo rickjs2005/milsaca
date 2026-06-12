@@ -10,12 +10,15 @@
   },
   "scripts": {
     "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "clean": "rimraf dist .turbo"
   },
   "devDependencies": {
     "@milsaca/eslint-config": "workspace:*",
     "@milsaca/typescript-config": "workspace:*",
     "rimraf": "^6.0.1",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.6"
   }
 }
