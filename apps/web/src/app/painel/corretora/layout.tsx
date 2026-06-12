@@ -42,35 +42,33 @@ export default async function PainelCorretoraLayout({
     redirect("/painel");
   }
 
-  const corretora = await loadCorretora(profile?.corretora_id ?? null);
   const showSwitcher = (profile?.roles.length ?? 0) > 1;
+
+  // UMA onda paralela em vez de 4 awaits em fila: cada await sequencial é
+  // uma ida de ~170ms até o Supabase (us-west) — a fila respondia por boa
+  // parte do TTFB de ~1,5s do painel (medição 2026-06-12).
+  const cid = profile?.corretora_id ?? null;
+  const [corretora, onboarding, subscription, badges, support] =
+    await Promise.all([
+      loadCorretora(cid),
+      cid ? getCorretoraOnboarding(cid) : Promise.resolve(null),
+      cid ? getCorretoraSubscriptionInfo(cid) : Promise.resolve(null),
+      cid ? loadSidebarBadges(cid) : Promise.resolve(undefined),
+      getSupportChannels(),
+    ]);
 
   // Gate de onboarding — sem CNPJ/cidade/WhatsApp + nome do operador,
   // redireciona pra rota top-level /onboarding/corretora (fora deste
   // layout, sem risco de loop).
-  if (profile?.corretora_id) {
-    const onboarding = await getCorretoraOnboarding(profile.corretora_id);
-    if (needsCorretoraOnboarding(profile, onboarding)) {
-      redirect("/onboarding/corretora");
-    }
+  if (profile?.corretora_id && needsCorretoraOnboarding(profile, onboarding)) {
+    redirect("/onboarding/corretora");
   }
-
-  const [subscription, badges] = await Promise.all([
-    profile?.corretora_id
-      ? getCorretoraSubscriptionInfo(profile.corretora_id)
-      : Promise.resolve(null),
-    profile?.corretora_id
-      ? loadSidebarBadges(profile.corretora_id)
-      : Promise.resolve(undefined),
-  ]);
 
   const corretoraLabel = corretora
     ? [corretora.name, [corretora.city, corretora.state].filter(Boolean).join("/")]
         .filter(Boolean)
         .join(" · ")
     : null;
-
-  const support = await getSupportChannels();
 
   return (
     <>

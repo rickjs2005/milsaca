@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import type { Profile, UserRole } from "@milsaca/types";
@@ -6,14 +7,19 @@ const ACTIVE_ROLE_COOKIE = "mp_active_role";
 
 /**
  * User autenticado (server-side). Use SEMPRE getUser() — nunca getSession().
+ *
+ * React.cache(): supabase.auth.getUser() é uma ida de rede ao GoTrue
+ * (~170ms até us-west-1). Layout + página + loaders chamavam isto várias
+ * vezes POR REQUEST — a memoização por request corta essas idas duplicadas
+ * (medição 2026-06-12: era a maior fatia do TTFB de ~1,5s do painel).
  */
-export async function getUser() {
+export const getUser = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   return user;
-}
+});
 
 /**
  * Redireciona para /entrar se não houver sessão.
@@ -27,9 +33,10 @@ export async function requireUser(redirectTo = "/painel") {
 }
 
 /**
- * Lê o profile do user autenticado.
+ * Lê o profile do user autenticado. Memoizado por request (React.cache) —
+ * mesma razão do getUser(): era re-buscado por layout, página e loaders.
  */
-export async function getProfile(): Promise<Profile | null> {
+export const getProfile = cache(async (): Promise<Profile | null> => {
   const user = await getUser();
   if (!user) return null;
 
@@ -44,7 +51,7 @@ export async function getProfile(): Promise<Profile | null> {
     .maybeSingle<Profile>();
 
   return data ?? null;
-}
+});
 
 /**
  * Manda quem não tem `profile.status='ativo'` para a tela correspondente,
@@ -89,13 +96,13 @@ export async function requireRole(...allowed: UserRole[]) {
  * nada a ver com profile.role ou profile.roles. Quem entra em app_admins
  * é provisionado manualmente.
  */
-export async function isAppAdmin(): Promise<boolean> {
+export const isAppAdmin = cache(async (): Promise<boolean> => {
   const user = await getUser();
   if (!user) return false;
   const supabase = await createClient();
   const { data } = await supabase.rpc("is_app_admin");
   return data === true;
-}
+});
 
 export async function requireAppAdmin() {
   const user = await getUser();

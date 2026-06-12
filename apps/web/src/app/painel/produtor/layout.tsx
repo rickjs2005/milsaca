@@ -26,18 +26,18 @@ export default async function PainelProdutorLayout({
 
   const showSwitcher = (profile?.roles.length ?? 0) > 1;
 
+  // Paralelo (cada await sequencial = ~170ms até us-west; medição 2026-06-12).
+  const [produtor, support] = await Promise.all([
+    profile ? getProdutorByProfileId(profile.id) : Promise.resolve(null),
+    getSupportChannels(),
+  ]);
+
   // Gate de onboarding — sem dados mínimos, manda pra rota externa
   // /onboarding/produtor (fora deste layout, sem risco de loop).
-  let fazendaNome: string | null = null;
-  if (profile) {
-    const produtor = await getProdutorByProfileId(profile.id);
-    if (needsOnboarding(profile, produtor)) {
-      redirect("/onboarding/produtor");
-    }
-    fazendaNome = produtor?.fazenda_nome ?? null;
+  if (profile && needsOnboarding(profile, produtor)) {
+    redirect("/onboarding/produtor");
   }
-
-  const support = await getSupportChannels();
+  const fazendaNome = produtor?.fazenda_nome ?? null;
 
   return (
     <>

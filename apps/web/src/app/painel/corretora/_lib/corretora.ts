@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
 import type { Profile } from "@milsaca/types";
@@ -100,9 +101,11 @@ export async function requireActiveSubscription(
   redirect(`${redirectTo}?error=${encodeURIComponent(msg)}`);
 }
 
-export async function getCorretoraSubscriptionInfo(
+// React.cache: o gate de assinatura roda em layout + página + actions no mesmo
+// request — memoiza a ida ao banco (medição de TTFB 2026-06-12).
+export const getCorretoraSubscriptionInfo = cache(async (
   corretoraId: string,
-): Promise<SubscriptionInfo> {
+): Promise<SubscriptionInfo> => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("subscriptions")
@@ -167,7 +170,7 @@ export async function getCorretoraSubscriptionInfo(
     daysUntilExpiry,
     planName,
   };
-}
+});
 
 /**
  * Nome de exibição da corretora (header de listas, templates de WhatsApp).
@@ -178,7 +181,7 @@ export async function getCorretoraSubscriptionInfo(
  * antes recebiam `string | null` (assinatura) passam a receber `"Milsaca"`
  * nesse caso — alinhado ao novo contrato.
  */
-export async function getCorretoraName(corretoraId: string): Promise<string> {
+export const getCorretoraName = cache(async (corretoraId: string): Promise<string> => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("corretoras")
@@ -186,7 +189,7 @@ export async function getCorretoraName(corretoraId: string): Promise<string> {
     .eq("id", corretoraId)
     .maybeSingle<{ name: string | null }>();
   return data?.name ?? "Milsaca";
-}
+});
 
 export type CorretoraOnboarding = {
   id: string;

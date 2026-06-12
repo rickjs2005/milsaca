@@ -1,6 +1,7 @@
 // Library compartilhada dos painéis do produtor.
 // Centraliza queries de leitura da própria fazenda + helpers de status.
 
+import { cache } from "react";
 import { createClient } from "@milsaca/db/web/server";
 import type { Database } from "@milsaca/types/database";
 
@@ -77,9 +78,10 @@ function toRow(r: Raw): ProdutorRow {
   };
 }
 
-export async function getProdutorByProfileId(
+// React.cache: layout + página re-buscavam o produtor no mesmo request.
+export const getProdutorByProfileId = cache(async (
   profileId: string,
-): Promise<ProdutorRow | null> {
+): Promise<ProdutorRow | null> => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("produtores")
@@ -93,7 +95,7 @@ export async function getProdutorByProfileId(
     .maybeSingle();
   if (!data) return null;
   return toRow(data as Raw);
-}
+});
 
 /**
  * Determina se o produtor passou pelo onboarding mínimo.
