@@ -6,6 +6,7 @@ import {
   Coffee,
   Home,
   Handshake,
+  MessagesSquare,
   User,
   LogOut,
   Repeat,
@@ -33,6 +34,11 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/painel/produtor/negociacoes", label: "Propostas", icon: Handshake },
   { href: "/painel/produtor/vendas", label: "Vendas", icon: Receipt },
   { href: "/painel/produtor/financeiro", label: "Financeiro", icon: Wallet },
+  {
+    href: "/painel/produtor/comunidade",
+    label: "Comunidade",
+    icon: MessagesSquare,
+  },
   { href: "/painel/produtor/perfil", label: "Perfil", icon: User },
 ];
 

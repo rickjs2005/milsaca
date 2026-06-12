@@ -7,6 +7,7 @@ import {
   Package,
   Handshake,
   Wallet,
+  MessagesSquare,
   User,
   type LucideIcon,
 } from "lucide-react";
@@ -14,12 +15,17 @@ import { cn } from "@/lib/utils";
 
 type Item = { href: string; label: string; icon: LucideIcon; exact?: boolean };
 
-// Mesmos 5 destinos da sidebar — navegação primária no celular (estilo app).
+// Principais destinos da sidebar — navegação primária no celular (estilo app).
 const ITEMS: Item[] = [
   { href: "/painel/produtor", label: "Início", icon: Home, exact: true },
   { href: "/painel/produtor/laudos", label: "Meu Café", icon: Package },
   { href: "/painel/produtor/negociacoes", label: "Propostas", icon: Handshake },
   { href: "/painel/produtor/financeiro", label: "Financeiro", icon: Wallet },
+  {
+    href: "/painel/produtor/comunidade",
+    label: "Comunidade",
+    icon: MessagesSquare,
+  },
   { href: "/painel/produtor/perfil", label: "Perfil", icon: User },
 ];
 
@@ -54,7 +60,7 @@ export function ProdutorBottomNav() {
                 active ? "text-milsaca-dourado" : "text-neutral-500",
               )}
             />
-            {item.label}
+            <span className="max-w-full truncate px-0.5">{item.label}</span>
           </Link>
         );
       })}

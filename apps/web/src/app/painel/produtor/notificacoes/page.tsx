@@ -15,6 +15,7 @@ const KIND_LABEL: Record<string, string> = {
   pagamento: "Pagamento",
   cotacao: "Cotação",
   price_alert: "Alerta de preço",
+  social: "Comunidade",
   sistema: "Sistema",
 };
 
@@ -26,6 +27,7 @@ const KIND_TONE: Record<string, StatusTone> = {
   pagamento: "premium",
   cotacao: "premium",
   price_alert: "info",
+  social: "premium",
   sistema: "neutral",
 };
 
@@ -69,6 +71,22 @@ function actionFor(
     case "cotacao":
     case "price_alert":
       return { href: "/painel/produtor/cotacoes", label: "Ver cotações" };
+    case "social": {
+      const postId = id("post_id");
+      if (postId) {
+        return {
+          href: `/painel/produtor/comunidade/post/${postId}`,
+          label: "Ver publicação",
+        };
+      }
+      const perfilId = id("perfil_id");
+      return perfilId
+        ? {
+            href: `/painel/produtor/comunidade/perfil/${perfilId}`,
+            label: "Ver perfil",
+          }
+        : { href: "/painel/produtor/comunidade", label: "Ver Comunidade" };
+    }
     default:
       return null;
   }

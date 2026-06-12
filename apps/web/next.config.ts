@@ -68,9 +68,25 @@ function buildCspHeader(isDev: boolean): string {
     .join("; ");
 }
 
+// Host do Supabase pra next/image otimizar imagens do Storage (fotos da
+// Comunidade, logos). Derivado do env pra não acoplar ao ref do projeto.
+const supabaseImageHost =
+  process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/^https?:\/\//, "") ?? "";
+
 const config: NextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
+  images: {
+    remotePatterns: supabaseImageHost
+      ? [
+          {
+            protocol: "https",
+            hostname: supabaseImageHost,
+            pathname: "/storage/v1/object/public/**",
+          },
+        ]
+      : [],
+  },
   transpilePackages: [
     "@milsaca/ui",
     "@milsaca/db",

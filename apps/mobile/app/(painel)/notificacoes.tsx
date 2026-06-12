@@ -22,6 +22,7 @@ const KIND_LABEL: Record<string, string> = {
   pagamento: "Pagamento",
   cotacao: "Cotação",
   price_alert: "Alerta de preço",
+  social: "Comunidade",
   sistema: "Sistema",
 };
 
@@ -32,6 +33,7 @@ const KIND_BG: Record<string, string> = {
   pagamento: "rgba(196,181,253,0.25)",
   cotacao: "rgba(224,198,138,0.25)",
   price_alert: "rgba(125,211,252,0.25)",
+  social: "rgba(224,198,138,0.25)",
   sistema: "rgba(203,213,225,0.25)",
 };
 
@@ -42,6 +44,7 @@ const KIND_FG: Record<string, string> = {
   pagamento: "#c4b5fd",
   cotacao: "#C9A961",
   price_alert: "#7dd3fc",
+  social: "#C9A961",
   sistema: "#cbd5e1",
 };
 

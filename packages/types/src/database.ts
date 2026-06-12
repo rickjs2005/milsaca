@@ -108,6 +108,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "amostras_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
+            referencedColumns: ["id"]
+          },
         ]
       }
       app_admins: {
@@ -165,6 +172,13 @@ export type Database = {
             columns: ["actor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
             referencedColumns: ["id"]
           },
           {
@@ -280,6 +294,13 @@ export type Database = {
             columns: ["classificador_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classificacoes_cob_classificador_id_fkey"
+            columns: ["classificador_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
             referencedColumns: ["id"]
           },
           {
@@ -543,6 +564,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "contratos_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
+            referencedColumns: ["id"]
+          },
         ]
       }
       corretora_avaliacoes: {
@@ -593,6 +621,13 @@ export type Database = {
             columns: ["produtor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corretora_avaliacoes_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
             referencedColumns: ["id"]
           },
         ]
@@ -648,6 +683,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corretora_invites_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
             referencedColumns: ["id"]
           },
         ]
@@ -980,6 +1022,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "entregas_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
+            referencedColumns: ["id"]
+          },
         ]
       }
       favoritos: {
@@ -1021,6 +1070,13 @@ export type Database = {
             columns: ["produtor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favoritos_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
             referencedColumns: ["id"]
           },
         ]
@@ -1098,6 +1154,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lead_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "lead_events_corretora_id_fkey"
             columns: ["corretora_id"]
             isOneToOne: false
@@ -1169,6 +1232,13 @@ export type Database = {
             columns: ["handled_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_waitlist_handled_by_fkey"
+            columns: ["handled_by"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
             referencedColumns: ["id"]
           },
         ]
@@ -1245,6 +1315,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "leads_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
+            referencedColumns: ["id"]
+          },
         ]
       }
       lgpd_consents: {
@@ -1290,6 +1367,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lgpd_consents_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
             referencedColumns: ["id"]
           },
         ]
@@ -1381,6 +1465,13 @@ export type Database = {
             columns: ["produtor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lotes_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
             referencedColumns: ["id"]
           },
         ]
@@ -1526,6 +1617,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "message_dispatches_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "message_dispatches_template_id_fkey"
             columns: ["template_id"]
             isOneToOne: false
@@ -1583,6 +1681,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "metas_venda_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
+            referencedColumns: ["id"]
+          },
         ]
       }
       moderation_reports: {
@@ -1637,10 +1742,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "moderation_reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "moderation_reports_resolved_by_fkey"
             columns: ["resolved_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_reports_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
             referencedColumns: ["id"]
           },
         ]
@@ -1723,6 +1842,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
+            referencedColumns: ["id"]
+          },
         ]
       }
       ofertas_comprador: {
@@ -1795,6 +1921,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ofertas_comprador_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
             referencedColumns: ["id"]
           },
           {
@@ -1880,6 +2013,13 @@ export type Database = {
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
             referencedColumns: ["id"]
           },
         ]
@@ -1985,6 +2125,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "price_alerts_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "price_alerts_region_id_fkey"
             columns: ["region_id"]
             isOneToOne: false
@@ -2054,6 +2201,13 @@ export type Database = {
             columns: ["claimed_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produtor_contatos_claimed_profile_id_fkey"
+            columns: ["claimed_profile_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
             referencedColumns: ["id"]
           },
           {
@@ -2167,6 +2321,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "produtor_pagamentos_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
+            referencedColumns: ["id"]
+          },
         ]
       }
       produtores: {
@@ -2267,6 +2428,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produtores_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "social_perfis"
             referencedColumns: ["id"]
           },
         ]
@@ -2409,6 +2577,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "propostas_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "propostas_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
@@ -2496,6 +2671,187 @@ export type Database = {
           window_start?: string
         }
         Relationships: []
+      }
+      social_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          post_id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          post_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_follows: {
+        Row: {
+          created_at: string
+          followed_id: string
+          follower_id: string
+        }
+        Insert: {
+          created_at?: string
+          followed_id: string
+          follower_id: string
+        }
+        Update: {
+          created_at?: string
+          followed_id?: string
+          follower_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_follows_followed_id_fkey"
+            columns: ["followed_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_follows_followed_id_fkey"
+            columns: ["followed_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_likes: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_posts: {
+        Row: {
+          author_id: string
+          body: string
+          comments_count: number
+          created_at: string
+          id: string
+          image_path: string | null
+          likes_count: number
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          comments_count?: number
+          created_at?: string
+          id?: string
+          image_path?: string | null
+          likes_count?: number
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          comments_count?: number
+          created_at?: string
+          id?: string
+          image_path?: string | null
+          likes_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscriptions: {
         Row: {
@@ -2656,6 +3012,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "whatsapp_leads_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -2693,6 +3056,13 @@ export type Database = {
             columns: ["produtor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contratos_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
             referencedColumns: ["id"]
           },
         ]
@@ -2826,6 +3196,40 @@ export type Database = {
             columns: ["produtor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lotes_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "social_perfis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_perfis: {
+        Row: {
+          avatar_url: string | null
+          corretora_id: string | null
+          corretora_nome: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string | null
+          roles: Database["public"]["Enums"]["user_role"][] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras_publicas"
             referencedColumns: ["id"]
           },
         ]
@@ -3039,6 +3443,7 @@ export type Database = {
         Args: { p_token: string }
         Returns: undefined
       }
+      social_pode_publicar: { Args: never; Returns: boolean }
       subscription_effective_status: {
         Args: { sub: Database["public"]["Tables"]["subscriptions"]["Row"] }
         Returns: Database["public"]["Enums"]["subscription_status"]
@@ -3147,6 +3552,7 @@ export type Database = {
         | "entrega"
         | "pagamento"
         | "price_alert"
+        | "social"
       oferta_status: "rascunho" | "enviada" | "aceita" | "recusada" | "expirada"
       pagamento_status: "pendente" | "pago" | "vencido" | "cancelado"
       produtor_specie: "arabica" | "conilon" | "ambos"
@@ -3378,6 +3784,7 @@ export const Constants = {
         "entrega",
         "pagamento",
         "price_alert",
+        "social",
       ],
       oferta_status: ["rascunho", "enviada", "aceita", "recusada", "expirada"],
       pagamento_status: ["pendente", "pago", "vencido", "cancelado"],
