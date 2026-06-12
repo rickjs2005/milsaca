@@ -13,6 +13,7 @@ import {
   isSeguindo,
   listFeed,
 } from "@/lib/social/queries";
+import { ApelidoForm } from "../apelido-form";
 import { FollowButton } from "../follow-button";
 import { PostCard } from "../post-card";
 import { SocialAvatar } from "../avatar";
@@ -71,6 +72,11 @@ export async function ComunidadePerfilPage({
                 <p className="mt-1 text-caption text-neutral-500">
                   Na Milsaca desde {fmtDate(perfil.desde)}
                 </p>
+              ) : null}
+              {souEu ? (
+                <div className="mt-2">
+                  <ApelidoForm apelido={perfil.apelido} />
+                </div>
               ) : null}
             </div>
             {!souEu ? (

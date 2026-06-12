@@ -91,6 +91,17 @@ export function PostCard({
           </div>
         ) : null}
 
+        {post.videoUrl ? (
+          // eslint-disable-next-line jsx-a11y/media-has-caption -- vídeo do usuário, sem legenda disponível
+          <video
+            src={post.videoUrl}
+            controls
+            playsInline
+            preload="metadata"
+            className="max-h-[520px] w-full rounded-md bg-black"
+          />
+        ) : null}
+
         {/* Rodapé de interação — LikeButton é a ilha client. */}
         <div className="flex items-center gap-1 border-t border-neutral-100 pt-2">
           <LikeButton

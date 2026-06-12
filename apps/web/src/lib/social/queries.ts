@@ -25,7 +25,10 @@ type PerfilRow = Database["public"]["Views"]["social_perfis"]["Row"];
 
 export type SocialPerfil = {
   id: string;
+  /** Nome de exibição na Comunidade: apelido quando houver, senão o nome. */
   nome: string;
+  /** Apelido cru (null = sem apelido) — pro form de edição. */
+  apelido: string | null;
   avatarUrl: string | null;
   /** Rótulo do papel pra UI ("Produtor", "Corretora", "Produtor · Corretora"). */
   papel: string;
@@ -39,6 +42,8 @@ export type SocialPost = {
   body: string;
   imageUrl: string | null;
   imagePath: string | null;
+  videoUrl: string | null;
+  videoPath: string | null;
   likesCount: number;
   commentsCount: number;
   likedByMe: boolean;
@@ -60,6 +65,7 @@ export type FeedTab = "todos" | "seguindo";
 
 const PERFIL_DESCONHECIDO: Omit<SocialPerfil, "id"> = {
   nome: "Usuário",
+  apelido: null,
   avatarUrl: null,
   papel: "",
   corretoraNome: null,
@@ -76,9 +82,11 @@ function papelLabel(roles: PerfilRow["roles"]): string {
 }
 
 function perfilFromRow(row: PerfilRow): SocialPerfil {
+  const apelido = row.apelido?.trim() || null;
   return {
     id: row.id ?? "",
-    nome: row.full_name?.trim() || "Usuário",
+    nome: apelido || row.full_name?.trim() || "Usuário",
+    apelido,
     avatarUrl: row.avatar_url,
     papel: papelLabel(row.roles),
     corretoraNome: row.corretora_nome,
@@ -113,7 +121,7 @@ async function fetchPerfis(
   if (ids.length === 0) return map;
   const { data } = await supabase
     .from("social_perfis")
-    .select("id, full_name, avatar_url, roles, corretora_id, corretora_nome, created_at")
+    .select("id, full_name, apelido, avatar_url, roles, corretora_id, corretora_nome, created_at")
     .in("id", ids);
   for (const row of data ?? []) {
     if (row.id) map.set(row.id, perfilFromRow(row));
@@ -146,6 +154,8 @@ async function hydratePosts(
     body: r.body,
     imageUrl: publicImageUrl(supabase, r.image_path),
     imagePath: r.image_path,
+    videoUrl: publicImageUrl(supabase, r.video_path),
+    videoPath: r.video_path,
     likesCount: r.likes_count,
     commentsCount: r.comments_count,
     likedByMe: curtidos.has(r.id),
@@ -230,7 +240,7 @@ export async function getPerfil(perfilId: string): Promise<SocialPerfil | null> 
   const supabase = await createClient();
   const { data } = await supabase
     .from("social_perfis")
-    .select("id, full_name, avatar_url, roles, corretora_id, corretora_nome, created_at")
+    .select("id, full_name, apelido, avatar_url, roles, corretora_id, corretora_nome, created_at")
     .eq("id", perfilId)
     .maybeSingle();
   return data ? perfilFromRow(data) : null;
@@ -292,7 +302,7 @@ export async function searchPerfis(
   const supabase = await createClient();
   let q = supabase
     .from("social_perfis")
-    .select("id, full_name, avatar_url, roles, corretora_id, corretora_nome, created_at")
+    .select("id, full_name, apelido, avatar_url, roles, corretora_id, corretora_nome, created_at")
     .limit(PERFIS_LIMIT);
 
   const t = termo.trim().replace(/[%_]/g, "\\$&");

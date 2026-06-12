@@ -1,14 +1,15 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { ImagePlus, X } from "lucide-react";
+import { Clapperboard, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { SubmitButton } from "@/components/submit-button";
 import { createPost, type SocialFormState } from "@/lib/social/actions";
 import { SocialAvatar } from "./avatar";
 
 /**
- * Composer do feed: texto + foto opcional (JPG/PNG/WebP até 5 MB).
+ * Composer do feed: texto + foto (JPG/PNG/WebP até 5 MB) ou vídeo
+ * (MP4/WebM/MOV até 50 MB) opcionais.
  * Usa useActionState pra limpar o form só quando a action confirma — em
  * erro o texto fica preservado com a mensagem inline.
  */
@@ -63,13 +64,13 @@ export function PostComposer({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
                 <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-pill px-2.5 py-1.5 text-body-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-milsaca-cafezal">
-                  <ImagePlus aria-hidden className="h-4 w-4" />
-                  Foto
+                  <Clapperboard aria-hidden className="h-4 w-4" />
+                  Foto ou vídeo
                   <input
                     ref={fileRef}
                     type="file"
-                    name="imagem"
-                    accept="image/jpeg,image/png,image/webp"
+                    name="midia"
+                    accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
                     className="sr-only"
                     onChange={(e) =>
                       setFileName(e.target.files?.[0]?.name ?? null)

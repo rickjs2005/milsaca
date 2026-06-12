@@ -44,6 +44,8 @@ function buildCspHeader(isDev: boolean): string {
       "https://*.tile.openstreetmap.org",
       "https://unpkg.com",
     ],
+    // Vídeos da Comunidade (Storage) — media usa media-src, não img-src.
+    "media-src": ["'self'", supabaseHttps, "blob:"].filter(Boolean),
     "connect-src": [
       "'self'",
       supabaseHttps,

@@ -48,7 +48,14 @@ const IMAGE_TYPES: Record<string, string> = {
   "image/png": "png",
   "image/webp": "webp",
 };
+const VIDEO_TYPES: Record<string, string> = {
+  "video/mp4": "mp4",
+  "video/webm": "webm",
+  "video/quicktime": "mov", // iPhone grava .mov
+};
 const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+// 50 MB = teto de upload por arquivo do plano Free do Supabase Storage.
+const VIDEO_MAX_BYTES = 50 * 1024 * 1024;
 
 export type SocialFormState = { ok: boolean; error?: string } | null;
 
@@ -66,39 +73,55 @@ export async function createPost(
 
   const supabase = await createClient();
   let imagePath: string | null = null;
+  let videoPath: string | null = null;
 
-  const file = formData.get("imagem");
+  const file = formData.get("midia");
   if (file instanceof File && file.size > 0) {
-    const ext = IMAGE_TYPES[file.type];
+    const isVideo = file.type in VIDEO_TYPES;
+    const ext = isVideo ? VIDEO_TYPES[file.type] : IMAGE_TYPES[file.type];
     if (!ext) {
-      return { ok: false, error: "Formato de imagem não suportado. Use JPG, PNG ou WebP." };
+      return {
+        ok: false,
+        error: "Formato não suportado. Foto: JPG, PNG, WebP. Vídeo: MP4, WebM, MOV.",
+      };
     }
-    if (file.size > IMAGE_MAX_BYTES) {
+    if (isVideo && file.size > VIDEO_MAX_BYTES) {
+      return { ok: false, error: "Vídeo grande demais. O limite é 50 MB (~1 minuto)." };
+    }
+    if (!isVideo && file.size > IMAGE_MAX_BYTES) {
       return { ok: false, error: "Imagem grande demais. O limite é 5 MB." };
     }
-    imagePath = `${user.id}/${randomUUID()}.${ext}`;
+    const path = `${user.id}/${randomUUID()}.${ext}`;
     const { error: upErr } = await supabase.storage
       .from("social")
-      .upload(imagePath, file, { contentType: file.type });
+      .upload(path, file, { contentType: file.type });
     if (upErr) {
-      (await getReqLogger()).error("social: upload de imagem falhou", {
+      (await getReqLogger()).error("social: upload de mídia falhou", {
         error: safeError(upErr),
       });
-      return { ok: false, error: "Não deu pra enviar a imagem. Tente de novo." };
+      return {
+        ok: false,
+        error: isVideo
+          ? "Não deu pra enviar o vídeo. Tente de novo."
+          : "Não deu pra enviar a imagem. Tente de novo.",
+      };
     }
+    if (isVideo) videoPath = path;
+    else imagePath = path;
   }
 
   const { error } = await supabase
     .from("social_posts")
-    .insert({ author_id: user.id, body, image_path: imagePath });
+    .insert({ author_id: user.id, body, image_path: imagePath, video_path: videoPath });
 
   if (error) {
     (await getReqLogger()).error("social: insert de post falhou", {
       code: error.code,
       error: safeError(error),
     });
-    if (imagePath) {
-      await supabase.storage.from("social").remove([imagePath]);
+    const orfao = imagePath ?? videoPath;
+    if (orfao) {
+      await supabase.storage.from("social").remove([orfao]);
     }
     return { ok: false, error: friendlyPostgresError(error) };
   }
@@ -124,7 +147,7 @@ export async function deletePost(formData: FormData) {
     .delete()
     .eq("id", postId)
     .eq("author_id", user.id)
-    .select("image_path")
+    .select("image_path, video_path")
     .maybeSingle();
 
   if (error) {
@@ -135,8 +158,11 @@ export async function deletePost(formData: FormData) {
     redirect(`${base}?error=${encodeURIComponent(friendlyPostgresError(error))}`);
   }
 
-  if (data?.image_path) {
-    await supabase.storage.from("social").remove([data.image_path]);
+  const midias = [data?.image_path, data?.video_path].filter(
+    (p): p is string => Boolean(p),
+  );
+  if (midias.length > 0) {
+    await supabase.storage.from("social").remove(midias);
   }
 
   revalidateComunidade();
@@ -231,6 +257,41 @@ export async function deleteComment(formData: FormData) {
 
   revalidateComunidade();
   redirect(postId ? `${base}/post/${postId}` : base);
+}
+
+/**
+ * Apelido (nome social da Comunidade). Contratos e cadastro seguem com o
+ * nome registrado (full_name) — o apelido só muda como a pessoa aparece
+ * no feed/perfil/notificações da Comunidade. Vazio = volta pro nome.
+ */
+export async function updateApelido(
+  _prev: SocialFormState,
+  formData: FormData,
+): Promise<SocialFormState> {
+  const user = await getUser();
+  if (!user) return { ok: false, error: "Sessão expirada. Entre de novo." };
+
+  const cru = String(formData.get("apelido") ?? "").trim();
+  if (cru && (cru.length < 2 || cru.length > 40)) {
+    return { ok: false, error: "O apelido precisa ter entre 2 e 40 caracteres." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ apelido: cru || null })
+    .eq("id", user.id);
+
+  if (error) {
+    (await getReqLogger()).error("social: salvar apelido falhou", {
+      code: error.code,
+      error: safeError(error),
+    });
+    return { ok: false, error: friendlyPostgresError(error) };
+  }
+
+  revalidateComunidade();
+  return { ok: true };
 }
 
 /** Seguir/deixar de seguir — chamada direto do client (FollowButton). */

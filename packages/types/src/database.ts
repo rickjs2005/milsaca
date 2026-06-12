@@ -2441,6 +2441,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          apelido: string | null
           avatar_url: string | null
           corretora_id: string | null
           corretora_role:
@@ -2457,6 +2458,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          apelido?: string | null
           avatar_url?: string | null
           corretora_id?: string | null
           corretora_role?:
@@ -2473,6 +2475,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          apelido?: string | null
           avatar_url?: string | null
           corretora_id?: string | null
           corretora_role?:
@@ -2815,6 +2818,7 @@ export type Database = {
           image_path: string | null
           likes_count: number
           updated_at: string
+          video_path: string | null
         }
         Insert: {
           author_id: string
@@ -2825,6 +2829,7 @@ export type Database = {
           image_path?: string | null
           likes_count?: number
           updated_at?: string
+          video_path?: string | null
         }
         Update: {
           author_id?: string
@@ -2835,6 +2840,7 @@ export type Database = {
           image_path?: string | null
           likes_count?: number
           updated_at?: string
+          video_path?: string | null
         }
         Relationships: [
           {
@@ -3209,6 +3215,7 @@ export type Database = {
       }
       social_perfis: {
         Row: {
+          apelido: string | null
           avatar_url: string | null
           corretora_id: string | null
           corretora_nome: string | null
