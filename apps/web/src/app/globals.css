@@ -76,3 +76,114 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   SHIM DE TEMA ESCURO (fora de @layer DE PROPÓSITO — vence empate de
+   especificidade com as utilities).
+
+   O painel foi construído com utilities CLARAS fixas (bg-white,
+   text-milsaca-cafezal, border-neutral-200…) em 100+ telas. Em vez de
+   reescrever tela a tela com `dark:`, este bloco remapeia as ~40 classes
+   mais usadas quando <html class="dark">. Telas novas podem (e devem)
+   continuar usando os tokens semânticos (bg-card/bg-background) que já
+   trocam sozinhos via variáveis.
+
+   Cuidado: NÃO use `dark:bg-*` numa classe que está mapeada aqui — o shim
+   vence o empate. Prefira o token semântico.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.dark {
+  color-scheme: dark;
+
+  /* Paleta café-escura (hue 124 da marca) */
+  --d-bg2: 124 12% 14%; /* superfície sutil (cream) */
+  --d-card: 124 14% 17%; /* cartões (white) */
+  --d-soft: 124 10% 21%; /* neutral-50 / hover suave */
+  --d-raised: 124 10% 25%; /* neutral-100 / hover forte */
+  --d-border: 124 8% 28%;
+  --d-text: 39 47% 93%; /* títulos (cafezal/preto/slate-900) */
+  --d-text-2: 120 12% 80%; /* corpo (neutral-700) */
+  --d-text-3: 120 10% 72%; /* secundário (neutral-600/verde-claro) */
+  --d-text-4: 120 8% 63%; /* terciário (neutral-500) */
+  --d-text-5: 120 7% 54%; /* hint (neutral-400) */
+}
+
+/* ── Fundos claros → superfícies escuras ── */
+.dark .bg-white { background-color: hsl(var(--d-card)); }
+.dark .bg-white\/95 { background-color: hsl(var(--d-card) / 0.95); }
+.dark .bg-white\/90 { background-color: hsl(var(--d-card) / 0.9); }
+.dark .bg-white\/80 { background-color: hsl(var(--d-card) / 0.8); }
+.dark .bg-milsaca-cream { background-color: hsl(var(--d-bg2)); }
+.dark .bg-milsaca-cream\/40 { background-color: hsl(var(--d-bg2) / 0.5); }
+.dark .bg-milsaca-cream\/60 { background-color: hsl(var(--d-bg2) / 0.7); }
+.dark .bg-milsaca-cream-claro { background-color: hsl(var(--d-soft)); }
+.dark .bg-milsaca-cream-escuro { background-color: hsl(var(--d-raised)); }
+.dark .bg-milsaca-cream-escuro\/40 { background-color: hsl(var(--d-raised) / 0.5); }
+.dark .bg-neutral-50,
+.dark .bg-slate-50 { background-color: hsl(var(--d-soft)); }
+.dark .bg-neutral-100,
+.dark .bg-slate-100 { background-color: hsl(var(--d-raised)); }
+.dark .bg-milsaca-cafezal\/10 { background-color: hsl(39 47% 94% / 0.08); }
+
+/* Tints de estado (bg suave + texto -700 + borda -100) */
+.dark .bg-danger-50 { background-color: rgb(178 59 46 / 0.18); }
+.dark .bg-success-50 { background-color: rgb(46 125 82 / 0.2); }
+.dark .bg-warning-50 { background-color: rgb(201 138 30 / 0.16); }
+.dark .bg-info-50 { background-color: rgb(75 107 130 / 0.22); }
+
+/* ── Textos escuros → claros (mantendo a hierarquia) ── */
+.dark .text-milsaca-cafezal { color: hsl(var(--d-text)); }
+.dark .text-milsaca-preto { color: hsl(var(--d-text)); }
+.dark .text-milsaca-verde { color: hsl(39 30% 88%); }
+.dark .text-milsaca-verde-claro { color: hsl(var(--d-text-3)); }
+.dark .text-neutral-900,
+.dark .text-neutral-800,
+.dark .text-slate-900,
+.dark .text-slate-800 { color: hsl(var(--d-text)); }
+.dark .text-neutral-700,
+.dark .text-slate-700 { color: hsl(var(--d-text-2)); }
+.dark .text-neutral-600,
+.dark .text-slate-600 { color: hsl(var(--d-text-3)); }
+.dark .text-neutral-500,
+.dark .text-slate-500 { color: hsl(var(--d-text-4)); }
+.dark .text-neutral-400,
+.dark .text-slate-400 { color: hsl(var(--d-text-5)); }
+.dark .placeholder\:text-neutral-400::placeholder { color: hsl(var(--d-text-5)); }
+.dark .text-milsaca-dourado-texto { color: #d9bc7f; }
+
+/* Textos de estado (tons -600/-700 clareados pra AA em fundo escuro) */
+.dark .text-danger-700 { color: #e89c90; }
+.dark .text-danger-600 { color: #e08a7d; }
+.dark .text-success-700 { color: #8fd0ac; }
+.dark .text-success-600 { color: #7cc59d; }
+.dark .text-warning-700 { color: #e5b563; }
+.dark .text-warning-600 { color: #dda863; }
+.dark .text-info-700 { color: #9dbad0; }
+.dark .text-info-600 { color: #8cabc4; }
+
+/* ── Bordas/divisores ── */
+.dark .border-neutral-100,
+.dark .border-neutral-200,
+.dark .border-slate-100,
+.dark .border-slate-200,
+.dark .border-milsaca-cream-escuro { border-color: hsl(var(--d-border)); }
+.dark .divide-neutral-200 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: hsl(var(--d-border));
+}
+.dark .border-danger-100 { border-color: rgb(178 59 46 / 0.45); }
+.dark .border-success-100 { border-color: rgb(46 125 82 / 0.45); }
+.dark .border-warning-100 { border-color: rgb(201 138 30 / 0.4); }
+.dark .border-info-100 { border-color: rgb(75 107 130 / 0.5); }
+
+/* ── Hovers claros ── */
+.dark .hover\:bg-white:hover { background-color: hsl(var(--d-raised)); }
+.dark .hover\:bg-neutral-50:hover,
+.dark .hover\:bg-slate-50:hover { background-color: hsl(var(--d-soft)); }
+.dark .hover\:bg-neutral-100:hover,
+.dark .hover\:bg-slate-100:hover { background-color: hsl(var(--d-raised)); }
+.dark .hover\:bg-milsaca-cream:hover { background-color: hsl(124 12% 16%); }
+.dark .hover\:bg-milsaca-cream-claro:hover { background-color: hsl(var(--d-soft)); }
+.dark .hover\:bg-milsaca-cream-escuro:hover { background-color: hsl(var(--d-raised)); }
+.dark .hover\:bg-milsaca-cream-escuro\/40:hover { background-color: hsl(var(--d-raised) / 0.5); }
+.dark .hover\:text-milsaca-cafezal:hover { color: hsl(var(--d-text)); }

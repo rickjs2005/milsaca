@@ -17,6 +17,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { getProfile } from "@/lib/auth";
 import { isCorretoraDono } from "../_lib/corretora";
 
@@ -154,6 +155,17 @@ export default async function MaisPage() {
           </Card>
         </section>
       ))}
+
+      <section className="space-y-2">
+        <h2 className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
+          Aparência
+        </h2>
+        <Card>
+          <CardContent className="p-card pt-card">
+            <ThemeToggle surface="light" />
+          </CardContent>
+        </Card>
+      </section>
 
       <form action="/sair" method="post">
         <button

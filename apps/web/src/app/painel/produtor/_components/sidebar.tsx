@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SidebarSupportLink } from "@/components/sidebar-support-link";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type NavItem = {
   href: string;
@@ -149,6 +150,7 @@ export function ProdutorSidebar({
             Trocar painel
           </Link>
         )}
+        <ThemeToggle surface="dark" compact className="mb-2 px-3" />
         <SidebarSupportLink waHref={support.waHref} mailHref={support.mailHref} />
         <form action="/sair" method="post">
           <button

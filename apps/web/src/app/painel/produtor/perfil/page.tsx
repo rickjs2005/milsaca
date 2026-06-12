@@ -14,6 +14,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { MaskedInput } from "@/components/forms/masked-input";
 import { UfSelect } from "@/components/forms/uf-select";
 import { SubmitButton } from "@/components/submit-button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { getProfile, getUser } from "@/lib/auth";
 import {
   getProdutorByProfileId,
@@ -321,6 +322,18 @@ export default async function PerfilProdutorPage({
           </SubmitButton>
         </div>
       </form>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Aparência</CardTitle>
+          <CardDescription>
+            Escolha entre tema claro, escuro ou seguir o sistema do aparelho.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ThemeToggle surface="light" className="max-w-xs" />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
