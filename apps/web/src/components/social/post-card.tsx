@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { MessageCircle, Trash2 } from "lucide-react";
+import { MessageCircle, Mic, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { timeAgo } from "@/lib/format";
@@ -74,10 +74,25 @@ export function PostCard({
           ) : null}
         </div>
 
-        {/* Conteúdo */}
-        <p className="whitespace-pre-wrap break-words text-body text-milsaca-preto">
-          {post.body}
-        </p>
+        {/* Conteúdo (texto é opcional — post pode ser só áudio/foto/vídeo) */}
+        {post.body ? (
+          <p className="whitespace-pre-wrap break-words text-body text-milsaca-preto">
+            {post.body}
+          </p>
+        ) : null}
+
+        {post.audioUrl ? (
+          <div className="flex items-center gap-2 rounded-md bg-milsaca-cream/60 p-2">
+            <Mic aria-hidden className="h-4 w-4 shrink-0 text-milsaca-dourado" />
+            {/* eslint-disable-next-line jsx-a11y/media-has-caption -- áudio do usuário */}
+            <audio
+              src={post.audioUrl}
+              controls
+              preload="metadata"
+              className="h-10 min-w-0 flex-1"
+            />
+          </div>
+        ) : null}
 
         {post.imageUrl ? (
           <div className="relative aspect-[16/10] w-full overflow-hidden rounded-md bg-neutral-100">

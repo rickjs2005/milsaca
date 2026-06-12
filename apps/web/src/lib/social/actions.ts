@@ -53,9 +53,19 @@ const VIDEO_TYPES: Record<string, string> = {
   "video/webm": "webm",
   "video/quicktime": "mov", // iPhone grava .mov
 };
+// MediaRecorder grava webm/opus (Chrome/Android) ou mp4 (Safari/iPhone);
+// os demais cobrem upload de arquivo pronto.
+const AUDIO_TYPES: Record<string, string> = {
+  "audio/webm": "webm",
+  "audio/mp4": "m4a",
+  "audio/mpeg": "mp3",
+  "audio/ogg": "ogg",
+  "audio/wav": "wav",
+};
 const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 // 50 MB = teto de upload por arquivo do plano Free do Supabase Storage.
 const VIDEO_MAX_BYTES = 50 * 1024 * 1024;
+const AUDIO_MAX_BYTES = 15 * 1024 * 1024;
 
 export type SocialFormState = { ok: boolean; error?: string } | null;
 
@@ -67,15 +77,26 @@ export async function createPost(
   if (!user) return { ok: false, error: "Sessão expirada. Entre de novo." };
 
   const body = cleanBody(formData.get("body"), 2000);
-  if (!body) {
-    return { ok: false, error: "Escreva algo (até 2.000 caracteres) pra publicar." };
+  const file = formData.get("midia");
+  const audio = formData.get("audio");
+  const temMidia = file instanceof File && file.size > 0;
+  const temAudio = audio instanceof File && audio.size > 0;
+
+  if (!body && !temMidia && !temAudio) {
+    return {
+      ok: false,
+      error: "Escreva algo, grave um áudio ou anexe uma foto/vídeo pra publicar.",
+    };
+  }
+  if (body === null && String(formData.get("body") ?? "").trim().length > 2000) {
+    return { ok: false, error: "O texto passou de 2.000 caracteres." };
   }
 
   const supabase = await createClient();
   let imagePath: string | null = null;
   let videoPath: string | null = null;
+  let audioPath: string | null = null;
 
-  const file = formData.get("midia");
   if (file instanceof File && file.size > 0) {
     const isVideo = file.type in VIDEO_TYPES;
     const ext = isVideo ? VIDEO_TYPES[file.type] : IMAGE_TYPES[file.type];
@@ -110,18 +131,48 @@ export async function createPost(
     else imagePath = path;
   }
 
-  const { error } = await supabase
-    .from("social_posts")
-    .insert({ author_id: user.id, body, image_path: imagePath, video_path: videoPath });
+  if (audio instanceof File && audio.size > 0) {
+    // MediaRecorder manda "audio/webm;codecs=opus" — normaliza pro tipo base.
+    const tipo = audio.type.split(";")[0]?.trim() ?? "";
+    const ext = AUDIO_TYPES[tipo];
+    if (!ext) {
+      return { ok: false, error: "Formato de áudio não suportado." };
+    }
+    if (audio.size > AUDIO_MAX_BYTES) {
+      return { ok: false, error: "Áudio grande demais. Grave até ~2 minutos." };
+    }
+    audioPath = `${user.id}/${randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("social")
+      .upload(audioPath, audio, { contentType: tipo });
+    if (upErr) {
+      (await getReqLogger()).error("social: upload de áudio falhou", {
+        error: safeError(upErr),
+      });
+      const orfaos = [imagePath, videoPath].filter((p): p is string => Boolean(p));
+      if (orfaos.length > 0) await supabase.storage.from("social").remove(orfaos);
+      return { ok: false, error: "Não deu pra enviar o áudio. Tente de novo." };
+    }
+  }
+
+  const { error } = await supabase.from("social_posts").insert({
+    author_id: user.id,
+    body,
+    image_path: imagePath,
+    video_path: videoPath,
+    audio_path: audioPath,
+  });
 
   if (error) {
     (await getReqLogger()).error("social: insert de post falhou", {
       code: error.code,
       error: safeError(error),
     });
-    const orfao = imagePath ?? videoPath;
-    if (orfao) {
-      await supabase.storage.from("social").remove([orfao]);
+    const orfaos = [imagePath, videoPath, audioPath].filter(
+      (p): p is string => Boolean(p),
+    );
+    if (orfaos.length > 0) {
+      await supabase.storage.from("social").remove(orfaos);
     }
     return { ok: false, error: friendlyPostgresError(error) };
   }
@@ -147,7 +198,7 @@ export async function deletePost(formData: FormData) {
     .delete()
     .eq("id", postId)
     .eq("author_id", user.id)
-    .select("image_path, video_path")
+    .select("image_path, video_path, audio_path")
     .maybeSingle();
 
   if (error) {
@@ -158,7 +209,7 @@ export async function deletePost(formData: FormData) {
     redirect(`${base}?error=${encodeURIComponent(friendlyPostgresError(error))}`);
   }
 
-  const midias = [data?.image_path, data?.video_path].filter(
+  const midias = [data?.image_path, data?.video_path, data?.audio_path].filter(
     (p): p is string => Boolean(p),
   );
   if (midias.length > 0) {

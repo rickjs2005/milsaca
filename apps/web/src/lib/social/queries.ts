@@ -39,11 +39,14 @@ export type SocialPerfil = {
 export type SocialPost = {
   id: string;
   autor: SocialPerfil;
-  body: string;
+  /** Texto é opcional desde o v1.2 (post pode ser só áudio/foto/vídeo). */
+  body: string | null;
   imageUrl: string | null;
   imagePath: string | null;
   videoUrl: string | null;
   videoPath: string | null;
+  audioUrl: string | null;
+  audioPath: string | null;
   likesCount: number;
   commentsCount: number;
   likedByMe: boolean;
@@ -156,6 +159,8 @@ async function hydratePosts(
     imagePath: r.image_path,
     videoUrl: publicImageUrl(supabase, r.video_path),
     videoPath: r.video_path,
+    audioUrl: publicImageUrl(supabase, r.audio_path),
+    audioPath: r.audio_path,
     likesCount: r.likes_count,
     commentsCount: r.comments_count,
     likedByMe: curtidos.has(r.id),

@@ -2810,8 +2810,9 @@ export type Database = {
       }
       social_posts: {
         Row: {
+          audio_path: string | null
           author_id: string
-          body: string
+          body: string | null
           comments_count: number
           created_at: string
           id: string
@@ -2821,8 +2822,9 @@ export type Database = {
           video_path: string | null
         }
         Insert: {
+          audio_path?: string | null
           author_id: string
-          body: string
+          body?: string | null
           comments_count?: number
           created_at?: string
           id?: string
@@ -2832,8 +2834,9 @@ export type Database = {
           video_path?: string | null
         }
         Update: {
+          audio_path?: string | null
           author_id?: string
-          body?: string
+          body?: string | null
           comments_count?: number
           created_at?: string
           id?: string
