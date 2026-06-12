@@ -8,6 +8,7 @@ import {
   ufSchema as brUfSchema,
   ufOptionalSchema,
 } from "@/lib/brasil-schemas";
+import { sanitizeHttpUrl } from "@/lib/safe-url";
 
 /**
  * Schemas Zod usados pelas server actions do admin. Centralizados
@@ -37,6 +38,21 @@ const optionalText = (max = 200) =>
     .max(max)
     .optional()
     .transform((v) => (v && v.length > 0 ? v : null));
+
+/**
+ * URL http(s) opcional — rejeita `javascript:`/`data:` etc. (XSS armazenado
+ * em href público, auditoria 2026-06-12). Sem scheme assume https://.
+ */
+const httpUrlOptional = (max = 200) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .optional()
+    .refine((v) => !v || v.length === 0 || sanitizeHttpUrl(v) !== null, {
+      message: "URL inválida — use um endereço http(s) válido.",
+    })
+    .transform((v) => sanitizeHttpUrl(v ?? null));
 
 const requiredText = (label: string, max = 200) =>
   z
@@ -100,9 +116,9 @@ export const corretoraSchema = z.object({
   cep: optionalText(15),
   endereco: optionalText(200),
   bairro: optionalText(100),
-  site_url: optionalText(200),
+  site_url: httpUrlOptional(200),
   descricao: optionalText(1000),
-  logo_url: optionalText(500),
+  logo_url: httpUrlOptional(500),
   regioes_atendimento: z.array(regiaoSchema).default([]),
   especialidades: z
     .array(z.string().trim().min(1).max(60))

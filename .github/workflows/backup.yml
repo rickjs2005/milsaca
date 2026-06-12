@@ -1,0 +1,87 @@
+# Backup semanal do banco (P0 da auditoria 2026-06-12).
+#
+# O plano Free do Supabase NÃO tem backup gerenciado nem PITR — sem isto,
+# um incidente = perda total. Roda pg_dump toda segunda 06:00 UTC (03:00 BRT)
+# e guarda o dump CRIPTOGRAFADO como artifact (28 dias de retenção).
+#
+# ⚠️ O repo é PÚBLICO: artifacts de repo público são baixáveis por qualquer
+# conta GitHub logada — por isso o dump é criptografado com AES-256 antes
+# do upload. NUNCA remover a etapa de criptografia.
+#
+# Secrets necessários (Settings → Secrets and variables → Actions):
+#   SUPABASE_DB_URL    — connection string do SESSION POOLER (IPv4!), formato:
+#                        postgresql://postgres.<ref>:<senha>@aws-0-us-west-1.pooler.supabase.com:5432/postgres
+#                        (a conexão direta db.<ref>.supabase.co é só-IPv6 e
+#                        NÃO funciona nos runners do GitHub)
+#   BACKUP_PASSPHRASE  — frase longa e aleatória; guardar no gerenciador de
+#                        senhas do dono. Sem ela o backup é ilegível.
+#
+# Restore (runbook completo em docs/milsaca/backup-retencao.md):
+#   openssl enc -d -aes-256-cbc -pbkdf2 -in milsaca-DATA.dump.enc \
+#     -pass pass:<BACKUP_PASSPHRASE> -out milsaca.dump
+#   pg_restore --clean --if-exists -d "<conn-string>" milsaca.dump
+
+name: Backup semanal do banco
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # segunda 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Validar secrets
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$DB_URL" ] || [ -z "$PASS" ]; then
+            echo "::error::Secrets SUPABASE_DB_URL e/ou BACKUP_PASSPHRASE não configurados — backup NÃO rodou. Ver instruções no topo de .github/workflows/backup.yml"
+            exit 1
+          fi
+
+      - name: Instalar postgresql-client-17
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+
+      - name: pg_dump (formato custom)
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          STAMP=$(date -u +%Y-%m-%d)
+          /usr/lib/postgresql/17/bin/pg_dump "$DB_URL" \
+            --format=custom --no-owner --no-privileges \
+            --file="milsaca-${STAMP}.dump"
+          ls -lh milsaca-*.dump
+          echo "STAMP=${STAMP}" >> "$GITHUB_ENV"
+
+      - name: Criptografar (AES-256, obrigatório — repo público)
+        env:
+          PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          openssl enc -aes-256-cbc -pbkdf2 -salt \
+            -in "milsaca-${STAMP}.dump" \
+            -out "milsaca-${STAMP}.dump.enc" \
+            -pass env:PASS
+          rm "milsaca-${STAMP}.dump"
+          ls -lh milsaca-*.enc
+
+      - name: Upload do artifact criptografado
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-milsaca-${{ env.STAMP }}
+          path: milsaca-${{ env.STAMP }}.dump.enc
+          retention-days: 28
+          if-no-files-found: error

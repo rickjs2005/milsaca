@@ -61,8 +61,19 @@ Supabase**:
 - Guardar a chave/URL como secret (nunca no repo). Retenção sugerida: 4
   semanas de dumps semanais.
 
-> Status atual: **não automatizado** (follow-up). Documentado aqui como o
-> caminho recomendado.
+> Status atual: **✅ AUTOMATIZADO em 2026-06-12** (P0 da auditoria) —
+> `.github/workflows/backup.yml`: pg_dump semanal (segunda 03:00 BRT) via
+> **session pooler** (a conexão direta `db.<ref>.supabase.co` é só-IPv6 e não
+> funciona em runner do GitHub), **criptografado com AES-256** antes do upload
+> (o repo é público — artifact sem criptografia vazaria o banco inteiro),
+> retenção 28 dias.
+>
+> **Pendente do dono (uma vez):** criar os 2 secrets no GitHub
+> (`SUPABASE_DB_URL` = connection string do **Session Pooler** com a senha;
+> `BACKUP_PASSPHRASE` = frase aleatória longa, guardada no gerenciador de
+> senhas) e disparar 1× via "Run workflow" pra validar.
+> **Descriptografar:** `openssl enc -d -aes-256-cbc -pbkdf2 -in arquivo.dump.enc
+> -pass pass:<frase> -out milsaca.dump` e seguir o Caso C com `pg_restore`.
 
 ## 4. Runbook de restore
 
@@ -110,10 +121,15 @@ guarda") para evitar precisar disto.
   `milsaca-check-queue-failures` (migration
   `20260655000000_system_events_alert_cron.sql`) registra um alerta na
   própria fila quando há muitas falhas recentes.
-- O **ping de uptime externo** (cron-job.org / Better Uptime batendo numa
-  health-check das edge functions e do site) é **manual** — configurar no
-  provedor de uptime escolhido. Este doc e o cron interno **não**
-  substituem o uptime externo.
+- **✅ `/api/health` existe desde 2026-06-12** (P0 da auditoria):
+  - HTTP **503** = banco fora (alerta de queda no monitor);
+  - HTTP 200 com `"status":"degraded"` = app de pé mas **há despachos
+    falhando na fila** (`queue_failed_24h > 0`) — é assim que o alerta de
+    fila chega num humano.
+- **Pendente do dono (uma vez, ~5min):** criar monitor no UptimeRobot (ou
+  similar) apontando pra `https://<dominio>/api/health` com DOIS gatilhos:
+  (1) HTTP != 200 e (2) **keyword "degraded"** no corpo. Notificação por
+  email/Telegram do dono.
 
 ## 6. Checklist pré-go-live
 

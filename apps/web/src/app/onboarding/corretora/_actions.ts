@@ -6,6 +6,7 @@ import { createClient } from "@milsaca/db/web/server";
 import { getProfile, requireUser } from "@/lib/auth";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
+import { sanitizeHttpUrl } from "@/lib/safe-url";
 import {
   citySchema,
   cnpjSchema,
@@ -45,7 +46,8 @@ export async function completarOnboardingCorretora(formData: FormData) {
   const endereco = clean(formData.get("endereco"));
   const bairro = clean(formData.get("bairro"));
   const descricao = clean(formData.get("descricao"));
-  const site_url = clean(formData.get("site_url"));
+  // só http(s) — javascript:/data: viram null (XSS em href público, auditoria)
+  const site_url = sanitizeHttpUrl(clean(formData.get("site_url")));
 
   if (!full_name) redirectError("Preencha seu nome.");
 

@@ -123,7 +123,7 @@ utilities claras mais usadas (`bg-white`, `bg-milsaca-cream*`, `text-milsaca-caf
 
 ## Comunidade (rede social interna)
 
-Feed multi-formato (texto opcional + foto ≤5MB + vídeo ≤50MB + áudio gravado ≤2min/15MB), curtidas,
+Feed multi-formato (texto opcional + foto ≤5MB + vídeo ≤25MB + áudio gravado ≤2min/15MB), curtidas,
 comentários, seguir, perfil público com **apelido** (nome social — contratos seguem com `full_name`).
 - Rotas: wrappers finos em `/painel/{corretora,produtor}/comunidade{,/post/[id],/perfil/[id],/pessoas}`;
   páginas reais em `@/components/social/pages/`; lógica em `@/lib/social/{queries,actions}.ts`.

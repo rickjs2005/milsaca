@@ -63,8 +63,9 @@ const AUDIO_TYPES: Record<string, string> = {
   "audio/wav": "wav",
 };
 const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
-// 50 MB = teto de upload por arquivo do plano Free do Supabase Storage.
-const VIDEO_MAX_BYTES = 50 * 1024 * 1024;
+// 25 MB (~1min de celular): auditoria 2026-06-12 — a 50MB, 20 vídeos lotavam
+// o storage do plano Free e ~100 plays estouravam o egress do mês.
+const VIDEO_MAX_BYTES = 25 * 1024 * 1024;
 const AUDIO_MAX_BYTES = 15 * 1024 * 1024;
 
 export type SocialFormState = { ok: boolean; error?: string } | null;
@@ -107,7 +108,7 @@ export async function createPost(
       };
     }
     if (isVideo && file.size > VIDEO_MAX_BYTES) {
-      return { ok: false, error: "Vídeo grande demais. O limite é 50 MB (~1 minuto)." };
+      return { ok: false, error: "Vídeo grande demais. O limite é 25 MB (~1 minuto de celular)." };
     }
     if (!isVideo && file.size > IMAGE_MAX_BYTES) {
       return { ok: false, error: "Imagem grande demais. O limite é 5 MB." };

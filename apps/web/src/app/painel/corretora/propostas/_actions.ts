@@ -142,6 +142,9 @@ export async function createProposta(formData: FormData) {
 
   // Lead convertido (já virou contrato) é terminal: não dá pra enviar proposta
   // nova num negócio fechado. Trava no servidor (a UI também esconde o form).
+  // leadRow == null é FATAL: lead inexistente OU de outra corretora — seguir
+  // adiante gravaria lead_event num lead alheio (injeção cross-tenant,
+  // auditoria 2026-06-12).
   if (leadId) {
     const { data: leadRow } = await supabase
       .from("leads")
@@ -149,7 +152,12 @@ export async function createProposta(formData: FormData) {
       .eq("id", leadId)
       .eq("corretora_id", profile.corretora_id)
       .maybeSingle<{ status: string }>();
-    if (leadRow?.status === "convertido") {
+    if (!leadRow) {
+      redirect(
+        `${backHref}?error=${encodeURIComponent("Lead não encontrado.")}`,
+      );
+    }
+    if (leadRow.status === "convertido") {
       redirect(
         `${backHref}?error=${encodeURIComponent("Lead convertido (já virou contrato) — não dá pra enviar nova proposta.")}`,
       );

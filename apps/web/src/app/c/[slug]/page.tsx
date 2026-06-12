@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { unstable_cache } from "next/cache";
 import { createPublicClient } from "@milsaca/db/web/public";
+import { sanitizeHttpUrl } from "@/lib/safe-url";
 import { StarsDisplay } from "@/components/stars";
 
 /**
@@ -255,20 +256,25 @@ export default async function CorretoraPublicPage({ params }: Props) {
             ) : null}
           </div>
 
-          {c.site_url ? (
-            <div className="mt-6 border-t border-neutral-200 pt-5">
-              <Link
-                href={c.site_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-body-sm font-medium text-milsaca-cafezal hover:underline"
-              >
-                <Globe className="h-3.5 w-3.5" />
-                {c.site_url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-                <ExternalLink className="h-3 w-3" />
-              </Link>
-            </div>
-          ) : null}
+          {/* sanitizado de novo no render: defesa em profundidade contra
+              javascript: gravado antes da validação de escrita existir */}
+          {(() => {
+            const siteSeguro = sanitizeHttpUrl(c.site_url);
+            return siteSeguro ? (
+              <div className="mt-6 border-t border-neutral-200 pt-5">
+                <Link
+                  href={siteSeguro}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-body-sm font-medium text-milsaca-cafezal hover:underline"
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  {siteSeguro.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                  <ExternalLink className="h-3 w-3" />
+                </Link>
+              </div>
+            ) : null;
+          })()}
         </div>
 
         {produtores > 0 || negociacoes > 0 ? (

@@ -434,6 +434,22 @@ export async function addLeadComment(formData: FormData) {
   if (!id || !text) redirect(`/painel/corretora/leads/${id}`);
 
   const supabase = await createClient();
+
+  // Posse do lead ANTES de escrever na timeline: sem isso, um lead_id de
+  // outra corretora passaria na RLS (que só valida o corretora_id do autor)
+  // — injeção cross-tenant de escrita (auditoria 2026-06-12).
+  const { data: leadDono } = await supabase
+    .from("leads")
+    .select("id")
+    .eq("id", id)
+    .eq("corretora_id", profile.corretora_id)
+    .maybeSingle();
+  if (!leadDono) {
+    redirect(
+      `/painel/corretora/leads?error=${encodeURIComponent("Lead não encontrado.")}`,
+    );
+  }
+
   const { error: eventErr } = await supabase.from("lead_events").insert({
     lead_id: id,
     corretora_id: profile.corretora_id,
