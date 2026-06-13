@@ -57,8 +57,12 @@ function buildCsp(nonce: string, isDev: boolean): string {
     "base-uri": ["'self'"],
     "form-action": ["'self'"],
     "frame-ancestors": ["'none'"],
-    "upgrade-insecure-requests": [],
   };
+
+  // Só em produção (HTTPS). Em dev o servidor é HTTP; forçar upgrade quebra
+  // o acesso por IP de LAN (ex.: testar no celular) — o navegador tenta
+  // https://<ip>:3000 e o CSS/JS falha. localhost é isento, IP de LAN não.
+  if (!isDev) directives["upgrade-insecure-requests"] = [];
 
   return Object.entries(directives)
     .map(([k, v]) => (v.length > 0 ? `${k} ${v.join(" ")}` : k))
