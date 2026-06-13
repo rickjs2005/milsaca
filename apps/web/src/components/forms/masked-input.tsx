@@ -28,6 +28,11 @@ const META: Record<
   {
     placeholder: string;
     maxDigits: number;
+    /** Comprimentos (em dígitos) em que o valor é considerado "completo"
+     *  e portanto passível de validação inline. CPF=11, CNPJ=14, etc. */
+    validLengths: number[];
+    /** Mensagem mostrada inline quando completo porém inválido. */
+    errorLabel: string;
     format: (v: string) => string;
     normalize: (v: string) => string | null;
     isValid: (v: string) => boolean;
@@ -38,6 +43,8 @@ const META: Record<
   cpf: {
     placeholder: "000.000.000-00",
     maxDigits: 11,
+    validLengths: [11],
+    errorLabel: "CPF inválido — confira os números.",
     format: formatCPF,
     normalize: (v) => normalizeCPF(v),
     isValid: isValidCPF,
@@ -46,6 +53,8 @@ const META: Record<
   cnpj: {
     placeholder: "00.000.000/0000-00",
     maxDigits: 14,
+    validLengths: [14],
+    errorLabel: "CNPJ inválido — confira os números.",
     format: formatCNPJ,
     normalize: (v) => normalizeCNPJ(v),
     isValid: isValidCNPJ,
@@ -54,6 +63,8 @@ const META: Record<
   "cpf-cnpj": {
     placeholder: "CPF ou CNPJ",
     maxDigits: 14,
+    validLengths: [11, 14],
+    errorLabel: "CPF ou CNPJ inválido — confira os números.",
     format: formatCpfOrCnpj,
     normalize: (v) => normalizeCpfOrCnpj(v),
     isValid: isValidCpfOrCnpj,
@@ -62,6 +73,8 @@ const META: Record<
   phone: {
     placeholder: "(00) 00000-0000",
     maxDigits: 11,
+    validLengths: [10, 11],
+    errorLabel: "Telefone inválido — confira o DDD e os números.",
     format: formatPhoneBR,
     normalize: (v) => normalizePhoneBR(v),
     isValid: isValidPhoneBR,
@@ -71,6 +84,8 @@ const META: Record<
   cep: {
     placeholder: "00000-000",
     maxDigits: 8,
+    validLengths: [8],
+    errorLabel: "CEP inválido.",
     format: formatCEP,
     normalize: (v) => normalizeCEP(v),
     isValid: isValidCEP,
@@ -91,7 +106,7 @@ type Props = {
   required?: boolean;
   id?: string;
   className?: string;
-  /** Se true, valida ao perder foco e mostra hint visual. */
+  /** Se true, valida ao perder foco / completar e mostra hint visual + mensagem. */
   validateOnBlur?: boolean;
   "aria-describedby"?: string;
   "aria-invalid"?: boolean;
@@ -105,8 +120,10 @@ type Props = {
  *   - Docs (CPF/CNPJ) submetem só dígitos
  *   - Telefones submetem 55DDDXXXXXXXX (E.164 sem +)
  *
- * Validação visual opcional via `validateOnBlur`: marca borda destrutiva
- * + aria-invalid se o valor estiver completo mas inválido (DV errado).
+ * Validação visual via `validateOnBlur`: quando o valor atinge um
+ * comprimento "completo" (ex.: 11 dígitos de CPF) mas o dígito
+ * verificador não bate, marca borda destrutiva + aria-invalid e mostra
+ * uma mensagem curta logo abaixo. Verde discreto quando válido.
  */
 export function MaskedInput({
   type,
@@ -123,6 +140,7 @@ export function MaskedInput({
   const meta = META[type];
   const autoId = useId();
   const fieldId = id ?? `${name}-${autoId}`;
+  const msgId = `${fieldId}-msg`;
 
   const [raw, setRaw] = useState(() => meta.format(defaultValue ?? ""));
   const [touched, setTouched] = useState(false);
@@ -133,9 +151,12 @@ export function MaskedInput({
   }, [raw, meta]);
 
   const digitsOnly = onlyDigits(raw);
-  const isComplete = digitsOnly.length === meta.maxDigits;
-  const isInvalidNow =
-    validateOnBlur && touched && isComplete && !meta.isValid(raw);
+  // "Completo" = bateu num comprimento válido pro tipo (CPF 11, CNPJ 14...).
+  const isComplete = meta.validLengths.includes(digitsOnly.length);
+  const valueIsValid = meta.isValid(raw);
+  const showFeedback = !!validateOnBlur && (touched || isComplete) && digitsOnly.length > 0;
+  const isInvalidNow = showFeedback && isComplete && !valueIsValid;
+  const isValidNow = showFeedback && isComplete && valueIsValid;
 
   return (
     <>
@@ -150,9 +171,24 @@ export function MaskedInput({
         onChange={(e) => setRaw(meta.format(e.target.value))}
         onBlur={() => setTouched(true)}
         aria-invalid={ariaInvalidProp ?? (isInvalidNow || undefined)}
-        aria-describedby={ariaDescribedBy}
-        className={className}
+        aria-describedby={
+          isInvalidNow ? [ariaDescribedBy, msgId].filter(Boolean).join(" ") : ariaDescribedBy
+        }
+        className={
+          [
+            className,
+            isInvalidNow ? "border-danger-500 focus-visible:ring-danger-500" : "",
+            isValidNow ? "border-success-500 focus-visible:ring-success-500" : "",
+          ]
+            .filter(Boolean)
+            .join(" ") || undefined
+        }
       />
+      {isInvalidNow ? (
+        <p id={msgId} className="mt-1 text-xs text-danger-600">
+          {meta.errorLabel}
+        </p>
+      ) : null}
       {/* Submete valor normalizado pro form. */}
       <input type="hidden" name={name} value={normalized} />
     </>

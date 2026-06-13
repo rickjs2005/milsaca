@@ -99,7 +99,9 @@ export const getProdutorByProfileId = cache(async (
 
 /**
  * Determina se o produtor passou pelo onboarding mínimo.
- * MVP: precisa ter pelo menos `cpf_cnpj` E `fazenda_nome` preenchidos.
+ * MVP enxuto (2026-06): basta nome + WhatsApp (contato) + registro de
+ * produtor. CPF, fazenda, UF/cidade e espécie são opcionais e podem ser
+ * completados depois no Perfil — reduz fricção no primeiro acesso.
  */
 export function needsOnboarding(
   profile: { full_name: string | null },
@@ -107,8 +109,7 @@ export function needsOnboarding(
 ): boolean {
   if (!profile.full_name?.trim()) return true;
   if (!produtor) return true;
-  if (!produtor.cpf_cnpj?.trim()) return true;
-  if (!produtor.fazenda_nome?.trim()) return true;
+  if (!produtor.whatsapp?.trim()) return true;
   return false;
 }
 

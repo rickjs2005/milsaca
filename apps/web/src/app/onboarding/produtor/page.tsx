@@ -7,7 +7,6 @@ import { UfSelect } from "@/components/forms/uf-select";
 import { SubmitButton } from "@/components/submit-button";
 import { SignOutButton } from "@/components/sign-out-button";
 import { MilsacaLogo } from "@/components/milsaca-logo";
-import { createClient } from "@milsaca/db/web/server";
 import { getProfile, requireUser } from "@/lib/auth";
 import {
   getProdutorByProfileId,
@@ -37,74 +36,49 @@ export default async function OnboardingProdutorPage({
 
   const { error } = await searchParams;
 
-  // Lista corretoras verificadas pra escolher uma "casa" opcional.
-  // Usa view pública (não vaza cnpj/endereço — produtor só precisa
-  // do nome e localização pra escolher).
-  const supabase = await createClient();
-  const { data: corretoras } = await supabase
-    .from("corretoras_publicas")
-    .select("id, name, city, state")
-    .eq("verified", true)
-    .order("name", { ascending: true });
-
   return (
     <main className="min-h-screen bg-milsaca-cream">
-      <div className="mx-auto max-w-2xl px-6 py-12">
-        <header className="flex items-center">
-          <MilsacaLogo size={96} />
+      <div className="mx-auto max-w-lg px-5 py-10">
+        <header className="flex items-center justify-between">
+          <MilsacaLogo size={80} />
+          <SignOutButton className="text-sm font-medium text-milsaca-verde-claro underline-offset-4 hover:underline">
+            Sair
+          </SignOutButton>
         </header>
 
-        <div className="mt-8">
-          <p className="text-sm font-medium text-milsaca-dourado-texto">
-            Boas-vindas, {user.email}
-          </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-milsaca-verde">
-            Vamos começar{" "}
-            <span className="text-milsaca-dourado-texto">do básico</span>
+        <div className="mt-6">
+          <h1 className="text-2xl font-bold tracking-tight text-milsaca-verde">
+            Bem-vindo ao Milsaca
           </h1>
-          <p className="mt-3 text-sm text-milsaca-verde-claro">
-            São três blocos curtos. Dá pra mudar tudo depois no Perfil.
+          <p className="mt-2 text-sm text-milsaca-verde-claro">
+            Só o essencial pra começar. O resto dá pra completar depois no Perfil.
           </p>
         </div>
 
         {error ? (
-          <p className="mt-6 rounded-md border border-danger-100 bg-danger-50 px-4 py-2 text-sm text-danger-700">
+          <p className="mt-5 rounded-md border border-danger-100 bg-danger-50 px-4 py-2 text-sm text-danger-700">
             {error}
           </p>
         ) : null}
 
-        <form
-          action={completarOnboarding}
-          className="mt-8 space-y-8"
-        >
-          <Section
-            number={1}
-            title="Sobre você"
-            subtitle="Como te identificamos e como a corretora te encontra."
-          >
-            <div className="space-y-2">
-              <Label htmlFor="full_name">Seu nome completo *</Label>
-              <Input
-                id="full_name"
-                name="full_name"
-                required
-                defaultValue={profile.full_name ?? ""}
-                placeholder="Ex: João da Silva"
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="cpf_cnpj">CPF ou CNPJ *</Label>
-                <MaskedInput
-                  id="cpf_cnpj"
-                  type="cpf-cnpj"
-                  name="cpf_cnpj"
+        <form action={completarOnboarding} className="mt-6 space-y-5">
+          {/* Obrigatório: identidade + contato */}
+          <section className="rounded-2xl border border-milsaca-cream-escuro bg-white p-5 shadow-sm">
+            <h2 className="text-base font-semibold text-milsaca-verde">
+              Seus dados
+            </h2>
+            <div className="mt-4 space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="full_name">Nome completo *</Label>
+                <Input
+                  id="full_name"
+                  name="full_name"
                   required
-                  defaultValue={produtor?.cpf_cnpj ?? ""}
-                  validateOnBlur
+                  defaultValue={profile.full_name ?? ""}
+                  placeholder="Ex: João da Silva"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="whatsapp">WhatsApp *</Label>
                 <MaskedInput
                   id="whatsapp"
@@ -114,165 +88,87 @@ export default async function OnboardingProdutorPage({
                   defaultValue={produtor?.whatsapp ?? profile.phone ?? ""}
                   validateOnBlur
                 />
-                <p className="text-[11px] text-milsaca-verde-claro/70">
-                  É por aqui que a corretora vai te chamar.
+                <p className="text-xs text-milsaca-verde-claro/80">
+                  É por aqui que a corretora vai falar com você.
                 </p>
               </div>
             </div>
-          </Section>
+          </section>
 
-          <Section
-            number={2}
-            title="Sobre sua produção"
-            subtitle="Onde fica a sua fazenda e o que você colhe."
-          >
-            <div className="space-y-2">
-              <Label htmlFor="fazenda_nome">Nome da fazenda *</Label>
-              <Input
-                id="fazenda_nome"
-                name="fazenda_nome"
-                required
-                defaultValue={produtor?.fazenda_nome ?? ""}
-                placeholder="Ex: Sítio Boa Vista"
-              />
+          {/* Opcional: dá pra pular tudo e completar depois */}
+          <section className="rounded-2xl border border-milsaca-cream-escuro bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-semibold text-milsaca-verde">
+                Sua fazenda
+              </h2>
+              <span className="rounded-full bg-milsaca-cream-escuro/60 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-milsaca-verde-claro">
+                Opcional
+              </span>
             </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="state">UF *</Label>
-                <UfSelect
-                  id="state"
-                  name="state"
-                  required
-                  defaultValue={produtor?.state ?? "MG"}
-                />
+            <div className="mt-4 space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="state">Estado</Label>
+                  <UfSelect
+                    id="state"
+                    name="state"
+                    defaultValue={produtor?.state ?? "MG"}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="city">Cidade</Label>
+                  <MunicipioAutocomplete
+                    name="city"
+                    defaultValue={produtor?.city ?? ""}
+                    uf={produtor?.state ?? "MG"}
+                    ufFieldId="state"
+                    placeholder="Toque para escolher"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="city">Cidade *</Label>
-                <MunicipioAutocomplete
-                  name="city"
-                  defaultValue={produtor?.city ?? ""}
-                  uf={produtor?.state ?? "MG"}
-                  ufFieldId="state"
-                  placeholder="Manhuaçu"
-                  required
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="specie">Você produz</Label>
-              <select
-                id="specie"
-                name="specie"
-                defaultValue={produtor?.specie ?? ""}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="">—</option>
-                {Object.entries(SPECIE_LABEL).map(([v, label]) => (
-                  <option key={v} value={v}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </Section>
-
-          <Section
-            number={3}
-            title="Sua corretora preferida"
-            subtitle="Opcional. Você pode favoritar várias depois no catálogo."
-            optional
-          >
-            {(corretoras ?? []).length > 0 ? (
-              <div className="space-y-2">
-                <Label htmlFor="corretora_id">Quem te atende hoje</Label>
-                <select
-                  id="corretora_id"
-                  name="corretora_id"
-                  defaultValue={profile.corretora_id ?? ""}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <option value="">— escolho depois —</option>
-                  {(corretoras ?? [])
-                    .filter(
-                      (c): c is {
-                        id: string;
-                        name: string;
-                        city: string | null;
-                        state: string | null;
-                      } => !!c.id && !!c.name,
-                    )
-                    .map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                        {c.city ? ` — ${c.city}` : ""}
-                        {c.state ? `/${c.state}` : ""}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="specie">O que você produz</Label>
+                  <select
+                    id="specie"
+                    name="specie"
+                    defaultValue={produtor?.specie ?? ""}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="">—</option>
+                    {Object.entries(SPECIE_LABEL).map(([v, label]) => (
+                      <option key={v} value={v}>
+                        {label}
                       </option>
                     ))}
-                </select>
-                <p className="text-xs text-milsaca-verde-claro">
-                  Você pode mudar ou adicionar outras corretoras depois.
-                </p>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="cpf_cnpj">CPF ou CNPJ</Label>
+                  <MaskedInput
+                    id="cpf_cnpj"
+                    type="cpf-cnpj"
+                    name="cpf_cnpj"
+                    defaultValue={produtor?.cpf_cnpj ?? ""}
+                    validateOnBlur
+                  />
+                  <p className="text-xs text-milsaca-verde-claro/80">
+                    Só pra fechar contrato — pode deixar pra depois.
+                  </p>
+                </div>
               </div>
-            ) : (
-              <p className="text-sm text-milsaca-verde-claro">
-                Ainda não há corretoras verificadas no Milsaca. Você pode
-                continuar e escolher depois.
-              </p>
-            )}
-          </Section>
+            </div>
+          </section>
 
-          <div className="flex flex-col items-stretch gap-3 pt-2 sm:flex-row sm:justify-end">
-            <SignOutButton className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-milsaca-verde-claro hover:bg-accent hover:text-accent-foreground">
-              Sair
-            </SignOutButton>
-            <SubmitButton
-              size="lg"
-              pendingLabel="Salvando..."
-              className="bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
-            >
-              Pronto, começar
-            </SubmitButton>
-          </div>
+          <SubmitButton
+            size="lg"
+            pendingLabel="Salvando..."
+            className="w-full bg-milsaca-verde text-milsaca-cream hover:bg-milsaca-verde-claro"
+          >
+            Começar
+          </SubmitButton>
         </form>
       </div>
     </main>
-  );
-}
-
-function Section({
-  number,
-  title,
-  subtitle,
-  optional,
-  children,
-}: {
-  number: number;
-  title: string;
-  subtitle?: string;
-  optional?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-2xl border border-milsaca-cream-escuro bg-white p-6 shadow-sm">
-      <header className="mb-5 flex items-start gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-milsaca-verde text-milsaca-dourado-texto">
-          <span className="text-sm font-bold">{number}</span>
-        </span>
-        <div className="space-y-0.5">
-          <h2 className="text-lg font-semibold text-milsaca-verde">
-            {title}
-            {optional ? (
-              <span className="ml-2 rounded-full bg-milsaca-cream-escuro/60 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-milsaca-verde-claro">
-                Opcional
-              </span>
-            ) : null}
-          </h2>
-          {subtitle ? (
-            <p className="text-xs text-milsaca-verde-claro">{subtitle}</p>
-          ) : null}
-        </div>
-      </header>
-      <div className="space-y-4">{children}</div>
-    </section>
   );
 }

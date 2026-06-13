@@ -7,9 +7,9 @@ import { getProfile, requireUser } from "@/lib/auth";
 import { safeError } from "@/lib/logger";
 import { getReqLogger } from "@/lib/req-logger";
 import {
-  citySchema,
-  cpfOrCnpjSchema,
-  ufSchema,
+  cityOptionalSchema,
+  cpfOrCnpjOptionalSchema,
+  ufOptionalSchema,
   whatsappSchema,
 } from "@/lib/brasil-schemas";
 import type { ProdutorSpecie } from "@/app/painel/produtor/_lib/produtor";
@@ -38,32 +38,32 @@ export async function completarOnboarding(formData: FormData) {
   if (!profile) redirect("/entrar");
 
   const full_name = clean(formData.get("full_name"));
-  const cpfCnpjRaw = String(formData.get("cpf_cnpj") ?? "");
   const whatsappRaw = String(formData.get("whatsapp") ?? "");
   const fazenda_nome = clean(formData.get("fazenda_nome"));
-  const cityRaw = String(formData.get("city") ?? "");
-  const stateRaw = String(formData.get("state") ?? "");
   const specie = parseSpecie(formData.get("specie"));
   const corretora_id = clean(formData.get("corretora_id"));
 
   if (!full_name) redirectError("Preencha seu nome.");
-  if (!fazenda_nome) redirectError("Informe o nome da fazenda.");
 
-  const cpfParsed = cpfOrCnpjSchema.safeParse(cpfCnpjRaw);
-  if (!cpfParsed.success) redirectError("Informe um CPF ou CNPJ válido.");
-  const cpf_cnpj = cpfParsed.data;
-
+  // WhatsApp é o único contato obrigatório (é por ele que a corretora fala).
   const whatsappParsed = whatsappSchema.safeParse(whatsappRaw);
   if (!whatsappParsed.success)
     redirectError("Informe um WhatsApp válido com DDD.");
   const whatsapp = whatsappParsed.data;
 
-  const cityParsed = citySchema.safeParse(cityRaw);
+  // CPF/CNPJ, UF e cidade são OPCIONAIS — completa depois no Perfil.
+  // Se vier preenchido, valida; se vier vazio, segue como null.
+  const cpfParsed = cpfOrCnpjOptionalSchema.safeParse(formData.get("cpf_cnpj"));
+  if (!cpfParsed.success)
+    redirectError("CPF ou CNPJ inválido — confira ou deixe em branco.");
+  const cpf_cnpj = cpfParsed.data;
+
+  const cityParsed = cityOptionalSchema.safeParse(formData.get("city"));
   if (!cityParsed.success) redirectError("Cidade inválida.");
   const city = cityParsed.data;
 
-  const stateParsed = ufSchema.safeParse(stateRaw);
-  if (!stateParsed.success) redirectError("Selecione o estado.");
+  const stateParsed = ufOptionalSchema.safeParse(formData.get("state"));
+  if (!stateParsed.success) redirectError("Estado inválido.");
   const state = stateParsed.data;
 
   const supabase = await createClient();
