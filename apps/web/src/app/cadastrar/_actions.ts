@@ -95,6 +95,12 @@ export async function signUp(formData: FormData) {
     params.set("error", "Preencha: " + missing.join(", "));
     redirect(`/cadastrar?${params.toString()}`);
   }
+  // Formato de email — feedback claro antes de chamar o GoTrue.
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!EMAIL_RE.test(email)) {
+    params.set("error", "Email inválido. Confira o endereço (ex: nome@email.com).");
+    redirect(`/cadastrar?${params.toString()}`);
+  }
   const fraca = validarSenha(password);
   if (fraca) {
     params.set("error", fraca);
@@ -193,17 +199,36 @@ export async function signUp(formData: FormData) {
   });
 
   if (error) {
-    // Anti-enumeration ESTRITO: mensagem totalmente genérica, sem variar
-    // por tipo do erro. Variar (ex.: "senha fraca" vs "erro genérico")
-    // permite ao atacante usar /cadastrar como oráculo de email existente
-    // — bastaria mandar senhas diferentes e ver qual ramo dispara.
-    // Mensagem técnica vai só pro log (não vaza pro usuário).
     const log = await getReqLogger({ action: "signUp", role });
     log.warn("signup_falhou", { err: safeError(error) });
-    params.set(
-      "error",
-      "Não foi possível concluir o cadastro. Verifique os dados e tente novamente em alguns minutos.",
-    );
+    // Decisão do dono (2026-06-13): priorizar avisos CLAROS em vez de
+    // anti-enumeration estrito no cadastro. Distinguimos "email já
+    // cadastrado" / "email inválido" pra reduzir fricção do usuário real.
+    // Trade-off aceito: permite descobrir se um email existe; o rate limit
+    // (10/h por IP, acima) limita varredura em massa. Login segue genérico
+    // ("email ou senha inválidos") porque o GoTrue não distingue lá.
+    const m = (error.message ?? "").toLowerCase();
+    const status = (error as { status?: number }).status;
+    const code = (error as { code?: string }).code;
+    let msg =
+      "Não foi possível concluir o cadastro. Tente novamente em alguns minutos.";
+    if (
+      code === "user_already_exists" ||
+      code === "email_exists" ||
+      m.includes("already registered") ||
+      m.includes("already been registered") ||
+      (status === 422 && m.includes("registered"))
+    ) {
+      msg = "Esse email já está cadastrado. Faça login ou use “Esqueci a senha”.";
+    } else if (
+      code === "email_address_invalid" ||
+      (m.includes("invalid") && m.includes("email"))
+    ) {
+      msg = "Email inválido. Confira o endereço.";
+    } else if (m.includes("password")) {
+      msg = "Senha não atende aos requisitos (mín. 8 caracteres, com letra e número).";
+    }
+    params.set("error", msg);
     redirect(`/cadastrar?${params.toString()}`);
   }
 

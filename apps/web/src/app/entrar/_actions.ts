@@ -46,7 +46,7 @@ export async function signIn(formData: FormData) {
     // confirmed" etc.) era oráculo de enumeração de contas (auditoria).
     const params = new URLSearchParams({
       email,
-      error: "Email ou senha inválidos.",
+      error: "Email ou senha incorretos. Confira e tente de novo.",
     });
     if (redirectTo !== "/painel") params.set("redirectTo", redirectTo);
     redirect(`/entrar?${params.toString()}`);
