@@ -105,11 +105,32 @@ export async function fetchIceArabica(): Promise<Quote | null> {
   const meta = body?.chart?.result?.[0]?.meta;
   if (!meta) return null;
 
-  const price = Number(meta.regularMarketPrice);
-  const prevClose = Number(meta.chartPreviousClose);
+  let price = Number(meta.regularMarketPrice);
+  let prevClose = Number(meta.chartPreviousClose);
   if (!Number.isFinite(price) || price <= 0) return null;
 
-  // Yahoo devolve regularMarketPrice já em US cents/lb (currency USX).
+  // Sanidade de unidade: Yahoo normalmente cota o KC=F em US cents/lb
+  // (currency 'USX' / 'USc'). Se vier 'USD' (dólares/lb, ~2 ordens de
+  // grandeza menor), convertemos ×100 (price e prevClose, pra manter a
+  // mesma unidade). Qualquer outra moeda é inesperada → REGRA DE OURO:
+  // retorna null em vez de inventar/aceitar errado.
+  const currency = String(meta.currency ?? "").toUpperCase();
+  if (currency === "USD") {
+    price = price * 100; // USD/lb → US cents/lb
+    if (Number.isFinite(prevClose)) prevClose = prevClose * 100;
+  } else if (currency && currency !== "USX" && currency !== "USC") {
+    log.warn("ice_currency_inesperada", { currency, price });
+    return null;
+  }
+
+  // Faixa de sanidade pra arábica ICE NY (KC): ~50 a 600 US cents/lb.
+  // Fora disso o payload está corrompido/em outra unidade → null.
+  if (price < 50 || price > 600) {
+    log.warn("ice_preco_fora_faixa", { price, currency });
+    return null;
+  }
+
+  // Aqui price já está normalizado em US cents/lb.
   const priceCents = Math.round(price);
   const variation =
     Number.isFinite(prevClose) && prevClose > 0
