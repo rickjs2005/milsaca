@@ -3497,6 +3497,8 @@ export type Database = {
         }
         Returns: undefined
       }
+      alert_documentos_vencendo: { Args: never; Returns: number }
+      alert_eudr_incompleto: { Args: never; Returns: number }
       anonimizar_titular: { Args: { p_user_id: string }; Returns: undefined }
       approve_corretora: {
         Args: {

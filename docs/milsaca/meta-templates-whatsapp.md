@@ -96,6 +96,13 @@ Regras da Meta respeitadas aqui: corpo não pode ser só variável; **duas vari�
 18. **milsaca_onboarding_incompleto**
     `Oi {{1}}, vi que você começou seu cadastro no Milsaca mas ainda falta um passo pra começar a vender seu café. Leva 2 minutos — qualquer dúvida, é só chamar!`
 
+### Adicionados na F5 (migration `20261530`) — registrar junto
+
+19. **milsaca_documento_vencendo** (UTILITY) — vars: nome, titulo, categoria, quando
+    `Oi {{1}}, atenção: o documento {{2}} ({{3}}) vence {{4}}. Atualize no Milsaca pra não travar contratos e dossiês.`
+20. **milsaca_eudr_incompleto** (UTILITY) — vars: corretora_nome, lote_codigo, pendencias
+    `Oi {{1}}, o lote {{2}} está em negociação mas o dossiê EUDR tem pendências: {{3}}. Resolva no painel pra não travar a venda pra exportação.`
+
 Amostras de exemplo (a Meta pede na submissão): use dados fictícios plausíveis — "João da Silva", "Manhuaçu", "MG", "R$ 2.350,00", "C-2026-014".
 
 ## Runbook de ativação (ordem exata)
