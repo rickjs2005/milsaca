@@ -28,7 +28,7 @@ const cardVariants = cva(
         muted: "border-neutral-200 bg-milsaca-cream",
       },
       interactive: {
-        true: "transition-shadow transition-colors duration-200 hover:shadow-card-hover hover:border-milsaca-dourado/40",
+        true: "transition-[box-shadow,border-color,transform] duration-200 hover:shadow-card-hover hover:border-milsaca-dourado/40 motion-safe:hover:-translate-y-0.5",
         false: "",
       },
     },

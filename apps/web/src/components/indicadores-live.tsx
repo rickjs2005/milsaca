@@ -10,7 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { createClient } from "@milsaca/db/web/server";
+import { unstable_cache } from "next/cache";
+import { createPublicClient } from "@milsaca/db/web/public";
 import { loadMarketTrend, type MarketTrend } from "@/lib/market-trend";
 import { Sparkline } from "@/components/sparkline";
 import { cn } from "@/lib/utils";
@@ -126,19 +127,37 @@ function isStale(iso: string): boolean {
   return Date.now() - new Date(iso).getTime() > 48 * 60 * 60 * 1000;
 }
 
-export async function IndicadoresLive() {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("market_quotes")
-    .select(
-      "source, symbol, price_brl_cents, price_usd_cents, variation_pct, quoted_at, fetched_at, source_url",
-    );
+// market_quotes é dado GLOBAL de mercado (não por tenant), legível por
+// qualquer um via RLS (policy `market_quotes_public_read` USING (true), grant
+// a anon) e atualizado só ~2x/dia pela edge function sync-cotacoes. Antes era
+// relido a cada render dos dois dashboards. Agora cacheamos por 5 min com um
+// client SEM cookie (createPublicClient) — `unstable_cache` não pode tocar
+// APIs dinâmicas como cookies()/headers(). Invalidável pela tag "market-quotes".
+const getMarketQuotes = unstable_cache(
+  async (): Promise<MarketQuote[]> => {
+    const supabase = createPublicClient();
+    const { data } = await supabase
+      .from("market_quotes")
+      .select(
+        "source, symbol, price_brl_cents, price_usd_cents, variation_pct, quoted_at, fetched_at, source_url",
+      );
+    return (data ?? []) as MarketQuote[];
+  },
+  ["indicadores-market-quotes"],
+  { revalidate: 300, tags: ["market-quotes"] },
+);
 
-  const rows = (data ?? []) as MarketQuote[];
+export async function IndicadoresLive() {
+  const rows = await getMarketQuotes();
   const byKey = new Map(
     rows.map((r) => [`${r.source}/${r.symbol}`, r] as const),
   );
 
+  // NOTA: loadMarketTrend (lê market_quotes_history, também 100% pública) NÃO
+  // foi cacheado aqui porque ele instancia um client COM cookie em
+  // @/lib/market-trend.ts — e cookies() é proibido dentro de unstable_cache.
+  // Cacheá-lo exigiria editar market-trend.ts (trocar pra createPublicClient
+  // ou separar leitura/cálculo), fora do escopo desta mudança. Follow-up.
   const trend = await loadMarketTrend(INDICADORES.map((i) => i.symbol));
 
   // Se nenhum dado existe ainda, esconde o bloco em vez de mostrar cards vazios

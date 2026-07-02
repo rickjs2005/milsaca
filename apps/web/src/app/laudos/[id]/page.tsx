@@ -7,7 +7,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   MapPin,
-  Mail,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -108,15 +107,6 @@ export default async function LaudoPublicoPage({
               {[laudo.corretora.city, laudo.corretora.state]
                 .filter(Boolean)
                 .join(" / ")}
-              {laudo.corretora.email && (
-                <>
-                  <span className="mx-1">·</span>
-                  <span className="inline-flex items-center gap-1">
-                    <Mail className="h-3 w-3" />
-                    {laudo.corretora.email}
-                  </span>
-                </>
-              )}
             </p>
             {laudo.corretora.verified && (
               <Badge variant="success" className="mt-2">

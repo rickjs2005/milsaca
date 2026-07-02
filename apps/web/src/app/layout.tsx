@@ -50,7 +50,14 @@ export default async function RootLayout({
   return (
     <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>
       <head>
-        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
+        {/* O navegador apaga o atributo `nonce` do DOM após o load (HTML spec),
+            então o nonce do servidor diverge do cliente na hidratação. É
+            esperado e seguro — suprimir o warning só neste <script>. */}
+        <script
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: THEME_INIT }}
+        />
       </head>
       {/* bg/text semânticos (idênticos a cream/verde no claro) pro tema trocar junto */}
       <body className="min-h-screen bg-background font-sans text-foreground">

@@ -1,6 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { createHash } from "node:crypto";
 import { createClient } from "@milsaca/db/web/server";
 import { defaultRouteFor, isAppAdmin } from "@/lib/auth";
 import { checkRateLimit, identityKey } from "@/lib/rate-limit";
@@ -26,8 +28,25 @@ export async function signIn(formData: FormData) {
 
   // Rate limit por email: 5 tentativas em 5min. Anti-brute force.
   const rl = await checkRateLimit(identityKey("signin", email), 5, 300);
-  if (!rl.allowed) {
-    const msg = `Muitas tentativas. Tente de novo em ${rl.retryAfterSeconds}s.`;
+
+  // Rate limit por IP: 20 tentativas em 5min, em paralelo ao por-email.
+  // O limite por-email não barra password spraying (um atacante girando
+  // muitos emails distintos com poucas tentativas cada); o por-IP fecha
+  // essa brecha barrando a origem. Mesmo padrão de hash de /esqueci-senha
+  // e /convite (granularidade por origem, sem armazenar IP cru).
+  const h = await headers();
+  const xff = h.get("x-forwarded-for");
+  const ip = xff ? xff.split(",")[0]?.trim() : h.get("x-real-ip");
+  const salt = process.env.LEAD_IP_SALT ?? "milsaca-signin";
+  const ipHash = createHash("sha256")
+    .update(`${salt}|${ip ?? "no-ip"}`)
+    .digest("hex")
+    .slice(0, 16);
+  const rlIp = await checkRateLimit(`signin-ip:${ipHash}`, 20, 300);
+
+  if (!rl.allowed || !rlIp.allowed) {
+    const retryAfter = Math.max(rl.retryAfterSeconds, rlIp.retryAfterSeconds);
+    const msg = `Muitas tentativas. Tente de novo em ${retryAfter}s.`;
     redirect(
       `/entrar?error=${encodeURIComponent(msg)}&email=${encodeURIComponent(email)}`,
     );

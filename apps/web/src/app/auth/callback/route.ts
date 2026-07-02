@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@milsaca/db/web/server";
 import { defaultRouteFor, isAppAdmin } from "@/lib/auth";
+import { safeInternalPath } from "@/lib/safe-url";
 import { logger, safeError } from "@/lib/logger";
 import { tagSentryReqId } from "@/lib/req-logger";
 import type { Profile } from "@milsaca/types";
@@ -47,8 +48,11 @@ export async function GET(request: NextRequest) {
 
   // Se o caller especificou `next`, vence — fluxo de reset de senha
   // depende disso pra parar em /redefinir-senha em vez de cair no painel.
+  // Sanitiza contra open redirect (achado de segurança S1): `next=@evil.com`
+  // viraria `https://milsaca.app@evil.com` (truque userinfo). safeInternalPath
+  // só aceita caminho interno; valor malicioso cai no fallback /painel.
   if (nextParam) {
-    return NextResponse.redirect(`${origin}${nextParam}`);
+    return NextResponse.redirect(`${origin}${safeInternalPath(nextParam)}`);
   }
 
   if (await isAppAdmin()) {

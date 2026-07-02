@@ -115,7 +115,9 @@
 .dark .bg-white\/80 { background-color: hsl(var(--d-card) / 0.8); }
 .dark .bg-milsaca-cream { background-color: hsl(var(--d-bg2)); }
 .dark .bg-milsaca-cream\/40 { background-color: hsl(var(--d-bg2) / 0.5); }
+.dark .bg-milsaca-cream\/50 { background-color: hsl(var(--d-bg2) / 0.6); }
 .dark .bg-milsaca-cream\/60 { background-color: hsl(var(--d-bg2) / 0.7); }
+.dark .bg-milsaca-cream\/70 { background-color: hsl(var(--d-bg2) / 0.8); }
 .dark .bg-milsaca-cream-claro { background-color: hsl(var(--d-soft)); }
 .dark .bg-milsaca-cream-escuro { background-color: hsl(var(--d-raised)); }
 .dark .bg-milsaca-cream-escuro\/40 { background-color: hsl(var(--d-raised) / 0.5); }
@@ -130,6 +132,11 @@
 .dark .bg-success-50 { background-color: rgb(46 125 82 / 0.2); }
 .dark .bg-warning-50 { background-color: rgb(201 138 30 / 0.16); }
 .dark .bg-info-50 { background-color: rgb(75 107 130 / 0.22); }
+/* Tints de estado com opacidade (mesma cor escura, alpha proporcional) */
+.dark .bg-success-50\/60 { background-color: rgb(46 125 82 / 0.16); }
+.dark .bg-warning-50\/70 { background-color: rgb(201 138 30 / 0.13); }
+.dark .bg-danger-50\/50 { background-color: rgb(178 59 46 / 0.12); }
+.dark .bg-danger-50\/70 { background-color: rgb(178 59 46 / 0.15); }
 
 /* ── Textos escuros → claros (mantendo a hierarquia) ── */
 .dark .text-milsaca-cafezal { color: hsl(var(--d-text)); }
@@ -187,3 +194,46 @@
 .dark .hover\:bg-milsaca-cream-escuro:hover { background-color: hsl(var(--d-raised)); }
 .dark .hover\:bg-milsaca-cream-escuro\/40:hover { background-color: hsl(var(--d-raised) / 0.5); }
 .dark .hover\:text-milsaca-cafezal:hover { color: hsl(var(--d-text)); }
+
+/* ════════════════════════════════════════════════════════════════════════
+   MOTION — entrada suave + microinterações. Acessível por padrão: só roda
+   com `prefers-reduced-motion: no-preference`. Quem pede menos movimento vê
+   tudo já no estado final (sem opacity:0, sem desenho de linha).
+   ════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @keyframes ms-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes ms-draw {
+    from {
+      stroke-dashoffset: 360;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* Entrada com fade + subida; o atraso (stagger) vem por inline style. */
+  .ms-reveal {
+    opacity: 0;
+    animation: ms-fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Sparkline que se desenha da esquerda pra direita. */
+  .ms-spark {
+    stroke-dasharray: 360;
+    animation: ms-draw 1.2s ease-out 0.25s both;
+  }
+}

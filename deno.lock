@@ -1,0 +1,19 @@
+{
+  "version": "4",
+  "redirects": {
+    "https://esm.sh/@supabase/supabase-js@2": "https://esm.sh/@supabase/supabase-js@2.110.0"
+  },
+  "remote": {
+    "https://esm.sh/@sentry/deno@8.45.1": "4366f23e6d86af6da4e31b30e8e4ad766dad1119302992b096fab040bcac4509",
+    "https://esm.sh/@supabase/supabase-js@2.110.0": "b99c0ce7729f9de7797f836b93ab9ec94f1cfe079b4f937fa4144fe13525e979"
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:prettier@^3.4.2",
+        "npm:turbo@^2.9.0",
+        "npm:typescript@^5.7.2"
+      ]
+    }
+  }
+}

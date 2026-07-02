@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@milsaca/db/web/server";
 import { defaultRouteFor } from "@/lib/auth";
+import { safeInternalPath } from "@/lib/safe-url";
 import { logger, safeError } from "@/lib/logger";
 import { tagSentryReqId } from "@/lib/req-logger";
 import type { Profile } from "@milsaca/types";
@@ -17,7 +18,10 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
-  const next = searchParams.get("next") ?? "/painel";
+  // Sanitiza contra open redirect (achado de segurança S1): valor malicioso
+  // (`@evil.com`, `//evil.com`) cai no fallback interno /painel.
+  const nextRaw = searchParams.get("next");
+  const next = safeInternalPath(nextRaw, "/painel");
 
   if (!token_hash || !type) {
     return NextResponse.redirect(
@@ -50,7 +54,7 @@ export async function GET(request: NextRequest) {
   // `/painel`), vence — padroniza com /auth/callback, importante pra
   // fluxos como reset de senha que precisam pousar em /redefinir-senha
   // em vez do painel.
-  const nextWasExplicit = searchParams.get("next") !== null;
+  const nextWasExplicit = nextRaw !== null;
   if (nextWasExplicit) {
     return NextResponse.redirect(`${origin}${next}`);
   }

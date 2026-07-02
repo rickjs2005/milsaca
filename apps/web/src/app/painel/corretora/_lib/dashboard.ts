@@ -80,8 +80,7 @@ export async function loadDashboardKpis(
     lotesAtivos,
     produtores,
     compradores,
-    leadsProdutores,
-    contratosProdutores,
+    produtoresAtivosRes,
   ] = await Promise.all([
     supabase
       .from("leads")
@@ -131,28 +130,14 @@ export async function loadDashboardKpis(
       .eq("ativo", true),
     // Produtores ATIVOS = distintos vindos de leads (não arquivados) + contratos.
     // produtor_contatos é "cadastrados" (outra métrica); aqui conta quem move negócio.
-    supabase
-      .from("leads")
-      .select("produtor_id")
-      .eq("corretora_id", corretoraId)
-      .not("produtor_id", "is", null)
-      .neq("status", "arquivado"),
-    supabase
-      .from("contratos")
-      .select("produtor_id")
-      .eq("corretora_id", corretoraId)
-      .not("produtor_id", "is", null),
+    // Agregado no banco (count distinct via RPC) em vez de puxar todas as linhas
+    // e deduplicar em memória — escala com o tamanho do tenant (E2).
+    supabase.rpc("corretora_produtores_ativos", {
+      p_corretora_id: corretoraId,
+    }),
   ]);
 
-  const produtoresAtivosSet = new Set<string>();
-  for (const r of (leadsProdutores.data ?? []) as { produtor_id: string | null }[]) {
-    if (r.produtor_id) produtoresAtivosSet.add(r.produtor_id);
-  }
-  for (const r of (contratosProdutores.data ?? []) as {
-    produtor_id: string | null;
-  }[]) {
-    if (r.produtor_id) produtoresAtivosSet.add(r.produtor_id);
-  }
+  const produtoresAtivos = Number(produtoresAtivosRes.data ?? 0);
 
   const receitaMes = (
     (contratosMes.data ?? []) as { comissao_total: number | string | null }[]
@@ -197,7 +182,7 @@ export async function loadDashboardKpis(
     lotesAtivos: lotesRows.length,
     sacasDisponiveis,
     produtoresCadastrados: produtores.count ?? 0,
-    produtoresAtivos: produtoresAtivosSet.size,
+    produtoresAtivos,
     compradoresAtivos: compradores.count ?? 0,
   };
 }

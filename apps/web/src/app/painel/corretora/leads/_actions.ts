@@ -18,6 +18,19 @@ import type { LeadStatus, LeadOrigem } from "./_lib/queries";
 import { LEAD_STATUS_ORDER, LEAD_STATUS_LABEL } from "./_lib/queries";
 import { LEAD_ORIGEM_ORDER } from "./_lib/lead-meta";
 
+// Máquina de estados do lead (P1) — ESPELHO da trigger
+// tg_validate_lead_transition (migration 20260660000000). Fonte da validação
+// é o banco; isto só dá um erro amigável antes do update em vez de deixar a
+// exceção crua "transicao_lead_invalida" vazar. `convertido` é terminal (só
+// vira convertido ao gerar o contrato). No-op (mesmo status) sempre permitido.
+const LEAD_TRANSICOES: Record<LeadStatus, LeadStatus[]> = {
+  novo: ["em_negociacao", "perdido", "arquivado", "convertido"],
+  em_negociacao: ["novo", "convertido", "perdido", "arquivado"],
+  perdido: ["novo", "em_negociacao", "arquivado"],
+  arquivado: ["novo", "em_negociacao"],
+  convertido: [],
+};
+
 function formatProposta(
   coffee_type: string | null,
   bag_count: number | null,
@@ -343,6 +356,25 @@ export async function updateLeadStatus(formData: FormData) {
     }
     revalidateLead(id);
     redirect(`/painel/corretora/leads/${id}`);
+  }
+
+  // Espelho da máquina de estados (P1): bloqueia transições incoerentes com
+  // erro amigável ANTES do update — a trigger no banco é a trava final, mas
+  // aqui evitamos que a exceção crua "transicao_lead_invalida" chegue ao
+  // usuário. (convertido já foi tratado acima; sobra novo/em_negociacao/
+  // perdido/arquivado como origem.)
+  const permitidas = LEAD_TRANSICOES[current.status as LeadStatus] ?? [];
+  if (!permitidas.includes(next)) {
+    const log = await getReqLogger({
+      action: "updateLeadStatus",
+      corretoraId: profile.corretora_id,
+      leadId: id,
+    });
+    log.warn("lead_transicao_invalida", { from: current.status, to: next });
+    const params = new URLSearchParams({
+      error: `Não dá pra mudar de "${LEAD_STATUS_LABEL[current.status as LeadStatus] ?? current.status}" para "${LEAD_STATUS_LABEL[next]}".`,
+    });
+    redirect(`/painel/corretora/leads/${id}?${params.toString()}`);
   }
 
   const { error } = await supabase

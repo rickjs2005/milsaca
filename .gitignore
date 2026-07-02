@@ -67,3 +67,6 @@ coverage/
 # Milsaca review (relatórios de auditoria pré-piloto — contêm achados sensíveis)
 .milsaca-review/
 .qa-shots/
+
+# Screenshots de sessões de redesign (artefato local, não versionar)
+_redesign-shots/

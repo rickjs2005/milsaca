@@ -16,6 +16,12 @@ import {
   type PropostaStatus,
 } from "./_lib/proposta-meta";
 
+// Teto de sanidade de preço (P10): R$/saca acima disso é quase certo um erro
+// de digitação (ex.: esqueceu a vírgula). Café arábica raramente passa de
+// alguns milhares de reais por saca — R$ 100.000 é folga MUITO grande, só
+// barra absurdos. Mensagem amigável em vez de gravar lixo.
+const PRECO_SACA_MAX = 100_000;
+
 function clean(v: FormDataEntryValue | null): string | null {
   if (v == null) return null;
   const s = String(v).trim();
@@ -114,6 +120,9 @@ export async function createProposta(formData: FormData) {
   const errors: string[] = [];
   if (!leadId && !loteId) errors.push("Vincule a um lead ou lote");
   if (preco_saca == null) errors.push("Informe o preço por saca");
+  else if (preco_saca <= 0 || preco_saca > PRECO_SACA_MAX) {
+    errors.push("Valor por saca fora do intervalo plausível.");
+  }
 
   // pra redirecionar de volta pro lugar certo, usa a primeira FK que veio
   const backHref = leadId
@@ -315,6 +324,15 @@ export async function updatePropostaStatus(formData: FormData) {
       code: error.code,
       err: safeError(error),
     });
+    // P6 — trava de overselling: índice único parcial (uma proposta aceita
+    // por lead/lote) gera 23505 ao tentar aceitar uma 2ª proposta. Mensagem
+    // amigável específica em vez do genérico "Já existe um registro...".
+    if (error.code === "23505") {
+      const msg = /por_lote/i.test(error.message ?? "")
+        ? "Já existe uma proposta aceita para este lote."
+        : "Já existe uma proposta aceita para este lead.";
+      redirect(`${backHref}?error=${encodeURIComponent(msg)}`);
+    }
     const params = new URLSearchParams({ error: friendlyPostgresError(error) });
     redirect(`${backHref}?${params.toString()}`);
   }
@@ -359,6 +377,37 @@ export async function updatePropostaStatus(formData: FormData) {
       .eq("id", c.lote_id)
       .eq("corretora_id", profile.corretora_id)
       .not("status", "in", "(vendido,arquivado)");
+  }
+
+  // P4 — notifica o produtor quando a corretora aceita/rejeita a proposta.
+  // Simetria: o caminho inverso (produtor responde) já avisa a corretora.
+  // Best-effort; nunca derruba o sucesso da resposta.
+  if ((next === "aceita" || next === "rejeitada") && c.lead_id) {
+    const { data: leadRow } = await supabase
+      .from("leads")
+      .select("produtor_id")
+      .eq("id", c.lead_id)
+      .eq("corretora_id", profile.corretora_id)
+      .maybeSingle();
+    if (leadRow?.produtor_id) {
+      await notify({
+        userId: leadRow.produtor_id,
+        kind: "lead",
+        title:
+          next === "aceita"
+            ? "Proposta aceita pela corretora"
+            : "Proposta recusada pela corretora",
+        body:
+          next === "aceita"
+            ? "A corretora confirmou a proposta. Veja os próximos passos."
+            : "A corretora recusou a proposta — você pode fazer uma contraproposta.",
+        data: {
+          lead_id: c.lead_id,
+          corretora_id: profile.corretora_id,
+          href: `/painel/produtor/negociacoes/${c.lead_id}`,
+        },
+      });
+    }
   }
 
   revalidateProposta({ leadId: c.lead_id, loteId: c.lote_id });

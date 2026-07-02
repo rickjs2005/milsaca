@@ -3,12 +3,16 @@ import {
   Coffee,
   Sprout,
   ArrowRight,
+  ArrowUpRight,
   FileCheck2,
   Smartphone,
   Globe2,
   MessageCircle,
   ScrollText,
   ShieldCheck,
+  LineChart,
+  Lock,
+  BadgeCheck,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -56,80 +60,144 @@ export default async function Home() {
           </Badge>
         </header>
 
-        {/* Hero */}
-        <section className="flex flex-col items-center pt-16 text-center md:pt-24">
-          <Badge
-            variant="outline"
-            className="mb-6 border-milsaca-dourado/50 text-milsaca-cafezal"
-          >
-            Mercado do café · Brasil
-          </Badge>
+        {/* Hero — duas colunas: proposta à esquerda, produto à direita */}
+        <section className="grid grid-cols-1 items-center gap-10 pt-14 md:grid-cols-2 md:gap-12 md:pt-20">
+          <div className="ms-reveal text-center md:text-left">
+            <Badge
+              variant="outline"
+              className="mb-6 border-milsaca-dourado/50 text-milsaca-cafezal"
+            >
+              Mercado do café · Zona da Mata · Minas Gerais
+            </Badge>
 
-          <h1 className="text-balance text-h1 leading-[1.05] tracking-tight text-milsaca-preto md:text-display md:text-[3.5rem]">
-            Corretagem de café{" "}
-            <span className="text-milsaca-dourado-texto">cloud-nativa</span>
-            <br className="hidden md:block" /> pra nova geração.
-          </h1>
+            <h1 className="text-balance text-h1 leading-[1.05] tracking-tight text-milsaca-preto md:text-display md:text-[3.25rem]">
+              A corretora de café{" "}
+              <span className="text-milsaca-dourado-texto">inteira</span> num
+              painel só.
+            </h1>
 
-          <p className="mt-6 max-w-2xl text-balance text-body text-neutral-600 md:text-body-lg">
-            O Milsaca é o sistema que conecta corretora, produtor e mercado —
-            com COB digital, laudo público com QR, NFP-e e EUDR no horizonte, e
-            app no celular do produtor.
-          </p>
+            <p className="mx-auto mt-6 max-w-xl text-balance text-body text-neutral-700 md:mx-0 md:text-body-lg">
+              Produtores, cotações, propostas, contratos e laudo digital num
+              lugar — e o produtor acompanha tudo, e fala com você, direto do
+              celular. Sem planilha, sem papelada, sem ligação perdida.
+            </p>
 
-          <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">
-            <Button asChild size="lg" variant="primary">
-              <Link href="/entrar">
-                Sou corretora
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <Link href="/entrar">Sou produtor</Link>
-            </Button>
+            <div className="mt-9 flex flex-col items-center gap-3 sm:flex-row md:items-start md:justify-start">
+              {WHATSAPP_URL ? (
+                <Button asChild size="lg" variant="primary">
+                  <a
+                    href={WHATSAPP_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Agendar uma demo
+                  </a>
+                </Button>
+              ) : (
+                <Button asChild size="lg" variant="primary">
+                  <Link href="/entrar">
+                    Começar
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              )}
+              <Button asChild size="lg" variant="outline">
+                <Link href="/entrar">Já tenho conta</Link>
+              </Button>
+            </div>
+
+            <p className="mt-5 text-caption text-neutral-600">
+              Demo de 20 minutos, sem cartão · Foco inicial em Manhuaçu e Matas
+              de Minas.
+            </p>
           </div>
 
-          <p className="mt-6 text-caption text-neutral-500">
-            Foco inicial: Zona da Mata · Matas de Minas · Manhuaçu/MG.
-          </p>
+          {/* Preview do produto — mock fiel à UI real (dado ilustrativo) */}
+          <HeroPreview />
+        </section>
+
+        {/* Faixa de credibilidade — sinais reais, sem número inventado */}
+        <section
+          className="ms-reveal mt-section grid grid-cols-2 gap-3 pt-14 md:grid-cols-4"
+          style={{ animationDelay: "220ms" }}
+        >
+          <TrustItem
+            icon={<LineChart className="h-4 w-4" />}
+            title="Cotação CEPEA/ESALQ"
+            text="Referência oficial do mercado, ao lado do preço de cada corretora."
+          />
+          <TrustItem
+            icon={<BadgeCheck className="h-4 w-4" />}
+            title="Laudo COB auditável"
+            text="Classificação pela IN 8/2003, com laudo público e QR."
+          />
+          <TrustItem
+            icon={<Lock className="h-4 w-4" />}
+            title="Isolamento por RLS"
+            text="Cada corretora vê só os próprios dados — garantido no banco."
+          />
+          <TrustItem
+            icon={<ShieldCheck className="h-4 w-4" />}
+            title="LGPD desde o dia 1"
+            text="Exportação e anonimização de dados previstas no produto."
+          />
         </section>
 
         {/* Pra quem é */}
         <section className="mt-section grid grid-cols-1 gap-4 pt-16 md:grid-cols-2">
-          <Card className="p-8">
+          <Card className="flex flex-col p-8">
             <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-milsaca-cafezal text-milsaca-cream">
               <Coffee className="h-5 w-5" />
             </div>
             <h2 className="mt-4 text-h3 text-milsaca-cafezal">Pra corretora</h2>
-            <p className="mt-2 text-body-sm leading-relaxed text-neutral-600">
+            <p className="mt-2 text-body-sm leading-relaxed text-neutral-700">
               Mesa de operação completa: produtores, leads, contratos com
               espelho, lotes com laudo COB digital, cotações e canal direto via
               WhatsApp. Tudo num único painel.
             </p>
-            <ul className="mt-4 space-y-2 text-body-sm text-neutral-600">
+            <ul className="mt-4 space-y-2 text-body-sm text-neutral-700">
               <Item>CRM de produtores + modo sombra</Item>
               <Item>Lotes com laudo COB (IN 8/2003) auditável</Item>
               <Item>Contratos com espelho imprimível</Item>
               <Item>Multi-tenant seguro (RLS)</Item>
             </ul>
+            <div className="mt-6 pt-2">
+              <Link
+                href="/entrar"
+                className="inline-flex items-center gap-1.5 text-body-sm font-semibold text-milsaca-cafezal hover:underline"
+              >
+                Entrar como corretora
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </Card>
 
-          <Card tone="premium" className="p-8">
+          <Card tone="premium" className="flex flex-col p-8">
             <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-milsaca-dourado text-milsaca-cafezal">
               <Smartphone className="h-5 w-5" />
             </div>
             <h2 className="mt-4 text-h3 text-milsaca-cafezal">Pra produtor</h2>
-            <p className="mt-2 text-body-sm leading-relaxed text-neutral-600">
+            <p className="mt-2 text-body-sm leading-relaxed text-neutral-700">
               App leve no celular pra acompanhar cotações, ver propostas das
               corretoras, contratos assinados e falar direto no WhatsApp. Sem
               papelada, sem ligação perdida.
             </p>
-            <ul className="mt-4 space-y-2 text-body-sm text-neutral-600">
+            <ul className="mt-4 space-y-2 text-body-sm text-neutral-700">
               <Item>Cotações com variação e histórico</Item>
               <Item>Propostas e contratos em uma tela</Item>
               <Item>Login simples por código de email</Item>
               <Item>WhatsApp 1-toque pra cada corretora</Item>
             </ul>
+            <div className="mt-6 pt-2">
+              <Link
+                href="/entrar"
+                className="inline-flex items-center gap-1.5 text-body-sm font-semibold text-milsaca-cafezal hover:underline"
+              >
+                Entrar como produtor
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </Card>
         </section>
 
@@ -156,9 +224,11 @@ export default async function Home() {
               text="Arquitetura preparada pra emissão eletrônica de Nota Fiscal de Produtor quando a homologação SEFAZ entrar."
             />
             <Feature
+              tone="urgent"
+              badge="Prazo dez/2026"
               icon={<Globe2 className="h-5 w-5" />}
               title="EUDR-ready"
-              text="Banco preparado pra talhões com polígono geográfico e DDS — vai estar pronto antes do prazo de dez/2026."
+              text="A UE vai exigir origem geográfica do café. O banco já guarda talhão com polígono e DDS — você chega pronto antes do prazo."
             />
             <Feature
               icon={<ShieldCheck className="h-5 w-5" />}
@@ -174,8 +244,8 @@ export default async function Home() {
             Pronto pra digitalizar sua corretora?
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-body-sm text-milsaca-cream/85">
-            Cadastros novos hoje são feitos junto com o time Milsaca. Fale
-            comigo no WhatsApp e marcamos uma demo de 20 minutos.
+            Cadastros novos são feitos junto com o time Milsaca — você sai da
+            demo já operando. Marque 20 minutos no WhatsApp.
           </p>
           <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
             {WHATSAPP_URL ? (
@@ -247,7 +317,7 @@ function Item({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Feature({
+function TrustItem({
   icon,
   title,
   text,
@@ -257,9 +327,44 @@ function Feature({
   text: string;
 }) {
   return (
-    <Card className="p-5">
-      <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-milsaca-cream-escuro text-milsaca-cafezal">
+    <div className="flex flex-col gap-2">
+      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-milsaca-cream-escuro text-milsaca-cafezal">
         {icon}
+      </span>
+      <p className="text-body-sm font-semibold text-milsaca-cafezal">{title}</p>
+      <p className="text-caption leading-relaxed text-neutral-600">{text}</p>
+    </div>
+  );
+}
+
+function Feature({
+  icon,
+  title,
+  text,
+  tone,
+  badge,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  text: string;
+  tone?: "urgent";
+  badge?: string;
+}) {
+  const urgent = tone === "urgent";
+  return (
+    <Card
+      tone={urgent ? "premium" : "default"}
+      className="flex flex-col p-5"
+    >
+      <div className="flex items-center justify-between">
+        <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-milsaca-cream-escuro text-milsaca-cafezal">
+          {icon}
+        </div>
+        {badge ? (
+          <span className="rounded-pill bg-milsaca-dourado/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-milsaca-dourado-texto">
+            {badge}
+          </span>
+        ) : null}
       </div>
       <h3 className="mt-3 text-body font-semibold text-milsaca-cafezal">
         {title}
@@ -268,5 +373,136 @@ function Feature({
         {text}
       </p>
     </Card>
+  );
+}
+
+/**
+ * Preview do produto no hero. Mock fiel à UI real do painel do produtor
+ * (card "melhor preço" + propostas), com dado ILUSTRATIVO — dá o impacto
+ * visual que faltava sem depender de screenshot de dado real.
+ */
+function HeroPreview() {
+  return (
+    <div
+      className="ms-reveal relative mx-auto w-full min-w-0 max-w-sm md:mx-0 md:max-w-md"
+      style={{ animationDelay: "120ms" }}
+    >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -inset-4 rounded-[2rem] bg-milsaca-dourado/10 blur-2xl"
+      />
+      <div className="relative overflow-hidden rounded-[1.75rem] border border-milsaca-cream-escuro bg-white shadow-elevated">
+        {/* Barra de janela */}
+        <div className="flex items-center gap-1.5 border-b border-milsaca-cream-escuro bg-milsaca-cream/60 px-4 py-3">
+          <span className="h-2.5 w-2.5 rounded-full bg-milsaca-cream-escuro" />
+          <span className="h-2.5 w-2.5 rounded-full bg-milsaca-cream-escuro" />
+          <span className="h-2.5 w-2.5 rounded-full bg-milsaca-cream-escuro" />
+          <span className="ml-3 truncate text-[11px] font-medium text-neutral-500">
+            Painel do produtor · Cotações
+          </span>
+        </div>
+
+        <div className="space-y-3 p-4">
+          {/* Melhor preço hoje */}
+          <div className="rounded-card border border-milsaca-dourado/30 bg-white p-4 ring-1 ring-inset ring-milsaca-dourado/10">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-milsaca-dourado-texto">
+              🔥 Melhor preço hoje
+            </p>
+            <div className="mt-1 flex flex-wrap items-end justify-between gap-x-2 gap-y-1">
+              <p className="text-h1 font-bold leading-none tracking-tight text-milsaca-cafezal">
+                R$ 1.505
+                <span className="text-body-sm font-normal text-neutral-500">
+                  ,00
+                </span>
+              </p>
+              <span className="inline-flex items-center gap-0.5 rounded-pill bg-success-50 px-2 py-0.5 text-caption font-semibold text-success-700">
+                <ArrowUpRight className="h-3.5 w-3.5" />
+                +1,0% vs CEPEA
+              </span>
+            </div>
+            <p className="mt-1 text-caption text-neutral-600">
+              Corretora Demo Café · Arábica cereja descascado
+            </p>
+            {/* Sparkline ilustrativa */}
+            <svg
+              viewBox="0 0 320 56"
+              className="mt-3 h-12 w-full"
+              fill="none"
+              aria-hidden
+            >
+              <defs>
+                <linearGradient id="hpArea" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stopColor="#C9A961" stopOpacity="0.28" />
+                  <stop offset="100%" stopColor="#C9A961" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <path
+                d="M0 44 L46 40 L92 42 L138 30 L184 33 L230 20 L276 22 L320 8 L320 56 L0 56 Z"
+                fill="url(#hpArea)"
+              />
+              <path
+                className="ms-spark"
+                d="M0 44 L46 40 L92 42 L138 30 L184 33 L230 20 L276 22 L320 8"
+                stroke="#C9A961"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+
+          {/* Duas propostas resumidas */}
+          <div className="grid grid-cols-2 gap-3">
+            <PreviewProposta
+              nome="Corretora Demo"
+              preco="R$ 1.510"
+              total="R$ 135.900"
+              melhor={false}
+            />
+            <PreviewProposta
+              nome="Corretora Sul"
+              preco="R$ 1.520"
+              total="R$ 228.000"
+              melhor
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PreviewProposta({
+  nome,
+  preco,
+  total,
+  melhor,
+}: {
+  nome: string;
+  preco: string;
+  total: string;
+  melhor: boolean;
+}) {
+  return (
+    <div className="min-w-0 rounded-card border border-neutral-200 bg-white p-3">
+      <div className="flex items-center justify-between gap-1">
+        <p className="truncate text-caption font-semibold text-milsaca-cafezal">
+          {nome}
+        </p>
+        {melhor ? (
+          <span className="shrink-0 rounded-pill bg-milsaca-dourado/20 px-1.5 py-0.5 text-[9px] font-semibold text-milsaca-cafezal">
+            Melhor
+          </span>
+        ) : null}
+      </div>
+      <p className="mt-2 text-body font-bold text-milsaca-cafezal">{preco}</p>
+      <p className="text-[10px] text-neutral-500">/saca</p>
+      <div className="mt-2 border-t border-neutral-100 pt-2">
+        <p className="text-[10px] text-neutral-500">Total</p>
+        <p className="text-caption font-semibold text-milsaca-cafezal">
+          {total}
+        </p>
+      </div>
+    </div>
   );
 }

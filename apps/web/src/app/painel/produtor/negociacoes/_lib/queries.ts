@@ -95,8 +95,34 @@ export type NegociacaoEvent = {
   created_at: string;
 };
 
+export type PropostaStatus =
+  | "rascunho"
+  | "enviada"
+  | "aceita"
+  | "rejeitada"
+  | "expirada";
+
+/**
+ * Proposta real da corretora (tabela `propostas`) — fonte de verdade do
+ * preço, ao contrário de `leads.proposed_price` (campo legado/sugerido).
+ * Lida via RPC `v1_listar_propostas_produtor` (SECURITY DEFINER) porque a
+ * RLS de `propostas` é owner-only e o produtor não lê a tabela direto.
+ */
+export type PropostaProdutor = {
+  id: string;
+  status: PropostaStatus;
+  preco_saca: number;
+  bag_count: number | null;
+  mensagem: string | null;
+  validade_ate: string | null;
+  enviada_em: string | null;
+  created_at: string;
+};
+
 export type NegociacaoDetail = NegociacaoListItem & {
   events: NegociacaoEvent[];
+  /** Propostas reais deste lead, mais recente primeiro. */
+  propostas: PropostaProdutor[];
 };
 
 export async function getMinhaNegociacao(
@@ -142,6 +168,34 @@ export async function getMinhaNegociacao(
     }),
   );
 
+  // Propostas reais via RPC (owner-only na RLS → produtor não lê a tabela).
+  // O RPC já filtra por auth.uid() = leads.produtor_id; filtramos por lead aqui.
+  const { data: propRaw } = await supabase.rpc("v1_listar_propostas_produtor", {
+    p_only_pending: false,
+  });
+  const propostas: PropostaProdutor[] = ((propRaw ?? []) as Array<{
+    id: string;
+    status: PropostaStatus;
+    preco_saca: number | string | null;
+    bag_count: number | null;
+    mensagem: string | null;
+    validade_ate: string | null;
+    enviada_em: string | null;
+    created_at: string;
+    lead_id: string | null;
+  }>)
+    .filter((p) => p.lead_id === leadId)
+    .map((p) => ({
+      id: p.id,
+      status: p.status,
+      preco_saca: p.preco_saca != null ? Number(p.preco_saca) : 0,
+      bag_count: p.bag_count != null ? Number(p.bag_count) : null,
+      mensagem: p.mensagem,
+      validade_ate: p.validade_ate,
+      enviada_em: p.enviada_em,
+      created_at: p.created_at,
+    }));
+
   return {
     id: r.id,
     status: r.status,
@@ -157,5 +211,6 @@ export async function getMinhaNegociacao(
     corretora_phone: cor?.phone ?? null,
     corretora_city: cor?.city ?? null,
     events,
+    propostas,
   };
 }

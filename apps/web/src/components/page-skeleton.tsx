@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/skeleton";
+import { Skeleton, TableSkeleton } from "@/components/skeleton";
 import { cn } from "@/lib/utils";
 
 /**
@@ -214,6 +214,215 @@ export function FeedSkeleton() {
           </div>
         </CardShell>
       ))}
+    </div>
+  );
+}
+
+/* ====================================================================== */
+/* Variante: tabela (header simples + tabela)                             */
+/* ====================================================================== */
+
+/**
+ * Header (título + descrição, sem botão) + <TableSkeleton>. Match com
+ * páginas de tabela como Contratos e Extrato do produtor.
+ */
+export function TabelaSkeleton({ cols = 5 }: { cols?: number }) {
+  return (
+    <div aria-busy className="space-y-6">
+      <header className="space-y-2">
+        <Skeleton className="h-8 w-56" />
+        <Skeleton className="h-3.5 w-72 max-w-full" />
+      </header>
+      <TableSkeleton rows={6} cols={cols} />
+    </div>
+  );
+}
+
+/* ====================================================================== */
+/* Variante: cotações do produtor                                         */
+/* ====================================================================== */
+
+/** Card de cotação — nome + preço grande + delta + sparkline. */
+function CotacaoCardSkeleton() {
+  return (
+    <CardShell>
+      <div className="flex items-start justify-between gap-2">
+        <Skeleton className="h-3.5 w-32" />
+        <Skeleton className="h-5 w-14 rounded-pill" />
+      </div>
+      <Skeleton className="mt-3 h-7 w-28" />
+      <Skeleton className="mt-4 h-10 w-full rounded-md" />
+      <Skeleton className="mt-3 h-2.5 w-28" />
+    </CardShell>
+  );
+}
+
+/**
+ * Cotações do produtor — filtros + banner de insight + "melhor preço hoje"
+ * + grade de corretoras + mercado nacional/internacional. Match com
+ * /painel/produtor/cotacoes pra que nada salte quando os dados chegam.
+ */
+export function CotacoesSkeleton() {
+  return (
+    <div aria-busy className="space-y-6">
+      {/* Header */}
+      <header className="space-y-2">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-3.5 w-80 max-w-full" />
+      </header>
+
+      {/* Filtros: tipo de café + região */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="space-y-1.5">
+            <Skeleton className="h-2.5 w-20" />
+            <Skeleton className="h-11 w-full rounded-md" />
+          </div>
+        ))}
+      </div>
+
+      {/* Banner de insight */}
+      <CardShell className="flex items-center gap-3">
+        <Skeleton className="h-6 w-6 shrink-0 rounded-full" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-3 w-40" />
+          <Skeleton className="h-2.5 w-64 max-w-full" />
+        </div>
+      </CardShell>
+
+      {/* Melhor preço hoje — destaque */}
+      <CardShell>
+        <Skeleton className="h-2.5 w-32" />
+        <Skeleton className="mt-2 h-9 w-48" />
+        <Skeleton className="mt-2 h-3 w-56 max-w-full" />
+      </CardShell>
+
+      {/* Minhas corretoras */}
+      <section className="space-y-3">
+        <Skeleton className="h-3.5 w-40" />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <CotacaoCardSkeleton key={i} />
+          ))}
+        </div>
+      </section>
+
+      {/* Mercado nacional + internacional */}
+      {Array.from({ length: 2 }).map((_, s) => (
+        <section key={s} className="space-y-3">
+          <Skeleton className="h-3.5 w-44" />
+          <div className="grid gap-3 sm:grid-cols-2">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <CotacaoCardSkeleton key={i} />
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+/* ====================================================================== */
+/* Variante: agenda comercial (corretora)                                 */
+/* ====================================================================== */
+
+/** Card de balde — linhas com ícone + 2 textos + chip de data à direita. */
+function AgendaBaldeSkeleton({ rows = 2 }: { rows?: number }) {
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-3 w-20" />
+        <Skeleton className="h-5 w-6 rounded-pill" />
+      </div>
+      <div
+        aria-hidden
+        className="divide-y divide-neutral-200 rounded-card border border-neutral-200 bg-white shadow-card"
+      >
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3 px-card py-3.5">
+            <Skeleton className="h-9 w-9 shrink-0 rounded-full" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-3.5 w-44 max-w-full" />
+              <Skeleton className="h-2.5 w-32 max-w-full" />
+            </div>
+            <Skeleton className="h-4 w-16 shrink-0" />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Agenda comercial da corretora — header + baldes Hoje/Amanhã/Esta semana,
+ * cada um com linhas de entrega/repasse. Match com /painel/corretora/agenda.
+ */
+export function AgendaSkeleton() {
+  return (
+    <div aria-busy className="space-y-section">
+      <header className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-6 w-6 rounded-md" />
+          <Skeleton className="h-8 w-56" />
+        </div>
+        <Skeleton className="h-3.5 w-80 max-w-full" />
+      </header>
+      <div className="space-y-section">
+        <AgendaBaldeSkeleton rows={2} />
+        <AgendaBaldeSkeleton rows={3} />
+        <AgendaBaldeSkeleton rows={2} />
+      </div>
+    </div>
+  );
+}
+
+/* ====================================================================== */
+/* Variante: catálogo de corretoras (produtor)                            */
+/* ====================================================================== */
+
+/**
+ * Catálogo de corretoras — filtros em pílulas + grade de cards. Match com
+ * /painel/produtor/corretoras.
+ */
+export function CatalogoSkeleton() {
+  return (
+    <div aria-busy className="space-y-6">
+      <header className="space-y-2">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-3.5 w-96 max-w-full" />
+      </header>
+
+      {/* Filtros em pílulas (mostrar + região) */}
+      {Array.from({ length: 2 }).map((_, row) => (
+        <div key={row} className="flex flex-wrap items-center gap-2">
+          <Skeleton className="h-5 w-16" />
+          {Array.from({ length: row === 0 ? 3 : 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-7 w-24 rounded-pill" />
+          ))}
+        </div>
+      ))}
+
+      {/* Grade de cards de corretora */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <CardShell key={i}>
+            <div className="flex items-start justify-between gap-2">
+              <Skeleton className="h-4 w-36" />
+              <Skeleton className="h-5 w-5 rounded-md" />
+            </div>
+            <Skeleton className="mt-2 h-2.5 w-40 max-w-full" />
+            <Skeleton className="mt-3 h-14 w-full rounded-md" />
+            <div className="mt-3 flex flex-wrap gap-1">
+              <Skeleton className="h-5 w-20 rounded-pill" />
+              <Skeleton className="h-5 w-24 rounded-pill" />
+            </div>
+            <div className="mt-3 flex gap-2">
+              <Skeleton className="h-9 w-28 rounded-md" />
+              <Skeleton className="h-9 w-24 rounded-md" />
+            </div>
+          </CardShell>
+        ))}
+      </div>
     </div>
   );
 }

@@ -64,7 +64,7 @@ export function EmptyState({
 
       <h3
         className={cn(
-          "font-semibold text-slate-900",
+          "font-semibold text-milsaca-cafezal",
           compact ? "text-sm" : "text-base",
         )}
       >
@@ -74,7 +74,7 @@ export function EmptyState({
       {description ? (
         <p
           className={cn(
-            "max-w-md text-slate-500",
+            "max-w-md text-neutral-500",
             compact ? "text-xs" : "text-sm",
           )}
         >
@@ -91,7 +91,7 @@ export function EmptyState({
                 "inline-flex items-center rounded-md px-3.5 py-2 text-sm font-medium transition-colors",
                 (cta.variant ?? "primary") === "primary"
                   ? "bg-milsaca-cafezal text-milsaca-cream hover:bg-milsaca-folha"
-                  : "border border-slate-200 text-slate-700 hover:bg-slate-50",
+                  : "border border-neutral-200 text-neutral-700 hover:bg-neutral-50",
               )}
             >
               {cta.label}

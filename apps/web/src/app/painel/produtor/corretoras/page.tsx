@@ -386,7 +386,7 @@ export default async function CorretorasProdutorPage({
                       {c.regioes_atendimento.map((r) => (
                         <span
                           key={r}
-                          className="rounded-pill bg-milsaca-dourado/15 px-2 py-0.5 text-[10px] text-milsaca-cafezal"
+                          className="rounded-pill border border-milsaca-dourado/25 bg-milsaca-dourado/10 px-2 py-0.5 text-[11px] font-medium text-milsaca-dourado-texto"
                         >
                           {REGIAO_LABEL[r]}
                         </span>

@@ -10,6 +10,9 @@ import {
   MessageSquare,
   HandCoins,
   CircleDot,
+  Check,
+  X,
+  Clock,
 } from "lucide-react";
 import {
   Card,
@@ -26,7 +29,7 @@ import { cn } from "@/lib/utils";
 import { coffeeLabel } from "@/lib/coffee";
 import { SubmitButton } from "@/components/submit-button";
 import { requireUser, getProfile } from "@/lib/auth";
-import { contraproporNegociacao } from "../_actions";
+import { contraproporNegociacao, responderProposta } from "../_actions";
 import {
   getMinhaNegociacao,
   LEAD_STATUS_LABEL,
@@ -129,9 +132,21 @@ export default async function NegociacaoDetalhePage({
   ]);
   if (!lead) notFound();
 
+  // P3 — fonte de verdade do preço é a PROPOSTA real (tabela `propostas`),
+  // não o campo legado `leads.proposed_price`. Mostra a mais recente; se houver
+  // uma `enviada`, o produtor pode aceitar/recusar aqui mesmo (P2).
+  const ultimaProposta = lead.propostas[0] ?? null;
+  const propostaAtiva =
+    lead.propostas.find((p) => p.status === "enviada") ?? null;
+  const precoAtual = ultimaProposta?.preco_saca ?? lead.proposed_price;
+  const bagAtual = ultimaProposta?.bag_count ?? lead.bag_count;
+  const validadeVencida =
+    propostaAtiva?.validade_ate != null &&
+    new Date(propostaAtiva.validade_ate).getTime() < Date.now();
+
   const nome = profile?.full_name?.trim() || null;
   const intro = nome ? `Oi! Aqui é ${nome}, da Milsaca.` : "Oi! Aqui é da Milsaca.";
-  const detalheProposta = `Sobre a proposta${lead.coffee_type ? ` de ${coffeeLabel(lead.coffee_type)}` : ""}${lead.bag_count ? ` (${lead.bag_count} sacas)` : ""}${lead.proposed_price != null ? ` a R$ ${lead.proposed_price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}/sc` : ""} — tudo certo?`;
+  const detalheProposta = `Sobre a proposta${lead.coffee_type ? ` de ${coffeeLabel(lead.coffee_type)}` : ""}${bagAtual ? ` (${bagAtual} sacas)` : ""}${precoAtual != null ? ` a R$ ${precoAtual.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}/sc` : ""} — tudo certo?`;
   const waUrl = buildWhatsAppInviteUrl({
     phone: lead.corretora_phone,
     message: `${intro}\n${detalheProposta}\nPodemos conversar pra acertar os detalhes?`,
@@ -206,8 +221,8 @@ export default async function NegociacaoDetalhePage({
                   Sacas (60kg)
                 </p>
                 <p className="text-body-sm font-medium text-milsaca-cafezal">
-                  {lead.bag_count != null
-                    ? lead.bag_count.toLocaleString("pt-BR")
+                  {bagAtual != null
+                    ? bagAtual.toLocaleString("pt-BR")
                     : "—"}
                 </p>
               </div>
@@ -216,20 +231,18 @@ export default async function NegociacaoDetalhePage({
                   Por saca
                 </p>
                 <p className="text-body-sm font-medium text-milsaca-cafezal">
-                  {lead.proposed_price != null
-                    ? formatBRL(lead.proposed_price)
-                    : "—"}
+                  {precoAtual != null ? formatBRL(precoAtual) : "—"}
                 </p>
               </div>
             </div>
 
-            {lead.proposed_price != null && lead.bag_count != null && (
+            {precoAtual != null && bagAtual != null && (
               <div className="rounded-md border border-milsaca-dourado/30 bg-milsaca-dourado/10 p-4">
                 <p className="text-caption uppercase tracking-wider text-milsaca-cafezal/70">
                   Valor total estimado
                 </p>
                 <p className="text-h3 text-milsaca-cafezal">
-                  {formatBRL(lead.proposed_price * lead.bag_count)}
+                  {formatBRL(precoAtual * bagAtual)}
                 </p>
               </div>
             )}
@@ -332,6 +345,76 @@ export default async function NegociacaoDetalhePage({
           </CardContent>
         </Card>
       </div>
+
+      {propostaAtiva && (
+        <Card tone="premium">
+          <CardHeader>
+            <CardTitle>Responder a proposta</CardTitle>
+            <CardDescription>
+              A corretora ofertou{" "}
+              <span className="font-semibold text-milsaca-cafezal">
+                {formatBRL(propostaAtiva.preco_saca)}/saca
+              </span>
+              {propostaAtiva.bag_count != null
+                ? ` por ${propostaAtiva.bag_count.toLocaleString("pt-BR")} sacas`
+                : ""}
+              . Aceite pra travar o valor, ou recuse e siga negociando.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {propostaAtiva.validade_ate && (
+              <p
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-pill px-2.5 py-1 text-caption font-medium",
+                  validadeVencida
+                    ? "bg-danger-50 text-danger-700"
+                    : "bg-warning-50 text-warning-700",
+                )}
+              >
+                <Clock className="h-3.5 w-3.5" />
+                {validadeVencida
+                  ? `Venceu em ${formatDateTime(propostaAtiva.validade_ate)}`
+                  : `Válida até ${formatDateTime(propostaAtiva.validade_ate)}`}
+              </p>
+            )}
+            {validadeVencida ? (
+              <p className="text-body-sm text-neutral-600">
+                Esta proposta venceu. Faça uma contraproposta abaixo ou fale no
+                WhatsApp pra a corretora reenviar.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <form action={responderProposta} className="sm:flex-1">
+                  <input type="hidden" name="proposta_id" value={propostaAtiva.id} />
+                  <input type="hidden" name="lead_id" value={lead.id} />
+                  <input type="hidden" name="resposta" value="aceita" />
+                  <SubmitButton
+                    variant="success"
+                    className="w-full"
+                    pendingLabel="Aceitando..."
+                  >
+                    <Check className="mr-2 h-4 w-4" />
+                    Aceitar proposta
+                  </SubmitButton>
+                </form>
+                <form action={responderProposta} className="sm:flex-1">
+                  <input type="hidden" name="proposta_id" value={propostaAtiva.id} />
+                  <input type="hidden" name="lead_id" value={lead.id} />
+                  <input type="hidden" name="resposta" value="rejeitada" />
+                  <SubmitButton
+                    variant="outline"
+                    className="w-full"
+                    pendingLabel="Recusando..."
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Recusar
+                  </SubmitButton>
+                </form>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {(lead.status === "novo" || lead.status === "em_negociacao") && (
         <Card>
