@@ -15,8 +15,17 @@ export const CATEGORIA_LABEL: Record<DocumentoCategoria, string> = {
   certificado: "Certificado",
   nota_fiscal: "Nota fiscal",
   contrato_assinado: "Contrato assinado",
+  dossie_eudr: "Dossiê EUDR",
   outro: "Outro",
 };
+
+/**
+ * Categorias disponíveis pra upload MANUAL. `dossie_eudr` fica de fora:
+ * é gerado pelo sistema (PDF do lote), não anexado à mão.
+ */
+export const CATEGORIAS_UPLOAD = (
+  Object.keys(CATEGORIA_LABEL) as DocumentoCategoria[]
+).filter((c) => c !== "dossie_eudr");
 
 export const OWNER_KIND_LABEL: Record<DocumentoOwnerKind, string> = {
   produtor: "Produtor",

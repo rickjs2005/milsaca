@@ -7,13 +7,13 @@ import { Select } from "@/components/ui/select";
 import { SubmitButton } from "@/components/submit-button";
 import {
   CATEGORIA_LABEL,
+  CATEGORIAS_UPLOAD,
   OWNER_KIND_LABEL,
-  type DocumentoCategoria,
   type DocumentoOwnerKind,
 } from "@/lib/documentos";
 import type { VinculoOption } from "../_lib/queries";
 
-const CATEGORIAS = Object.keys(CATEGORIA_LABEL) as DocumentoCategoria[];
+const CATEGORIAS = CATEGORIAS_UPLOAD;
 const KINDS = Object.keys(OWNER_KIND_LABEL) as DocumentoOwnerKind[];
 
 /**

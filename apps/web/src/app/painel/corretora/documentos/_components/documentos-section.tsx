@@ -12,7 +12,7 @@ import { Select } from "@/components/ui/select";
 import { SubmitButton } from "@/components/submit-button";
 import {
   CATEGORIA_LABEL,
-  type DocumentoCategoria,
+  CATEGORIAS_UPLOAD,
   type DocumentoOwnerKind,
 } from "@/lib/documentos";
 import { listDocumentosDoOwner } from "../_lib/queries";
@@ -23,7 +23,7 @@ import {
 } from "../_actions";
 import { DocumentosList } from "./documentos-list";
 
-const CATEGORIAS = Object.keys(CATEGORIA_LABEL) as DocumentoCategoria[];
+const CATEGORIAS = CATEGORIAS_UPLOAD;
 
 /**
  * Seção "Documentos" embutível nas páginas de detalhe (lote, contrato).

@@ -1,4 +1,12 @@
-import { CheckCircle2, Download, Leaf, MapPin, MapPinOff, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  Download,
+  FileText,
+  Leaf,
+  MapPin,
+  MapPinOff,
+  XCircle,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -219,17 +227,35 @@ export async function EudrSection({
         )}
 
         {temGeo && (
-          <div className="border-t border-milsaca-cream-escuro pt-4">
-            <Button asChild variant="outline">
-              <a href={`/painel/corretora/lotes/${loteId}/eudr`} download>
-                <Download className="mr-2 h-4 w-4" />
-                Exportar GeoJSON (para o exportador)
-              </a>
-            </Button>
-            <p className="mt-1.5 text-caption text-neutral-500">
-              Arquivo com a geometria dos talhões no formato aceito pela due
-              diligence (DDS/TRACES) do exportador.
-            </p>
+          <div className="flex flex-wrap items-start gap-3 border-t border-milsaca-cream-escuro pt-4">
+            <div>
+              <Button asChild variant="primary">
+                <a
+                  href={`/painel/corretora/lotes/${loteId}/dossie-eudr`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Dossiê EUDR (PDF)
+                </a>
+              </Button>
+              <p className="mt-1.5 text-caption text-neutral-500">
+                Documento completo: produtor, talhões, checklist e hash do
+                anexo.
+              </p>
+            </div>
+            <div>
+              <Button asChild variant="outline">
+                <a href={`/painel/corretora/lotes/${loteId}/eudr`} download>
+                  <Download className="mr-2 h-4 w-4" />
+                  Exportar GeoJSON
+                </a>
+              </Button>
+              <p className="mt-1.5 text-caption text-neutral-500">
+                Versão de máquina para a due diligence (DDS/TRACES) do
+                exportador.
+              </p>
+            </div>
           </div>
         )}
       </CardContent>

@@ -3715,6 +3715,7 @@ export type Database = {
         | "certificado"
         | "nota_fiscal"
         | "contrato_assinado"
+        | "dossie_eudr"
         | "outro"
       documento_owner_kind: "produtor" | "lote" | "contrato" | "corretora"
       entrega_status:
@@ -3952,6 +3953,7 @@ export const Constants = {
         "certificado",
         "nota_fiscal",
         "contrato_assinado",
+        "dossie_eudr",
         "outro",
       ],
       documento_owner_kind: ["produtor", "lote", "contrato", "corretora"],
