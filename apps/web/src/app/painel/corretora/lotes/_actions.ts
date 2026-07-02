@@ -159,3 +159,87 @@ export async function updateLoteStatus(formData: FormData) {
   revalidatePath("/painel/corretora");
   redirect("/painel/corretora/lotes?ok=Status%20atualizado");
 }
+
+// -----------------------------------------------------------------
+// EUDR (F2): vínculo lote ↔ talhões georreferenciados
+// -----------------------------------------------------------------
+
+/**
+ * Vincula um talhão do produtor ao lote (origem EUDR). A RLS de
+ * lote_talhoes valida no with check que o talhão pertence ao produtor
+ * do lote — aqui só traduzimos o erro pra mensagem amigável.
+ */
+export async function vincularTalhao(formData: FormData) {
+  const profile = await ensureCorretora();
+  const loteId = String(formData.get("lote_id") ?? "").trim();
+  const talhaoId = String(formData.get("talhao_id") ?? "").trim();
+  const back = `/painel/corretora/lotes/${loteId}`;
+
+  if (!loteId || !talhaoId) {
+    redirect(`${back}?error=${encodeURIComponent("Selecione um talhão.")}`);
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("lote_talhoes")
+    .insert({ lote_id: loteId, talhao_id: talhaoId });
+
+  if (error) {
+    if (error.code === "23505") {
+      redirect(
+        `${back}?error=${encodeURIComponent("Este talhão já está vinculado ao lote.")}`,
+      );
+    }
+    if (error.code === "42501") {
+      redirect(
+        `${back}?error=${encodeURIComponent("Talhão não pertence ao produtor deste lote.")}`,
+      );
+    }
+    const log = await getReqLogger({
+      action: "vincularTalhao",
+      corretoraId: profile.corretora_id,
+      loteId,
+    });
+    log.error("lote_talhao_vincular_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
+    redirect(`${back}?error=${encodeURIComponent(friendlyPostgresError(error))}`);
+  }
+
+  revalidatePath(back);
+  redirect(`${back}?saved=${encodeURIComponent("Talhão vinculado ao lote.")}`);
+}
+
+/** Remove o vínculo lote↔talhão (não apaga o talhão do produtor). */
+export async function desvincularTalhao(formData: FormData) {
+  const profile = await ensureCorretora();
+  const loteId = String(formData.get("lote_id") ?? "").trim();
+  const talhaoId = String(formData.get("talhao_id") ?? "").trim();
+  const back = `/painel/corretora/lotes/${loteId}`;
+
+  if (!loteId || !talhaoId) redirect(back);
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("lote_talhoes")
+    .delete()
+    .eq("lote_id", loteId)
+    .eq("talhao_id", talhaoId);
+
+  if (error) {
+    const log = await getReqLogger({
+      action: "desvincularTalhao",
+      corretoraId: profile.corretora_id,
+      loteId,
+    });
+    log.error("lote_talhao_desvincular_falhou", {
+      code: error.code,
+      err: safeError(error),
+    });
+    redirect(`${back}?error=${encodeURIComponent(friendlyPostgresError(error))}`);
+  }
+
+  revalidatePath(back);
+  redirect(`${back}?saved=${encodeURIComponent("Vínculo removido.")}`);
+}

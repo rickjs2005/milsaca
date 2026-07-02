@@ -14,6 +14,7 @@ import {
   Wallet,
   Receipt,
   FolderOpen,
+  MapPin,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { href: "/painel/produtor", label: "Início", icon: Home, exact: true },
   { href: "/painel/produtor/laudos", label: "Meu Café", icon: Package },
+  { href: "/painel/produtor/talhoes", label: "Minha lavoura", icon: MapPin },
   { href: "/painel/produtor/negociacoes", label: "Propostas", icon: Handshake },
   { href: "/painel/produtor/vendas", label: "Vendas", icon: Receipt },
   { href: "/painel/produtor/financeiro", label: "Financeiro", icon: Wallet },

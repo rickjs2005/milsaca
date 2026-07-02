@@ -31,6 +31,7 @@ import {
   OFERTA_STATUS_COLOR,
 } from "../../ofertas/_lib/queries";
 import { DocumentosSection } from "../../documentos/_components/documentos-section";
+import { EudrSection } from "../_components/eudr-section";
 
 export const metadata = { title: "Detalhe do lote — Milsaca" };
 
@@ -466,6 +467,8 @@ export default async function LoteDetalhePage({
             </CardContent>
           </Card>
         )}
+
+        <EudrSection loteId={lote.id} produtorProfileId={lote.produtor_id} />
 
         <DocumentosSection
           ownerKind="lote"

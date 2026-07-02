@@ -1457,6 +1457,39 @@ export type Database = {
           },
         ]
       }
+      lote_talhoes: {
+        Row: {
+          created_at: string
+          lote_id: string
+          talhao_id: string
+        }
+        Insert: {
+          created_at?: string
+          lote_id: string
+          talhao_id: string
+        }
+        Update: {
+          created_at?: string
+          lote_id?: string
+          talhao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lote_talhoes_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lote_talhoes_talhao_id_fkey"
+            columns: ["talhao_id"]
+            isOneToOne: false
+            referencedRelation: "talhoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lotes: {
         Row: {
           beneficiado: boolean
@@ -3047,6 +3080,48 @@ export type Database = {
         }
         Relationships: []
       }
+      talhoes: {
+        Row: {
+          area_ha: number | null
+          created_at: string
+          geojson: Json | null
+          geom: unknown | null
+          id: string
+          nome: string
+          origem: string
+          produtor_id: string
+          updated_at: string
+        }
+        Insert: {
+          area_ha?: number | null
+          created_at?: string
+          geom?: unknown | null
+          id?: string
+          nome: string
+          origem?: string
+          produtor_id: string
+          updated_at?: string
+        }
+        Update: {
+          area_ha?: number | null
+          created_at?: string
+          geom?: unknown | null
+          id?: string
+          nome?: string
+          origem?: string
+          produtor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "talhoes_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "produtores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_leads: {
         Row: {
           contato_email: string | null
@@ -3422,6 +3497,16 @@ export type Database = {
           lotes_parados: number
         }[]
       }
+      criar_talhao: {
+        Args: {
+          p_produtor_id: string
+          p_nome: string
+          p_area_ha: number | null
+          p_geojson: Json | null
+          p_origem?: string
+        }
+        Returns: string
+      }
       current_corretora: { Args: never; Returns: string }
       current_role: {
         Args: never
@@ -3435,6 +3520,7 @@ export type Database = {
         Args: { p_mensagem: string; p_user_id: string }
         Returns: undefined
       }
+      eudr_checklist: { Args: { p_lote_id: string }; Returns: Json }
       expire_subscriptions: { Args: never; Returns: number }
       expire_trials: { Args: never; Returns: number }
       fn_log_system_event: {
