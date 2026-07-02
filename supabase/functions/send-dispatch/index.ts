@@ -32,6 +32,19 @@
 //      (não verify_jwt porque o caller é o próprio banco, não usuário).
 //   5. Em /admin/configuracoes: dispatch_worker_url + dispatch_worker_secret
 //      (sai do modo stub no cron process_pending_dispatches).
+//
+// WhatsApp — TEMPLATE vs TEXT:
+//   A Cloud API só aceita type:"text" dentro da janela de 24h aberta pelo
+//   USUÁRIO. Notificação iniciada pela plataforma (nosso caso) fora da
+//   janela exige TEMPLATE aprovado pela Meta (HSM) — texto livre leva 131047.
+//   Regra deste worker:
+//     - notification_templates.meta_template_name preenchido → type:"template",
+//       parâmetros POSICIONAIS na ordem do array `variables` ({{1}} =
+//       variables[0], ...). A ordem de `variables` é CONTRATO com o template
+//       registrado na Meta — não reordenar sem re-registrar lá.
+//     - meta_template_name NULL → type:"text" (fallback; só janela 24h).
+//   Idioma do template: WHATSAPP_TEMPLATE_LANG (default pt_BR).
+//   Registro/aprovação dos templates: docs/milsaca/meta-templates-whatsapp.md.
 // =================================================================
 
 // @ts-expect-error — Deno runtime
@@ -48,6 +61,8 @@ const SEND_DISPATCH_SECRET = Deno.env.get("SEND_DISPATCH_SECRET") ?? "";
 const WHATSAPP_TOKEN = Deno.env.get("WHATSAPP_PROVIDER_TOKEN") ?? "";
 const WHATSAPP_PHONE_ID = Deno.env.get("WHATSAPP_PHONE_ID") ?? "";
 const WHATSAPP_API_VERSION = Deno.env.get("WHATSAPP_API_VERSION") ?? "v21.0";
+const WHATSAPP_TEMPLATE_LANG =
+  Deno.env.get("WHATSAPP_TEMPLATE_LANG") ?? "pt_BR";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const RESEND_FROM =
   Deno.env.get("RESEND_FROM") ?? "Milsaca <nao-responda@milsaca.app>";
@@ -164,6 +179,8 @@ type Template = {
   kind: string;
   body: string;
   subject: string | null;
+  variables: unknown;
+  meta_template_name: string | null;
 };
 
 // Comparação de string em tempo constante (não vaza tamanho/posição da
@@ -193,9 +210,74 @@ function renderTemplate(body: string, vars: Record<string, unknown>): string {
   });
 }
 
+// Monta os parâmetros POSICIONAIS do template Meta na ordem do array
+// `variables` do notification_template ({{1}} = variables[0], ...).
+// Mesma regra do renderTemplate: variável ausente/vazia → erro PERMANENTE
+// (a Meta também rejeita parâmetro vazio). A Meta rejeita quebra de linha,
+// tab e 4+ espaços consecutivos DENTRO de parâmetro — sanitizamos aqui
+// (payloads como {{resumo}} dos digests vêm com \n).
+function buildTemplateParams(
+  variables: unknown,
+  vars: Record<string, unknown>,
+): string[] {
+  const names = Array.isArray(variables) ? variables.map(String) : [];
+  return names.map((k) => {
+    const v = vars[k];
+    if (v === undefined || v === null || v === "") {
+      throw new MissingTemplateVarError(k);
+    }
+    return String(v)
+      .replace(/\s*[\n\r\t]+\s*/g, " | ")
+      .replace(/ {4,}/g, "   ")
+      .trim();
+  });
+}
+
 // -----------------------------------------------------------------
 // Providers
 // -----------------------------------------------------------------
+
+// Template aprovado pela Meta (HSM) — único jeito de iniciar conversa fora
+// da janela de 24h. Template inexistente/não aprovado → 4xx do Graph →
+// classificado como falha PERMANENTE (aparece em /admin/fila-eventos).
+async function sendWhatsAppTemplate(
+  recipient: string,
+  templateName: string,
+  params: string[],
+): Promise<void> {
+  // Sem provider configurado: erro ESPERADO (allowlist) — mantém o modo stub.
+  if (!WHATSAPP_TOKEN || !WHATSAPP_PHONE_ID) {
+    throw new Error("whatsapp_provider_not_implemented");
+  }
+  // Meta Cloud API aceita E.164 só com dígitos (DDI+DDD+número).
+  const to = recipient.replace(/\D/g, "");
+  if (!to) throw new Error("whatsapp_recipient_invalido");
+
+  await postJson(
+    "whatsapp_send_falhou",
+    `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${WHATSAPP_PHONE_ID}/messages`,
+    { Authorization: `Bearer ${WHATSAPP_TOKEN}` },
+    {
+      messaging_product: "whatsapp",
+      to,
+      type: "template",
+      template: {
+        name: templateName,
+        language: { code: WHATSAPP_TEMPLATE_LANG },
+        ...(params.length > 0
+          ? {
+              components: [
+                {
+                  type: "body",
+                  parameters: params.map((text) => ({ type: "text", text })),
+                },
+              ],
+            }
+          : {}),
+      },
+    },
+  );
+}
 
 async function sendWhatsApp(recipient: string, body: string): Promise<void> {
   // Sem provider configurado: erro ESPERADO (allowlist) — mantém o modo stub.
@@ -296,7 +378,7 @@ Deno.serve(async (req: Request) => {
   if (dispatch.template_id) {
     const { data: t } = await supabase
       .from("notification_templates")
-      .select("channel, kind, body, subject")
+      .select("channel, kind, body, subject, variables, meta_template_name")
       .eq("id", dispatch.template_id)
       .maybeSingle<Template>();
     template = t;
@@ -315,13 +397,28 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Render PODE lançar MissingTemplateVarError (permanente) — fica DENTRO
-    // do try pra ser classificado e nunca entregar {{x}} cru.
-    const renderedBody = renderTemplate(template.body, dispatch.payload);
-
+    // Render/buildTemplateParams PODEM lançar MissingTemplateVarError
+    // (permanente) — ficam DENTRO do try pra serem classificados e nunca
+    // entregar {{x}} cru.
     if (dispatch.channel === "whatsapp") {
-      await sendWhatsApp(dispatch.recipient, renderedBody);
+      if (template.meta_template_name) {
+        // Template Meta (HSM): parâmetros posicionais na ordem de `variables`.
+        const params = buildTemplateParams(
+          template.variables,
+          dispatch.payload,
+        );
+        await sendWhatsAppTemplate(
+          dispatch.recipient,
+          template.meta_template_name,
+          params,
+        );
+      } else {
+        // Sem mapeamento Meta: texto livre (só funciona em janela de 24h).
+        const renderedBody = renderTemplate(template.body, dispatch.payload);
+        await sendWhatsApp(dispatch.recipient, renderedBody);
+      }
     } else if (dispatch.channel === "email") {
+      const renderedBody = renderTemplate(template.body, dispatch.payload);
       const renderedSubject = template.subject
         ? renderTemplate(template.subject, dispatch.payload)
         : "Milsaca";

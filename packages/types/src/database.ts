@@ -1772,6 +1772,7 @@ export type Database = {
           created_at: string
           id: string
           kind: string
+          meta_template_name: string | null
           name: string
           subject: string | null
           updated_at: string
@@ -1784,6 +1785,7 @@ export type Database = {
           created_at?: string
           id?: string
           kind: string
+          meta_template_name?: string | null
           name: string
           subject?: string | null
           updated_at?: string
@@ -1796,6 +1798,7 @@ export type Database = {
           created_at?: string
           id?: string
           kind?: string
+          meta_template_name?: string | null
           name?: string
           subject?: string | null
           updated_at?: string
@@ -3326,6 +3329,10 @@ export type Database = {
           error_msg: string
           success: boolean
         }[]
+      }
+      corretora_produtores_ativos: {
+        Args: { p_corretora_id: string }
+        Returns: number
       }
       corretora_sidebar_badges: {
         Args: never
