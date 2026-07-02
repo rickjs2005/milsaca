@@ -14,6 +14,7 @@ import {
   LogOut,
   CheckSquare,
   CalendarDays,
+  FolderOpen,
   type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -54,6 +55,11 @@ const GROUPS: Group[] = [
         icon: Store,
       },
       { href: "/painel/corretora/entregas", label: "Entregas", icon: Truck },
+      {
+        href: "/painel/corretora/documentos",
+        label: "Documentos",
+        icon: FolderOpen,
+      },
       {
         href: "/painel/corretora/pagamentos",
         label: "Pagamento ao Produtor",

@@ -39,6 +39,7 @@ import { listEntregasDoContrato } from "../../entregas/_lib/queries";
 import { EntregasContrato } from "../_components/entregas-contrato";
 import { buildWhatsAppInviteUrl } from "../../produtores/_lib/whatsapp";
 import { listCompradoresOptions } from "../../compradores/_lib/queries";
+import { DocumentosSection } from "../../documentos/_components/documentos-section";
 
 export const metadata = { title: "Contrato — Milsaca" };
 
@@ -558,6 +559,12 @@ export default async function ContratoDetalhePage({
           </CardContent>
         </Card>
       </div>
+
+      <DocumentosSection
+        ownerKind="contrato"
+        ownerId={contrato.id}
+        back={`/painel/corretora/contratos/${contrato.id}`}
+      />
     </div>
   );
 }

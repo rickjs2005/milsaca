@@ -30,6 +30,7 @@ import {
   OFERTA_STATUS_LABEL,
   OFERTA_STATUS_COLOR,
 } from "../../ofertas/_lib/queries";
+import { DocumentosSection } from "../../documentos/_components/documentos-section";
 
 export const metadata = { title: "Detalhe do lote — Milsaca" };
 
@@ -465,6 +466,12 @@ export default async function LoteDetalhePage({
             </CardContent>
           </Card>
         )}
+
+        <DocumentosSection
+          ownerKind="lote"
+          ownerId={lote.id}
+          back={`/painel/corretora/lotes/${lote.id}`}
+        />
       </section>
     </div>
   );

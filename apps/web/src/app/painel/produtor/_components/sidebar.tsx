@@ -13,6 +13,7 @@ import {
   Package,
   Wallet,
   Receipt,
+  FolderOpen,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -35,6 +36,11 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/painel/produtor/negociacoes", label: "Propostas", icon: Handshake },
   { href: "/painel/produtor/vendas", label: "Vendas", icon: Receipt },
   { href: "/painel/produtor/financeiro", label: "Financeiro", icon: Wallet },
+  {
+    href: "/painel/produtor/documentos",
+    label: "Meus documentos",
+    icon: FolderOpen,
+  },
   {
     href: "/painel/produtor/comunidade",
     label: "Comunidade",

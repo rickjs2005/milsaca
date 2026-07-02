@@ -23,6 +23,7 @@ import {
   Sparkles,
   CheckSquare,
   CalendarDays,
+  FolderOpen,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -100,6 +101,11 @@ const NAV_GROUPS: NavGroup[] = [
         href: "/painel/corretora/entregas",
         label: "Entregas",
         icon: Truck,
+      },
+      {
+        href: "/painel/corretora/documentos",
+        label: "Documentos",
+        icon: FolderOpen,
       },
       {
         href: "/painel/corretora/pagamentos",

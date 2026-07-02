@@ -922,6 +922,85 @@ export type Database = {
           },
         ]
       }
+      documentos: {
+        Row: {
+          categoria: Database["public"]["Enums"]["documento_categoria"]
+          corretora_id: string | null
+          created_at: string
+          deleted_at: string | null
+          id: string
+          mime_type: string
+          owner_id: string
+          owner_kind: Database["public"]["Enums"]["documento_owner_kind"]
+          storage_path: string
+          substitui_documento_id: string | null
+          tamanho_bytes: number
+          titulo: string
+          updated_at: string
+          uploaded_by: string | null
+          valido_ate: string | null
+          versao: number
+        }
+        Insert: {
+          categoria?: Database["public"]["Enums"]["documento_categoria"]
+          corretora_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          mime_type: string
+          owner_id: string
+          owner_kind: Database["public"]["Enums"]["documento_owner_kind"]
+          storage_path: string
+          substitui_documento_id?: string | null
+          tamanho_bytes?: number
+          titulo: string
+          updated_at?: string
+          uploaded_by?: string | null
+          valido_ate?: string | null
+          versao?: number
+        }
+        Update: {
+          categoria?: Database["public"]["Enums"]["documento_categoria"]
+          corretora_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          mime_type?: string
+          owner_id?: string
+          owner_kind?: Database["public"]["Enums"]["documento_owner_kind"]
+          storage_path?: string
+          substitui_documento_id?: string | null
+          tamanho_bytes?: number
+          titulo?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          valido_ate?: string | null
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_corretora_id_fkey"
+            columns: ["corretora_id"]
+            isOneToOne: false
+            referencedRelation: "corretoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_substitui_documento_id_fkey"
+            columns: ["substitui_documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entregas: {
         Row: {
           bag_count: number | null
@@ -3543,6 +3622,15 @@ export type Database = {
         | "finalizado"
         | "cancelado"
       corretora_member_role: "dono" | "operador"
+      documento_categoria:
+        | "car"
+        | "itr"
+        | "procuracao"
+        | "certificado"
+        | "nota_fiscal"
+        | "contrato_assinado"
+        | "outro"
+      documento_owner_kind: "produtor" | "lote" | "contrato" | "corretora"
       entrega_status:
         | "programada"
         | "em_transito"
@@ -3771,6 +3859,16 @@ export const Constants = {
         "cancelado",
       ],
       corretora_member_role: ["dono", "operador"],
+      documento_categoria: [
+        "car",
+        "itr",
+        "procuracao",
+        "certificado",
+        "nota_fiscal",
+        "contrato_assinado",
+        "outro",
+      ],
+      documento_owner_kind: ["produtor", "lote", "contrato", "corretora"],
       entrega_status: [
         "programada",
         "em_transito",
