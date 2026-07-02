@@ -5,6 +5,9 @@ import {
   Leaf,
   MapPin,
   MapPinOff,
+  ShieldAlert,
+  ShieldCheck,
+  ShieldQuestion,
   XCircle,
 } from "lucide-react";
 import {
@@ -20,7 +23,11 @@ import { Select } from "@/components/ui/select";
 import { SubmitButton } from "@/components/submit-button";
 import { createClient } from "@milsaca/db/web/server";
 import { resumoGeometria } from "@/lib/geo";
-import { desvincularTalhao, vincularTalhao } from "../_actions";
+import {
+  desvincularTalhao,
+  verificarDesmatamentoLote,
+  vincularTalhao,
+} from "../_actions";
 
 const CHECKLIST_LABEL: Record<string, string> = {
   produtor_cadastrado: "Produtor com cadastro completo",
@@ -41,6 +48,32 @@ type TalhaoLite = {
   area_ha: number | string | null;
   geojson: unknown | null;
 };
+
+export type Verificacao = {
+  talhao_id: string;
+  status: string;
+  alertas: unknown;
+  verificado_em: string;
+};
+
+/** Última verificação de desmatamento de cada talhão (mapa talhao_id → row). */
+async function loadUltimasVerificacoes(
+  talhaoIds: string[],
+): Promise<Map<string, Verificacao>> {
+  const map = new Map<string, Verificacao>();
+  if (talhaoIds.length === 0) return map;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("talhao_verificacoes")
+    .select("talhao_id, status, alertas, verificado_em")
+    .in("talhao_id", talhaoIds)
+    .order("verificado_em", { ascending: false })
+    .limit(talhaoIds.length * 5);
+  for (const v of (data ?? []) as Verificacao[]) {
+    if (!map.has(v.talhao_id)) map.set(v.talhao_id, v);
+  }
+  return map;
+}
 
 async function loadEudr(loteId: string, produtorProfileId: string) {
   const supabase = await createClient();
@@ -99,6 +132,9 @@ export async function EudrSection({
     produtorProfileId,
   );
   const temGeo = vinculados.some((t) => t.geojson != null);
+  const verificacoes = await loadUltimasVerificacoes(
+    vinculados.filter((t) => t.geojson != null).map((t) => t.id),
+  );
 
   return (
     <Card className="border-milsaca-cream-escuro">
@@ -224,6 +260,73 @@ export async function EudrSection({
               ? "Todos os talhões do produtor já estão vinculados."
               : "O produtor ainda não tem talhões cadastrados — peça pra ele usar a página “Minha lavoura” no app, ou cadastre por ele em campo."}
           </p>
+        )}
+
+        {temGeo && (
+          <div className="border-t border-milsaca-cream-escuro pt-4">
+            <p className="text-label text-milsaca-preto">
+              Análise de desmatamento (MapBiomas Alerta)
+            </p>
+            <p className="mt-0.5 text-caption text-neutral-500">
+              Alertas públicos de desmatamento após 31/12/2020 (corte EUDR),
+              conferidos contra a geometria de cada talhão.
+            </p>
+            <ul className="mt-2 space-y-1.5">
+              {vinculados
+                .filter((t) => t.geojson != null)
+                .map((t) => {
+                  const v = verificacoes.get(t.id);
+                  const nAlertas = Array.isArray(v?.alertas)
+                    ? v.alertas.length
+                    : 0;
+                  return (
+                    <li
+                      key={t.id}
+                      className="flex items-center gap-2 text-body-sm"
+                    >
+                      {!v ? (
+                        <ShieldQuestion className="h-4 w-4 shrink-0 text-neutral-400" />
+                      ) : v.status === "sem_alerta" ? (
+                        <ShieldCheck className="h-4 w-4 shrink-0 text-success-600" />
+                      ) : v.status === "alerta_detectado" ? (
+                        <ShieldAlert className="h-4 w-4 shrink-0 text-danger-500" />
+                      ) : (
+                        <ShieldQuestion className="h-4 w-4 shrink-0 text-warning-500" />
+                      )}
+                      <span className="min-w-0 flex-1 truncate text-neutral-600">
+                        {t.nome}
+                      </span>
+                      {!v ? (
+                        <span className="text-caption text-neutral-400">
+                          nunca verificado
+                        </span>
+                      ) : v.status === "sem_alerta" ? (
+                        <span className="text-caption text-success-700">
+                          sem alerta ·{" "}
+                          {new Date(v.verificado_em).toLocaleDateString("pt-BR")}
+                        </span>
+                      ) : v.status === "alerta_detectado" ? (
+                        <span className="text-caption font-medium text-danger-700">
+                          {nAlertas} alerta(s) ·{" "}
+                          {new Date(v.verificado_em).toLocaleDateString("pt-BR")}
+                        </span>
+                      ) : (
+                        <span className="text-caption text-warning-700">
+                          erro na consulta
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+            </ul>
+            <form action={verificarDesmatamentoLote} className="mt-3">
+              <input type="hidden" name="lote_id" value={loteId} />
+              <SubmitButton variant="outline" pendingLabel="Consultando MapBiomas…">
+                <ShieldCheck className="mr-2 h-4 w-4" />
+                Verificar desmatamento agora
+              </SubmitButton>
+            </form>
+          </div>
         )}
 
         {temGeo && (

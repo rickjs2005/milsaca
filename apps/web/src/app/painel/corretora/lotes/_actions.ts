@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@milsaca/db/web/server";
+import type { Json } from "@milsaca/types/database";
 import { friendlyPostgresError } from "@/lib/postgres-error";
 import { sacasParaKg } from "@/lib/unidades";
 import { safeError } from "@/lib/logger";
@@ -242,4 +243,155 @@ export async function desvincularTalhao(formData: FormData) {
 
   revalidatePath(back);
   redirect(`${back}?saved=${encodeURIComponent("Vínculo removido.")}`);
+}
+
+/**
+ * Verifica desmatamento (MapBiomas Alerta) em todos os talhões
+ * georreferenciados do lote. Duas etapas por talhão: bounding box na API
+ * (filtro grosso) → interseção exata no PostGIS com o WKT de cada alerta
+ * (RPC talhao_intersecta_wkt). Grava uma linha de histórico por talhão em
+ * talhao_verificacoes. Corte EUDR: 31/12/2020.
+ */
+export async function verificarDesmatamentoLote(formData: FormData) {
+  const profile = await ensureCorretora();
+  const loteId = String(formData.get("lote_id") ?? "").trim();
+  const back = `/painel/corretora/lotes/${loteId}`;
+  if (!loteId) redirect("/painel/corretora/lotes");
+
+  const {
+    bboxDeGeojson,
+    mapbiomasAlertsByBbox,
+    mapbiomasConfigurado,
+    mapbiomasSignIn,
+  } = await import("@/lib/mapbiomas");
+
+  if (!mapbiomasConfigurado()) {
+    redirect(
+      `${back}?error=${encodeURIComponent(
+        "Integração MapBiomas não configurada — defina MAPBIOMAS_ALERTA_EMAIL e MAPBIOMAS_ALERTA_PASSWORD no ambiente.",
+      )}`,
+    );
+  }
+
+  const supabase = await createClient();
+  const { data: vinculos } = await supabase
+    .from("lote_talhoes")
+    .select("talhoes(id, nome, geojson)")
+    .eq("lote_id", loteId);
+  const talhoes = (vinculos ?? [])
+    .map(
+      (v) =>
+        v.talhoes as unknown as {
+          id: string;
+          nome: string;
+          geojson: unknown | null;
+        } | null,
+    )
+    .filter((t): t is { id: string; nome: string; geojson: unknown } =>
+      Boolean(t && t.geojson),
+    );
+
+  if (talhoes.length === 0) {
+    redirect(
+      `${back}?error=${encodeURIComponent(
+        "Nenhum talhão georreferenciado vinculado ao lote.",
+      )}`,
+    );
+  }
+
+  const log = await getReqLogger({
+    action: "verificarDesmatamentoLote",
+    corretoraId: profile.corretora_id,
+    loteId,
+  });
+
+  let token: string;
+  try {
+    token = await mapbiomasSignIn();
+  } catch (e) {
+    log.error("mapbiomas_signin_falhou", { err: safeError(e) });
+    redirect(
+      `${back}?error=${encodeURIComponent(
+        "Não foi possível autenticar no MapBiomas — confira as credenciais.",
+      )}`,
+    );
+  }
+
+  let comAlerta = 0;
+  let comErro = 0;
+
+  for (const talhao of talhoes) {
+    try {
+      const bbox = bboxDeGeojson(talhao.geojson);
+      if (!bbox) throw new Error("bbox_indisponivel");
+
+      const { alertas } = await mapbiomasAlertsByBbox(token, bbox);
+
+      // Interseção exata no PostGIS; se o WKT não parsear (null), mantém
+      // o alerta por precaução com conferencia='bbox'.
+      const confirmados: Json[] = [];
+      for (const a of alertas) {
+        let conferencia: "exata" | "bbox" = "bbox";
+        let intersecta: boolean | null = null;
+        if (a.geometryWkt) {
+          const { data } = await supabase.rpc("talhao_intersecta_wkt", {
+            p_talhao_id: talhao.id,
+            p_wkt: a.geometryWkt,
+          });
+          intersecta = data;
+          if (data === true) conferencia = "exata";
+        }
+        if (intersecta === false) continue; // fora do talhão — descarta
+        confirmados.push({
+          code: a.alertCode,
+          area_ha: a.areaHa,
+          detected_at: a.detectedAt,
+          status_name: a.statusName,
+          conferencia,
+        });
+      }
+
+      const { error: insertError } = await supabase
+        .from("talhao_verificacoes")
+        .insert({
+          talhao_id: talhao.id,
+          status: confirmados.length > 0 ? "alerta_detectado" : "sem_alerta",
+          alertas: confirmados,
+          verificado_por: profile.id,
+        });
+      if (insertError) throw insertError;
+      if (confirmados.length > 0) comAlerta += 1;
+    } catch (e) {
+      comErro += 1;
+      log.error("mapbiomas_verificacao_falhou", {
+        talhaoId: talhao.id,
+        err: safeError(e),
+      });
+      // Registra o erro como histórico (best-effort — se nem isso der,
+      // o log acima fica como rastro).
+      await supabase.from("talhao_verificacoes").insert({
+        talhao_id: talhao.id,
+        status: "erro",
+        erro: e instanceof Error ? e.message.slice(0, 200) : "erro",
+        verificado_por: profile.id,
+      });
+    }
+  }
+
+  revalidatePath(back);
+  const ok = talhoes.length - comErro;
+  if (comAlerta > 0) {
+    redirect(
+      `${back}?error=${encodeURIComponent(
+        `Atenção: ${comAlerta} de ${ok} talhão(ões) com alerta de desmatamento após 31/12/2020. Confira os detalhes na seção EUDR.`,
+      )}`,
+    );
+  }
+  redirect(
+    `${back}?saved=${encodeURIComponent(
+      comErro > 0
+        ? `${ok} talhão(ões) verificados sem alerta; ${comErro} com erro de consulta.`
+        : `${ok} talhão(ões) verificados — nenhum alerta de desmatamento desde 31/12/2020. ✅`,
+    )}`,
+  );
 }

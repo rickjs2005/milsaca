@@ -3080,6 +3080,57 @@ export type Database = {
         }
         Relationships: []
       }
+      talhao_verificacoes: {
+        Row: {
+          alertas: Json
+          erro: string | null
+          id: string
+          periodo_inicio: string
+          provider: string
+          status: string
+          talhao_id: string
+          verificado_em: string
+          verificado_por: string | null
+        }
+        Insert: {
+          alertas?: Json
+          erro?: string | null
+          id?: string
+          periodo_inicio?: string
+          provider?: string
+          status: string
+          talhao_id: string
+          verificado_em?: string
+          verificado_por?: string | null
+        }
+        Update: {
+          alertas?: Json
+          erro?: string | null
+          id?: string
+          periodo_inicio?: string
+          provider?: string
+          status?: string
+          talhao_id?: string
+          verificado_em?: string
+          verificado_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "talhao_verificacoes_talhao_id_fkey"
+            columns: ["talhao_id"]
+            isOneToOne: false
+            referencedRelation: "talhoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "talhao_verificacoes_verificado_por_fkey"
+            columns: ["verificado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       talhoes: {
         Row: {
           area_ha: number | null
@@ -3638,6 +3689,10 @@ export type Database = {
       subscription_effective_status: {
         Args: { sub: Database["public"]["Tables"]["subscriptions"]["Row"] }
         Returns: Database["public"]["Enums"]["subscription_status"]
+      }
+      talhao_intersecta_wkt: {
+        Args: { p_talhao_id: string; p_wkt: string }
+        Returns: boolean | null
       }
       v1_criar_oferta_produtor: {
         Args: {

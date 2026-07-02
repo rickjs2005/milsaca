@@ -183,9 +183,24 @@ function centroide(anel: number[][]): [number, number] | null {
 
 export type ChecklistItemPdf = { key: string; ok: boolean; label: string };
 
+export type VerificacaoPdf = {
+  talhaoNome: string;
+  status: string; // sem_alerta | alerta_detectado | erro | nao_verificado
+  verificadoEm: string | null;
+  alertaCodes: string[];
+};
+
+const VERIF_LABEL: Record<string, string> = {
+  sem_alerta: "Sem alerta de desmatamento",
+  alerta_detectado: "ALERTA DETECTADO",
+  erro: "Erro na consulta",
+  nao_verificado: "Não verificado",
+};
+
 export function DossieEudrPdf({
   data,
   checklist,
+  verificacoes,
   geojsonHash,
   qrDataUrl,
   publicUrl,
@@ -193,6 +208,7 @@ export function DossieEudrPdf({
 }: {
   data: EudrData;
   checklist: ChecklistItemPdf[];
+  verificacoes: VerificacaoPdf[];
   geojsonHash: string;
   qrDataUrl: string;
   publicUrl: string;
@@ -345,6 +361,41 @@ export function DossieEudrPdf({
                 {item.ok ? "[ok]" : "[pendente]"}
               </Text>
               <Text style={styles.checkLabel}>{item.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            Análise de desmatamento — MapBiomas Alerta
+          </Text>
+          <Text style={[styles.regText, { marginBottom: 4 }]}>
+            Alertas públicos de desmatamento detectados após 31/12/2020
+            (corte do regulamento), com interseção conferida contra a
+            geometria de cada talhão. Fonte: plataforma.alerta.mapbiomas.org.
+          </Text>
+          {verificacoes.map((v) => (
+            <View key={v.talhaoNome} style={styles.checkRow}>
+              <Text
+                style={
+                  v.status === "sem_alerta"
+                    ? styles.checkOk
+                    : v.status === "alerta_detectado"
+                      ? styles.checkFail
+                      : { fontSize: 9, color: COLORS.verdeClaro, fontWeight: 700 }
+                }
+              >
+                [{VERIF_LABEL[v.status] ?? v.status}]
+              </Text>
+              <Text style={styles.checkLabel}>
+                {v.talhaoNome}
+                {v.verificadoEm
+                  ? ` — verificado em ${new Date(v.verificadoEm).toLocaleDateString("pt-BR")}`
+                  : ""}
+                {v.alertaCodes.length > 0
+                  ? ` — alertas: ${v.alertaCodes.join(", ")}`
+                  : ""}
+              </Text>
             </View>
           ))}
         </View>

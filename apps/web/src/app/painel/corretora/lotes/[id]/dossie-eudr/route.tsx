@@ -12,6 +12,7 @@ import { eudrGeojsonHash, loadEudrData } from "../../_lib/eudr-export";
 import {
   DossieEudrPdf,
   type ChecklistItemPdf,
+  type VerificacaoPdf,
 } from "../../_lib/dossie-eudr-pdf";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -58,6 +59,36 @@ export async function GET(
     label: CHECKLIST_LABEL[i.key] ?? i.key,
   }));
 
+  // Última verificação de desmatamento (MapBiomas) de cada talhão.
+  const talhaoIds = data.talhoes.map((t) => t.id);
+  const { data: verifRows } = await supabase
+    .from("talhao_verificacoes")
+    .select("talhao_id, status, alertas, verificado_em")
+    .in("talhao_id", talhaoIds)
+    .order("verificado_em", { ascending: false })
+    .limit(talhaoIds.length * 5);
+  const ultimaPorTalhao = new Map<
+    string,
+    { status: string; alertas: unknown; verificado_em: string }
+  >();
+  for (const v of verifRows ?? []) {
+    if (!ultimaPorTalhao.has(v.talhao_id)) ultimaPorTalhao.set(v.talhao_id, v);
+  }
+  const verificacoes: VerificacaoPdf[] = data.talhoes.map((t) => {
+    const v = ultimaPorTalhao.get(t.id);
+    const alertas = Array.isArray(v?.alertas)
+      ? (v.alertas as Array<{ code?: string }>)
+      : [];
+    return {
+      talhaoNome: t.nome,
+      status: v?.status ?? "nao_verificado",
+      verificadoEm: v?.verificado_em ?? null,
+      alertaCodes: alertas
+        .map((a) => a.code)
+        .filter((c): c is string => Boolean(c)),
+    };
+  });
+
   const publicUrl = `${SITE_URL}/lote/${data.lote.id}`;
   const qrDataUrl = await QRCode.toDataURL(publicUrl, {
     errorCorrectionLevel: "M",
@@ -76,6 +107,7 @@ export async function GET(
     <DossieEudrPdf
       data={data}
       checklist={checklist}
+      verificacoes={verificacoes}
       geojsonHash={eudrGeojsonHash(data)}
       qrDataUrl={qrDataUrl}
       publicUrl={publicUrl}
